@@ -1,0 +1,217 @@
+# AGENTS.md — KC Technology Corporation Website
+
+Persistent project memory for any agent (OpenHands or otherwise) working in this repository.
+Read this file first, then `docs/PROJECT_BRIEF.md` for the full business/product brief and the
+phase roadmap. Keep both files synchronized with the specification as the build progresses.
+
+---
+
+## 1. What this project is
+
+KC Technology Corporation corporate website plus three department experiences under one brand:
+
+| Department | Public localized path | Accent |
+| --- | --- | --- |
+| Corporate gateway (root, language-neutral) | `/` | Corporate Navy / Premium Gold |
+| Digital Marketing (store) | `/{locale}/digital-marketing` | `#2E6FB8` |
+| Electrical Services | `/{locale}/electrical-services` | `#D98E04` |
+| Real Estate | `/{locale}/real-estate` | `#1E7A5C` |
+
+Supported locales: `en`, `fr` (URL segments stay `/en` and `/fr`; SEO language-region annotations
+use `en-CM` / `fr-CM`).
+
+## 2. Corporate facts — do not invent, do not alter
+
+- Legal/brand name: **KC Technology Corporation**
+- Corporate address: **Half-Mile, Limbe, Southwest Region, Cameroon**
+- Public email: **kctechc@gmail.com**
+- Public phones: **(+237) 679-202-265** and **656-218-651**
+- Motto: **"Innovating Technology. Powering Infrastructure. Transforming Futures."**
+
+Any business fact not supplied by the source material must be editable CMS content or clearly
+marked development seed data, and must never appear as a production marketing claim. Never
+fabricate certifications, awards, client results, property inventory, prices, product specs,
+legal claims, staff, testimonials, or case-study metrics.
+
+## 3. Locked technical decisions
+
+- **Next.js 16.x App Router** (stable, non-canary only). `proxy.ts`, **not** `middleware.ts`.
+  No custom server. No `output: export`. No `next lint` (ESLint CLI only). No `next/legacy/image`.
+  `images.remotePatterns` (never `images.domains`). Async `params`/`searchParams`.
+  Current stable package release at last check: see `docs/PROJECT_BRIEF.md` §"Verified versions".
+- **TypeScript strict**; no `any` unless narrowly justified and documented.
+- **Tailwind CSS**; **Lucide** as the single icon family.
+- **Supabase**: PostgreSQL + Auth + Storage + RLS, migrations version-controlled, types generated
+  from schema. Use `@supabase/ssr` with cookie-based SSR auth.
+- **Tolgee** is the localization runtime/management layer. **Never install `next-intl`,
+  `next-i18next`, `react-i18next`, or any competing i18n framework.**
+- **Zod** for all input validation (server-side before any write).
+- **Vitest** for unit/integration; **Playwright** for E2E once the app surface exists.
+- **Resend** for transactional email.
+- **MapLibre GL JS + OpenFreeMap** as the default map stack, behind a map adapter so Mapbox or
+  Google Maps can be swapped without rewriting business logic.
+- Server Components by default; Client Components only where interaction requires them.
+
+## 4. Non-negotiable architecture rules
+
+### Localization
+- Root `/` stays language-neutral (`x-default`) — offer EN/FR + department choices, do not guess.
+- Localized app lives in `src/app/[locale]/...`. `src/proxy.ts` does only lightweight
+  locale/routing checks and redirects — **never** slow database fetches.
+- Locale handling must validate `en`/`fr`, preserve the current route and safe query params on
+  language switch, support localized slugs, emit reciprocal `hreflang` + `x-default`, and prevent
+  untranslated/unpublished locale content from being indexed as fully localized pages.
+
+### Dynamic translation rule (critical)
+- Static UI text → normal Tolgee keys. Dynamic DB content → **never** static JSON dictionaries.
+- Canonical structured content lives in Supabase; localized content lives in Supabase translation
+  tables / typed localized fields so the site works even if Tolgee is down.
+- Maintain a `translation_entries` index: stable key, entity type, entity ID, field name, source
+  locale, target locales, translation state, Tolgee key/id, sync state, last sync timestamp,
+  error info.
+- Tolgee sync runs from server-side code or a Supabase Edge Function only. Never expose a Tolgee
+  management/secret API key to the browser. Sync must be idempotent and retryable, ideally via an
+  async job/webhook pattern.
+- Publishing a product (or any translatable entity) must auto-create its translation entries —
+  admins never create translation keys by hand.
+- Source locale defaults to English. French starts `pending` unless supplied or an approved MT
+  workflow is enabled. Changing a source field marks downstream translations potentially outdated
+  and re-syncs, but **never destroys existing translations**.
+
+### Security
+- Supabase service-role key is server-only. No secrets in `NEXT_PUBLIC_*`.
+- Authorization enforced by **RLS** in the database, not by hiding UI routes.
+- Least-privilege policies for visitor/customer/agent/department staff/admin/super admin.
+- Zod-validate all input; use Supabase query methods (no unsafe SQL string concatenation).
+- Audit-log privileged CRUD, role changes, payment state changes, content publishing, property
+  approval/rejection, and translation sync events.
+- Soft-delete/archive where referential history matters. Use DB functions/transactions for
+  atomic multi-record changes. FKs, check/unique constraints, indexes, sane defaults.
+- Avoid RLS recursion; security-definer helpers only when necessary and hardened.
+- Admin/auth/private routes are `noindex`.
+
+### Storage
+- Separate buckets/folders: public site media, product media, property media, electrical project
+  media, private inquiry attachments, private admin documents.
+- Public media may use public URLs; sensitive uploads use signed URLs. Validate type + size
+  server-side, generate safe deterministic paths, block executable uploads, keep alt/caption/credit
+  fields, keep the asset→entity→locale relationship, always render through `next/image`.
+
+### Payments
+- Provider abstraction. **Flutterwave** is the preferred initial provider (documented XAF support
+  with MTN/Orange Mobile Money and cards). Server-side payment creation, idempotency, webhook
+  signature verification, async state handling, server-side verification before order finalization,
+  explicit pending/success/failed states, no card data in our DB, audit trail, sandbox/production
+  separation, and a disabled feature flag when production credentials are absent.
+- **Never fake a successful payment when credentials are missing.**
+- Bank transfer may be offered as a manual/offline method until a verified provider flow exists.
+
+### Maps & geography
+- Real estate supports list/map toggle, clustered markers, single-property map, safe coordinate
+  storage, and no accidental exposure of exact coordinates for private/approximate listings.
+- Cameroon hierarchy: Region → Division → Subdivision. Seed the ten regions (Adamawa, Centre, East,
+  Far North, Littoral, North, Northwest, West, South, Southwest) immediately; load divisions and
+  subdivisions only from a vetted administrative dataset via a validated import path — never guess.
+- PostGIS only when needed, in a dedicated extension schema — not exposed through `public`.
+
+### Money
+- Primary currency XAF/FCFA. USD equivalent display only where content explicitly supports it and
+  never with invented exchange rates. Format with `Intl.NumberFormat` (`en-CM` / `fr-CM`).
+
+## 5. Design system
+
+Palette: Corporate Navy `#0B2545`, Premium Gold `#B8892E`, Digital Marketing `#2E6FB8`,
+Electrical `#D98E04`, Real Estate `#1E7A5C`, body text `#3C4858` on white.
+
+Type: premium heading font (Sora or Playfair Display) + highly legible body font (Inter), loaded
+via `next/font`. Subtle motion only for hierarchy; respect `prefers-reduced-motion`.
+
+Feel: premium, corporate, engineering/investment-grade, trustworthy, spacious, restrained — not
+template-like. Mobile-first for mid-range Android on mobile data.
+
+## 6. Performance budget
+
+Beat the under-2.5s load goal on realistic 4G, target Core Web Vitals "Good", and stay usable on
+3G/2G. Server Components first, minimal client JS, no unnecessary global providers, lazy-load
+below-the-fold media and maps, responsive sizing, reserved dimensions (CLS), modern formats,
+no heavy animation libraries for simple transitions, deliberate caching/revalidation, and never
+make a page dynamic just because a client component could have been avoided.
+
+## 7. SEO / AEO rules
+
+SEO is architecture from Phase 1. Required: unique titles, meta descriptions, canonicals, locale
+alternates + `hreflang`, `x-default`, stable descriptive URLs, correct `html[lang]`, Open Graph +
+social images, metadata base from env, `robots.txt`, XML sitemaps, correct 404/410, clean internal
+linking, breadcrumbs, server-generated structured data matching visible content, alt text and
+descriptive filenames, indexation controls, `noindex` for admin/auth/private, canonical handling
+for filter/sort/search states, regional/category landing pages only with unique content, redirect
+management, and zero duplicate content from locale routing or query params.
+
+Governing standard is current Google Search Central guidance, not older folklore.
+
+AEO/GEO: use the evidence-based interpretation. Implement answer-first intros, question-style
+headings where they match real intent, concise factual definitions, strong entity identity, clear
+product/service/property facts, comparison tables where natural, FAQs only when genuinely useful,
+author identity and `datePublished`/`dateModified` on insights, credible references for non-obvious
+claims, original company knowledge, local language/geographic context, consistent NAP/department
+data, crawlable text (no important content hidden behind client interaction), accessible HTML.
+
+Do **not** create `llms.txt`, AI-only sitemaps, fake entity mentions, keyword stuffing, doorway
+pages, or other unsupported "GEO hacks".
+
+## 8. Analytics & Google ecosystem
+
+GA4 with real business events (never pageviews only), consent-aware, **no PII ever sent**.
+
+- Ecommerce: `view_item_list`, `view_item`, `select_item`, `add_to_cart`, `remove_from_cart`,
+  `begin_checkout`, `purchase`, `refund`.
+- Site conversions: `generate_lead`, `quote_request`, `property_inquiry`,
+  `property_viewing_request`, `consultation_request`, `contact_submit`, `department_selection`,
+  `site_search`.
+
+Also prepare for Search Console, Merchant Center / free listings (real identifiers only, no
+invented GTINs), Business Profile consistency, Rich Results testing, URL Inspection, and CWV
+monitoring.
+
+## 9. Code quality bar
+
+Strict TypeScript; no `any` without documented justification; no silent error swallowing; no
+duplicated business logic between Server and Client components; reusable server/data layer;
+reusable Zod schemas; typed DB access; small components; meaningful names; comments only for
+non-obvious reasoning; no dead code; **no TODO placeholders in completed work**; no mock
+implementations on production paths.
+
+## 10. Deployment targets
+
+One codebase must work on **Vercel** and a **self-hosted VPS**. Do not rely on Vercel-only runtime
+behavior. For VPS: `next start` or standalone output, Docker or a clear Node path, Nginx reverse
+proxy guidance, HTTPS at the proxy, server-safe runtime config, graceful restarts, and
+externalized storage/database/webhooks/cron-queue. `output: export` is forbidden (auth'd admin,
+server logic, dynamic data, runtime integrations).
+
+## 11. Per-phase workflow (mandatory)
+
+Before editing: inspect repo structure, `package.json`/lockfile, Next.js version and config,
+Supabase migrations/config, this file and any `.openhands` instructions, and determine what already
+works. Never delete a working feature because another approach looks cleaner. Prefer incremental
+changes. Keep this file synchronized.
+
+At the end of every phase:
+1. `tsc --noEmit` (type check) → 2. ESLint CLI → 3. unit/integration tests → 4. production build
+(when practical) → 5. phase-specific smoke tests → 6. inspect generated HTML for SEO-critical public
+pages → 7. fix everything found → 8. report and **STOP**.
+
+If an external credential is unavailable, test the code path with a deterministic config or a
+disabled state — never by pretending the external service succeeded.
+
+End-of-phase report must list: what changed; important files added/changed; migrations added; env
+vars added; commands/tests run; genuinely external/blocked issues; and explicit confirmation that
+acceptance criteria pass. Then stop — do not start the next phase.
+
+## 12. Current repository status
+
+- Branch: `main`. The repository is **empty apart from `example.env`** (a 1-byte placeholder file).
+- No `package.json`, no Next.js app, no Supabase migrations, no CI, no tests yet.
+- Phase 0 (specification capture, agent rules, project brief, env template) is complete.
+
+See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
