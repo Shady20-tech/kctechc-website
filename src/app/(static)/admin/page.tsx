@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
@@ -42,6 +43,12 @@ export default async function AdminDashboardPage() {
         <Notice tone="warning" title={t("admin.metaTitle")}>
           <p>{t("admin.phaseNotice")}</p>
         </Notice>
+
+        <p>
+          <ButtonLink href="/admin/store/new" variant="primary">
+            {t("admin.store.heading")}
+          </ButtonLink>
+        </p>
       </div>
     </>
   );

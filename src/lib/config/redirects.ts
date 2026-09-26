@@ -16,6 +16,14 @@ import { LOCALES } from "../i18n/locales";
 /** Canonical path for the articles section. */
 export const INSIGHTS_PATH = "/insights";
 
+/**
+ * Canonical path for the Digital Marketing store.
+ *
+ * Kept here rather than in the store module so `next.config.ts` can import it
+ * without pulling in a dependency chain, exactly as `INSIGHTS_PATH` is.
+ */
+export const STORE_PATH = "/digital-marketing/store";
+
 /** The articles section's former path, still linked from Phase 2 pages. */
 const LEGACY_INSIGHTS_PATH = "/blog";
 
