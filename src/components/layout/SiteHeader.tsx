@@ -44,17 +44,40 @@ export function SiteHeader({
 
   return (
     <header className="on-ink sticky top-0 z-40 border-b border-white/10 bg-ink-950/95 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between gap-6 lg:h-18">
-        <Logo locale={locale} tone="light" />
+      {/* A three-column grid, not `justify-between`. With `justify-between` the
+          nav sits midway between the logo and the account action, so it drifts
+          off the page centre by half the difference between those two widths.
+          Equal `1fr` side columns put the nav on the true centre at every width,
+          and pin the logo and the action to the same content edges the rest of
+          the page uses.
 
-        <nav aria-label={t("nav.primary")} className="hidden xl:block">
-          <ul className="flex items-center gap-1">
+          The row gap and the nav padding below are sized so the bar fits inside
+          `container-page` in both locales. Measured natural widths: the English
+          row needs 1201px and the French row 1258px at the previous spacing,
+          against a fixed 1168px of content, so French overflowed at every
+          viewport. These values bring French down to ~1118px. */}
+      <div className="container-page grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-4 lg:h-18">
+        <div className="col-start-1 min-w-0 justify-self-start">
+          <Logo locale={locale} tone="light" />
+        </div>
+
+        <nav
+          aria-label={t("nav.primary")}
+          className="col-start-2 hidden shrink-0 justify-self-center xl:block"
+        >
+          <ul className="flex items-center gap-0.5">
             {navEntries.map((entry) =>
               entry.kind === "link" ? (
                 <li key={entry.href}>
                   <Link
                     href={entry.href}
-                    className="rounded-card px-3 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
+                    // `inline-flex` + `whitespace-nowrap` are load-bearing. As a
+                    // flex item a link will otherwise shrink below its text width
+                    // and wrap, and an `inline` box reports a shorter rect than the
+                    // `inline-flex` dropdown trigger beside it, so the two end up
+                    // on different baselines. Matching the trigger's box model
+                    // keeps every item the same height and baseline.
+                    className="inline-flex items-center whitespace-nowrap rounded-card px-1.5 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
                   >
                     {entry.label}
                   </Link>
@@ -72,11 +95,12 @@ export function SiteHeader({
           </ul>
         </nav>
 
-        <div className="hidden items-center gap-3 xl:flex">
+        <div className="col-start-3 hidden shrink-0 items-center gap-2.5 justify-self-end xl:flex">
           <LanguageSwitcher
             currentLocale={locale}
             label={t("a11y.languageSwitcher")}
             tone="light"
+            compact
           />
           <span aria-hidden="true" className="h-6 w-px bg-white/15" />
           <ButtonLink href={signInHref} variant="accentOnInk" size="sm">
@@ -84,11 +108,12 @@ export function SiteHeader({
           </ButtonLink>
         </div>
 
-        <div className="flex items-center gap-2 xl:hidden">
+        <div className="col-start-3 flex shrink-0 items-center gap-2 justify-self-end xl:hidden">
           <LanguageSwitcher
             currentLocale={locale}
             label={t("a11y.languageSwitcher")}
             tone="light"
+            compact
           />
           <MobileMenu
             locale={locale}

@@ -18,6 +18,20 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   fr: "Français",
 };
 
+/**
+ * Compact labels for the header switcher.
+ *
+ * The header bar has a fixed width budget (see `container-page`, capped at
+ * `78rem`) shared with the logo, the nav and the account action. The full names
+ * cost ~60px more in French and are what pushed the bar past that budget. These
+ * abbreviations are visual only: the links keep `LOCALE_LABELS` as their
+ * accessible name, so a screen reader still announces "English"/"Français".
+ */
+export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
+  en: "EN",
+  fr: "FR",
+};
+
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
 }

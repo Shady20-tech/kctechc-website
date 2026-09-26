@@ -424,6 +424,24 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **The desktop nav only appears from `xl`.** Seven entries plus the language switcher and the
   account action crowd at `lg`; the drawer is used below `xl`. The breakpoint on the desktop block
   and on the drawer trigger must stay in sync (`xl:block` / `xl:hidden`), or both render at once.
+- **The header row is a three-column grid, not `justify-between`.** With `justify-between` the nav
+  sits midway between the logo and the account action, so it lands off the page centre by half the
+  difference between those two widths. Equal `1fr` side columns (`grid-cols-[1fr_auto_1fr]`) hold
+  the nav on the true centre and pin the logo and action to the same content edges as the rest of
+  the page. The row also shares `container-page`, so the bar lines up with page content.
+- **The header fits inside a fixed 1168px content budget, and French is the binding case.** The
+  container is capped at `78rem`, so the content width stops growing at 1280px while the French row
+  is the widest (its labels are longer). At one point the French bar needed 1326px and so overflowed
+  at every viewport; nav padding (`px-1.5`) and the row gap (`gap-4`) are what keep it inside. Before
+  widening nav spacing, changing `container-page`, or adding a nav entry, re-measure French at
+  1280px — English passing means nothing, since English has ~50px more slack.
+- **Nav links and the dropdown trigger must share one box model** (`inline-flex items-center
+  whitespace-nowrap`). As flex items they shrink below their text width and wrap without
+  `whitespace-nowrap`, and an `inline` box reports a shorter rect than an `inline-flex` one — either
+  one puts a single item on a different baseline from the rest of the bar.
+- **The language switcher abbreviates to `EN`/`FR` in the header.** The full names cost ~60px more
+  in French and are what pushed the bar past its budget. The abbreviation is visual only: the link
+  keeps `LOCALE_LABELS` as its `aria-label`, so the accessible name is still the full language.
 - **`@testing-library/user-event` is not installed.** Component tests use `fireEvent` from
   `@testing-library/react`. Do not add the dependency just for a test without a reason.
 - Next 16 emits `hrefLang` (camelCase) in prerendered HTML; HTML attribute parsing is

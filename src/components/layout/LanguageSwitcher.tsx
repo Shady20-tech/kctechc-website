@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n/locales";
+import {
+  LOCALE_LABELS,
+  LOCALE_SHORT_LABELS,
+  LOCALES,
+  type Locale,
+} from "@/lib/i18n/locales";
 import { buildLocaleSwitchHref } from "@/lib/i18n/routing";
 
 /**
@@ -22,12 +27,20 @@ export function LanguageSwitcher({
   label,
   className,
   tone = "dark",
+  compact = false,
 }: {
   currentLocale: Locale;
   label: string;
   className?: string;
   /** `light` is for use on the dark ink header; `dark` for light surfaces. */
   tone?: "dark" | "light";
+  /**
+   * Renders the two-letter codes instead of the full language names. Used on the
+   * narrow end of the header, where the full names plus the logo and the menu
+   * button exceed the viewport and give the whole page a horizontal scrollbar.
+   * The accessible name is unaffected — see the `aria-label` below.
+   */
+  compact?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -51,9 +64,12 @@ export function LanguageSwitcher({
                 href={buildLocaleSwitchHref(pathname, "", locale)}
                 hrefLang={locale}
                 aria-current={isCurrent ? "true" : undefined}
+                // The visible text is an abbreviation in compact mode, so the
+                // full language name is supplied here rather than left as "EN".
+                aria-label={compact ? LOCALE_LABELS[locale] : undefined}
                 className={isCurrent ? activeClass : idleClass}
               >
-                {LOCALE_LABELS[locale]}
+                {compact ? LOCALE_SHORT_LABELS[locale] : LOCALE_LABELS[locale]}
               </Link>
             </li>
           );
