@@ -1,5 +1,4 @@
 import { DEPARTMENTS } from "@/lib/config/site";
-import { INSIGHTS_PATH } from "@/lib/config/redirects";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 
@@ -37,31 +36,15 @@ export const NAV_PATHS = [
   "/about",
   "/services",
   "/gallery",
-  "/insights",
+  "/blog",
   "/contact",
 ] as const;
-
-/**
- * Translation key for the articles section label.
- *
- * Phase 2 rendered this entry as "Blog" at `/blog`; Phase 3 names the section
- * "Insights (blog)" and gives it a real article model. The section is served at
- * `/insights` with `/blog` permanently redirecting to it, so there is exactly one
- * canonical URL per article rather than two competing ones. The label lives here
- * as a single constant so switching it back to `nav.blog` is a one-line change if
- * the "Blog" wording is preferred.
- */
-export const INSIGHTS_LABEL_KEY = "nav.insights";
-
-// Defined in `./redirects` so `next.config.ts` can import the redirect table
-// without pulling in this module's dependency chain.
-export { INSIGHTS_PATH, LEGACY_REDIRECTS } from "./redirects";
 
 /**
  * Build the primary nav for a locale.
  *
  * Order is the requested information hierarchy: Home, About us, Departments,
- * Services, Gallery, Contact, Insights. Departments sits between About us and
+ * Services, Gallery, Contact, Blog. Departments sits between About us and
  * Services deliberately — it is the pivot from "who we are" to "what we do",
  * and keeping it in the middle of the bar balances the row.
  *
@@ -87,10 +70,6 @@ export function buildPrimaryNav(
     { kind: "link", href: `/${locale}/services`, label: t("nav.services") },
     { kind: "link", href: `/${locale}/gallery`, label: t("nav.gallery") },
     { kind: "link", href: `/${locale}/contact`, label: t("nav.contact") },
-    {
-      kind: "link",
-      href: `/${locale}${INSIGHTS_PATH}`,
-      label: t(INSIGHTS_LABEL_KEY),
-    },
+    { kind: "link", href: `/${locale}/blog`, label: t("nav.blog") },
   ];
 }

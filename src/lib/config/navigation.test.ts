@@ -15,18 +15,8 @@ describe("buildPrimaryNav", () => {
       "Services",
       "Gallery",
       "Contact",
-      "Insights",
+      "Blog",
     ]);
-  });
-
-  it("points the articles entry at the canonical insights path", () => {
-    const link = nav.find(
-      (entry) => entry.kind === "link" && entry.label === "Insights",
-    );
-    expect(link).toBeDefined();
-    // `/blog` is a legacy path that redirects here; the nav must advertise the
-    // canonical URL so crawlers and visitors are sent to one place.
-    expect(link?.kind === "link" ? link.href : null).toBe("/en/insights");
   });
 
   it("exposes departments as a single menu entry rather than top-level links", () => {

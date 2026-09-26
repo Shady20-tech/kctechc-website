@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { INSIGHTS_PATH, NAV_PATHS } from "@/lib/config/navigation";
+import { NAV_PATHS } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
 import { DEPARTMENTS } from "@/lib/config/site";
 import {
@@ -29,21 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/",
     ...DEPARTMENTS.map((department) => `/${department.slug}`),
     ...NAV_PATHS,
-    // Only departments with published content expose these surfaces, so listing
-    // them unconditionally would advertise 404s for the departments whose phases
-    // have not landed yet.
-    ...DEPARTMENTS.filter((department) =>
-      departmentHasServices(department.slug),
-    ).flatMap((department) => [
-      `/${department.slug}/services`,
-      `/${department.slug}/portfolio`,
-      ...serviceRecordsFor(department.slug).map(
-        (service) => `/${department.slug}/services/${service.slug}`,
-      ),
-    ]),
-    ...allCategories().map(
-      (category) => `${INSIGHTS_PATH}/category/${category.slug}`,
-    ),
   ];
 
   const entries: MetadataRoute.Sitemap = LOCALES.flatMap((locale) =>

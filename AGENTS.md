@@ -246,65 +246,12 @@ acceptance criteria pass. Then stop — do not start the next phase.
   the three department entry pages, `/about`, `/contact` with the inquiry pipeline (migration,
   Zod schema, server action, form), and the shared design/UI kit.
 - Primary navigation is `Home · About us · Departments (dropdown) · Services · Gallery · Contact ·
-  Insights`. Departments are a dropdown on desktop and a labelled group in the mobile drawer; the
+  Blog`. Departments are a dropdown on desktop and a labelled group in the mobile drawer; the
   department anchors stay in the DOM while the panel is closed so all three remain crawlable.
-- `/services` is a corporate index that routes to the three departments. `/gallery` renders an
-  explicit empty state because no project photography was supplied — see the gotcha below before
-  filling it.
-- Phase 3 (services / insights / case studies content layer) is implemented:
-  - Migrations `20260101000007_services_and_entity_seo.sql`,
-    `20260101000008_insights.sql`, `20260101000009_case_studies_and_inquiry_service.sql`, plus a
-    regenerated `src/lib/db/database.types.ts` (20 tables).
-  - Content layer `src/lib/content/*`: record types with per-field localization merge, the nine
-    Digital Marketing services with a full French overlay, category/author/case-study defaults, and
-    Supabase-backed loaders that fall back to bundled content on any failure.
-  - Surfaces: `/[locale]/[department]` (department home with catalogue, process, commitments, FAQ),
-    `/[locale]/[department]/services` and `/services/[service]`, `/[locale]/[department]/portfolio`,
-    `/[locale]/insights` with `/[slug]` and `/category/[category]`.
-  - Structured data: `Service`, `Article`, `FAQPage` and `BreadcrumbList` JSON-LD, all built from
-    the same values the page renders.
-  - Inquiry tagging: `?department=` and `?service=` prefill the contact form, and the action resolves
-    the service to a real row and records `source = service_inquiry`.
-- `/blog` permanently redirects (308) to `/insights`, which is the canonical articles URL.
-- 132 Vitest tests pass and the production build prerenders all 59 routes.
-
-### Phase 3 gotchas worth not rediscovering
-
-- **`next.config.ts` cannot import application modules.** It is transpiled standalone before the
-  `@/` alias exists, so importing `@/lib/config/navigation` fails the build with
-  `Cannot find module './src/lib/config/site'`. Redirect tables live in `src/lib/config/redirects.ts`,
-  which may only reach leaf modules by *relative* path (`../i18n/locales` is a pure data module with
-  no imports of its own). `navigation.ts` re-exports from it for app code.
-- **A renamed route needs a redirect for the locale-prefixed URL, not just the bare one.** Phase 2
-  linked to the section as `/${locale}/blog`, so `/en/blog` and `/fr/blog` were live, indexable URLs.
-  Redirecting only `/blog` left both returning 404 — the bare path looked fixed while every real
-  inbound link was broken. `redirects.test.ts` pins all locale variants.
-- **Nested dynamic routes must be under the existing `[department]` segment.** Adding a parallel
-  static `src/app/(site)/[locale]/digital-marketing/` directory shadows `[department]` and splits
-  the department across two page components. `.../[department]/services/[service]` is the correct
-  shape for `/[locale]/digital-marketing/services/seo`.
-- **A page module may only export the Next.js-recognised names.** Exporting a helper (e.g. a
-  `formatDate`) from `page.tsx` fails the build's route type check. Shared helpers live in
-  `src/lib/content/format.ts`.
-- **Article bodies are rendered as React elements, never `dangerouslySetInnerHTML`.** `RichText`
-  escapes raw HTML and refuses to make a non-http(s) link clickable, so `<script>` written into an
-  article displays as text and `javascript:` URLs are not clickable. Tests in
-  `RichText.test.tsx` pin both behaviours.
-- **`noUncheckedIndexedAccess` is on.** Regex capture groups (`match[1]`) are `string | undefined`
-  and array indexing (`records[0]`) is `T | undefined`. Assert with `!` only where the pattern
-  guarantees the group; otherwise narrow.
-- **Content surfaces gate on published content, not on the department existing.** `departmentHasServices()`
-  decides whether a department exposes `/services` and `/portfolio`, so `electrical-services` and
-  `real-estate` 404 on those paths and are absent from the sitemap until their phase lands. The URL
-  scheme does not change when they do.
-- **The portfolio and insights surfaces render honest empty states.** There is no case-study or
-  article content in the brief, so nothing is invented to fill them. The database enforces the
-  client-approval rule (`case_studies_publish_requires_client_approval`) that makes a published case
-  study safe to claim.
-- **Sitemap articles are data-driven and the route is `async`.** `sitemap()` awaits `loadInsights`,
-  which returns `[]` when Supabase is unreachable, so a database outage degrades the sitemap instead
-  of failing it.
-
+- `/services` is a corporate index that routes to the three departments. `/gallery` and `/blog`
+  render explicit empty states because no project photography or articles were supplied — see the
+  gotcha below before filling them.
+- 106 Vitest tests pass and the production build prerenders all 31 routes.
 
 ### Phase 1 gotchas worth not rediscovering
 
