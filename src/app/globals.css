@@ -4,8 +4,10 @@
  * Design tokens.
  *
  * Brand colours come from the business brief. Departments share the corporate
- * navy/gold foundation and differentiate through their accent colour, so the
- * group reads as one company rather than three unrelated sites.
+ * navy/gold foundation and differentiate through a single contextual accent
+ * variable (`--dept-accent`) rather than a parallel set of component variants.
+ * One visual system with a swappable accent is what stops the departments
+ * drifting apart into three unrelated sites over time.
  */
 @theme {
   --color-navy-50: #f2f5f9;
@@ -13,18 +15,24 @@
   --color-navy-200: #b9c8dc;
   --color-navy-500: #1d4e89;
   --color-navy-700: #123a68;
+  --color-navy-800: #0e2d52;
   --color-navy-900: #0b2545;
+  --color-navy-950: #071830;
 
   --color-gold-100: #f7efdc;
+  --color-gold-200: #f0e0bc;
   --color-gold-300: #e0c48a;
   --color-gold-500: #b8892e;
+  --color-gold-600: #a1751f;
   --color-gold-700: #8a6520;
 
   --color-body: #3c4858;
   --color-muted: #64748b;
   --color-surface: #ffffff;
   --color-surface-alt: #f7f8fa;
+  --color-surface-sunken: #eef1f5;
   --color-border: #dfe3e9;
+  --color-border-strong: #c6ced9;
 
   --color-dept-marketing: #2e6fb8;
   --color-dept-electrical: #d98e04;
@@ -32,11 +40,72 @@
 
   --color-focus: #0b2545;
 
+  /* Font families are injected by next/font as CSS variables, with a system
+     stack fallback so the site stays legible if a webfont fails to load. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, "Noto Sans", sans-serif;
+    var(--font-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-display:
+    var(--font-heading), var(--font-body), ui-sans-serif, system-ui, Georgia,
+    serif;
 
   --radius-card: 0.75rem;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgb(11 37 69 / 0.04), 0 1px 3px rgb(11 37 69 / 0.06);
+  --shadow-raised:
+    0 4px 6px -1px rgb(11 37 69 / 0.08), 0 2px 4px -2px rgb(11 37 69 / 0.06);
+  --shadow-overlay: 0 20px 40px -12px rgb(11 37 69 / 0.25);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   Department accent scoping
+   ---------------------------------------------------------------------------
+   Corporate surfaces leave the accent at premium gold. A department surface
+   sets it once on its subtree and every shared component follows. Declared by
+   data attribute so React never has to build class-name strings. */
+:root {
+  --dept-accent: var(--color-gold-500);
+}
+
+[data-department="digital-marketing"] {
+  --dept-accent: var(--color-dept-marketing);
+}
+
+[data-department="electrical-services"] {
+  --dept-accent: var(--color-dept-electrical);
+}
+
+[data-department="real-estate"] {
+  --dept-accent: var(--color-dept-realestate);
+}
+
+.text-dept-accent {
+  color: var(--dept-accent);
+}
+
+.bg-dept-accent {
+  background-color: var(--dept-accent);
+}
+
+.border-dept-accent {
+  border-color: var(--dept-accent);
+}
+
+.accent-rule {
+  border-top: 4px solid var(--dept-accent);
+}
+
+/* Soft accent wash, derived from the one accent so there is no second palette
+   to keep in sync. */
+.accent-wash {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--dept-accent) 8%, transparent),
+    transparent
+  );
 }
 
 /* ---------------------------------------------------------------------------
@@ -130,10 +199,76 @@ p {
   }
 }
 
+/* Vertical rhythm between major page sections. */
+.section {
+  padding-block: 3rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding-block: 4.5rem;
+  }
+}
+
+.section-tight {
+  padding-block: 2rem;
+}
+
+@media (min-width: 768px) {
+  .section-tight {
+    padding-block: 2.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   ---------------------------------------------------------------------------
+   Transitions are subtle and additive: every section is fully readable with
+   them disabled. The reduced-motion block below neutralises all of it. */
+.transition-soft {
+  transition:
+    color 150ms var(--ease-out-soft),
+    background-color 150ms var(--ease-out-soft),
+    border-color 150ms var(--ease-out-soft),
+    box-shadow 150ms var(--ease-out-soft),
+    transform 150ms var(--ease-out-soft);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Rotating gateway statement: the line is always present and readable in the
+   DOM; only opacity/transform animate, so a reduced-motion user or a crawler
+   still sees the full text. */
+.statement-fade {
+  animation: statement-fade 700ms var(--ease-out-soft) both;
+}
+
+@keyframes statement-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Honour the user's reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .statement-fade {
+    animation: none;
+  }
+
+  .hover-lift:hover {
+    transform: none;
   }
 
   *,
@@ -143,5 +278,14 @@ p {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Print
+   --------------------------------------------------------------------------- */
+@media print {
+  .no-print {
+    display: none !important;
   }
 }

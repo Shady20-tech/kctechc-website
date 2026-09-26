@@ -13,6 +13,8 @@ function optional(value: string | undefined): string | null {
 
 export const serverEnv = {
   supabaseServiceRoleKey: optional(process.env.SUPABASE_SERVICE_ROLE_KEY),
+  /** Salt for hashing submitter IPs. Rotating it invalidates past hashes. */
+  inquiryIpSalt: optional(process.env.INQUIRY_IP_SALT),
   tolgeeApiKey: optional(process.env.TOLGEE_API_KEY),
   resendApiKey: optional(process.env.RESEND_API_KEY),
   emailFrom: optional(process.env.EMAIL_FROM),

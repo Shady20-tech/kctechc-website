@@ -15,7 +15,7 @@ export function PageIntro({
   return (
     <div className="max-w-3xl">
       {eyebrow ? (
-        <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">
+        <p className="text-xs font-semibold uppercase tracking-wide text-dept-accent">
           {eyebrow}
         </p>
       ) : null}

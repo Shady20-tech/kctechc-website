@@ -40,11 +40,19 @@ export type DepartmentDefinition = {
   /** Static translation key prefix; labels resolve through Tolgee. */
   labelKey: string;
   descriptionKey: string;
+  /** One-line value proposition shown on the gateway card. */
+  summaryKey: string;
+  /** Key into the icon map in `DepartmentIcon`. */
+  icon: DepartmentSlug;
 };
 
 /**
  * Departments share one corporate brand and are routed under the active locale,
  * e.g. `/en/digital-marketing`. Slugs stay stable across locales for SEO.
+ *
+ * Array order is the display order on the gateway and in the switcher, and the
+ * three entries are deliberately equal weight — no department is promoted over
+ * another on corporate surfaces.
  */
 export const DEPARTMENTS: readonly DepartmentDefinition[] = [
   {
@@ -52,18 +60,24 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     accent: BRAND_COLORS.digitalMarketing,
     labelKey: "departments.digitalMarketing.label",
     descriptionKey: "departments.digitalMarketing.description",
+    summaryKey: "departments.digitalMarketing.summary",
+    icon: "digital-marketing",
   },
   {
     slug: "electrical-services",
     accent: BRAND_COLORS.electricalServices,
     labelKey: "departments.electricalServices.label",
     descriptionKey: "departments.electricalServices.description",
+    summaryKey: "departments.electricalServices.summary",
+    icon: "electrical-services",
   },
   {
     slug: "real-estate",
     accent: BRAND_COLORS.realEstate,
     labelKey: "departments.realEstate.label",
     descriptionKey: "departments.realEstate.description",
+    summaryKey: "departments.realEstate.summary",
+    icon: "real-estate",
   },
 ] as const;
 

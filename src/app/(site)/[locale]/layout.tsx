@@ -5,17 +5,20 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SkipLink } from "@/components/layout/Navigation";
 import { TolgeeProvider } from "@/components/TolgeeProvider";
 import { DEPARTMENTS } from "@/lib/config/site";
+import { getSiteContent } from "@/lib/config/site-content";
 import { LOCALES, LOCALE_SEO_TAGS, isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
-import "../../globals.css";
 
 /**
- * Root layout for the localized public site.
+ * Layout for the localized public site.
  *
- * `generateStaticParams` pre-renders both locales, and `lang` reflects the
- * actual locale — a real language signal for assistive technology and crawlers
- * rather than a client-side patch.
+ * `generateStaticParams` pre-renders both locales, and `lang` reflects the actual
+ * locale — a real language signal for assistive technology and crawlers rather
+ * than a client-side patch.
+ *
+ * Header and footer content is loaded once here and passed down, so a page never
+ * re-reads settings and the contact details cannot differ between the two.
  */
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -48,27 +51,42 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const t = createTranslator(locale).t;
+  const resolved: Locale = locale;
+  const t = createTranslator(resolved).t;
+  const site = await getSiteContent();
+
+  const departmentLabels = Object.fromEntries(
+    DEPARTMENTS.map((department) => [department.slug, t(department.labelKey)]),
+  ) as Record<(typeof DEPARTMENTS)[number]["slug"], string>;
 
   const navItems = [
-    { href: `/${locale}`, label: t("nav.home") },
+    { href: `/${resolved}`, label: t("nav.home") },
     ...DEPARTMENTS.map((department) => ({
-      href: `/${locale}/${department.slug}`,
-      label: t(department.labelKey),
+      href: `/${resolved}/${department.slug}`,
+      label: departmentLabels[department.slug],
     })),
-    { href: `/${locale}/contact`, label: t("nav.contact") },
+    { href: `/${resolved}/about`, label: t("nav.about") },
+    { href: `/${resolved}/contact`, label: t("nav.contact") },
   ];
 
   return (
-    <html lang={locale}>
-      <body>
-        <SkipLink>{t("common.skipToContent")}</SkipLink>
-        <SiteHeader locale={locale} t={t} navItems={navItems} />
-        <main id="main" className="container-page py-12">
-          <TolgeeProvider locale={locale}>{children}</TolgeeProvider>
-        </main>
-        <SiteFooter locale={locale} t={t} />
-      </body>
-    </html>
+    <>
+      <SkipLink>{t("common.skipToContent")}</SkipLink>
+      <SiteHeader
+        locale={resolved}
+        t={t}
+        navItems={navItems}
+        departmentLabels={departmentLabels}
+      />
+      <main id="main" className="min-h-[60vh]">
+        <TolgeeProvider locale={resolved}>{children}</TolgeeProvider>
+      </main>
+      <SiteFooter
+        locale={resolved}
+        t={t}
+        site={site}
+        departmentLabels={departmentLabels}
+      />
+    </>
   );
 }

@@ -10,11 +10,12 @@
     "backToHome": "Back to home",
     "close": "Close",
     "menu": "Menu",
-    "language": "Language"
+    "language": "Language",
+    "required": "Required"
   },
   "actions": {
-    "contact": "Contact",
-    "getQuote": "Get a Quote",
+    "contact": "Contact us",
+    "getQuote": "Get a quote",
     "learnMore": "Learn more",
     "viewAll": "View all",
     "submit": "Submit",
@@ -23,7 +24,12 @@
     "signOut": "Sign out",
     "exploreDepartment": "Explore department",
     "chooseLanguage": "Choose your language",
-    "enterSite": "Enter site"
+    "enterSite": "Enter site",
+    "visitDepartment": "Visit department",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "sendMessage": "Send message",
+    "sending": "Sending…"
   },
   "nav": {
     "primary": "Primary navigation",
@@ -33,21 +39,27 @@
     "about": "About",
     "contact": "Contact",
     "insights": "Insights",
-    "admin": "Admin"
+    "admin": "Admin",
+    "mobileMenu": "Mobile navigation",
+    "currentDepartment": "Current department"
   },
   "departments": {
     "heading": "Our departments",
+    "intro": "Three departments, one standard of engineering.",
     "digitalMarketing": {
       "label": "Digital Marketing",
-      "description": "Digital marketing services and technology products for growing businesses."
+      "description": "Digital marketing services and technology products for growing businesses.",
+      "summary": "Storefront, campaigns and technology products for businesses that need to be found and to sell online."
     },
     "electricalServices": {
       "label": "Electrical Services",
-      "description": "Electrical engineering, installation and infrastructure services."
+      "description": "Electrical engineering, installation and infrastructure services.",
+      "summary": "Electrical engineering, installation, maintenance and infrastructure work delivered to specification."
     },
     "realEstate": {
       "label": "Real Estate",
-      "description": "Property listings and real estate services across Cameroon."
+      "description": "Property listings and real estate services across Cameroon.",
+      "summary": "Nationwide property listings and real estate services, supported by local agents across Cameroon."
     }
   },
   "home": {
@@ -55,7 +67,84 @@
     "metaDescription": "KC Technology Corporation delivers digital marketing, electrical services and real estate across Cameroon.",
     "gatewayHeading": "Three departments. One standard of engineering.",
     "gatewayIntro": "KC Technology Corporation operates Digital Marketing, Electrical Services and Real Estate from Half-Mile, Limbe in the Southwest Region of Cameroon. Choose a department to continue.",
-    "gatewayNote": "Select a department or choose your language to enter the site."
+    "gatewayNote": "Select a department or choose your language to enter the site.",
+    "heroEyebrow": "KC Technology Corporation",
+    "heroLocation": "Half-Mile, Limbe · Southwest Region, Cameroon",
+    "heroPrimaryCta": "Explore our departments",
+    "heroSecondaryCta": "Talk to us",
+    "statementHeading": "What we do",
+    "aboutHeading": "About KC Technology Corporation",
+    "aboutBody": "KC Technology Corporation brings digital marketing, electrical engineering and real estate together under one corporate standard. Operating from Half-Mile, Limbe, we serve clients across the Southwest Region and nationwide in Cameroon.",
+    "aboutCta": "Read about the company",
+    "trustHeading": "Company information",
+    "trustNote": "Verified company details, published so you can confirm who you are dealing with.",
+    "lastDepartment": "Return to {department}",
+    "lastDepartmentNote": "You last visited this department. You can also choose another above."
+  },
+  "about": {
+    "metaTitle": "About the company",
+    "metaDescription": "KC Technology Corporation is headquartered at Half-Mile, Limbe in the Southwest Region of Cameroon, operating Digital Marketing, Electrical Services and Real Estate.",
+    "eyebrow": "About us",
+    "heading": "One company, three engineering disciplines",
+    "intro": "KC Technology Corporation operates Digital Marketing, Electrical Services and Real Estate from a single base in Limbe, Cameroon.",
+    "whoHeading": "Who we are",
+    "whoBody": "KC Technology Corporation is a Cameroon-based company working across three departments: Digital Marketing, Electrical Services and Real Estate. Each department serves a different market, and all three operate to the same corporate standard for delivery, communication and accountability.",
+    "whereHeading": "Where we operate",
+    "whereBody": "Our head office is at Half-Mile, Limbe, in the Southwest Region of Cameroon. Real estate services extend nationwide across the country's ten regions, and digital and electrical work is delivered from our Limbe base.",
+    "howHeading": "How we work",
+    "howBody": "Every engagement begins with a clear scope and a named point of contact. We quote before we start, we keep clients informed as work progresses, and we document what was delivered. Where a project needs more than one discipline, the departments coordinate under one contract rather than sending you between separate suppliers.",
+    "valuesHeading": "What we hold to",
+    "value1Title": "Clear scope",
+    "value1Body": "Work is defined and quoted before it begins, so there are no surprise costs.",
+    "value2Title": "Direct contact",
+    "value2Body": "You deal with a named contact who knows your project, not a queue.",
+    "value3Title": "Documented delivery",
+    "value3Body": "We record what was installed, published or transacted, and hand it over.",
+    "factsHeading": "Company facts",
+    "departmentsHeading": "Our departments",
+    "ctaHeading": "Work with us",
+    "ctaBody": "Tell us what you need and the relevant department will respond with next steps."
+  },
+  "contact": {
+    "metaTitle": "Contact us",
+    "metaDescription": "Contact KC Technology Corporation by phone or email, or send an inquiry to the relevant department. Head office: Half-Mile, Limbe, Southwest Region, Cameroon.",
+    "eyebrow": "Contact",
+    "heading": "Talk to KC Technology Corporation",
+    "intro": "Send us an inquiry and the relevant department will respond. For urgent matters, call or email us directly.",
+    "detailsHeading": "Contact details",
+    "formHeading": "Send an inquiry",
+    "formIntro": "Fields marked with an asterisk are required. We use your details only to respond to this inquiry.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Full name",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "phoneLabel": "Phone number",
+    "phoneHint": "Optional. Include your country code if you are outside Cameroon.",
+    "phonePlaceholder": "+237 6XX XXX XXX",
+    "departmentLabel": "Which department?",
+    "departmentHint": "Choose the department best placed to answer.",
+    "departmentGeneral": "General inquiry",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "A short summary of your inquiry",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Tell us what you need, including any relevant location or timeline.",
+    "consentLabel": "I agree to KC Technology Corporation using my details to respond to this inquiry.",
+    "submit": "Send inquiry",
+    "submitting": "Sending inquiry…",
+    "successTitle": "Your inquiry has been received",
+    "successBody": "Thank you. The relevant department will respond using the contact details you provided.",
+    "errorTitle": "We could not send your inquiry",
+    "errorBody": "Please check the highlighted fields and try again. If the problem continues, email or call us using the details on this page.",
+    "rateLimitedTitle": "Too many submissions",
+    "rateLimitedBody": "Please wait a moment before sending another inquiry.",
+    "unavailableTitle": "The inquiry form is temporarily unavailable",
+    "unavailableBody": "Our inquiry system is not configured in this environment. Please reach us by phone or email instead.",
+    "officeHoursHeading": "Office hours",
+    "officeHoursBody": "Monday to Friday, 08:00–17:00 (West Africa Time). Messages received outside these hours are answered on the next working day.",
+    "mapHeading": "Head office",
+    "mapNote": "We are based at Half-Mile, Limbe. Please contact us before visiting so we can make sure the right person is available.",
+    "errorSummaryHeading": "Please correct the following",
+    "referenceLabel": "Reference"
   },
   "footer": {
     "company": "Company",
@@ -69,7 +158,10 @@
     "copyright": "© {year} KC Technology Corporation. All rights reserved.",
     "phoneLabel": "Telephone",
     "emailLabel": "Email",
-    "addressLabel": "Address"
+    "addressLabel": "Address",
+    "aboutLink": "About the company",
+    "contactLink": "Contact us",
+    "mottoLabel": "Our motto"
   },
   "auth": {
     "signInHeading": "Sign in",
@@ -106,7 +198,11 @@
     "tooLong": "This value is too long.",
     "invalidUuid": "This value must be a valid identifier.",
     "invalidLocale": "This language is not supported.",
-    "invalidSlug": "Use lowercase letters, numbers and hyphens only."
+    "invalidSlug": "Use lowercase letters, numbers and hyphens only.",
+    "invalidPhone": "Enter a valid phone number.",
+    "invalidDepartment": "Choose one of the listed departments.",
+    "consentRequired": "Please confirm you agree before sending.",
+    "spamDetected": "This submission could not be processed."
   },
   "status": {
     "success": "Success",
@@ -132,7 +228,9 @@
     "languageSwitcher": "Change language",
     "departmentNav": "Department navigation",
     "mainLandmark": "Main content",
-    "footerLandmark": "Site footer"
+    "footerLandmark": "Site footer",
+    "tableScroll": "Scrollable table",
+    "loadingContent": "Loading content"
   },
   "errors": {
     "notFoundTitle": "We could not find that page",

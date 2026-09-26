@@ -22,6 +22,8 @@ export const AUDIT_ACTIONS = [
   "site_setting_changed",
   "sign_in_succeeded",
   "sign_in_failed",
+  "inquiry_received",
+  "inquiry_status_changed",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

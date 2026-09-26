@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import "../../globals.css";
 
 /**
- * Root layout for internal areas.
+ * Layout for internal areas.
  *
  * `noindex` is declared here once so every admin route inherits it; the admin
- * surface must never appear in search results.
+ * surface must never appear in search results. The document element is owned by
+ * the root layout.
  */
 export const metadata: Metadata = {
-  title: "Admin | KC Technology Corporation",
+  title: "Admin",
   robots: { index: false, follow: false, nocache: true },
 };
 
@@ -18,12 +18,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <main id="main" className="container-page py-12">
-          {children}
-        </main>
-      </body>
-    </html>
+    <main id="main" className="container-page py-12">
+      {children}
+    </main>
   );
 }

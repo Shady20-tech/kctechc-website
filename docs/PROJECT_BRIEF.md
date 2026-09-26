@@ -96,7 +96,7 @@ original spec; the summary below tracks progress.
 - **Acceptance:** `AGENTS.md`, `docs/PROJECT_BRIEF.md`, `README.md`, `.env.example` exist and
   accurately reflect the spec; repository state documented. No application code yet.
 
-### Phase 1 — Foundations (next)
+### Phase 1 — Foundations ✅
 - Scaffold Next.js 16 App Router + TypeScript strict + Tailwind v4 + ESLint CLI + Vitest.
 - Baseline metadata, `metadataBase`, `robots.ts`, `sitemap.ts`, `html[lang]`, OG defaults.
 - Corporate design tokens, `next/font` type system, header/footer shells, root gateway `/`.
@@ -104,6 +104,10 @@ original spec; the summary below tracks progress.
 - `next/image` configuration with `remotePatterns`.
 - **Acceptance:** production build succeeds, lint + type check clean, Vitest runs, root + locale
   routes render server-side with correct metadata and accessible markup.
+- **Delivered beyond the line items:** corporate gateway with all three departments at equal
+  weight, department entry pages with accent scoping + breadcrumbs + structured data, `/about`,
+  and `/contact` backed by the inquiry pipeline (migration `20260101000006`, Zod schema, server
+  action with rate limiting/honeypot/audit, `useActionState` form).
 
 ### Phase 2 — Supabase foundation
 - Supabase project config, migrations for core domains (profiles/roles, departments, translation

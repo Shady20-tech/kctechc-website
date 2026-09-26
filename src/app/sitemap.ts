@@ -17,6 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const localizedPaths = [
     "/",
     ...DEPARTMENTS.map((department) => `/${department.slug}`),
+    "/about",
+    "/contact",
   ];
 
   const entries: MetadataRoute.Sitemap = LOCALES.flatMap((locale) =>
@@ -24,7 +26,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: canonicalFor(locale, pathWithoutLocale),
       lastModified,
       changeFrequency: "weekly" as const,
-      priority: pathWithoutLocale === "/" ? 1 : 0.8,
+      priority:
+        pathWithoutLocale === "/"
+          ? 1
+          : pathWithoutLocale === "/about" || pathWithoutLocale === "/contact"
+            ? 0.6
+            : 0.8,
       alternates: {
         languages: alternatesFor(pathWithoutLocale),
       },
