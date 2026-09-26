@@ -210,8 +210,29 @@ acceptance criteria pass. Then stop — do not start the next phase.
 
 ## 12. Current repository status
 
-- Branch: `main`. The repository is **empty apart from `example.env`** (a 1-byte placeholder file).
-- No `package.json`, no Next.js app, no Supabase migrations, no CI, no tests yet.
+- Branch: `main`.
 - Phase 0 (specification capture, agent rules, project brief, env template) is complete.
+- Phase 1 (secure, typed foundation) is implemented: Next.js 16 App Router + strict TypeScript,
+  Supabase clients/RLS migrations, auth roles + guards, i18n routing, SEO/AEO metadata, design
+  system, app shell, admin shell, health endpoint, and Vitest coverage.
+
+### Phase 1 gotchas worth not rediscovering
+
+- **Tolgee `staticData` is keyed by language first**, then namespace:
+  `{ en: { ...messages } }`. Passing the raw message object (or `{ "": messages }`) logs
+  `Tolgee: Missing records in "staticData"` during prerender. Use `Tolgee().init({...})` with a
+  real `tolgee` instance prop — the `@tolgee/react` v7 provider takes `tolgee`/`ssr`, not `config`.
+- **`useSearchParams` in a shared layout component aborts prerendering** with
+  "should be wrapped in a suspense boundary". `LanguageSwitcher` deliberately reads only
+  `usePathname` so localized pages stay statically prerendered.
+- **Vitest cannot resolve the `server-only` marker package.** It is aliased to a no-op stub in
+  `vitest.config.ts`; the real build-time guard still applies to app builds.
+- **CSP is applied in `next.config.ts` headers** via `buildContentSecurityPolicy()`. The helper
+  existing in `src/lib/security/headers.ts` is not enough — a control that is defined but unwired
+  gives false confidence.
+- **`globals.css` relative imports depend on route-group nesting**: `(site)/page.tsx` → `../globals.css`,
+  `(site)/[locale]/layout.tsx` and `(static)/admin/layout.tsx` → `../../globals.css`.
+- Next 16 emits `hrefLang` (camelCase) in prerendered HTML; HTML attribute parsing is
+  case-insensitive, so `hreflang` alternates are correct.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
