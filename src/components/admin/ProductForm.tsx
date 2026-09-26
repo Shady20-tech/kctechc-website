@@ -59,6 +59,9 @@ export function ProductForm({
               {t("admin.store.syncWarning", { reason: state.syncWarning })}
             </p>
           ) : null}
+          {state.seoWarning ? (
+            <p className="mt-2">{t("admin.store.seoWarning")}</p>
+          ) : null}
         </Notice>
       ) : null}
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildPendingTranslationRows,
   fieldErrors,
   productInputSchema,
 } from "@/lib/store/product-input";
@@ -172,63 +171,5 @@ describe("fieldErrors", () => {
     if (result.success) return;
     const errors = fieldErrors(result.error);
     expect(typeof errors.title).toBe("string");
-  });
-});
-
-describe("buildPendingTranslationRows", () => {
-  it("creates an English row and a pending French row per field", () => {
-    const rows = buildPendingTranslationRows({
-      productId: "p1",
-      values: { name: "ThinkPad", description: "A description." },
-    });
-
-    const english = rows.filter((row) => row.locale === "en");
-    const french = rows.filter((row) => row.locale === "fr");
-
-    expect(english).toHaveLength(2);
-    expect(french).toHaveLength(2);
-    expect(english.every((row) => row.state === "translated")).toBe(true);
-  });
-
-  it("leaves the French value empty and pending", () => {
-    // Seeding the French row with the English text would mark the French as done
-    // when it is not, and the page would show English as a translation.
-    const rows = buildPendingTranslationRows({
-      productId: "p1",
-      values: { name: "ThinkPad" },
-    });
-    const french = rows.find((row) => row.locale === "fr");
-    expect(french?.value).toBe("");
-    expect(french?.state).toBe("pending");
-  });
-
-  it("skips a field with no source value", () => {
-    const rows = buildPendingTranslationRows({
-      productId: "p1",
-      values: { name: "ThinkPad", seo_title: null, seo_description: "  " },
-    });
-    expect(rows.map((row) => row.field_name)).toEqual(["name", "name"]);
-  });
-
-  it("uses the entity type the trigger expects", () => {
-    const rows = buildPendingTranslationRows({
-      productId: "p1",
-      values: { name: "ThinkPad" },
-    });
-    expect(rows.every((row) => row.entity_type === "product")).toBe(true);
-  });
-
-  it("attaches every row to the product id", () => {
-    const rows = buildPendingTranslationRows({
-      productId: "product-abc",
-      values: { name: "A", description: "B" },
-    });
-    expect(rows.every((row) => row.entity_id === "product-abc")).toBe(true);
-  });
-
-  it("returns nothing when there is no source content", () => {
-    expect(
-      buildPendingTranslationRows({ productId: "p1", values: {} }),
-    ).toEqual([]);
   });
 });

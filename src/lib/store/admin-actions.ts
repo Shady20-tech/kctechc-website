@@ -6,7 +6,6 @@ import { isElevatedRole } from "@/lib/auth/roles";
 import { STORE_PATH } from "@/lib/config/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  buildPendingTranslationRows,
   DEFAULT_PRODUCT_CURRENCY,
   fieldErrors,
   productInputSchema,
@@ -43,6 +42,7 @@ export type CreateProductResult =
       translationKeyCount: number;
       syncQueued: number;
       syncWarning?: string;
+      seoWarning?: string;
     }
   | { ok: false; error: string; fields?: Record<string, string> };
 
@@ -121,45 +121,55 @@ export async function createProductAction(
     return { ok: false, error: "write_failed" };
   }
 
-  // The English content rows are written explicitly. The database trigger indexes
-  // translations that exist; it does not invent the source text, because the
-  // source lives on the product row and the index is derived from it.
-  const translationRows = buildPendingTranslationRows({
-    productId: product.id,
-    values: {
-      name: input.title,
-      short_description: input.shortDescription,
-      description: input.description,
-      slug: input.slug,
-      seo_title: input.seoTitle || null,
-      seo_description: input.seoDescription || null,
-    },
-  });
+  // SEO overrides live in `entity_seo`, not on the product row, and the product
+  // page reads them from there. Writing them anywhere else would accept the
+  // editor's text and never use it. The `entity_seo` trigger then indexes the
+  // seo_title / seo_description keys and queues their sync jobs, which is why
+  // this action does not touch the index itself.
+  const seoTitle = input.seoTitle || null;
+  const seoDescription = input.seoDescription || null;
+  let seoWarning: string | undefined;
 
-  if (translationRows.length > 0) {
-    const { error: translationError } = await supabase
-      .from("content_translations")
-      .upsert(translationRows, {
-        onConflict: "entity_type,entity_id,field_name,locale",
-      });
+  if (seoTitle || seoDescription) {
+    const { error: seoError } = await supabase.from("entity_seo").upsert(
+      {
+        entity_type: "product",
+        entity_id: product.id,
+        locale: "en",
+        title: seoTitle,
+        description: seoDescription,
+        updated_by: auth.userId,
+      },
+      { onConflict: "entity_type,entity_id,locale" },
+    );
 
-    if (translationError) {
-      // The product exists; only its translation rows failed. Deleting the
-      // product to keep things tidy would be worse — the editor would lose the
-      // work — so this is reported and the product is left in place as a draft.
-      return {
-        ok: false,
-        error: "translation_write_failed",
-      };
+    if (seoError) {
+      // The product exists and is kept. Failing the whole action would be worse:
+      // the editor would retry and hit a duplicate-slug error for a product that
+      // was in fact created. The override did not save, so say so rather than
+      // reporting a success the editor cannot rely on.
+      seoWarning = "seo_write_failed";
     }
   }
 
-  // Count what the triggers enqueued, so the confirmation can state a real
-  // number rather than an assumed one.
-  const { count: queued } = await supabase
-    .from("translation_sync_jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "queued");
+  // Count this product's own index entries and queued jobs. Counting the whole
+  // queue would report other editors' work as though it were this product's.
+  const { data: entryRows } = await supabase
+    .from("translation_entries")
+    .select("id")
+    .eq("entity_type", "product")
+    .eq("entity_id", product.id);
+
+  const entryIds = (entryRows ?? []).map((row) => row.id);
+  let queued = 0;
+  if (entryIds.length > 0) {
+    const { count } = await supabase
+      .from("translation_sync_jobs")
+      .select("id", { count: "exact", head: true })
+      .in("translation_entry_id", entryIds)
+      .eq("status", "queued");
+    queued = count ?? 0;
+  }
 
   let syncWarning: string | undefined;
   if (isTolgeeSyncConfigured()) {
@@ -182,9 +192,10 @@ export async function createProductAction(
   return {
     ok: true,
     productId: product.id,
-    translationKeyCount: translationRows.length / 2,
-    syncQueued: queued ?? 0,
+    translationKeyCount: entryIds.length,
+    syncQueued: queued,
     syncWarning,
+    seoWarning,
   };
 }
 
