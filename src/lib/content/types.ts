@@ -25,6 +25,9 @@ export type LocalizedOverlay = Partial<{
   deliveryNotes: string;
   features: readonly string[];
   faqs: readonly FaqItem[];
+  /** Electrical project fields. Absent for other entity types. */
+  scope: string;
+  outcome: string;
 }>;
 
 export type FaqItem = {
@@ -179,6 +182,148 @@ export type LocalizedCaseStudy = {
 };
 
 /**
+ * Electrical project media.
+ *
+ * `alt` is required rather than optional: an image without alternative text is
+ * inaccessible, and making it optional is how it ends up empty. `caption` and
+ * `credit` are separate because they are different claims — a caption describes
+ * the image, a credit attributes it — and conflating them means one of the two is
+ * always wrong.
+ *
+ * `before`/`after` marks the image's role in a pair. A project may have neither
+ * (a single view) or a matched pair, which is what the detail page renders as a
+ * comparison. Modelling it as an explicit role rather than by array position
+ * means a pair cannot be silently broken by reordering.
+ */
+export type ProjectMediaRole = "before" | "after" | "general";
+
+export type ProjectMediaRecord = {
+  /** Storage-relative object path, matching the `project_media` constraint. */
+  storagePath: string;
+  alt: string;
+  caption?: string;
+  credit?: string;
+  role: ProjectMediaRole;
+  width?: number;
+  height?: number;
+  /**
+   * Per-locale alt/caption overrides for this image, keyed by locale.
+   *
+   * Media text is translated through the same `content_translations` index as
+   * the project body, with `entity_type = 'project_media'` and the media row's
+   * own id as the entity. It is held on the media item rather than on the
+   * project because two images on one project are translated independently.
+   */
+  translations?: Partial<Record<Locale, ProjectMediaOverlay>>;
+};
+
+/** The translatable text of one project image. */
+export type ProjectMediaOverlay = {
+  alt?: string;
+  caption?: string;
+};
+
+export type LocalizedProjectMedia = ProjectMediaRecord & {
+  /** Per-locale alt/caption overrides, keyed by locale. */
+  localized?: {
+    alt?: string;
+    caption?: string;
+  };
+};
+
+/**
+ * An electrical project.
+ *
+ * `serviceSlugs` is a list rather than a single slug because a project routinely
+ * spans several service areas (an installation that included solar, say), and the
+ * gallery filter has to find it under each. It is also what the project detail
+ * page links back to.
+ *
+ * `regionSlug` is optional: a project's region is only recorded when it is known,
+ * and the region filter must not invent one to fill the gap.
+ */
+export type ProjectRecord = {
+  slug: string;
+  department: DepartmentSlug;
+  title: string;
+  summary: string;
+  /** Longer narrative, rendered as rich text. */
+  description?: string;
+  scope?: string;
+  outcome?: string;
+  serviceSlugs: readonly string[];
+  regionSlug?: string;
+  /** Human-readable location, e.g. a town. Never a precise coordinate. */
+  location?: string;
+  propertyType?: PropertyType;
+  /** Year completed. A number, not a date: the brief supplies no exact dates. */
+  completedYear?: number;
+  media: readonly ProjectMediaRecord[];
+  tags: readonly string[];
+  translations?: Partial<Record<Locale, LocalizedOverlay>>;
+  seo?: Partial<Record<Locale, SeoOverlay>>;
+  publishedAt?: string;
+  updatedAt?: string;
+};
+
+export type LocalizedProject = {
+  slug: string;
+  department: DepartmentSlug;
+  title: string;
+  summary: string;
+  description?: string;
+  scope?: string;
+  outcome?: string;
+  serviceSlugs: readonly string[];
+  regionSlug?: string;
+  location?: string;
+  propertyType?: PropertyType;
+  completedYear?: number;
+  media: readonly LocalizedProjectMedia[];
+  tags: readonly string[];
+  hasFallback: boolean;
+  seo: SeoOverlay;
+  publishedAt?: string;
+  updatedAt?: string;
+};
+
+/**
+ * Property type for a quote request and for a project.
+ *
+ * Shared between the two because a quote is scoped differently for a house, a
+ * shop and a plant, and the project gallery filters on the same distinction.
+ */
+export type PropertyType = "residential" | "commercial" | "industrial";
+
+export const PROPERTY_TYPES: readonly PropertyType[] = [
+  "residential",
+  "commercial",
+  "industrial",
+];
+
+export function isPropertyType(value: string): value is PropertyType {
+  return (PROPERTY_TYPES as readonly string[]).includes(value);
+}
+
+/** A region, for the project filter and the quote form's location field. */
+export type RegionRecord = {
+  slug: string;
+  name: string;
+  nameFr?: string;
+};
+
+export function localizeRegion(
+  record: RegionRecord,
+  locale: Locale,
+): { slug: string; name: string } {
+  const localized = locale === "fr" ? record.nameFr?.trim() : undefined;
+  return {
+    slug: record.slug,
+    name: localized && localized.length > 0 ? localized : record.name,
+  };
+}
+
+/**
  * Merge a localized overlay onto canonical fields, per field.
  *
  * A blank or whitespace-only translation is treated as absent rather than
@@ -220,6 +365,8 @@ export function resolveLocalized<T extends Record<string, unknown>>(
     "deliveryNotes",
     "features",
     "faqs",
+    "scope",
+    "outcome",
   ] as const) {
     assign(key);
   }

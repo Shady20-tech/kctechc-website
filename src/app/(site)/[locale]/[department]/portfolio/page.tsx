@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { CtaBand } from "@/components/ui/Cta";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { DEPARTMENTS } from "@/lib/config/site";
+import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import {
   allCaseStudyRecords,
   departmentHasServices,
@@ -76,6 +77,7 @@ export default async function DepartmentPortfolioPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const copy = departmentCopyPrefix(definition.slug) ?? "dm";
 
   const caseStudies = allCaseStudyRecords()
     .filter((entry) => entry.department === definition.slug)
@@ -186,8 +188,8 @@ export default async function DepartmentPortfolioPage({
         <CtaBand
           locale={resolved}
           t={t}
-          heading={t("dm.ctaHeading")}
-          body={t("dm.ctaBody")}
+          heading={t(`${copy}.ctaHeading`)}
+          body={t(`${copy}.ctaBody`)}
           accent
         />
       </div>

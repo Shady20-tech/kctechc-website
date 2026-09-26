@@ -10,6 +10,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { DEPARTMENTS } from "@/lib/config/site";
+import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import { departmentHasServices } from "@/lib/content/defaults";
 import { loadServices } from "@/lib/content/loaders";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
@@ -57,15 +58,18 @@ export async function generateMetadata({
   const t = createTranslator(locale).t;
 
   // A department with real content advertises its own title and description
-  // rather than the one-line department blurb.
-  const hasContent = departmentHasServices(definition.slug);
+  // rather than the one-line department blurb. The copy namespace is derived
+  // from the slug, so this route renders whichever department it is serving
+  // rather than one department's wording under another's URL.
+  const copy = departmentCopyPrefix(definition.slug);
+  const hasContent = copy !== null && departmentHasServices(definition.slug);
 
   return buildMetadata({
     locale,
     pathWithoutLocale: `/${department}`,
-    title: hasContent ? t("dm.metaTitle") : t(definition.labelKey),
+    title: hasContent ? t(`${copy}.metaTitle`) : t(definition.labelKey),
     description: hasContent
-      ? t("dm.metaDescription")
+      ? t(`${copy}.metaDescription`)
       : t(definition.descriptionKey),
   });
 }
@@ -84,7 +88,8 @@ export default async function DepartmentPage({
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
   const label = t(definition.labelKey);
-  const hasContent = departmentHasServices(definition.slug);
+  const copy = departmentCopyPrefix(definition.slug);
+  const hasContent = copy !== null && departmentHasServices(definition.slug);
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
@@ -100,24 +105,24 @@ export default async function DepartmentPage({
     : [];
 
   const processSteps = [
-    { title: t("dm.processStep1Title"), body: t("dm.processStep1Body") },
-    { title: t("dm.processStep2Title"), body: t("dm.processStep2Body") },
-    { title: t("dm.processStep3Title"), body: t("dm.processStep3Body") },
-    { title: t("dm.processStep4Title"), body: t("dm.processStep4Body") },
+    { title: t(`${copy}.processStep1Title`), body: t(`${copy}.processStep1Body`) },
+    { title: t(`${copy}.processStep2Title`), body: t(`${copy}.processStep2Body`) },
+    { title: t(`${copy}.processStep3Title`), body: t(`${copy}.processStep3Body`) },
+    { title: t(`${copy}.processStep4Title`), body: t(`${copy}.processStep4Body`) },
   ];
 
   const commitments = [
-    { title: t("dm.why1Title"), body: t("dm.why1Body") },
-    { title: t("dm.why2Title"), body: t("dm.why2Body") },
-    { title: t("dm.why3Title"), body: t("dm.why3Body") },
-    { title: t("dm.why4Title"), body: t("dm.why4Body") },
+    { title: t(`${copy}.why1Title`), body: t(`${copy}.why1Body`) },
+    { title: t(`${copy}.why2Title`), body: t(`${copy}.why2Body`) },
+    { title: t(`${copy}.why3Title`), body: t(`${copy}.why3Body`) },
+    { title: t(`${copy}.why4Title`), body: t(`${copy}.why4Body`) },
   ];
 
   const faqs = [
-    { question: t("dm.faq1Question"), answer: t("dm.faq1Answer") },
-    { question: t("dm.faq2Question"), answer: t("dm.faq2Answer") },
-    { question: t("dm.faq3Question"), answer: t("dm.faq3Answer") },
-    { question: t("dm.faq4Question"), answer: t("dm.faq4Answer") },
+    { question: t(`${copy}.faq1Question`), answer: t(`${copy}.faq1Answer`) },
+    { question: t(`${copy}.faq2Question`), answer: t(`${copy}.faq2Answer`) },
+    { question: t(`${copy}.faq3Question`), answer: t(`${copy}.faq3Answer`) },
+    { question: t(`${copy}.faq4Question`), answer: t(`${copy}.faq4Answer`) },
   ];
 
   return (
@@ -153,10 +158,10 @@ export default async function DepartmentPage({
                 {t("nav.departments")}
               </p>
               <h1 className="display-tight mt-4 font-display text-4xl font-bold text-white sm:text-5xl">
-                {hasContent ? t("dm.heroHeading") : label}
+                {hasContent ? t(`${copy}.heroHeading`) : label}
               </h1>
               <p className="mt-5 text-base leading-relaxed text-ink-200 sm:text-lg">
-                {hasContent ? t("dm.heroIntro") : t(definition.descriptionKey)}
+                {hasContent ? t(`${copy}.heroIntro`) : t(definition.descriptionKey)}
               </p>
               {hasContent ? (
                 <div className="mt-8 flex flex-wrap gap-3">
@@ -164,14 +169,14 @@ export default async function DepartmentPage({
                     href={`/${resolved}/${definition.slug}/services`}
                     className="inline-flex items-center gap-2 rounded-pill bg-dept-accent px-5 py-3 text-sm font-semibold text-white transition-soft hover:opacity-90"
                   >
-                    {t("dm.heroPrimaryCta")}
+                    {t(`${copy}.heroPrimaryCta`)}
                     <ArrowRight aria-hidden="true" className="h-4 w-4" />
                   </Link>
                   <Link
                     href={`/${resolved}/contact?department=${definition.slug}`}
                     className="inline-flex items-center rounded-pill border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-soft hover:border-white/40"
                   >
-                    {t("dm.heroSecondaryCta")}
+                    {t(`${copy}.heroSecondaryCta`)}
                   </Link>
                 </div>
               ) : null}
@@ -184,16 +189,16 @@ export default async function DepartmentPage({
         <>
           <SectionBand labelledBy="department-services-heading">
             <p className="mono-label text-dept-accent">
-              01 — {t("dm.servicesHeading")}
+              01 — {t(`${copy}.servicesHeading`)}
             </p>
             <h2
               id="department-services-heading"
               className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"
             >
-              {t("dm.servicesHeading")}
+              {t(`${copy}.servicesHeading`)}
             </h2>
             <p className="mt-4 max-w-2xl text-base text-body">
-              {t("dm.servicesIntro")}
+              {t(`${copy}.servicesIntro`)}
             </p>
             <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((service, index) => (
@@ -207,21 +212,21 @@ export default async function DepartmentPage({
                 />
               ))}
             </ul>
-            <p className="mt-6 text-sm text-muted">{t("dm.servicesNote")}</p>
+            <p className="mt-6 text-sm text-muted">{t(`${copy}.servicesNote`)}</p>
           </SectionBand>
 
           <SectionBand tone="alt" labelledBy="department-process-heading">
             <p className="mono-label text-dept-accent">
-              02 — {t("dm.processHeading")}
+              02 — {t(`${copy}.processHeading`)}
             </p>
             <h2
               id="department-process-heading"
               className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"
             >
-              {t("dm.processHeading")}
+              {t(`${copy}.processHeading`)}
             </h2>
             <p className="mt-4 max-w-2xl text-base text-body">
-              {t("dm.processIntro")}
+              {t(`${copy}.processIntro`)}
             </p>
             <ol
               aria-label={t("a11y.processList")}
@@ -251,16 +256,16 @@ export default async function DepartmentPage({
             <div className="grid gap-12 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <p className="mono-label text-dept-accent">
-                  03 — {t("dm.whyHeading")}
+                  03 — {t(`${copy}.whyHeading`)}
                 </p>
                 <h2
                   id="department-why-heading"
                   className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"
                 >
-                  {t("dm.whyHeading")}
+                  {t(`${copy}.whyHeading`)}
                 </h2>
                 <p className="mt-4 max-w-2xl text-base text-body">
-                  {t("dm.whyIntro")}
+                  {t(`${copy}.whyIntro`)}
                 </p>
                 <ul className="mt-8 grid gap-6 sm:grid-cols-2">
                   {commitments.map((item) => (
@@ -326,10 +331,10 @@ export default async function DepartmentPage({
               id="department-faq-heading"
               className="text-xl font-semibold text-ink-900"
             >
-              {t("dm.faqHeading")}
+              {t(`${copy}.faqHeading`)}
             </h2>
             <p className="mt-3 max-w-2xl text-sm text-muted">
-              {t("dm.faqIntro")}
+              {t(`${copy}.faqIntro`)}
             </p>
             <dl aria-label={t("a11y.faqList")} className="mt-6 space-y-6">
               {faqs.map((faq) => (
@@ -352,8 +357,8 @@ export default async function DepartmentPage({
             <CtaBand
               locale={resolved}
               t={t}
-              heading={t("dm.ctaHeading")}
-              body={t("dm.ctaBody")}
+              heading={t(`${copy}.ctaHeading`)}
+              body={t(`${copy}.ctaBody`)}
               accent
             />
           </div>

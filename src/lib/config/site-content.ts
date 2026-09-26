@@ -1,7 +1,7 @@
 import "server-only";
 
 import { SITE } from "@/lib/config/site";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 /**
  * Editable site settings.
@@ -55,7 +55,9 @@ function asString(value: unknown): string | null {
 
 function asStringArray(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
-  const items = value.map(asString).filter((item): item is string => item !== null);
+  const items = value
+    .map(asString)
+    .filter((item): item is string => item !== null);
   return items.length > 0 ? items : null;
 }
 
@@ -79,7 +81,7 @@ export async function getSiteContent(): Promise<SiteContent> {
   let content: SiteContent = FALLBACK_SITE_CONTENT;
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return content;
 
     const { data, error } = await supabase

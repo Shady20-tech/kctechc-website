@@ -6,8 +6,24 @@ import {
   serviceRecordsFor,
 } from "@/lib/content/defaults";
 import { SERVICE_TRANSLATIONS_FR } from "@/lib/content/services.fr";
+import { ELECTRICAL_SERVICE_TRANSLATIONS_FR } from "@/lib/content/services.electrical.fr";
 import { resolveLocalized } from "@/lib/content/types";
-import { SERVICE_SLUGS } from "@/lib/content/service-slugs";
+import {
+  ELECTRICAL_SERVICE_SLUGS,
+  SERVICE_SLUGS,
+} from "@/lib/content/service-slugs";
+
+/**
+ * The two departments publish into one catalogue, and each keeps its own slug
+ * list. Looking the overlay up across both maps mirrors what `withTranslations`
+ * does when it composes the records, so a missing French overlay for either
+ * department fails here rather than surfacing as an untranslated page.
+ */
+function frenchOverlayFor(slug: string) {
+  return (
+    SERVICE_TRANSLATIONS_FR[slug] ?? ELECTRICAL_SERVICE_TRANSLATIONS_FR[slug]
+  );
+}
 
 describe("resolveLocalized", () => {
   const canonical = {
@@ -62,17 +78,44 @@ describe("resolveLocalized", () => {
 
 describe("service catalogue", () => {
   const records = allServiceRecords();
+  const digitalMarketing = serviceRecordsFor("digital-marketing");
+  const electrical = serviceRecordsFor("electrical-services");
 
-  it("contains the nine Digital Marketing service areas", () => {
-    expect(records).toHaveLength(9);
-    expect(records.map((record) => record.slug).sort()).toEqual(
+  it("contains both published service catalogues", () => {
+    expect(digitalMarketing).toHaveLength(9);
+    expect(electrical).toHaveLength(9);
+    expect(records).toHaveLength(18);
+  });
+
+  it("covers exactly the declared slugs for each department", () => {
+    expect(digitalMarketing.map((record) => record.slug).sort()).toEqual(
       [...SERVICE_SLUGS].sort(),
+    );
+    expect(electrical.map((record) => record.slug).sort()).toEqual(
+      [...ELECTRICAL_SERVICE_SLUGS].sort(),
     );
   });
 
-  it("belongs entirely to the digital marketing department", () => {
+  it("keeps the two departments' slugs disjoint", () => {
+    // The shared route resolves a slug inside a department, so a slug appearing
+    // in both lists would make one department's URL shadow the other's.
+    const overlap = SERVICE_SLUGS.filter((slug) =>
+      (ELECTRICAL_SERVICE_SLUGS as readonly string[]).includes(slug),
+    );
+    expect(overlap).toEqual([]);
+  });
+
+  it("belongs each record to exactly one department", () => {
     for (const record of records) {
+      expect(["digital-marketing", "electrical-services"]).toContain(
+        record.department,
+      );
+    }
+    for (const record of digitalMarketing) {
       expect(record.department).toBe("digital-marketing");
+    }
+    for (const record of electrical) {
+      expect(record.department).toBe("electrical-services");
     }
   });
 
@@ -95,7 +138,7 @@ describe("service catalogue", () => {
 
   it("supplies a French overlay for every service, covering every field", () => {
     for (const record of records) {
-      const overlay = SERVICE_TRANSLATIONS_FR[record.slug];
+      const overlay = frenchOverlayFor(record.slug);
       expect(overlay, `missing fr overlay for ${record.slug}`).toBeDefined();
       if (!overlay) continue;
       expect(overlay.title?.trim()).toBeTruthy();
@@ -136,12 +179,20 @@ describe("department capability gate", () => {
     expect(departmentHasServices("digital-marketing")).toBe(true);
   });
 
+  it("enables services for electrical services", () => {
+    expect(departmentHasServices("electrical-services")).toBe(true);
+  });
+
   it("keeps the surface closed for departments whose content is a later phase", () => {
-    expect(departmentHasServices("electrical-services")).toBe(false);
     expect(departmentHasServices("real-estate")).toBe(false);
   });
 
-  it("returns no records for a department without services", () => {
-    expect(serviceRecordsFor("electrical-services")).toEqual([]);
+  it("returns no records for a department whose content is a later phase", () => {
+    expect(serviceRecordsFor("real-estate")).toEqual([]);
+  });
+
+  it("returns the nine records for a department with published services", () => {
+    expect(serviceRecordsFor("electrical-services")).toHaveLength(9);
+    expect(serviceRecordsFor("digital-marketing")).toHaveLength(9);
   });
 });

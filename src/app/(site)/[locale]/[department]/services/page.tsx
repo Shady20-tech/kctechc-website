@@ -7,6 +7,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { CtaBand } from "@/components/ui/Cta";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { DEPARTMENTS } from "@/lib/config/site";
+import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import { departmentHasServices } from "@/lib/content/defaults";
 import { loadServices } from "@/lib/content/loaders";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
@@ -45,13 +46,15 @@ export async function generateMetadata({
 
   const definition = DEPARTMENTS.find((entry) => entry.slug === department);
   if (!definition || !departmentHasServices(definition.slug)) return {};
+  const copy = departmentCopyPrefix(definition.slug);
+  if (!copy) return {};
 
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
     pathWithoutLocale: `/${department}/services`,
-    title: t("dm.servicesMetaTitle"),
-    description: t("dm.servicesMetaDescription"),
+    title: t(`${copy}.servicesMetaTitle`),
+    description: t(`${copy}.servicesMetaDescription`),
   });
 }
 
@@ -68,6 +71,8 @@ export default async function DepartmentServicesPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const copy = departmentCopyPrefix(definition.slug);
+  if (!copy) notFound();
   const departmentLabel = t(definition.labelKey);
   const services = await loadServices(definition.slug, resolved);
 
@@ -100,9 +105,9 @@ export default async function DepartmentServicesPage({
           className="mb-6"
         />
         <PageIntro
-          eyebrow={t("dm.servicesEyebrow")}
-          heading={t("dm.servicesHeadingFull")}
-          intro={t("dm.servicesIntroFull")}
+          eyebrow={t(`${copy}.servicesEyebrow`)}
+          heading={t(`${copy}.servicesHeadingFull`)}
+          intro={t(`${copy}.servicesIntroFull`)}
         />
       </SectionBand>
 
@@ -131,8 +136,8 @@ export default async function DepartmentServicesPage({
         <CtaBand
           locale={resolved}
           t={t}
-          heading={t("dm.ctaHeading")}
-          body={t("dm.ctaBody")}
+          heading={t(`${copy}.ctaHeading`)}
+          body={t(`${copy}.ctaBody`)}
           accent
         />
       </div>

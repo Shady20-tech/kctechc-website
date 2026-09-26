@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Locale } from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { STORE_CURRENCY } from "@/lib/config/site";
 import {
   allCategoryRecords,
@@ -160,7 +161,7 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
   const fallback = allProductRecords();
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return fallback;
 
     // The department is looked up rather than assumed, so the store is scoped to
@@ -181,7 +182,8 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
       .eq("publish_state", "published")
       .eq("is_active", true);
 
-    if (categoryError || !categories || categories.length === 0) return fallback;
+    if (categoryError || !categories || categories.length === 0)
+      return fallback;
 
     const categoryIdBySlug = new Map(
       categories.map((category) => [category.id, category.slug]),
@@ -232,10 +234,7 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
 
     const overlays = groupProductTranslations(translations ?? []);
 
-    const localizedSlugs = new Map<
-      string,
-      Partial<Record<Locale, string>>
-    >();
+    const localizedSlugs = new Map<string, Partial<Record<Locale, string>>>();
     for (const row of slugs ?? []) {
       if (row.locale !== "en" && row.locale !== "fr") continue;
       const locale = row.locale as Locale;
@@ -303,7 +302,7 @@ export async function loadCategoryRecords(): Promise<
   const fallback = allCategoryRecords();
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return fallback;
 
     const { data: department } = await supabase
@@ -377,7 +376,9 @@ export async function loadCategoryRecords(): Promise<
 }
 
 /** Load every published product, localized for one locale. */
-export async function loadProducts(locale: Locale): Promise<LocalizedProduct[]> {
+export async function loadProducts(
+  locale: Locale,
+): Promise<LocalizedProduct[]> {
   const records = await loadProductRecords();
   return records.map((record) => localizeProduct(record, locale));
 }
@@ -473,7 +474,9 @@ export async function loadCategoryBySlug(
  * Used by the sitemap and the feed, which need one URL per product rather than
  * one per locale.
  */
-export async function canonicalSlugForProduct(id: string): Promise<string | null> {
+export async function canonicalSlugForProduct(
+  id: string,
+): Promise<string | null> {
   const records = await loadProductRecords();
   return records.find((record) => record.id === id)?.slug ?? null;
 }

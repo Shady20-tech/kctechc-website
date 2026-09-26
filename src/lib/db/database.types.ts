@@ -5,7 +5,26 @@ export type Database = {
   
   "public": {
           Tables: {
-            "audit_logs": {
+            "appointments": {
+                  Row: {
+                    "created_at": string,"id": string,"inquiry_id": string,"notes": string | null,"preferred_date": string,"preferred_window": Database["public"]['Enums']["appointment_window"],"scheduled_for": string | null,"status": Database["public"]['Enums']["appointment_status"],"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"inquiry_id": string,"notes"?: string | null,"preferred_date": string,"preferred_window"?: Database["public"]['Enums']["appointment_window"],"scheduled_for"?: string | null,"status"?: Database["public"]['Enums']["appointment_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"inquiry_id"?: string,"notes"?: string | null,"preferred_date"?: string,"preferred_window"?: Database["public"]['Enums']["appointment_window"],"scheduled_for"?: string | null,"status"?: Database["public"]['Enums']["appointment_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "appointments_inquiry_id_fkey"
+      columns: ["inquiry_id"]
+isOneToOne: false
+      referencedRelation: "inquiries"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"audit_logs": {
                   Row: {
                     "action": string,"actor_id": string | null,"created_at": string,"entity_id": string | null,"entity_type": string,"id": string,"ip_hash": string | null,"metadata": NonNullable<Json>
                   }
@@ -139,6 +158,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"electrical_project_services": {
+                  Row: {
+                    "created_at": string,"project_id": string,"service_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"project_id": string,"service_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"project_id"?: string,"service_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "electrical_project_services_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "electrical_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "electrical_project_services_service_id_fkey"
+      columns: ["service_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"electrical_projects": {
+                  Row: {
+                    "completed_year": number | null,"created_at": string,"department_id": string,"description": string | null,"id": string,"location": string | null,"outcome": string | null,"property_type": Database["public"]['Enums']["property_type"] | null,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"region_id": string | null,"scope": string | null,"slug": string,"sort_order": number,"summary": string,"tags": (string)[],"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "completed_year"?: number | null,"created_at"?: string,"department_id": string,"description"?: string | null,"id"?: string,"location"?: string | null,"outcome"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"] | null,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"region_id"?: string | null,"scope"?: string | null,"slug": string,"sort_order"?: number,"summary": string,"tags"?: (string)[],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "completed_year"?: number | null,"created_at"?: string,"department_id"?: string,"description"?: string | null,"id"?: string,"location"?: string | null,"outcome"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"] | null,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"region_id"?: string | null,"scope"?: string | null,"slug"?: string,"sort_order"?: number,"summary"?: string,"tags"?: (string)[],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "electrical_projects_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "electrical_projects_region_id_fkey"
+      columns: ["region_id"]
+isOneToOne: false
+      referencedRelation: "regions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"entity_seo": {
                   Row: {
                     "canonical_override": string | null,"created_at": string,"description": string | null,"entity_id": string,"entity_type": Database["public"]['Enums']["translatable_entity_type"],"id": string,"locale": Database["public"]['Enums']["locale_code"],"noindex": boolean,"og_image_path": string | null,"structured_data": Json | null,"title": string | null,"updated_at": string,"updated_by": string | null
@@ -154,13 +223,13 @@ isOneToOne: false
                   ]
                 },"inquiries": {
                   Row: {
-                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"message": string,"phone": string | null,"reference": string,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
+                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"contact_method": Database["public"]['Enums']["contact_method"] | null,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"locality": string | null,"message": string,"phone": string | null,"preferred_contact": string | null,"property_type": Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id": string | null,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
                   }
                   Insert: {
-                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message": string,"phone"?: string | null,"reference": string,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"contact_method"?: Database["public"]['Enums']["contact_method"] | null,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"locality"?: string | null,"message": string,"phone"?: string | null,"preferred_contact"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id"?: string | null,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
                   }
                   Update: {
-                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email"?: string,"full_name"?: string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message"?: string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject"?: string,"updated_at"?: string,"user_agent"?: string | null
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"contact_method"?: Database["public"]['Enums']["contact_method"] | null,"created_at"?: string,"department_id"?: string | null,"email"?: string,"full_name"?: string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"locality"?: string | null,"message"?: string,"phone"?: string | null,"preferred_contact"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"] | null,"reference"?: string,"region_id"?: string | null,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject"?: string,"updated_at"?: string,"user_agent"?: string | null
                   }
                   Relationships: [
                     {
@@ -170,10 +239,35 @@ isOneToOne: false
       referencedRelation: "departments"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "inquiries_region_id_fkey"
+      columns: ["region_id"]
+isOneToOne: false
+      referencedRelation: "regions"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "inquiries_service_id_fkey"
       columns: ["service_id"]
 isOneToOne: false
       referencedRelation: "services"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"inquiry_attachments": {
+                  Row: {
+                    "byte_size": number,"created_at": string,"detected_mime": string,"id": string,"inquiry_id": string,"original_filename": string,"storage_path": string
+                  }
+                  Insert: {
+                    "byte_size": number,"created_at"?: string,"detected_mime": string,"id"?: string,"inquiry_id": string,"original_filename": string,"storage_path": string
+                  }
+                  Update: {
+                    "byte_size"?: number,"created_at"?: string,"detected_mime"?: string,"id"?: string,"inquiry_id"?: string,"original_filename"?: string,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inquiry_attachments_inquiry_id_fkey"
+      columns: ["inquiry_id"]
+isOneToOne: false
+      referencedRelation: "inquiries"
       referencedColumns: ["id"]
     }
                   ]
@@ -367,6 +461,25 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"project_media": {
+                  Row: {
+                    "alt_text": string,"caption": string | null,"created_at": string,"credit": string | null,"height": number | null,"id": string,"position": number,"project_id": string,"role": Database["public"]['Enums']["project_media_role"],"storage_path": string,"updated_at": string,"width": number | null
+                  }
+                  Insert: {
+                    "alt_text": string,"caption"?: string | null,"created_at"?: string,"credit"?: string | null,"height"?: number | null,"id"?: string,"position"?: number,"project_id": string,"role"?: Database["public"]['Enums']["project_media_role"],"storage_path": string,"updated_at"?: string,"width"?: number | null
+                  }
+                  Update: {
+                    "alt_text"?: string,"caption"?: string | null,"created_at"?: string,"credit"?: string | null,"height"?: number | null,"id"?: string,"position"?: number,"project_id"?: string,"role"?: Database["public"]['Enums']["project_media_role"],"storage_path"?: string,"updated_at"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "project_media_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "electrical_projects"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"redirects": {
                   Row: {
                     "created_at": string,"hit_count": number,"id": string,"is_active": boolean,"source_path": string,"status_code": number,"target_path": string,"updated_at": string
@@ -554,10 +667,40 @@ isOneToOne: false
                            },
 "requeue_translation_entry":
 { Args: { "p_entry_id": string }; Returns: undefined
+                           },
+"uuid_generate_v1":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_generate_v1mc":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_generate_v3":
+{ Args: { "name": string,"namespace": string }; Returns: string
+                           },
+"uuid_generate_v4":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_generate_v5":
+{ Args: { "name": string,"namespace": string }; Returns: string
+                           },
+"uuid_nil":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_ns_dns":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_ns_oid":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_ns_url":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"uuid_ns_x500":
+{ Args: Record<PropertyKey, never>; Returns: string
                            }
           }
           Enums: {
-            "cart_status": "active"|"converted"|"abandoned"|"expired","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","locale_code": "en"|"fr","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
+            "appointment_status": "requested"|"confirmed"|"completed"|"cancelled","appointment_window": "morning"|"afternoon"|"anytime","cart_status": "active"|"converted"|"abandoned"|"expired","contact_method": "email"|"phone"|"whatsapp","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry"|"site_visit_request","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","locale_code": "en"|"fr","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","project_media_role": "before"|"after"|"general","property_type": "residential"|"commercial"|"industrial","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media"|"project_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -673,7 +816,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "cart_status": ["active", "converted", "abandoned", "expired"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"locale_code": ["en", "fr"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
+            "appointment_status": ["requested", "confirmed", "completed", "cancelled"],"appointment_window": ["morning", "afternoon", "anytime"],"cart_status": ["active", "converted", "abandoned", "expired"],"contact_method": ["email", "phone", "whatsapp"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry", "site_visit_request"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"locale_code": ["en", "fr"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"project_media_role": ["before", "after", "general"],"property_type": ["residential", "commercial", "industrial"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media", "project_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
           }
         }
 } as const
