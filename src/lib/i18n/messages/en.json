@@ -277,9 +277,9 @@
         "unconfigured": "The store is not connected to a database.",
         "invalid": "Some fields need attention. The messages are shown below each one.",
         "duplicate": "A product already uses that slug or SKU.",
-        "write_failed": "The product could not be saved. Please try again.",
-        "translation_write_failed": "The product was saved, but its translation entries could not be created. Please retry."
-      }
+        "write_failed": "The product could not be saved. Please try again."
+      },
+      "seoWarning": "The product was created, but its SEO overrides could not be saved. Add them again from the product page."
     }
   },
   "seo": {

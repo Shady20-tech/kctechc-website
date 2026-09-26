@@ -305,6 +305,12 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **The translation index is built by database triggers, not by application code.** Inserting a
   product fires `products_sync_translation_index` and enqueues the sync jobs. An action that
   assembled the index itself would leave any product written by another path untranslated.
+- **Product SEO overrides live in `entity_seo`, never on the product row or in
+  `content_translations`.** `products` has no `seo_title` / `seo_description` columns, and the
+  product page reads its metadata from `entity_seo`. Writing SEO text anywhere else accepts the
+  editor's input and silently never renders it. The `entity_seo` trigger
+  (`entity_seo_sync_product_translation_index`) indexes the two keys once the row exists, so the
+  admin action only has to upsert `entity_seo`.
 - **`next start` does not work with `output: standalone`.** Use the standalone server, or run the
   dev server, when smoke-testing routes.
 - **`NAV_PATHS` is the sitemap's source of truth.** Adding a nav link without adding its path

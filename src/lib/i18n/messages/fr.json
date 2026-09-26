@@ -277,9 +277,9 @@
         "unconfigured": "La boutique n'est pas connectée à une base de données.",
         "invalid": "Certains champs nécessitent votre attention. Les messages sont affichés sous chacun d'eux.",
         "duplicate": "Un produit utilise déjà cet identifiant ou cette référence.",
-        "write_failed": "Le produit n'a pas pu être enregistré. Veuillez réessayer.",
-        "translation_write_failed": "Le produit a été enregistré, mais ses entrées de traduction n'ont pas pu être créées. Veuillez réessayer."
-      }
+        "write_failed": "Le produit n'a pas pu être enregistré. Veuillez réessayer."
+      },
+      "seoWarning": "Le produit a été créé, mais ses réglages SEO n'ont pas pu être enregistrés. Ajoutez-les à nouveau depuis la page du produit."
     }
   },
   "seo": {
