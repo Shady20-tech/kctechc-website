@@ -1,0 +1,143 @@
+{
+  "common": {
+    "brand": "KC Technology Corporation",
+    "brandShort": "KC Technology",
+    "motto": "Innovating Technology. Powering Infrastructure. Transforming Futures.",
+    "skipToContent": "Skip to main content",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "notFound": "Page not found",
+    "backToHome": "Back to home",
+    "close": "Close",
+    "menu": "Menu",
+    "language": "Language"
+  },
+  "actions": {
+    "contact": "Contact",
+    "getQuote": "Get a Quote",
+    "learnMore": "Learn more",
+    "viewAll": "View all",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "exploreDepartment": "Explore department",
+    "chooseLanguage": "Choose your language",
+    "enterSite": "Enter site"
+  },
+  "nav": {
+    "primary": "Primary navigation",
+    "departments": "Departments",
+    "departmentSwitcher": "Department switcher",
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "insights": "Insights",
+    "admin": "Admin"
+  },
+  "departments": {
+    "heading": "Our departments",
+    "digitalMarketing": {
+      "label": "Digital Marketing",
+      "description": "Digital marketing services and technology products for growing businesses."
+    },
+    "electricalServices": {
+      "label": "Electrical Services",
+      "description": "Electrical engineering, installation and infrastructure services."
+    },
+    "realEstate": {
+      "label": "Real Estate",
+      "description": "Property listings and real estate services across Cameroon."
+    }
+  },
+  "home": {
+    "metaTitle": "KC Technology Corporation",
+    "metaDescription": "KC Technology Corporation delivers digital marketing, electrical services and real estate across Cameroon.",
+    "gatewayHeading": "Three departments. One standard of engineering.",
+    "gatewayIntro": "KC Technology Corporation operates Digital Marketing, Electrical Services and Real Estate from Half-Mile, Limbe in the Southwest Region of Cameroon. Choose a department to continue.",
+    "gatewayNote": "Select a department or choose your language to enter the site."
+  },
+  "footer": {
+    "company": "Company",
+    "contactHeading": "Contact",
+    "officeHeading": "Head office",
+    "departmentsHeading": "Departments",
+    "legalHeading": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "accessibility": "Accessibility",
+    "copyright": "© {year} KC Technology Corporation. All rights reserved.",
+    "phoneLabel": "Telephone",
+    "emailLabel": "Email",
+    "addressLabel": "Address"
+  },
+  "auth": {
+    "signInHeading": "Sign in",
+    "signInDescription": "Sign in to manage your KC Technology Corporation account.",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "signInSubmit": "Sign in",
+    "signOutSubmit": "Sign out",
+    "signingIn": "Signing in…",
+    "signedInAs": "Signed in as {email}",
+    "signedOut": "You have been signed out.",
+    "notConfigured": "Authentication is not configured in this environment.",
+    "invalidCredentials": "Those credentials were not recognised.",
+    "unauthorizedHeading": "Access denied",
+    "unauthorizedDescription": "Your account does not have permission to view this area."
+  },
+  "admin": {
+    "metaTitle": "Admin",
+    "dashboardHeading": "Admin dashboard",
+    "dashboardIntro": "Internal operations for KC Technology Corporation. This area is not indexed by search engines.",
+    "roleLabel": "Your role",
+    "signedInHeading": "Session",
+    "phaseNotice": "Phase 1 foundation. Department, catalogue, property and CRM workflows arrive in later phases."
+  },
+  "seo": {
+    "defaultTitleTemplate": "%s | KC Technology Corporation",
+    "defaultDescription": "KC Technology Corporation delivers digital marketing, electrical services and real estate across Cameroon.",
+    "localeAlternate": "Language"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidEmail": "Enter a valid email address.",
+    "tooShort": "This value is too short.",
+    "tooLong": "This value is too long.",
+    "invalidUuid": "This value must be a valid identifier.",
+    "invalidLocale": "This language is not supported.",
+    "invalidSlug": "Use lowercase letters, numbers and hyphens only."
+  },
+  "status": {
+    "success": "Success",
+    "pending": "Pending",
+    "failed": "Failed",
+    "saved": "Your changes have been saved.",
+    "published": "Published",
+    "draft": "Draft",
+    "archived": "Archived",
+    "translationPending": "French translation pending",
+    "translationComplete": "Translation complete",
+    "translationOutdated": "Translation may be outdated",
+    "syncPending": "Awaiting synchronisation",
+    "syncFailed": "Synchronisation failed"
+  },
+  "a11y": {
+    "breadcrumb": "Breadcrumb",
+    "currentPage": "Current page",
+    "opensInNewTab": "Opens in a new tab",
+    "externalLink": "External link",
+    "requiredField": "Required field",
+    "errorSummary": "There are problems with your submission",
+    "languageSwitcher": "Change language",
+    "departmentNav": "Department navigation",
+    "mainLandmark": "Main content",
+    "footerLandmark": "Site footer"
+  },
+  "errors": {
+    "notFoundTitle": "We could not find that page",
+    "notFoundDescription": "The page you requested may have moved or no longer exists.",
+    "serverErrorTitle": "Something went wrong on our side",
+    "serverErrorDescription": "The page could not be loaded. Please try again."
+  }
+}
