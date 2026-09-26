@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { NAV_PATHS } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { LOCALES } from "@/lib/i18n/locales";
@@ -9,6 +10,10 @@ import { alternatesFor, canonicalFor } from "@/lib/seo/canonical";
  *
  * Only genuinely localized, indexable routes are listed. Private routes and
  * untranslated content are excluded rather than advertised.
+ *
+ * The path list is derived from the shared nav model plus the department slugs,
+ * so a new nav entry cannot be added to the header while being forgotten here —
+ * the two would otherwise drift silently and leave a linked page unlisted.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
@@ -17,8 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const localizedPaths = [
     "/",
     ...DEPARTMENTS.map((department) => `/${department.slug}`),
-    "/about",
-    "/contact",
+    ...NAV_PATHS,
   ];
 
   const entries: MetadataRoute.Sitemap = LOCALES.flatMap((locale) =>

@@ -41,8 +41,11 @@
     "insights": "Insights",
     "admin": "Admin",
     "mobileMenu": "Mobile navigation",
-    "currentDepartment": "Current department"
-  },
+    "currentDepartment": "Current department",
+    "aboutUs": "About us",
+    "services": "Services",
+    "gallery": "Gallery",
+    "blog": "Blog"  },
   "departments": {
     "heading": "Our departments",
     "intro": "Three departments, one standard of engineering.",
@@ -230,12 +233,45 @@
     "mainLandmark": "Main content",
     "footerLandmark": "Site footer",
     "tableScroll": "Scrollable table",
-    "loadingContent": "Loading content"
-  },
+    "loadingContent": "Loading content",
+    "departmentsMenu": "Departments menu"  },
   "errors": {
     "notFoundTitle": "We could not find that page",
     "notFoundDescription": "The page you requested may have moved or no longer exists.",
     "serverErrorTitle": "Something went wrong on our side",
     "serverErrorDescription": "The page could not be loaded. Please try again."
+  },
+  "services": {
+    "metaTitle": "Services",
+    "metaDescription": "The services KC Technology Corporation delivers through its Digital Marketing, Electrical Services and Real Estate departments.",
+    "eyebrow": "Services",
+    "heading": "What we do",
+    "intro": "KC Technology Corporation delivers work through three departments. Each department maintains its own detailed service list, and this page is the corporate overview that ties them together.",
+    "departmentsHeading": "Services by department",
+    "departmentsIntro": "Detailed service descriptions are published by each department.",
+    "howHeading": "How to commission work",
+    "howBody": "Tell us what you need and the relevant department responds with a scope, a quote and a named point of contact. Where a project spans more than one department, the work is coordinated under a single contract rather than split across suppliers.",
+    "ctaHeading": "Discuss a requirement",
+    "ctaBody": "Describe the work and we will route it to the department that handles it."
+  },
+  "gallery": {
+    "metaTitle": "Gallery",
+    "metaDescription": "Project and installation photography from KC Technology Corporation across its three departments.",
+    "eyebrow": "Gallery",
+    "heading": "Our work",
+    "intro": "Photography of completed projects and installations across our three departments.",
+    "emptyHeading": "Photographs are not published yet",
+    "emptyBody": "We only publish photographs of work we have actually completed, and only with the client's agreement. Nothing is ready to show on this page yet. Contact the relevant department in the meantime and we will share examples of comparable work directly.",
+    "browseDepartments": "Browse our departments"
+  },
+  "blog": {
+    "metaTitle": "Blog",
+    "metaDescription": "Articles and updates from KC Technology Corporation on digital marketing, electrical services and real estate.",
+    "eyebrow": "Blog",
+    "heading": "Articles and updates",
+    "intro": "Notes from our departments on digital marketing, electrical work and real estate in Cameroon.",
+    "emptyHeading": "No articles published yet",
+    "emptyBody": "Articles appear here once they have been written and reviewed. We publish nothing we cannot stand behind, so there are no placeholder posts on this page. Contact us in the meantime if you would like to discuss any of our work.",
+    "browseDepartments": "Browse our departments"
   }
 }
