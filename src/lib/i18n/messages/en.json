@@ -147,7 +147,10 @@
     "mapHeading": "Head office",
     "mapNote": "We are based at Half-Mile, Limbe. Please contact us before visiting so we can make sure the right person is available.",
     "errorSummaryHeading": "Please correct the following",
-    "referenceLabel": "Reference"
+    "referenceLabel": "Reference",
+    "serviceLabel": "Which service?",
+    "serviceHint": "Optional. Choose the service this relates to, if any.",
+    "serviceGeneral": "Not service specific"
   },
   "footer": {
     "company": "Company",
@@ -205,7 +208,8 @@
     "invalidPhone": "Enter a valid phone number.",
     "invalidDepartment": "Choose one of the listed departments.",
     "consentRequired": "Please confirm you agree before sending.",
-    "spamDetected": "This submission could not be processed."
+    "spamDetected": "This submission could not be processed.",
+    "invalidService": "Choose one of the listed services."
   },
   "status": {
     "success": "Success",

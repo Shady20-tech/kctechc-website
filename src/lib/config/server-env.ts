@@ -23,6 +23,9 @@ export const serverEnv = {
   flutterwavePublicKey: optional(process.env.FLUTTERWAVE_PUBLIC_KEY),
   flutterwaveSecretKey: optional(process.env.FLUTTERWAVE_SECRET_KEY),
   flutterwaveWebhookSecret: optional(process.env.FLUTTERWAVE_WEBHOOK_SECRET),
+  /** Bot verification (Turnstile/hCaptcha). Absent means the check is skipped. */
+  botVerificationSecretKey: optional(process.env.BOT_VERIFICATION_SECRET_KEY),
+  botVerificationEndpoint: optional(process.env.BOT_VERIFICATION_ENDPOINT),
 } as const;
 
 /**

@@ -28,6 +28,9 @@ export type ContactFormLabels = {
   departmentLabel: string;
   departmentHint: string;
   departmentGeneral: string;
+  serviceLabel: string;
+  serviceHint: string;
+  serviceGeneral: string;
   subjectLabel: string;
   subjectPlaceholder: string;
   messageLabel: string;
@@ -63,14 +66,18 @@ export function ContactForm({
   locale,
   labels,
   departmentLabels,
+  serviceOptions,
   validationMessages,
   defaultDepartment,
+  defaultService,
 }: {
   locale: Locale;
   labels: ContactFormLabels;
   departmentLabels: Record<DepartmentSlug, string>;
+  serviceOptions: readonly { slug: string; label: string }[];
   validationMessages: Record<string, string>;
   defaultDepartment?: DepartmentSlug;
+  defaultService?: string;
 }) {
   const [state, formAction, isPending] = useActionState(
     submitInquiry,
@@ -205,6 +212,22 @@ export function ContactForm({
           {DEPARTMENTS.map((department) => (
             <option key={department.slug} value={department.slug}>
               {departmentLabels[department.slug]}
+            </option>
+          ))}
+        </SelectField>
+
+        <SelectField
+          id="service"
+          name="service"
+          label={labels.serviceLabel}
+          hint={labels.serviceHint}
+          defaultValue={defaultService ?? ""}
+          error={message(fieldErrors.service)}
+        >
+          <option value="">{labels.serviceGeneral}</option>
+          {serviceOptions.map((service) => (
+            <option key={service.slug} value={service.slug}>
+              {service.label}
             </option>
           ))}
         </SelectField>

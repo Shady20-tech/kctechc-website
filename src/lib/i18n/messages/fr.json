@@ -147,7 +147,10 @@
     "mapHeading": "Siège social",
     "mapNote": "Nous sommes situés à Half-Mile, Limbe. Merci de nous contacter avant de vous déplacer afin que la bonne personne soit disponible.",
     "errorSummaryHeading": "Veuillez corriger les points suivants",
-    "referenceLabel": "Référence"
+    "referenceLabel": "Référence",
+    "serviceLabel": "Quel service ?",
+    "serviceHint": "Facultatif. Choisissez le service concerné, le cas échéant.",
+    "serviceGeneral": "Non lié à un service"
   },
   "footer": {
     "company": "Entreprise",
@@ -205,7 +208,8 @@
     "invalidPhone": "Saisissez un numéro de téléphone valide.",
     "invalidDepartment": "Choisissez l'un des départements proposés.",
     "consentRequired": "Veuillez confirmer votre accord avant l'envoi.",
-    "spamDetected": "Cet envoi n'a pas pu être traité."
+    "spamDetected": "Cet envoi n'a pas pu être traité.",
+    "invalidService": "Choisissez l'un des services proposés."
   },
   "status": {
     "success": "Succès",
