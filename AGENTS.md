@@ -56,7 +56,8 @@ legal claims, staff, testimonials, or case-study metrics.
 
 ### Localization
 - Root `/` stays language-neutral (`x-default`) — offer EN/FR + department choices, do not guess.
-- Localized app lives in `src/app/[locale]/...`. `src/proxy.ts` does only lightweight
+- Localized app lives in `src/app/(site)/[locale]/...`; the `(site)` group holds the public chrome
+  and `(static)` holds internal/admin routes. `src/proxy.ts` does only lightweight
   locale/routing checks and redirects — **never** slow database fetches.
 - Locale handling must validate `en`/`fr`, preserve the current route and safe query params on
   language switch, support localized slugs, emit reciprocal `hreflang` + `x-default`, and prevent
@@ -215,13 +216,21 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - Phase 1 (secure, typed foundation) is implemented: Next.js 16 App Router + strict TypeScript,
   Supabase clients/RLS migrations, auth roles + guards, i18n routing, SEO/AEO metadata, design
   system, app shell, admin shell, health endpoint, and Vitest coverage.
+- Phase 1 public surface is now complete: corporate gateway `/`, localized home `/en` + `/fr`,
+  the three department entry pages, `/about`, `/contact` with the inquiry pipeline (migration,
+  Zod schema, server action, form), and the shared design/UI kit. 93 Vitest tests pass and the
+  production build prerenders all 23 routes.
 
 ### Phase 1 gotchas worth not rediscovering
 
 - **Tolgee `staticData` is keyed by language first**, then namespace:
   `{ en: { ...messages } }`. Passing the raw message object (or `{ "": messages }`) logs
-  `Tolgee: Missing records in "staticData"` during prerender. Use `Tolgee().init({...})` with a
+  `Tolgee: Missing records in "staticData"`. Use `Tolgee().init({...})` with a
   real `tolgee` instance prop — the `@tolgee/react` v7 provider takes `tolgee`/`ssr`, not `config`.
+- **`staticData` must include the whole fallback chain, not just the active locale.** With
+  `fallbackLanguage: "en"`, a French render still resolves English records for any key missing from
+  `fr`, so shipping only `{ fr }` warns and prerenders partially. `TolgeeProvider` therefore maps
+  every entry in `LOCALES`, and the warning disappears only when both dictionaries are present.
 - **`useSearchParams` in a shared layout component aborts prerendering** with
   "should be wrapped in a suspense boundary". `LanguageSwitcher` deliberately reads only
   `usePathname` so localized pages stay statically prerendered.
@@ -230,8 +239,22 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **CSP is applied in `next.config.ts` headers** via `buildContentSecurityPolicy()`. The helper
   existing in `src/lib/security/headers.ts` is not enough — a control that is defined but unwired
   gives false confidence.
-- **`globals.css` relative imports depend on route-group nesting**: `(site)/page.tsx` → `../globals.css`,
-  `(site)/[locale]/layout.tsx` and `(static)/admin/layout.tsx` → `../../globals.css`.
+- **`globals.css` is imported once, from `src/app/layout.tsx`.** The route groups no longer import
+  it: `(site)/page.tsx`, `(site)/[locale]/layout.tsx` and `(static)/admin/layout.tsx` previously
+  each imported it at their own relative depth, which duplicated CSS and made the path brittle.
+- **`<html>`/`<body>` belong to the root layout only.** The locale and admin layouts render chrome
+  (`SiteHeader`/`SiteFooter`, admin `main`), not the document. A layout that renders `<html>` below
+  the root breaks `not-found.tsx` and `error.tsx`, which render inside the root layout.
+- **`inquiries` has no anonymous insert policy.** The public form writes through the service-role
+  client in a server action after Zod validation, rate limiting and a honeypot check. Adding an
+  anon insert policy would let a browser bypass all three.
+- **`database.types.ts` relationships must resolve inside `public`.** Adding a `Relationships` entry
+  that points at `auth.users` (e.g. `inquiries.assigned_to`) makes Supabase's `RejectExcessProperties`
+  collapse the whole schema to `never`, and every `.from(...)` call then fails typecheck with
+  confusing errors far from the file. Only reference relations that are declared in this file.
+- **Client-only browser state uses `useSyncExternalStore`, not `setState` in an effect.** The
+  `react-hooks/set-state-in-effect` rule rejects the effect form, and the external-store form also
+  gives a defined SSR snapshot. See `src/lib/hooks/use-client-environment.ts`.
 - Next 16 emits `hrefLang` (camelCase) in prerendered HTML; HTML attribute parsing is
   case-insensitive, so `hreflang` alternates are correct.
 

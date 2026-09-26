@@ -89,6 +89,38 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"inquiries": {
+                  Row: {
+                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"message": string,"phone": string | null,"reference": string,"responded_at": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
+                  }
+                  Insert: {
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message": string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
+                  }
+                  Update: {
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email"?: string,"full_name"?: string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message"?: string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject"?: string,"updated_at"?: string,"user_agent"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inquiries_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"inquiry_events": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"event_type": string,"from_status": Database["public"]['Enums']["inquiry_status"] | null,"id": string,"inquiry_id": string,"metadata": NonNullable<Json>,"note": string | null,"to_status": Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"event_type": string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id": string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"event_type"?: string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id"?: string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Relationships: [
+
+                  ]
                 },"regions": {
                   Row: {
                     "code": string,"created_at": string,"id": string,"name": string,"name_fr": string | null,"slug": string,"sort_order": number,"updated_at": string
@@ -204,7 +236,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "locale_code": "en"|"fr","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
+            "locale_code": "en"|"fr","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -320,7 +352,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "locale_code": ["en", "fr"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
+            "locale_code": ["en", "fr"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
           }
         }
 } as const

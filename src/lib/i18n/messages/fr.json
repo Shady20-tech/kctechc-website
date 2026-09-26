@@ -2,7 +2,7 @@
   "common": {
     "brand": "KC Technology Corporation",
     "brandShort": "KC Technology",
-    "motto": "Innovation technologique. Infrastructure énergétique. Avenir transformé.",
+    "motto": "Innovating Technology. Powering Infrastructure. Transforming Futures.",
     "skipToContent": "Aller au contenu principal",
     "loading": "Chargement…",
     "error": "Une erreur est survenue",
@@ -10,10 +10,11 @@
     "backToHome": "Retour à l'accueil",
     "close": "Fermer",
     "menu": "Menu",
-    "language": "Langue"
+    "language": "Langue",
+    "required": "Obligatoire"
   },
   "actions": {
-    "contact": "Contact",
+    "contact": "Nous contacter",
     "getQuote": "Demander un devis",
     "learnMore": "En savoir plus",
     "viewAll": "Voir tout",
@@ -23,7 +24,12 @@
     "signOut": "Se déconnecter",
     "exploreDepartment": "Découvrir le département",
     "chooseLanguage": "Choisissez votre langue",
-    "enterSite": "Entrer sur le site"
+    "enterSite": "Entrer sur le site",
+    "visitDepartment": "Visiter le département",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "sendMessage": "Envoyer le message",
+    "sending": "Envoi…"
   },
   "nav": {
     "primary": "Navigation principale",
@@ -33,29 +39,112 @@
     "about": "À propos",
     "contact": "Contact",
     "insights": "Actualités",
-    "admin": "Administration"
+    "admin": "Administration",
+    "mobileMenu": "Navigation mobile",
+    "currentDepartment": "Département actuel"
   },
   "departments": {
     "heading": "Nos départements",
+    "intro": "Trois départements, une même exigence d'ingénierie.",
     "digitalMarketing": {
       "label": "Marketing digital",
-      "description": "Services de marketing digital et produits technologiques pour les entreprises en croissance."
+      "description": "Services de marketing digital et produits technologiques pour les entreprises en croissance.",
+      "summary": "Boutique en ligne, campagnes et produits technologiques pour les entreprises qui doivent être visibles et vendre en ligne."
     },
     "electricalServices": {
       "label": "Services électriques",
-      "description": "Ingénierie électrique, installation et services d'infrastructure."
+      "description": "Ingénierie électrique, installation et services d'infrastructure.",
+      "summary": "Ingénierie électrique, installation, maintenance et travaux d'infrastructure conformes aux spécifications."
     },
     "realEstate": {
       "label": "Immobilier",
-      "description": "Annonces immobilières et services immobiliers à travers le Cameroun."
+      "description": "Annonces immobilières et services immobiliers partout au Cameroun.",
+      "summary": "Annonces immobilières nationales et services immobiliers, appuyés par des agents locaux partout au Cameroun."
     }
   },
   "home": {
     "metaTitle": "KC Technology Corporation",
-    "metaDescription": "KC Technology Corporation fournit des services de marketing digital, d'électricité et d'immobilier à travers le Cameroun.",
-    "gatewayHeading": "Trois départements. Une seule exigence d'ingénierie.",
+    "metaDescription": "KC Technology Corporation fournit des services de marketing digital, d'électricité et d'immobilier partout au Cameroun.",
+    "gatewayHeading": "Trois départements. Une même exigence d'ingénierie.",
     "gatewayIntro": "KC Technology Corporation exploite les départements Marketing digital, Services électriques et Immobilier depuis Half-Mile, Limbe, dans la région du Sud-Ouest du Cameroun. Choisissez un département pour continuer.",
-    "gatewayNote": "Sélectionnez un département ou choisissez votre langue pour entrer sur le site."
+    "gatewayNote": "Sélectionnez un département ou choisissez votre langue pour entrer sur le site.",
+    "heroEyebrow": "KC Technology Corporation",
+    "heroLocation": "Half-Mile, Limbe · Région du Sud-Ouest, Cameroun",
+    "heroPrimaryCta": "Découvrir nos départements",
+    "heroSecondaryCta": "Nous parler",
+    "statementHeading": "Ce que nous faisons",
+    "aboutHeading": "À propos de KC Technology Corporation",
+    "aboutBody": "KC Technology Corporation réunit le marketing digital, l'ingénierie électrique et l'immobilier sous une même norme d'entreprise. Depuis Half-Mile, Limbe, nous servons des clients dans la région du Sud-Ouest et partout au Cameroun.",
+    "aboutCta": "En savoir plus sur l'entreprise",
+    "trustHeading": "Informations sur l'entreprise",
+    "trustNote": "Coordonnées vérifiées, publiées pour que vous sachiez à qui vous avez affaire.",
+    "lastDepartment": "Revenir à {department}",
+    "lastDepartmentNote": "Vous avez consulté ce département en dernier. Vous pouvez aussi en choisir un autre ci-dessus."
+  },
+  "about": {
+    "metaTitle": "À propos de l'entreprise",
+    "metaDescription": "KC Technology Corporation a son siège à Half-Mile, Limbe, dans la région du Sud-Ouest du Cameroun, et exploite les départements Marketing digital, Services électriques et Immobilier.",
+    "eyebrow": "À propos",
+    "heading": "Une entreprise, trois disciplines d'ingénierie",
+    "intro": "KC Technology Corporation exploite les départements Marketing digital, Services électriques et Immobilier depuis une seule base à Limbe, au Cameroun.",
+    "whoHeading": "Qui nous sommes",
+    "whoBody": "KC Technology Corporation est une entreprise camerounaise active dans trois départements : Marketing digital, Services électriques et Immobilier. Chaque département sert un marché différent, et tous trois appliquent la même norme d'entreprise en matière de livraison, de communication et de responsabilité.",
+    "whereHeading": "Où nous intervenons",
+    "whereBody": "Notre siège est situé à Half-Mile, Limbe, dans la région du Sud-Ouest du Cameroun. Les services immobiliers s'étendent à tout le pays à travers ses dix régions, tandis que les travaux numériques et électriques sont réalisés depuis notre base de Limbe.",
+    "howHeading": "Notre façon de travailler",
+    "howBody": "Chaque projet commence par un périmètre clair et un interlocuteur nommé. Nous établissons un devis avant de commencer, nous tenons les clients informés de l'avancement, et nous documentons ce qui a été livré. Lorsqu'un projet exige plusieurs disciplines, les départements se coordonnent sous un seul contrat plutôt que de vous renvoyer entre plusieurs fournisseurs.",
+    "valuesHeading": "Nos engagements",
+    "value1Title": "Périmètre clair",
+    "value1Body": "Le travail est défini et chiffré avant de commencer, sans coûts imprévus.",
+    "value2Title": "Contact direct",
+    "value2Body": "Vous traitez avec un interlocuteur nommé qui connaît votre projet, pas avec une file d'attente.",
+    "value3Title": "Livraison documentée",
+    "value3Body": "Nous consignons ce qui a été installé, publié ou conclu, et nous vous le remettons.",
+    "factsHeading": "Informations sur l'entreprise",
+    "departmentsHeading": "Nos départements",
+    "ctaHeading": "Travailler avec nous",
+    "ctaBody": "Décrivez votre besoin et le département concerné vous répondra avec les prochaines étapes."
+  },
+  "contact": {
+    "metaTitle": "Nous contacter",
+    "metaDescription": "Contactez KC Technology Corporation par téléphone ou par e-mail, ou envoyez une demande au département concerné. Siège : Half-Mile, Limbe, région du Sud-Ouest, Cameroun.",
+    "eyebrow": "Contact",
+    "heading": "Parler à KC Technology Corporation",
+    "intro": "Envoyez-nous une demande et le département concerné vous répondra. Pour les urgences, appelez-nous ou écrivez-nous directement.",
+    "detailsHeading": "Coordonnées",
+    "formHeading": "Envoyer une demande",
+    "formIntro": "Les champs marqués d'un astérisque sont obligatoires. Vos coordonnées servent uniquement à répondre à cette demande.",
+    "nameLabel": "Votre nom",
+    "namePlaceholder": "Nom complet",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "phoneLabel": "Numéro de téléphone",
+    "phoneHint": "Facultatif. Indiquez l'indicatif du pays si vous êtes hors du Cameroun.",
+    "phonePlaceholder": "+237 6XX XXX XXX",
+    "departmentLabel": "Quel département ?",
+    "departmentHint": "Choisissez le département le mieux placé pour répondre.",
+    "departmentGeneral": "Demande générale",
+    "subjectLabel": "Objet",
+    "subjectPlaceholder": "Un bref résumé de votre demande",
+    "messageLabel": "Votre message",
+    "messagePlaceholder": "Décrivez votre besoin, en précisant le lieu ou le délai si utile.",
+    "consentLabel": "J'accepte que KC Technology Corporation utilise mes coordonnées pour répondre à cette demande.",
+    "submit": "Envoyer la demande",
+    "submitting": "Envoi de la demande…",
+    "successTitle": "Votre demande a bien été reçue",
+    "successBody": "Merci. Le département concerné vous répondra aux coordonnées que vous avez indiquées.",
+    "errorTitle": "Nous n'avons pas pu envoyer votre demande",
+    "errorBody": "Vérifiez les champs signalés et réessayez. Si le problème persiste, écrivez-nous ou appelez-nous aux coordonnées indiquées sur cette page.",
+    "rateLimitedTitle": "Trop d'envois",
+    "rateLimitedBody": "Veuillez patienter un instant avant d'envoyer une nouvelle demande.",
+    "unavailableTitle": "Le formulaire est temporairement indisponible",
+    "unavailableBody": "Notre système de demandes n'est pas configuré dans cet environnement. Veuillez nous joindre par téléphone ou par e-mail.",
+    "officeHoursHeading": "Horaires d'ouverture",
+    "officeHoursBody": "Du lundi au vendredi, de 08h00 à 17h00 (heure d'Afrique de l'Ouest). Les messages reçus en dehors de ces horaires sont traités le jour ouvré suivant.",
+    "mapHeading": "Siège social",
+    "mapNote": "Nous sommes situés à Half-Mile, Limbe. Merci de nous contacter avant de vous déplacer afin que la bonne personne soit disponible.",
+    "errorSummaryHeading": "Veuillez corriger les points suivants",
+    "referenceLabel": "Référence"
   },
   "footer": {
     "company": "Entreprise",
@@ -69,34 +158,37 @@
     "copyright": "© {year} KC Technology Corporation. Tous droits réservés.",
     "phoneLabel": "Téléphone",
     "emailLabel": "E-mail",
-    "addressLabel": "Adresse"
+    "addressLabel": "Adresse",
+    "aboutLink": "À propos de l'entreprise",
+    "contactLink": "Nous contacter",
+    "mottoLabel": "Notre devise"
   },
   "auth": {
-    "signInHeading": "Connexion",
+    "signInHeading": "Se connecter",
     "signInDescription": "Connectez-vous pour gérer votre compte KC Technology Corporation.",
     "emailLabel": "Adresse e-mail",
     "passwordLabel": "Mot de passe",
     "signInSubmit": "Se connecter",
     "signOutSubmit": "Se déconnecter",
-    "signingIn": "Connexion en cours…",
+    "signingIn": "Connexion…",
     "signedInAs": "Connecté en tant que {email}",
     "signedOut": "Vous avez été déconnecté.",
     "notConfigured": "L'authentification n'est pas configurée dans cet environnement.",
     "invalidCredentials": "Ces identifiants n'ont pas été reconnus.",
     "unauthorizedHeading": "Accès refusé",
-    "unauthorizedDescription": "Votre compte n'est pas autorisé à consulter cette zone."
+    "unauthorizedDescription": "Votre compte n'est pas autorisé à consulter cette section."
   },
   "admin": {
     "metaTitle": "Administration",
     "dashboardHeading": "Tableau de bord",
-    "dashboardIntro": "Opérations internes de KC Technology Corporation. Cette zone n'est pas indexée par les moteurs de recherche.",
+    "dashboardIntro": "Opérations internes de KC Technology Corporation. Cette section n'est pas indexée par les moteurs de recherche.",
     "roleLabel": "Votre rôle",
     "signedInHeading": "Session",
-    "phaseNotice": "Fondation de la phase 1. Les départements, le catalogue, les biens immobiliers et le CRM arrivent dans les phases suivantes."
+    "phaseNotice": "Fondation de la phase 1. Les workflows des départements, du catalogue, des biens immobiliers et du CRM arrivent dans les phases suivantes."
   },
   "seo": {
     "defaultTitleTemplate": "%s | KC Technology Corporation",
-    "defaultDescription": "KC Technology Corporation fournit des services de marketing digital, d'électricité et d'immobilier à travers le Cameroun.",
+    "defaultDescription": "KC Technology Corporation fournit des services de marketing digital, d'électricité et d'immobilier partout au Cameroun.",
     "localeAlternate": "Langue"
   },
   "validation": {
@@ -106,7 +198,11 @@
     "tooLong": "Cette valeur est trop longue.",
     "invalidUuid": "Cette valeur doit être un identifiant valide.",
     "invalidLocale": "Cette langue n'est pas prise en charge.",
-    "invalidSlug": "Utilisez uniquement des lettres minuscules, des chiffres et des tirets."
+    "invalidSlug": "Utilisez uniquement des lettres minuscules, des chiffres et des tirets.",
+    "invalidPhone": "Saisissez un numéro de téléphone valide.",
+    "invalidDepartment": "Choisissez l'un des départements proposés.",
+    "consentRequired": "Veuillez confirmer votre accord avant l'envoi.",
+    "spamDetected": "Cet envoi n'a pas pu être traité."
   },
   "status": {
     "success": "Succès",
@@ -128,11 +224,13 @@
     "opensInNewTab": "S'ouvre dans un nouvel onglet",
     "externalLink": "Lien externe",
     "requiredField": "Champ obligatoire",
-    "errorSummary": "Votre envoi contient des erreurs",
+    "errorSummary": "Votre envoi comporte des erreurs",
     "languageSwitcher": "Changer de langue",
     "departmentNav": "Navigation par département",
     "mainLandmark": "Contenu principal",
-    "footerLandmark": "Pied de page"
+    "footerLandmark": "Pied de page",
+    "tableScroll": "Tableau défilable",
+    "loadingContent": "Chargement du contenu"
   },
   "errors": {
     "notFoundTitle": "Nous n'avons pas trouvé cette page",
