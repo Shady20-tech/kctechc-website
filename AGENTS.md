@@ -12,10 +12,13 @@ KC Technology Corporation corporate website plus three department experiences un
 
 | Department | Public localized path | Accent |
 | --- | --- | --- |
-| Corporate gateway (root, language-neutral) | `/` | Corporate Navy / Premium Gold |
-| Digital Marketing (store) | `/{locale}/digital-marketing` | `#2E6FB8` |
-| Electrical Services | `/{locale}/electrical-services` | `#D98E04` |
-| Real Estate | `/{locale}/real-estate` | `#1E7A5C` |
+| Corporate gateway (root, language-neutral) | `/` | Brand ink / teal |
+| Digital Marketing (store) | `/{locale}/digital-marketing` | `#1E6FD9` |
+| Electrical Services | `/{locale}/electrical-services` | `#B45309` |
+| Real Estate | `/{locale}/real-estate` | `#127A5B` |
+
+Accent hex values are the text-safe variants used on light surfaces; each also has a `-bright`
+counterpart for dark ink bands (see section 5).
 
 Supported locales: `en`, `fr` (URL segments stay `/en` and `/fr`; SEO language-region annotations
 use `en-CM` / `fr-CM`).
@@ -121,14 +124,37 @@ legal claims, staff, testimonials, or case-study metrics.
 
 ## 5. Design system
 
-Palette: Corporate Navy `#0B2545`, Premium Gold `#B8892E`, Digital Marketing `#2E6FB8`,
-Electrical `#D98E04`, Real Estate `#1E7A5C`, body text `#3C4858` on white.
+**Brand identity comes from the artwork, not from this file.** The supplied KC logo is black ink
+with a teal accent. An earlier revision of this document specified an invented navy/gold palette,
+and the site was built against that instead of the real mark — which is why the UI read as
+off-brand. If a palette here ever conflicts with the logo, the logo wins.
 
-Type: premium heading font (Sora or Playfair Display) + highly legible body font (Inter), loaded
-via `next/font`. Subtle motion only for hierarchy; respect `prefers-reduced-motion`.
+Palette, mirrored from the tokens in `src/app/globals.css` (the CSS is the source of truth;
+`BRAND_COLORS` in `src/lib/config/site.ts` exists for non-CSS consumers such as the web manifest):
+
+- Ink scale `ink-50`…`ink-950` for dark bands and text; `ink-950 #06090B` is the hero/base band.
+- Brand teal `teal-700 #006E6A` (text-safe) and `teal-300 #4ED9D4` (on dark ink only).
+- Department accents are contextual, set once per subtree via `data-department` and consumed as
+  `--dept-accent`. Each declares two values: a text-safe one for light surfaces and a `-bright`
+  counterpart for ink bands, re-bound automatically under `.on-ink`.
+
+Rules that follow from that split:
+
+- Never hard-code a palette hex in a component. Use tokens, or the accent variables.
+- A filled accent control on a dark band needs `variant="accentOnInk"`, not `"accent"` — on ink
+  bands the accent resolves to the bright value, where white text is 1.72:1.
+- Any subtree that should take a department accent must set `data-department`; forgetting it
+  silently falls back to corporate teal.
+- Check new colour pairs against `.logo-work/contrast.py` before shipping. Every text and UI pair
+  is held to WCAG AA (4.5:1 text, 3:1 boundaries).
+
+Type: Sora (headings) + Inter (body) + JetBrains Mono for technical annotations — eyebrows, indices
+and spec labels. The mono face is what carries the engineering character; it is not decoration.
+Loaded via `next/font`, self-hosted at build time.
 
 Feel: premium, corporate, engineering/investment-grade, trustworthy, spacious, restrained — not
-template-like. Mobile-first for mid-range Android on mobile data.
+template-like. Mobile-first for mid-range Android on mobile data. Subtle motion only for hierarchy;
+all motion is neutralised under `prefers-reduced-motion`.
 
 ## 6. Performance budget
 
@@ -257,6 +283,14 @@ acceptance criteria pass. Then stop — do not start the next phase.
   gives a defined SSR snapshot. See `src/lib/hooks/use-client-environment.ts`.
 - Next 16 emits `hrefLang` (camelCase) in prerendered HTML; HTML attribute parsing is
   case-insensitive, so `hreflang` alternates are correct.
+- **A page title that already contains the brand name must be `title: { absolute: ... }`.** The root
+  layout applies a `%s | <legal name>` template, so a literal string title renders the brand twice
+  ("KC Technology Corporation | KC Technology Corporation"). `buildMetadata` handles this
+  automatically for titles containing `SITE.legalName`; static `metadata` exports must set
+  `absolute` by hand.
+- **Verify rendered HTML, not just source.** Several defects in this phase — duplicated titles,
+  a stale `theme-color`, three department cards sharing one accent — were invisible in the code and
+  only showed up in `curl` output. Prerendered HTML is the ground truth.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
