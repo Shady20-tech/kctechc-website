@@ -15,6 +15,9 @@ const departmentSlugs = DEPARTMENTS.map((department) => department.slug) as [
   ...string[],
 ];
 
+/** Service slugs accepted on an inquiry, validated as a shape rather than a list. */
+const serviceSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 /** Optional phone: empty string from a form means "not provided". */
 const optionalPhone = z
   .string()
@@ -38,12 +41,30 @@ export const inquirySchema = z.object({
       (value) => value === "" || departmentSlugs.includes(value),
       "invalidDepartment",
     ),
+  /**
+   * Optional service slug the inquiry relates to. Validated as a slug shape
+   * rather than against a fixed list, so adding a service does not require a code
+   * change here. The value is resolved to a real service id server-side, and an
+   * unresolvable slug is stored as no service rather than rejected — a stale link
+   * should not stop a customer contacting the business.
+   */
+  service: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) => value === "" || serviceSlugPattern.test(value),
+      "invalidService",
+    )
+    .optional(),
   subject: z.string().trim().min(1, "required").max(200, "tooLong"),
   message: z.string().trim().min(10, "tooShort").max(5000, "tooLong"),
   consent: z.literal(true, { error: "consentRequired" }),
   locale: localeSchema,
   /** Honeypot: must stay empty. Bots fill it in. */
   companyWebsite: z.string().max(0, "spamDetected").optional(),
+  /** Provider-issued bot-verification token, when a provider is configured. */
+  verificationToken: z.string().max(4096).optional(),
 });
 
 export type InquiryInput = z.infer<typeof inquirySchema>;
@@ -54,6 +75,7 @@ export type InquiryFieldErrors = Partial<
     | "email"
     | "phone"
     | "department"
+    | "service"
     | "subject"
     | "message"
     | "consent",
@@ -66,6 +88,7 @@ export type InquiryState =
   | { status: "success"; reference: string }
   | { status: "invalid"; errors: InquiryFieldErrors }
   | { status: "rate_limited" }
+  | { status: "verification_failed" }
   | { status: "unconfigured" }
   | { status: "error" };
 

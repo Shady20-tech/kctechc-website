@@ -8,6 +8,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { DEPARTMENTS, isDepartmentSlug, type DepartmentSlug } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
+import { loadServices } from "@/lib/content/loaders";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -52,10 +53,10 @@ export default async function ContactPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ department?: string }>;
+  searchParams: Promise<{ department?: string; service?: string }>;
 }) {
   const { locale } = await params;
-  const { department } = await searchParams;
+  const { department, service } = await searchParams;
   if (!isLocale(locale)) notFound();
 
   const resolved: Locale = locale;
@@ -64,6 +65,21 @@ export default async function ContactPage({
 
   const defaultDepartment: DepartmentSlug | undefined =
     department && isDepartmentSlug(department) ? department : undefined;
+
+  // Service options come from the published catalogue of the selected department.
+  // Only a service that is actually published can be pre-selected, so a stale
+  // `?service=` link cannot put a value in the form that the server would reject.
+  const serviceOptions = defaultDepartment
+    ? (await loadServices(defaultDepartment, resolved)).map((entry) => ({
+        slug: entry.slug,
+        label: entry.title,
+      }))
+    : [];
+
+  const defaultService =
+    service && serviceOptions.some((option) => option.slug === service)
+      ? service
+      : undefined;
 
   const departmentLabels = Object.fromEntries(
     DEPARTMENTS.map((entry) => [entry.slug, t(entry.labelKey)]),
@@ -81,6 +97,7 @@ export default async function ContactPage({
     tooLong: t("validation.tooLong"),
     invalidPhone: t("validation.invalidPhone"),
     invalidDepartment: t("validation.invalidDepartment"),
+    invalidService: t("validation.invalidService"),
     consentRequired: t("validation.consentRequired"),
     spamDetected: t("validation.spamDetected"),
   };
@@ -114,6 +131,8 @@ export default async function ContactPage({
             <ContactForm
               locale={resolved}
               defaultDepartment={defaultDepartment}
+              defaultService={defaultService}
+              serviceOptions={serviceOptions}
               departmentLabels={departmentLabels}
               validationMessages={validationMessages}
               labels={{
@@ -129,6 +148,9 @@ export default async function ContactPage({
                 departmentLabel: t("contact.departmentLabel"),
                 departmentHint: t("contact.departmentHint"),
                 departmentGeneral: t("contact.departmentGeneral"),
+                serviceLabel: t("contact.serviceLabel"),
+                serviceHint: t("contact.serviceHint"),
+                serviceGeneral: t("contact.serviceGeneral"),
                 subjectLabel: t("contact.subjectLabel"),
                 subjectPlaceholder: t("contact.subjectPlaceholder"),
                 messageLabel: t("contact.messageLabel"),

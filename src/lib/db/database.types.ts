@@ -18,6 +18,44 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"authors": {
+                  Row: {
+                    "bio": string | null,"created_at": string,"display_name": string,"id": string,"is_active": boolean,"role_title": string | null,"slug": string,"updated_at": string
+                  }
+                  Insert: {
+                    "bio"?: string | null,"created_at"?: string,"display_name": string,"id"?: string,"is_active"?: boolean,"role_title"?: string | null,"slug": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "bio"?: string | null,"created_at"?: string,"display_name"?: string,"id"?: string,"is_active"?: boolean,"role_title"?: string | null,"slug"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"case_studies": {
+                  Row: {
+                    "approach": string | null,"challenge": string | null,"client_approved": boolean,"client_name": string | null,"client_named_with_consent": boolean,"created_at": string,"department_id": string,"id": string,"outcome": string | null,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"results": NonNullable<Json>,"service_id": string | null,"slug": string,"sort_order": number,"summary": string,"tags": (string)[],"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "approach"?: string | null,"challenge"?: string | null,"client_approved"?: boolean,"client_name"?: string | null,"client_named_with_consent"?: boolean,"created_at"?: string,"department_id": string,"id"?: string,"outcome"?: string | null,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"results"?: NonNullable<Json>,"service_id"?: string | null,"slug": string,"sort_order"?: number,"summary": string,"tags"?: (string)[],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "approach"?: string | null,"challenge"?: string | null,"client_approved"?: boolean,"client_name"?: string | null,"client_named_with_consent"?: boolean,"created_at"?: string,"department_id"?: string,"id"?: string,"outcome"?: string | null,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"results"?: NonNullable<Json>,"service_id"?: string | null,"slug"?: string,"sort_order"?: number,"summary"?: string,"tags"?: (string)[],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "case_studies_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "case_studies_service_id_fkey"
+      columns: ["service_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"content_translations": {
                   Row: {
                     "created_at": string,"entity_id": string,"entity_type": Database["public"]['Enums']["translatable_entity_type"],"field_name": string,"id": string,"locale": Database["public"]['Enums']["locale_code"],"source_locale": Database["public"]['Enums']["locale_code"],"source_updated_at": string | null,"state": Database["public"]['Enums']["translation_state"],"translated_at": string | null,"translated_by": string | null,"updated_at": string,"value": string
@@ -63,6 +101,107 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"entity_seo": {
+                  Row: {
+                    "canonical_override": string | null,"created_at": string,"description": string | null,"entity_id": string,"entity_type": Database["public"]['Enums']["translatable_entity_type"],"id": string,"locale": Database["public"]['Enums']["locale_code"],"noindex": boolean,"og_image_path": string | null,"structured_data": Json | null,"title": string | null,"updated_at": string,"updated_by": string | null
+                  }
+                  Insert: {
+                    "canonical_override"?: string | null,"created_at"?: string,"description"?: string | null,"entity_id": string,"entity_type": Database["public"]['Enums']["translatable_entity_type"],"id"?: string,"locale": Database["public"]['Enums']["locale_code"],"noindex"?: boolean,"og_image_path"?: string | null,"structured_data"?: Json | null,"title"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "canonical_override"?: string | null,"created_at"?: string,"description"?: string | null,"entity_id"?: string,"entity_type"?: Database["public"]['Enums']["translatable_entity_type"],"id"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"noindex"?: boolean,"og_image_path"?: string | null,"structured_data"?: Json | null,"title"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"inquiries": {
+                  Row: {
+                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"message": string,"phone": string | null,"reference": string,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
+                  }
+                  Insert: {
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message": string,"phone"?: string | null,"reference": string,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
+                  }
+                  Update: {
+                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email"?: string,"full_name"?: string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message"?: string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject"?: string,"updated_at"?: string,"user_agent"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inquiries_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "inquiries_service_id_fkey"
+      columns: ["service_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"inquiry_events": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"event_type": string,"from_status": Database["public"]['Enums']["inquiry_status"] | null,"id": string,"inquiry_id": string,"metadata": NonNullable<Json>,"note": string | null,"to_status": Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"event_type": string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id": string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"event_type"?: string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id"?: string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inquiry_events_inquiry_id_fkey"
+      columns: ["inquiry_id"]
+isOneToOne: false
+      referencedRelation: "inquiries"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"insight_categories": {
+                  Row: {
+                    "created_at": string,"description": string | null,"id": string,"is_active": boolean,"name": string,"slug": string,"sort_order": number,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"slug": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"slug"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"insights": {
+                  Row: {
+                    "author_id": string | null,"body": string,"category_id": string | null,"cover_image_path": string | null,"created_at": string,"department_id": string | null,"id": string,"is_featured": boolean,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"related_service_slugs": (string)[],"slug": string,"summary": string,"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "author_id"?: string | null,"body": string,"category_id"?: string | null,"cover_image_path"?: string | null,"created_at"?: string,"department_id"?: string | null,"id"?: string,"is_featured"?: boolean,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"related_service_slugs"?: (string)[],"slug": string,"summary": string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string | null,"body"?: string,"category_id"?: string | null,"cover_image_path"?: string | null,"created_at"?: string,"department_id"?: string | null,"id"?: string,"is_featured"?: boolean,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"related_service_slugs"?: (string)[],"slug"?: string,"summary"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "insights_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "authors"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "insights_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "insight_categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "insights_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "avatar_path": string | null,"created_at": string,"email": string | null,"full_name": string | null,"id": string,"is_active": boolean,"locale": Database["public"]['Enums']["locale_code"],"phone": string | null,"role": Database["public"]['Enums']["user_role"],"updated_at": string
@@ -89,38 +228,6 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"inquiries": {
-                  Row: {
-                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"message": string,"phone": string | null,"reference": string,"responded_at": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
-                  }
-                  Insert: {
-                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message": string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
-                  }
-                  Update: {
-                    "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"created_at"?: string,"department_id"?: string | null,"email"?: string,"full_name"?: string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"message"?: string,"phone"?: string | null,"reference"?: string,"responded_at"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject"?: string,"updated_at"?: string,"user_agent"?: string | null
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "inquiries_department_id_fkey"
-      columns: ["department_id"]
-isOneToOne: false
-      referencedRelation: "departments"
-      referencedColumns: ["id"]
-    }
-                  ]
-                },"inquiry_events": {
-                  Row: {
-                    "actor_id": string | null,"created_at": string,"event_type": string,"from_status": Database["public"]['Enums']["inquiry_status"] | null,"id": string,"inquiry_id": string,"metadata": NonNullable<Json>,"note": string | null,"to_status": Database["public"]['Enums']["inquiry_status"] | null
-                  }
-                  Insert: {
-                    "actor_id"?: string | null,"created_at"?: string,"event_type": string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id": string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
-                  }
-                  Update: {
-                    "actor_id"?: string | null,"created_at"?: string,"event_type"?: string,"from_status"?: Database["public"]['Enums']["inquiry_status"] | null,"id"?: string,"inquiry_id"?: string,"metadata"?: NonNullable<Json>,"note"?: string | null,"to_status"?: Database["public"]['Enums']["inquiry_status"] | null
-                  }
-                  Relationships: [
-
-                  ]
                 },"regions": {
                   Row: {
                     "code": string,"created_at": string,"id": string,"name": string,"name_fr": string | null,"slug": string,"sort_order": number,"updated_at": string
@@ -146,6 +253,25 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"services": {
+                  Row: {
+                    "created_at": string,"delivery_notes": string | null,"department_id": string,"description": string,"faqs": NonNullable<Json>,"features": NonNullable<Json>,"id": string,"is_active": boolean,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"slug": string,"sort_order": number,"summary": string,"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"delivery_notes"?: string | null,"department_id": string,"description": string,"faqs"?: NonNullable<Json>,"features"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"slug": string,"sort_order"?: number,"summary": string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"delivery_notes"?: string | null,"department_id"?: string,"description"?: string,"faqs"?: NonNullable<Json>,"features"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"slug"?: string,"sort_order"?: number,"summary"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "services_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"site_settings": {
                   Row: {
@@ -223,6 +349,9 @@ isOneToOne: false
 "current_user_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
                            },
+"generate_inquiry_reference":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "import_administrative_divisions":
 { Args: { "p_divisions": Json,"p_region_code": string }; Returns: {
               "inserted": number,"skipped": number
@@ -236,7 +365,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "locale_code": "en"|"fr","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
+            "inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","locale_code": "en"|"fr","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -352,7 +481,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "locale_code": ["en", "fr"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
+            "inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"locale_code": ["en", "fr"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
           }
         }
 } as const

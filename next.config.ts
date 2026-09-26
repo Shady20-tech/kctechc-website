@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./src/lib/config/redirects";
 import { buildContentSecurityPolicy } from "./src/lib/security/headers";
 
 /**
@@ -61,6 +62,16 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+  async redirects() {
+    // Legacy paths map to their canonical equivalent with a permanent redirect,
+    // so an existing inbound link or bookmark keeps working and the canonical URL
+    // is the only one search engines index.
+    return LEGACY_REDIRECTS.map(({ from, to }) => ({
+      source: from,
+      destination: to,
+      permanent: true,
+    }));
   },
 };
 

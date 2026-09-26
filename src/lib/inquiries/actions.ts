@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { serverEnv } from "@/lib/config/server-env";
+import { verifySubmission } from "@/lib/security/bot-verification";
 import { recordAudit } from "@/lib/security/audit";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -67,16 +68,32 @@ export async function submitInquiry(
     email: formData.get("email"),
     phone: formData.get("phone") ?? "",
     department: formData.get("department") ?? "",
+    service: formData.get("service") ?? "",
     subject: formData.get("subject"),
     message: formData.get("message"),
     // An unchecked checkbox is absent from FormData entirely.
     consent: formData.get("consent") === "on",
     locale: formData.get("locale") ?? "en",
     companyWebsite: formData.get("companyWebsite") ?? "",
+    verificationToken: formData.get("verificationToken") ?? "",
   });
 
   if (!parsed.success) {
     return { status: "invalid", errors: toFieldErrors(parsed.error.issues) };
+  }
+
+  const forwarded = requestHeaders.get("x-forwarded-for");
+  const clientIp = forwarded?.split(",")[0]?.trim() ?? null;
+
+  // Verification runs before the rate limit so a failing provider cannot be used
+  // to exhaust another visitor's allowance, and before the write so an unverified
+  // submission never reaches the database.
+  const verification = await verifySubmission(
+    parsed.data.verificationToken ? parsed.data.verificationToken : null,
+    clientIp,
+  );
+  if (verification.outcome === "failed") {
+    return { status: "verification_failed" };
   }
 
   const rate = checkRateLimit(
@@ -89,6 +106,7 @@ export async function submitInquiry(
   if (!admin) return { status: "unconfigured" };
 
   const departmentSlug = parsed.data.department;
+  const serviceSlug = parsed.data.service ?? "";
   let departmentId: string | null = null;
 
   if (departmentSlug) {
@@ -100,14 +118,30 @@ export async function submitInquiry(
     departmentId = department?.id ?? null;
   }
 
+  // Resolve the service within the chosen department. An unresolvable slug is
+  // stored as no service rather than failing the submission, so a stale or
+  // hand-edited link still lets the customer reach the business.
+  let serviceId: string | null = null;
+  if (departmentId && serviceSlug) {
+    const { data: service } = await admin
+      .from("services")
+      .select("id")
+      .eq("department_id", departmentId)
+      .eq("slug", serviceSlug)
+      .maybeSingle();
+    serviceId = service?.id ?? null;
+  }
+
   const reference = generateReference();
-  const forwarded = requestHeaders.get("x-forwarded-for");
 
   const { error } = await admin.from("inquiries").insert({
     reference,
     status: "new",
-    source: "contact_form",
+    // A tagged submission is recorded as a service inquiry so the inbox can
+    // separate it from general contact traffic.
+    source: serviceId ? "service_inquiry" : "contact_form",
     department_id: departmentId,
+    service_id: serviceId,
     locale: parsed.data.locale,
     full_name: parsed.data.fullName,
     email: parsed.data.email,
@@ -116,7 +150,7 @@ export async function submitInquiry(
     message: parsed.data.message,
     consent_given: true,
     consent_at: new Date().toISOString(),
-    ip_hash: hashIp(forwarded?.split(",")[0]?.trim() ?? "unknown"),
+    ip_hash: hashIp(clientIp ?? "unknown"),
     user_agent: requestHeaders.get("user-agent")?.slice(0, 500) ?? null,
   });
 
@@ -130,8 +164,9 @@ export async function submitInquiry(
     entityType: "inquiry",
     entityId: reference,
     metadata: {
-      source: "contact_form",
+      source: serviceId ? "service_inquiry" : "contact_form",
       department: departmentSlug || null,
+      service: serviceId ? serviceSlug : null,
       locale: parsed.data.locale,
     },
   });
