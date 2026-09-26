@@ -157,7 +157,7 @@ export default async function ContactPage({
             >
               <h2
                 id="contact-details-heading"
-                className="text-base font-semibold text-navy-900"
+                className="text-base font-semibold text-ink-900"
               >
                 {t("contact.detailsHeading")}
               </h2>
@@ -173,7 +173,7 @@ export default async function ContactPage({
                       <a
                         key={phone}
                         href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                        className="text-navy-700 underline underline-offset-4"
+                        className="text-ink-700 underline underline-offset-4"
                       >
                         {phone}
                       </a>
@@ -189,7 +189,7 @@ export default async function ContactPage({
                   <dd>
                     <a
                       href={`mailto:${site.contact.email}`}
-                      className="text-navy-700 underline underline-offset-4"
+                      className="text-ink-700 underline underline-offset-4"
                     >
                       {site.contact.email}
                     </a>
@@ -222,7 +222,7 @@ export default async function ContactPage({
             >
               <h2
                 id="contact-hours-heading"
-                className="text-base font-semibold text-navy-900"
+                className="text-base font-semibold text-ink-900"
               >
                 {t("contact.officeHoursHeading")}
               </h2>
@@ -237,7 +237,7 @@ export default async function ContactPage({
             >
               <h2
                 id="contact-office-heading"
-                className="text-base font-semibold text-navy-900"
+                className="text-base font-semibold text-ink-900"
               >
                 {t("contact.mapHeading")}
               </h2>

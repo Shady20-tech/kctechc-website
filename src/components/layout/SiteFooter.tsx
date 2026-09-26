@@ -31,17 +31,17 @@ export function SiteFooter({
   return (
     <footer
       aria-label={t("a11y.footerLandmark")}
-      className="mt-16 border-t border-border bg-navy-950 text-white"
+      className="on-ink mt-16 border-t border-white/10 bg-ink-950 text-white"
     >
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-gold-500">
+          <h2 className="mono-label text-teal-300">
             {t("footer.company")}
           </h2>
           <p className="mt-3 text-sm font-semibold text-white">
             {site.legalName}
           </p>
-          <p className="mt-1 text-xs uppercase tracking-wide text-white/60">
+          <p className="mono-label mt-1 text-white/50">
             {t("footer.mottoLabel")}
           </p>
           <p className="mt-1 text-sm text-white/80">{site.motto}</p>
@@ -50,7 +50,7 @@ export function SiteFooter({
         <nav aria-labelledby="footer-departments">
           <h2
             id="footer-departments"
-            className="font-display text-sm font-semibold uppercase tracking-wide text-gold-500"
+            className="mono-label text-teal-300"
           >
             {t("footer.departmentsHeading")}
           </h2>
@@ -72,7 +72,7 @@ export function SiteFooter({
             ))}
           </ul>
 
-          <h2 className="mt-6 font-display text-sm font-semibold uppercase tracking-wide text-gold-500">
+          <h2 className="mono-label mt-8 text-teal-300">
             {t("footer.company")}
           </h2>
           <ul className="mt-3 space-y-2">
@@ -96,7 +96,7 @@ export function SiteFooter({
         </nav>
 
         <div>
-          <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-gold-500">
+          <h2 className="mono-label text-teal-300">
             {t("footer.contactHeading")}
           </h2>
           <ul className="mt-3 space-y-3 text-sm text-white/80">
@@ -127,7 +127,7 @@ export function SiteFooter({
         </div>
 
         <div>
-          <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-gold-500">
+          <h2 className="mono-label text-teal-300">
             {t("footer.officeHeading")}
           </h2>
           <address className="mt-3 flex gap-2 text-sm not-italic text-white/80">

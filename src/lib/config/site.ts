@@ -19,13 +19,21 @@ export const SITE = {
   },
 } as const;
 
+/**
+ * Brand colours, sampled from the supplied KC wordmark (black ink with a teal
+ * accent). These mirror the CSS tokens in `globals.css`; the CSS is what
+ * components actually consume, and this object exists so the values have a
+ * single documented source for non-CSS consumers such as the web manifest.
+ */
 export const BRAND_COLORS = {
-  navy: "#0B2545",
-  gold: "#B8892E",
-  digitalMarketing: "#2E6FB8",
-  electricalServices: "#D98E04",
-  realEstate: "#1E7A5C",
-  bodyText: "#3C4858",
+  ink: "#0D1216",
+  teal: "#006E6A",
+  tealBright: "#4ED9D4",
+  digitalMarketing: "#1E6FD9",
+  electricalServices: "#B45309",
+  realEstate: "#127A5B",
+  bodyText: "#414D57",
+  mutedText: "#66717B",
 } as const;
 
 export type DepartmentSlug =

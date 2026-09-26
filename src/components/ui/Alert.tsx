@@ -7,13 +7,13 @@ const TONE_STYLES: Record<
   AlertTone,
   { wrapper: string; icon: typeof Info }
 > = {
-  info: { wrapper: "border-navy-200 bg-navy-50 text-navy-900", icon: Info },
+  info: { wrapper: "border-ink-200 bg-ink-50 text-ink-900", icon: Info },
   success: {
     wrapper: "border-green-300 bg-green-50 text-green-900",
     icon: CheckCircle2,
   },
   warning: {
-    wrapper: "border-gold-300 bg-gold-100 text-gold-700",
+    wrapper: "border-teal-300 bg-teal-100 text-teal-700",
     icon: TriangleAlert,
   },
   error: { wrapper: "border-red-300 bg-red-50 text-red-900", icon: AlertCircle },

@@ -31,7 +31,7 @@ export function CtaBand({
         accent ? "accent-wash" : "bg-surface-alt"
       }`}
     >
-      <h2 id="cta-heading" className="text-xl font-semibold text-navy-900">
+      <h2 id="cta-heading" className="text-xl font-semibold text-ink-900">
         {heading}
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-body">{body}</p>
@@ -72,7 +72,7 @@ export function ContactPrompt({
     >
       <h2
         id="contact-prompt-heading"
-        className="text-base font-semibold text-navy-900"
+        className="text-base font-semibold text-ink-900"
       >
         {heading}
       </h2>

@@ -98,7 +98,7 @@ export default async function AboutPage({
           <div className="lg:col-span-2">
             <h2
               id="about-who-heading"
-              className="text-xl font-semibold text-navy-900"
+              className="text-xl font-semibold text-ink-900"
             >
               {t("about.whoHeading")}
             </h2>
@@ -106,14 +106,14 @@ export default async function AboutPage({
               {t("about.whoBody")}
             </p>
 
-            <h2 className="mt-8 text-xl font-semibold text-navy-900">
+            <h2 className="mt-8 text-xl font-semibold text-ink-900">
               {t("about.whereHeading")}
             </h2>
             <p className="mt-3 max-w-2xl text-base text-body">
               {t("about.whereBody")}
             </p>
 
-            <h2 className="mt-8 text-xl font-semibold text-navy-900">
+            <h2 className="mt-8 text-xl font-semibold text-ink-900">
               {t("about.howHeading")}
             </h2>
             <p className="mt-3 max-w-2xl text-base text-body">
@@ -127,19 +127,19 @@ export default async function AboutPage({
           >
             <h2
               id="about-facts-heading"
-              className="text-base font-semibold text-navy-900"
+              className="text-base font-semibold text-ink-900"
             >
               {t("about.factsHeading")}
             </h2>
             <dl className="mt-4 space-y-4 text-sm">
               <div>
-                <dt className="font-medium text-navy-900">
+                <dt className="font-medium text-ink-900">
                   {t("footer.company")}
                 </dt>
                 <dd className="text-body">{site.legalName}</dd>
               </div>
               <div>
-                <dt className="font-medium text-navy-900">
+                <dt className="font-medium text-ink-900">
                   {t("footer.officeHeading")}
                 </dt>
                 <dd className="text-body">
@@ -151,7 +151,7 @@ export default async function AboutPage({
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-navy-900">
+                <dt className="font-medium text-ink-900">
                   {t("footer.phoneLabel")}
                 </dt>
                 <dd className="flex flex-col text-body">
@@ -159,7 +159,7 @@ export default async function AboutPage({
                     <a
                       key={phone}
                       href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                      className="text-navy-700 underline underline-offset-4"
+                      className="text-ink-700 underline underline-offset-4"
                     >
                       {phone}
                     </a>
@@ -167,20 +167,20 @@ export default async function AboutPage({
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-navy-900">
+                <dt className="font-medium text-ink-900">
                   {t("footer.emailLabel")}
                 </dt>
                 <dd>
                   <a
                     href={`mailto:${site.contact.email}`}
-                    className="text-navy-700 underline underline-offset-4"
+                    className="text-ink-700 underline underline-offset-4"
                   >
                     {site.contact.email}
                   </a>
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-navy-900">
+                <dt className="font-medium text-ink-900">
                   {t("footer.mottoLabel")}
                 </dt>
                 <dd className="text-body">{site.motto}</dd>
@@ -193,7 +193,7 @@ export default async function AboutPage({
       <SectionBand tone="alt" labelledBy="about-values-heading">
         <h2
           id="about-values-heading"
-          className="text-xl font-semibold text-navy-900"
+          className="text-xl font-semibold text-ink-900"
         >
           {t("about.valuesHeading")}
         </h2>
@@ -203,7 +203,7 @@ export default async function AboutPage({
               key={value.title}
               className="rounded-card border border-border bg-surface p-6 shadow-card"
             >
-              <h3 className="text-base font-semibold text-navy-900">
+              <h3 className="text-base font-semibold text-ink-900">
                 {value.title}
               </h3>
               <p className="mt-2 text-sm text-body">{value.body}</p>
@@ -215,7 +215,7 @@ export default async function AboutPage({
       <SectionBand labelledBy="about-departments-heading">
         <h2
           id="about-departments-heading"
-          className="text-xl font-semibold text-navy-900"
+          className="text-xl font-semibold text-ink-900"
         >
           {t("about.departmentsHeading")}
         </h2>
@@ -229,7 +229,7 @@ export default async function AboutPage({
                 borderTopWidth: "4px",
               }}
             >
-              <h3 className="text-base font-semibold text-navy-900">
+              <h3 className="text-base font-semibold text-ink-900">
                 {t(department.labelKey)}
               </h3>
               <p className="mt-2 text-sm text-body">
@@ -237,7 +237,7 @@ export default async function AboutPage({
               </p>
               <Link
                 href={`/${resolved}/${department.slug}`}
-                className="mt-4 inline-block text-sm font-semibold text-navy-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
+                className="mt-4 inline-block text-sm font-semibold text-ink-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
               >
                 {t("actions.visitDepartment")}
               </Link>

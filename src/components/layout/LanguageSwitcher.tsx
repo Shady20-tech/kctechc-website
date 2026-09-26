@@ -21,16 +21,28 @@ export function LanguageSwitcher({
   currentLocale,
   label,
   className,
+  tone = "dark",
 }: {
   currentLocale: Locale;
   label: string;
   className?: string;
+  /** `light` is for use on the dark ink header; `dark` for light surfaces. */
+  tone?: "dark" | "light";
 }) {
   const pathname = usePathname();
 
+  const activeClass =
+    tone === "light"
+      ? "rounded-card px-2.5 py-1.5 text-sm font-semibold text-white underline decoration-teal-300 decoration-2 underline-offset-4"
+      : "rounded-card px-2.5 py-1.5 text-sm font-semibold text-ink-900 underline decoration-2 underline-offset-4";
+  const idleClass =
+    tone === "light"
+      ? "rounded-card px-2.5 py-1.5 text-sm text-white/60 transition-soft hover:bg-white/5 hover:text-white"
+      : "rounded-card px-2.5 py-1.5 text-sm text-muted transition-soft hover:text-ink-900";
+
   return (
     <nav aria-label={label} className={className}>
-      <ul className="flex items-center gap-1">
+      <ul className="flex items-center gap-0.5">
         {LOCALES.map((locale) => {
           const isCurrent = locale === currentLocale;
           return (
@@ -39,11 +51,7 @@ export function LanguageSwitcher({
                 href={buildLocaleSwitchHref(pathname, "", locale)}
                 hrefLang={locale}
                 aria-current={isCurrent ? "true" : undefined}
-                className={
-                  isCurrent
-                    ? "rounded px-2 py-1 text-sm font-semibold text-navy-900 underline underline-offset-4"
-                    : "rounded px-2 py-1 text-sm text-muted hover:text-navy-900"
-                }
+                className={isCurrent ? activeClass : idleClass}
               >
                 {LOCALE_LABELS[locale]}
               </Link>

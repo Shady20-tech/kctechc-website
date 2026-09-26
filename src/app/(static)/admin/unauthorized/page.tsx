@@ -16,7 +16,7 @@ export default function UnauthorizedPage() {
         </Notice>
         <Link
           href="/admin/login"
-          className="text-sm text-navy-700 underline underline-offset-4"
+          className="text-sm text-ink-700 underline underline-offset-4"
         >
           {t("actions.signIn")}
         </Link>

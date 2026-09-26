@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
-import type { DepartmentSlug } from "@/lib/config/site";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
-import { DepartmentSwitcher } from "./DepartmentSwitcher";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
 import { MobileMenu, type MobileNavItem } from "./MobileMenu";
@@ -11,65 +9,62 @@ import { MobileMenu, type MobileNavItem } from "./MobileMenu";
 /**
  * Global site header.
  *
- * Server-rendered: it receives the resolved locale, translated labels and site
- * content, so the only client JavaScript is the interactive switchers. Nothing
- * here depends on a data fetch that would make every page dynamic.
+ * Server-rendered: it receives the resolved locale, translated labels and nav
+ * items, so the only client JavaScript is the language switcher and the mobile
+ * drawer. Nothing here depends on a data fetch that would make every page
+ * dynamic.
  *
- * The primary nav is a row of plain links and the department switcher is an
- * additional affordance for jumping sideways between departments, not a
- * replacement for it — so department routes stay crawlable as real anchors.
+ * The department switcher was removed in favour of plain department links in the
+ * primary nav. A dropdown hid the three departments behind a click and competed
+ * with the nav for the same job, while the anchors keep every department
+ * crawlable and reachable in one click.
+ *
+ * The account action is a static link to the sign-in route rather than a
+ * session-aware control. Reading the session here would call `cookies()` in the
+ * shared layout and force every public page to render dynamically, costing the
+ * prerendered HTML that the SEO requirements depend on. The sign-in route
+ * already redirects an authenticated visitor onward, so the link stays correct.
  */
 export function SiteHeader({
   locale,
   t,
   navItems,
-  departmentLabels,
-  currentDepartment,
 }: {
   locale: Locale;
   t: Translator["t"];
   navItems: readonly MobileNavItem[];
-  departmentLabels: Record<DepartmentSlug, string>;
-  currentDepartment?: DepartmentSlug;
 }) {
-  const quoteHref = `/${locale}/contact`;
+  const signInHref = "/admin/login";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
-      <div className="container-page flex items-center justify-between gap-4 py-3">
-        <Logo locale={locale} />
+    <header className="on-ink sticky top-0 z-40 border-b border-white/10 bg-ink-950/95 backdrop-blur">
+      <div className="container-page flex h-16 items-center justify-between gap-6 lg:h-18">
+        <Logo locale={locale} tone="light" />
 
-        <div className="hidden items-center gap-5 lg:flex">
-          <nav aria-label={t("nav.primary")}>
-            <ul className="flex items-center gap-5">
-              {navItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm font-medium text-navy-900 transition-soft hover:text-dept-accent"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <nav aria-label={t("nav.primary")} className="hidden lg:block">
+          <ul className="flex items-center gap-1">
+            {navItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="rounded-card px-3 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <DepartmentSwitcher
-            locale={locale}
-            labels={departmentLabels}
-            current={currentDepartment}
-            label={t("nav.departmentSwitcher")}
-            currentLabel={t("nav.currentDepartment")}
-          />
-
+        <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher
             currentLocale={locale}
             label={t("a11y.languageSwitcher")}
+            tone="light"
           />
-
-          <ButtonLink href={quoteHref} variant="primary" size="sm">
-            {t("actions.getQuote")}
+          <span aria-hidden="true" className="h-6 w-px bg-white/15" />
+          <ButtonLink href={signInHref} variant="accentOnInk" size="sm">
+            {t("actions.signIn")}
           </ButtonLink>
         </div>
 
@@ -77,19 +72,18 @@ export function SiteHeader({
           <LanguageSwitcher
             currentLocale={locale}
             label={t("a11y.languageSwitcher")}
+            tone="light"
           />
           <MobileMenu
             locale={locale}
             items={navItems}
-            departmentLabels={departmentLabels}
-            quoteHref={quoteHref}
+            signInHref={signInHref}
             labels={{
               open: t("actions.openMenu"),
               close: t("actions.closeMenu"),
               title: t("nav.mobileMenu"),
-              departments: t("nav.departments"),
               language: t("common.language"),
-              getQuote: t("actions.getQuote"),
+              signIn: t("actions.signIn"),
             }}
           />
         </div>

@@ -91,7 +91,7 @@ export function ContactForm({
     >
       <h2
         id="inquiry-form-heading"
-        className="text-xl font-semibold text-navy-900"
+        className="text-xl font-semibold text-ink-900"
       >
         {labels.heading}
       </h2>

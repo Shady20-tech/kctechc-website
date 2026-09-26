@@ -10,9 +10,9 @@ export type BadgeTone =
 
 const TONES: Record<BadgeTone, string> = {
   neutral: "border-border bg-surface-alt text-body",
-  info: "border-navy-200 bg-navy-50 text-navy-700",
+  info: "border-ink-200 bg-ink-50 text-ink-700",
   success: "border-green-300 bg-green-50 text-green-800",
-  warning: "border-gold-300 bg-gold-100 text-gold-700",
+  warning: "border-teal-300 bg-teal-100 text-teal-700",
   danger: "border-red-300 bg-red-50 text-red-800",
   accent: "border-dept-accent bg-surface text-dept-accent",
 };

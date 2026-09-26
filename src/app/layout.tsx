@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { fontClassNames } from "@/lib/fonts";
+import { BRAND_COLORS } from "@/lib/config/site";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
 import "./globals.css";
 
@@ -23,7 +24,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b2545",
+  // Matches the ink header band and `BRAND_COLORS.ink`, so mobile browser chrome
+  // blends with the site rather than showing a stray navy bar.
+  themeColor: BRAND_COLORS.ink,
   width: "device-width",
   initialScale: 1,
 };

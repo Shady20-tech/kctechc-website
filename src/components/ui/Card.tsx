@@ -52,7 +52,7 @@ export function CardHeading({
         ? "text-lg"
         : "text-base";
   return (
-    <Tag id={id} className={`${size} font-semibold text-navy-900`}>
+    <Tag id={id} className={`${size} font-semibold text-ink-900`}>
       {children}
     </Tag>
   );

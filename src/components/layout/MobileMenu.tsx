@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { DEPARTMENTS, type DepartmentSlug } from "@/lib/config/site";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n/locales";
 
 export type MobileNavItem = { href: string; label: string };
@@ -16,27 +15,25 @@ export type MobileNavItem = { href: string; label: string };
  * Reuses `Modal` in `placement="side"`, so focus trapping, Escape handling and
  * focus restoration are shared with the dialog rather than reimplemented.
  *
- * Language links are plain anchors to the other locale's version of the current
- * page, which keeps the drawer usable without JavaScript reading the router.
+ * Departments appear as ordinary entries in `items` — the same links the desktop
+ * nav uses — rather than a second, differently-grouped list, so the two menus
+ * cannot drift apart.
  */
 export function MobileMenu({
   locale,
   items,
-  departmentLabels,
-  quoteHref,
+  signInHref,
   labels,
 }: {
   locale: Locale;
   items: readonly MobileNavItem[];
-  departmentLabels: Record<DepartmentSlug, string>;
-  quoteHref: string;
+  signInHref: string;
   labels: {
     open: string;
     close: string;
     title: string;
-    departments: string;
     language: string;
-    getQuote: string;
+    signIn: string;
   };
 }) {
   const [open, setOpen] = useState(false);
@@ -46,10 +43,10 @@ export function MobileMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-card border border-border-strong px-3 py-2 text-sm font-medium text-navy-900 transition-soft hover:border-navy-500 lg:hidden"
+        aria-label={labels.open}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-card border border-white/20 text-white transition-soft hover:bg-white/10 lg:hidden"
       >
         <Menu aria-hidden="true" className="h-5 w-5" />
-        {labels.open}
       </button>
 
       <Modal
@@ -66,7 +63,7 @@ export function MobileMenu({
                 <Link
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="block rounded-card px-3 py-2.5 text-sm font-medium text-navy-900 transition-soft hover:bg-surface-alt"
+                  className="block rounded-card px-3 py-2.5 text-sm font-medium text-ink-900 transition-soft hover:bg-surface-alt"
                 >
                   {item.label}
                 </Link>
@@ -74,32 +71,10 @@ export function MobileMenu({
             ))}
           </ul>
 
-          <h3 className="mt-6 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
-            {labels.departments}
-          </h3>
-          <ul className="mt-1 space-y-1">
-            {DEPARTMENTS.map((department) => (
-              <li key={department.slug}>
-                <Link
-                  href={`/${locale}/${department.slug}`}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-card px-3 py-2.5 text-sm text-navy-900 transition-soft hover:bg-surface-alt"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: department.accent }}
-                  />
-                  {departmentLabels[department.slug]}
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          <h3 className="mt-6 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
+          <h3 className="mono-label mt-7 px-3 text-muted">
             {labels.language}
           </h3>
-          <ul className="mt-1 flex gap-2 px-3">
+          <ul className="mt-2 flex gap-2 px-3">
             {LOCALES.map((candidate) => (
               <li key={candidate}>
                 <Link
@@ -109,8 +84,8 @@ export function MobileMenu({
                   aria-current={candidate === locale ? "true" : undefined}
                   className={
                     candidate === locale
-                      ? "inline-block rounded-card px-3 py-1.5 text-sm font-semibold text-navy-900 underline underline-offset-4"
-                      : "inline-block rounded-card px-3 py-1.5 text-sm text-muted hover:text-navy-900"
+                      ? "inline-block rounded-card border border-ink-900 px-3 py-1.5 text-sm font-semibold text-ink-900"
+                      : "inline-block rounded-card border border-border px-3 py-1.5 text-sm text-muted transition-soft hover:border-ink-300 hover:text-ink-900"
                   }
                 >
                   {LOCALE_LABELS[candidate]}
@@ -119,14 +94,14 @@ export function MobileMenu({
             ))}
           </ul>
 
-          <div className="mt-6 px-3">
+          <div className="mt-7 px-3">
             <ButtonLink
-              href={quoteHref}
-              variant="accent"
+              href={signInHref}
+              variant="primary"
               className="w-full"
               onClick={() => setOpen(false)}
             >
-              {labels.getQuote}
+              {labels.signIn}
             </ButtonLink>
           </div>
         </nav>
