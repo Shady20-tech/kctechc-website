@@ -272,8 +272,13 @@ acceptance criteria pass. Then stop — do not start the next phase.
 
 - **`next.config.ts` cannot import application modules.** It is transpiled standalone before the
   `@/` alias exists, so importing `@/lib/config/navigation` fails the build with
-  `Cannot find module './src/lib/config/site'`. Redirect tables live in `src/lib/config/redirects.ts`
-  (dependency-free) and are re-exported by `navigation.ts` for app code.
+  `Cannot find module './src/lib/config/site'`. Redirect tables live in `src/lib/config/redirects.ts`,
+  which may only reach leaf modules by *relative* path (`../i18n/locales` is a pure data module with
+  no imports of its own). `navigation.ts` re-exports from it for app code.
+- **A renamed route needs a redirect for the locale-prefixed URL, not just the bare one.** Phase 2
+  linked to the section as `/${locale}/blog`, so `/en/blog` and `/fr/blog` were live, indexable URLs.
+  Redirecting only `/blog` left both returning 404 — the bare path looked fixed while every real
+  inbound link was broken. `redirects.test.ts` pins all locale variants.
 - **Nested dynamic routes must be under the existing `[department]` segment.** Adding a parallel
   static `src/app/(site)/[locale]/digital-marketing/` directory shadows `[department]` and splits
   the department across two page components. `.../[department]/services/[service]` is the correct
