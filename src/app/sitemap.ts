@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { NAV_PATHS } from "@/lib/config/navigation";
+import { INSIGHTS_PATH, NAV_PATHS, STORE_PATH } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
 import { DEPARTMENTS } from "@/lib/config/site";
 import {
@@ -10,6 +10,8 @@ import {
 import { loadInsights } from "@/lib/content/loaders";
 import { LOCALES } from "@/lib/i18n/locales";
 import { alternatesFor, canonicalFor } from "@/lib/seo/canonical";
+import { loadCategoryRecords, loadProductRecords } from "@/lib/store/loaders";
+import { slugForLocale } from "@/lib/store/slug-resolution";
 
 /**
  * XML sitemap foundation.
@@ -29,6 +31,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/",
     ...DEPARTMENTS.map((department) => `/${department.slug}`),
     ...NAV_PATHS,
+    // Only departments with published content expose these surfaces, so listing
+    // them unconditionally would advertise 404s for the departments whose phases
+    // have not landed yet.
+    ...DEPARTMENTS.filter((department) =>
+      departmentHasServices(department.slug),
+    ).flatMap((department) => [
+      `/${department.slug}/services`,
+      `/${department.slug}/portfolio`,
+      ...serviceRecordsFor(department.slug).map(
+        (service) => `/${department.slug}/services/${service.slug}`,
+      ),
+    ]),
+    ...allCategories().map(
+      (category) => `${INSIGHTS_PATH}/category/${category.slug}`,
+    ),
   ];
 
   const entries: MetadataRoute.Sitemap = LOCALES.flatMap((locale) =>
@@ -59,6 +76,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
         alternates: { languages: alternatesFor(path) },
       });
+    }
+  }
+
+  // Store categories and products are data-driven. Each product is listed under
+  // its own locale's slug, so the French sitemap advertises the French URL and
+  // not the English one — listing both would ask a search engine to index two
+  // addresses for one product.
+  const storeRecords = await loadProductRecords();
+  const storeCategories = await loadCategoryRecords();
+
+  for (const locale of LOCALES) {
+    for (const category of storeCategories) {
+      const categorySlug = slugForLocale(category, locale);
+      const path = `${STORE_PATH}/${categorySlug}`;
+      entries.push({
+        url: canonicalFor(locale, path),
+        lastModified,
+        changeFrequency: "weekly",
+        priority: 0.7,
+        alternates: { languages: alternatesFor(path) },
+      });
+
+      for (const product of storeRecords) {
+        if (product.categorySlug !== category.slug) continue;
+        const productPath = `${STORE_PATH}/${categorySlug}/${slugForLocale(product, locale)}`;
+        entries.push({
+          url: canonicalFor(locale, productPath),
+          lastModified: product.updatedAt
+            ? new Date(product.updatedAt)
+            : lastModified,
+          changeFrequency: "weekly",
+          priority: 0.7,
+          alternates: { languages: alternatesFor(productPath) },
+        });
+      }
     }
   }
 

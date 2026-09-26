@@ -31,6 +31,44 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"cart_items": {
+                  Row: {
+                    "cart_id": string,"created_at": string,"currency": string,"id": string,"product_id": string,"quantity": number,"unit_price_minor": number,"updated_at": string
+                  }
+                  Insert: {
+                    "cart_id": string,"created_at"?: string,"currency"?: string,"id"?: string,"product_id": string,"quantity": number,"unit_price_minor": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "cart_id"?: string,"created_at"?: string,"currency"?: string,"id"?: string,"product_id"?: string,"quantity"?: number,"unit_price_minor"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cart_items_cart_id_fkey"
+      columns: ["cart_id"]
+isOneToOne: false
+      referencedRelation: "carts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "cart_items_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"carts": {
+                  Row: {
+                    "created_at": string,"currency": string,"customer_id": string | null,"expires_at": string,"id": string,"locale": Database["public"]['Enums']["locale_code"],"status": Database["public"]['Enums']["cart_status"],"token": string,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"currency"?: string,"customer_id"?: string | null,"expires_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"status"?: Database["public"]['Enums']["cart_status"],"token": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"currency"?: string,"customer_id"?: string | null,"expires_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"status"?: Database["public"]['Enums']["cart_status"],"token"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"case_studies": {
                   Row: {
                     "approach": string | null,"challenge": string | null,"client_approved": boolean,"client_name": string | null,"client_named_with_consent": boolean,"created_at": string,"department_id": string,"id": string,"outcome": string | null,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"results": NonNullable<Json>,"service_id": string | null,"slug": string,"sort_order": number,"summary": string,"tags": (string)[],"title": string,"updated_at": string
@@ -202,6 +240,120 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"inventory_movements": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"delta": number,"id": string,"note": string | null,"product_id": string,"reason": Database["public"]['Enums']["inventory_reason"],"stock_after": number
+                  }
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"delta": number,"id"?: string,"note"?: string | null,"product_id": string,"reason": Database["public"]['Enums']["inventory_reason"],"stock_after": number
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"delta"?: number,"id"?: string,"note"?: string | null,"product_id"?: string,"reason"?: Database["public"]['Enums']["inventory_reason"],"stock_after"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inventory_movements_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_categories": {
+                  Row: {
+                    "created_at": string,"department_id": string,"description": string | null,"id": string,"is_active": boolean,"name": string,"publish_state": Database["public"]['Enums']["publish_state"],"slug": string,"sort_order": number,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"department_id": string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"publish_state"?: Database["public"]['Enums']["publish_state"],"slug": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"department_id"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"publish_state"?: Database["public"]['Enums']["publish_state"],"slug"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_categories_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_category_slugs": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"locale": Database["public"]['Enums']["locale_code"],"slug": string,"updated_at": string
+                  }
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"locale": Database["public"]['Enums']["locale_code"],"slug": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"slug"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_category_slugs_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "product_categories"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_media": {
+                  Row: {
+                    "alt_text": string,"created_at": string,"height": number | null,"id": string,"is_primary": boolean,"position": number,"product_id": string,"storage_path": string,"updated_at": string,"width": number | null
+                  }
+                  Insert: {
+                    "alt_text": string,"created_at"?: string,"height"?: number | null,"id"?: string,"is_primary"?: boolean,"position"?: number,"product_id": string,"storage_path": string,"updated_at"?: string,"width"?: number | null
+                  }
+                  Update: {
+                    "alt_text"?: string,"created_at"?: string,"height"?: number | null,"id"?: string,"is_primary"?: boolean,"position"?: number,"product_id"?: string,"storage_path"?: string,"updated_at"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_media_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_slugs": {
+                  Row: {
+                    "created_at": string,"id": string,"locale": Database["public"]['Enums']["locale_code"],"product_id": string,"slug": string,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"locale": Database["public"]['Enums']["locale_code"],"product_id": string,"slug": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"product_id"?: string,"slug"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_slugs_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"products": {
+                  Row: {
+                    "availability": Database["public"]['Enums']["product_availability"] | null,"availability_override": Database["public"]['Enums']["product_availability"] | null,"brand": string | null,"category_id": string,"condition": Database["public"]['Enums']["product_condition"],"created_at": string,"currency": string,"description": string,"gtin": string | null,"id": string,"price_minor": number,"publish_state": Database["public"]['Enums']["publish_state"],"published_at": string | null,"short_description": string,"sku": string,"slug": string,"specifications": NonNullable<Json>,"stock": number,"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "availability"?: never,"availability_override"?: Database["public"]['Enums']["product_availability"] | null,"brand"?: string | null,"category_id": string,"condition"?: Database["public"]['Enums']["product_condition"],"created_at"?: string,"currency"?: string,"description": string,"gtin"?: string | null,"id"?: string,"price_minor": number,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"short_description": string,"sku": string,"slug": string,"specifications"?: NonNullable<Json>,"stock"?: number,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "availability"?: never,"availability_override"?: Database["public"]['Enums']["product_availability"] | null,"brand"?: string | null,"category_id"?: string,"condition"?: Database["public"]['Enums']["product_condition"],"created_at"?: string,"currency"?: string,"description"?: string,"gtin"?: string | null,"id"?: string,"price_minor"?: number,"publish_state"?: Database["public"]['Enums']["publish_state"],"published_at"?: string | null,"short_description"?: string,"sku"?: string,"slug"?: string,"specifications"?: NonNullable<Json>,"stock"?: number,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "products_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "product_categories"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "avatar_path": string | null,"created_at": string,"email": string | null,"full_name": string | null,"id": string,"is_active": boolean,"locale": Database["public"]['Enums']["locale_code"],"phone": string | null,"role": Database["public"]['Enums']["user_role"],"updated_at": string
@@ -343,14 +495,48 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "can_access_department":
+            "build_translation_key":
+{ Args: { "p_entity_id": string,"p_entity_type": Database["public"]['Enums']["translatable_entity_type"],"p_field_name": string,"p_locale": Database["public"]['Enums']["locale_code"] }; Returns: string
+                           },
+"can_access_department":
 { Args: { "department_slug": string }; Returns: boolean
+                           },
+"claim_translation_sync_jobs":
+{ Args: { "p_limit"?: number }; Returns: {
+              "attempts": number,
+"created_at": string,
+"finished_at": string | null,
+"id": string,
+"job_type": string,
+"last_error": string | null,
+"max_attempts": number,
+"payload": NonNullable<Json>,
+"scheduled_at": string,
+"started_at": string | null,
+"status": Database["public"]['Enums']["sync_state"],
+"translation_entry_id": string | null,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "translation_sync_jobs"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"complete_translation_sync_job":
+{ Args: { "p_job_id": string,"p_tolgee_key_id"?: string }; Returns: undefined
                            },
 "current_user_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
                            },
+"fail_translation_sync_job":
+{ Args: { "p_error": string,"p_job_id": string }; Returns: undefined
+                           },
 "generate_inquiry_reference":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"gtin_is_valid":
+{ Args: { "value": string }; Returns: boolean
                            },
 "import_administrative_divisions":
 { Args: { "p_divisions": Json,"p_region_code": string }; Returns: {
@@ -362,10 +548,16 @@ isOneToOne: false
                            },
 "is_super_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"product_translatable_fields":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
+"requeue_translation_entry":
+{ Args: { "p_entry_id": string }; Returns: undefined
                            }
           }
           Enums: {
-            "inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","locale_code": "en"|"fr","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
+            "cart_status": "active"|"converted"|"abandoned"|"expired","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","locale_code": "en"|"fr","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","publish_state": "draft"|"published"|"archived","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -481,7 +673,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"locale_code": ["en", "fr"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
+            "cart_status": ["active", "converted", "abandoned", "expired"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"locale_code": ["en", "fr"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"publish_state": ["draft", "published", "archived"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin"]
           }
         }
 } as const
