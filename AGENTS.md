@@ -398,6 +398,16 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **Verify rendered HTML, not just source.** Several defects in this phase — duplicated titles,
   a stale `theme-color`, three department cards sharing one accent — were invisible in the code and
   only showed up in `curl` output. Prerendered HTML is the ground truth.
+- **Public content loaders must use `createPublicClient()`, never the cookie-bound `createClient()`.**
+  `createClient()` calls `cookies()`, which makes every page that reads through it dynamic. On a
+  route with `generateStaticParams` (project and store detail pages) Next 16 then refuses the static
+  params, the loader's fallback silently swallows the failure, and the build prerenders nothing —
+  so every detail URL 500s at request time with "Page changed from static to dynamic at runtime".
+  The symptom is invisible in unit tests, which never exercise prerendering. `createPublicClient()`
+  is stateless and anonymous, which is the correct access level: RLS already limits it to published
+  rows, and the loaders additionally filter `publish_state = 'published'`. `loadCategoryOptions()`
+  is the deliberate exception — it backs the admin product form and must see unpublished categories,
+  so it keeps the session client. `src/lib/supabase/public.test.ts` pins this split.
 
 ### Phase 2 gotchas worth not rediscovering
 

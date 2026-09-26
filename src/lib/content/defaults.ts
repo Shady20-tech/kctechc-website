@@ -1,6 +1,8 @@
 import type { DepartmentSlug } from "@/lib/config/site";
 import type { Locale } from "@/lib/i18n/locales";
 import { DEFAULT_SERVICES } from "./services";
+import { ELECTRICAL_SERVICES } from "./services.electrical";
+import { ELECTRICAL_SERVICE_TRANSLATIONS_FR } from "./services.electrical.fr";
 import { SERVICE_TRANSLATIONS_FR } from "./services.fr";
 import type {
   AuthorRecord,
@@ -32,11 +34,16 @@ import { resolveLocalized } from "./types";
 
 /** Attach the French overlays to the canonical service records. */
 function withTranslations(record: ServiceRecord): ServiceRecord {
-  const fr = SERVICE_TRANSLATIONS_FR[record.slug];
+  const fr =
+    SERVICE_TRANSLATIONS_FR[record.slug] ??
+    ELECTRICAL_SERVICE_TRANSLATIONS_FR[record.slug];
   return fr ? { ...record, translations: { fr } } : record;
 }
 
-const SERVICES: readonly ServiceRecord[] = DEFAULT_SERVICES.map(withTranslations);
+const SERVICES: readonly ServiceRecord[] = [
+  ...DEFAULT_SERVICES.map(withTranslations),
+  ...ELECTRICAL_SERVICES.map(withTranslations),
+];
 
 /** Insight categories from the brief's three subject areas. Names only. */
 const CATEGORIES: readonly CategoryRecord[] = [
@@ -70,8 +77,14 @@ const CASE_STUDIES: readonly CaseStudyRecord[] = [];
  * from rendering an empty catalogue: a department with no published services is
  * treated as not having the surface yet, and returns 404 until its phase supplies
  * the content. The URL scheme does not need to change when it does.
+ *
+ * Electrical Services was added in Phase 5 together with its nine services and
+ * their French overlays. Real Estate remains absent until its phase lands.
  */
-const DEPARTMENTS_WITH_SERVICES: readonly DepartmentSlug[] = ["digital-marketing"];
+const DEPARTMENTS_WITH_SERVICES: readonly DepartmentSlug[] = [
+  "digital-marketing",
+  "electrical-services",
+];
 
 export function departmentHasServices(department: DepartmentSlug): boolean {
   return DEPARTMENTS_WITH_SERVICES.includes(department);

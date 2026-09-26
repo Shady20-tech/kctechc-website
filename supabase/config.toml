@@ -116,6 +116,31 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
+# Storage buckets.
+#
+# `project-media` is public: project photography is marketing material meant to be
+# seen. `inquiry-attachments` is private: those are a visitor's photographs of
+# their own installation, possibly of their home, and must not be reachable
+# without a server-generated signed URL. The two are separate buckets rather than
+# separate folders in one, because a single bucket has a single public/private
+# setting and getting that wrong would expose every upload.
+#
+# `allowed_mime_types` is set here as well as enforced in `src/lib/uploads/`:
+# the application checks the file's actual content, and the bucket refuses
+# anything outside this set even if a caller bypassed the application.
+[storage.buckets.project-media]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/avif"]
+
+[storage.buckets.inquiry-attachments]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = [
+  "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
+  "application/pdf"
+]
+
 # Uncomment to configure local storage buckets
 # [storage.buckets.images]
 # public = false

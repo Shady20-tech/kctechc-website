@@ -2,19 +2,28 @@ import "server-only";
 
 import type { DepartmentSlug } from "@/lib/config/site";
 import type { Locale } from "@/lib/i18n/locales";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   findServiceRecord,
   localizeInsight,
   localizeService,
   serviceRecordsFor,
 } from "./defaults";
+import {
+  findProjectRecord,
+  localizeProject,
+  projectRecordsFor,
+} from "./projects";
 import type {
   AuthorRecord,
   FaqItem,
   InsightRecord,
   LocalizedInsight,
+  LocalizedProject,
   LocalizedService,
+  ProjectMediaOverlay,
+  ProjectMediaRecord,
+  ProjectRecord,
   SeoOverlay,
   ServiceRecord,
 } from "./types";
@@ -114,7 +123,9 @@ function groupTranslations(
       row.field_name === "title" ||
       row.field_name === "summary" ||
       row.field_name === "description" ||
-      row.field_name === "body"
+      row.field_name === "body" ||
+      row.field_name === "scope" ||
+      row.field_name === "outcome"
     ) {
       const text = asString(row.value);
       if (text) forLocale[row.field_name] = text;
@@ -125,6 +136,42 @@ function groupTranslations(
   }
 
   return byEntity;
+}
+
+/**
+ * Group translation rows for project images into per-media, per-locale
+ * overlays.
+ *
+ * Only `alt_text` and `caption` are translatable on an image; any other field
+ * name is ignored rather than copied through, so an unrelated index row cannot
+ * inject a field the renderer does not expect.
+ */
+function groupMediaTranslations(
+  rows: readonly TranslationRow[],
+): Map<string, Partial<Record<Locale, ProjectMediaOverlay>>> {
+  const byMedia = new Map<
+    string,
+    Partial<Record<Locale, ProjectMediaOverlay>>
+  >();
+
+  for (const row of rows) {
+    if (row.locale !== "en" && row.locale !== "fr") continue;
+    const locale = row.locale as Locale;
+    const text = asString(row.value);
+    if (!text) continue;
+
+    const fields = byMedia.get(row.entity_id) ?? {};
+    const forLocale = fields[locale] ?? {};
+
+    if (row.field_name === "alt_text") forLocale.alt = text;
+    else if (row.field_name === "caption") forLocale.caption = text;
+    else continue;
+
+    fields[locale] = forLocale;
+    byMedia.set(row.entity_id, fields);
+  }
+
+  return byMedia;
 }
 
 function seoFromRow(row: {
@@ -175,7 +222,7 @@ async function loadServiceRecords(
   const fallback = serviceRecordsFor(department);
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return fallback;
 
     const { data: departmentRow } = await supabase
@@ -299,7 +346,7 @@ async function loadInsightRecords(options: {
   limit?: number;
 }): Promise<readonly InsightRecord[]> {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return [];
 
     let departmentId: string | null = null;
@@ -386,7 +433,7 @@ async function loadInsightRecords(options: {
 /** Load a published author by slug, for the article byline. */
 export async function loadAuthor(slug: string): Promise<AuthorRecord | null> {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     if (!supabase) return null;
     const { data } = await supabase
       .from("authors")
@@ -403,4 +450,226 @@ export async function loadAuthor(slug: string): Promise<AuthorRecord | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Load published electrical projects for a department, localized.
+ *
+ * Falls back to the bundled (empty) defaults when the database is unconfigured,
+ * unreachable, or has nothing published yet. An empty list is the honest result
+ * here: there are no projects in the business brief, and inventing one would be a
+ * fabricated claim about the company's track record.
+ */
+export async function loadProjects(
+  department: DepartmentSlug,
+  locale: Locale,
+): Promise<LocalizedProject[]> {
+  const records = await loadProjectRecords(department);
+  return records.map((record) => localizeProject(record, locale));
+}
+
+export async function loadProject(
+  department: DepartmentSlug,
+  slug: string,
+  locale: Locale,
+): Promise<LocalizedProject | null> {
+  const records = await loadProjectRecords(department);
+  const record = records.find((entry) => entry.slug === slug);
+  return record ? localizeProject(record, locale) : null;
+}
+
+/** Canonical project records for a department: database first, bundled otherwise. */
+async function loadProjectRecords(
+  department: DepartmentSlug,
+): Promise<readonly ProjectRecord[]> {
+  const fallback = projectRecordsFor(department);
+
+  try {
+    const supabase = createPublicClient();
+    if (!supabase) return fallback;
+
+    const { data: departmentRow } = await supabase
+      .from("departments")
+      .select("id")
+      .eq("slug", department)
+      .maybeSingle();
+
+    if (!departmentRow) return fallback;
+
+    const { data: rows, error } = await supabase
+      .from("electrical_projects")
+      .select(
+        "id, slug, title, summary, description, scope, outcome, location, property_type, completed_year, tags, published_at, updated_at, region_id",
+      )
+      .eq("department_id", departmentRow.id)
+      .eq("publish_state", "published")
+      .order("sort_order", { ascending: true });
+
+    if (error || !rows || rows.length === 0) return fallback;
+
+    const ids = rows.map((row) => row.id);
+
+    const [
+      { data: translations },
+      { data: seoRows },
+      { data: mediaRows },
+      { data: linkRows },
+      { data: serviceRows },
+      { data: regionRows },
+    ] = await Promise.all([
+      supabase
+        .from("content_translations")
+        .select("entity_id, field_name, locale, value")
+        .eq("entity_type", "electrical_project")
+        .in("entity_id", ids),
+      supabase
+        .from("entity_seo")
+        .select(
+          "entity_id, locale, title, description, canonical_override, og_image_path, noindex",
+        )
+        .eq("entity_type", "electrical_project")
+        .in("entity_id", ids),
+      supabase
+        .from("project_media")
+        .select(
+          "id, project_id, storage_path, alt_text, caption, credit, role, width, height",
+        )
+        .in("project_id", ids)
+        .order("position", { ascending: true }),
+      supabase
+        .from("electrical_project_services")
+        .select("project_id, service_id")
+        .in("project_id", ids),
+      supabase
+        .from("services")
+        .select("id, slug")
+        .eq("department_id", departmentRow.id),
+      supabase.from("regions").select("id, slug"),
+    ]);
+
+    // Image text is indexed under `project_media` with the media row's own id, so
+    // it is a separate query keyed by the media ids — the project ids do not
+    // address it. Run after the media rows are known, and skipped entirely when
+    // there are none.
+    const mediaIds = (mediaRows ?? []).map((row) => row.id);
+    const { data: mediaTranslationRows } =
+      mediaIds.length > 0
+        ? await supabase
+            .from("content_translations")
+            .select("entity_id, field_name, locale, value")
+            .eq("entity_type", "project_media")
+            .in("entity_id", mediaIds)
+        : { data: [] as TranslationRow[] };
+
+    const overlays = groupTranslations(translations ?? []);
+    const mediaOverlays = groupMediaTranslations(mediaTranslationRows ?? []);
+
+    const seoByEntity = new Map<string, Partial<Record<Locale, SeoOverlay>>>();
+    for (const row of seoRows ?? []) {
+      if (row.locale !== "en" && row.locale !== "fr") continue;
+      const locale = row.locale as Locale;
+      const forEntity = seoByEntity.get(row.entity_id) ?? {};
+      forEntity[locale] = seoFromRow(row);
+      seoByEntity.set(row.entity_id, forEntity);
+    }
+
+    const mediaByProject = new Map<string, ProjectMediaRecord[]>();
+    for (const row of mediaRows ?? []) {
+      const list = mediaByProject.get(row.project_id) ?? [];
+      const role =
+        row.role === "before" || row.role === "after" ? row.role : "general";
+      const mediaTranslations = mediaOverlays.get(row.id);
+      list.push({
+        storagePath: row.storage_path,
+        alt: row.alt_text,
+        caption: asString(row.caption),
+        credit: asString(row.credit),
+        role,
+        width: row.width ?? undefined,
+        height: row.height ?? undefined,
+        translations: mediaTranslations,
+      });
+      mediaByProject.set(row.project_id, list);
+    }
+
+    // The join stores service ids; the public URL and the gallery filter both
+    // need slugs, so the ids are resolved to the department's own service slugs.
+    const serviceSlugById = new Map(
+      (serviceRows ?? []).map((row) => [row.id, row.slug]),
+    );
+
+    const regionSlugById = new Map(
+      (regionRows ?? []).map((row) => [row.id, row.slug]),
+    );
+
+    const servicesByProject = new Map<string, string[]>();
+    for (const row of linkRows ?? []) {
+      const slug = serviceSlugById.get(row.service_id);
+      // A link whose service is not published in this department is dropped
+      // rather than rendered as a filter option that returns nothing.
+      if (!slug) continue;
+      const list = servicesByProject.get(row.project_id) ?? [];
+      list.push(slug);
+      servicesByProject.set(row.project_id, list);
+    }
+
+    return rows.map((row) => {
+      const propertyType =
+        row.property_type === "residential" ||
+        row.property_type === "commercial" ||
+        row.property_type === "industrial"
+          ? row.property_type
+          : undefined;
+
+      const record: ProjectRecord = {
+        slug: row.slug,
+        department,
+        title: row.title,
+        summary: row.summary,
+        description: asString(row.description),
+        scope: asString(row.scope),
+        outcome: asString(row.outcome),
+        serviceSlugs: servicesByProject.get(row.id) ?? [],
+        regionSlug: row.region_id
+          ? regionSlugById.get(row.region_id)
+          : undefined,
+        location: asString(row.location),
+        propertyType,
+        completedYear:
+          typeof row.completed_year === "number"
+            ? row.completed_year
+            : undefined,
+        media: mediaByProject.get(row.id) ?? [],
+        tags: row.tags ?? [],
+        translations: overlays.get(row.id) ?? {},
+        seo: seoByEntity.get(row.id),
+        publishedAt: asString(row.published_at),
+        updatedAt: asString(row.updated_at),
+      };
+      return record;
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+/** Resolve a canonical project by slug, preferring the database. */
+export async function loadProjectRecord(
+  department: DepartmentSlug,
+  slug: string,
+): Promise<ProjectRecord | null> {
+  const records = await loadProjectRecords(department);
+  return (
+    records.find((entry) => entry.slug === slug) ??
+    findProjectRecord(department, slug) ??
+    null
+  );
+}
+
+/** True when a department has at least one published project to show. */
+export async function departmentHasPublishedProjects(
+  department: DepartmentSlug,
+): Promise<boolean> {
+  const records = await loadProjectRecords(department);
+  return records.length > 0;
 }
