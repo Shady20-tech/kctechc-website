@@ -442,6 +442,71 @@ p {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Departments dropdown
+   ---------------------------------------------------------------------------
+   Visibility is owned by CSS, not by React state, so the panel is present in the
+   DOM on every page. The department links therefore remain crawlable anchors and
+   still work when JavaScript does not load.
+
+   Three independent open conditions: the click state (`[data-open="true"]`),
+   hover, and `:focus-within`. The focus path is what makes the menu keyboard
+   usable without relying on the toggle handler — tabbing to the trigger reveals
+   the panel and tabbing onward walks the links.
+
+   `visibility` (not just `opacity`) is what actually removes the panel from the
+   tab order and the accessibility tree while closed. */
+.nav-menu-panel {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 160ms var(--ease-out-soft),
+    transform 160ms var(--ease-out-soft),
+    visibility 160ms;
+}
+
+/* Click state and keyboard focus open the panel everywhere. */
+.nav-menu[data-open="true"] .nav-menu-panel,
+.nav-menu:focus-within .nav-menu-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav-menu-chevron {
+  transition: transform 160ms var(--ease-out-soft);
+}
+
+.nav-menu[data-open="true"] .nav-menu-chevron,
+.nav-menu:focus-within .nav-menu-chevron {
+  transform: rotate(180deg);
+}
+
+/* Hover is a pointer-only convenience, so it is scoped to devices that actually
+   hover. Scoping it positively (rather than resetting it under `hover: none`)
+   keeps it from competing on specificity with the click state — a tap on a touch
+   screen can set `:hover`, and an override would then hide a panel the user
+   explicitly opened. */
+@media (hover: hover) {
+  .nav-menu:hover .nav-menu-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .nav-menu:hover .nav-menu-chevron {
+    transform: rotate(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-menu-panel,
+  .nav-menu-chevron {
+    transition: none;
+  }
+}
+
 /* Honour the user's reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
   html {

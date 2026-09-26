@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SkipLink } from "@/components/layout/Navigation";
 import { TolgeeProvider } from "@/components/TolgeeProvider";
+import { buildPrimaryNav } from "@/lib/config/navigation";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
 import { LOCALES, LOCALE_SEO_TAGS, isLocale, type Locale } from "@/lib/i18n/locales";
@@ -59,22 +60,14 @@ export default async function LocaleLayout({
     DEPARTMENTS.map((department) => [department.slug, t(department.labelKey)]),
   ) as Record<(typeof DEPARTMENTS)[number]["slug"], string>;
 
-  // Departments are ordinary nav entries rather than a dropdown, so every
-  // department is one click away and crawlable as a real anchor.
-  const navItems = [
-    { href: `/${resolved}`, label: t("nav.home") },
-    ...DEPARTMENTS.map((department) => ({
-      href: `/${resolved}/${department.slug}`,
-      label: departmentLabels[department.slug],
-    })),
-    { href: `/${resolved}/about`, label: t("nav.about") },
-    { href: `/${resolved}/contact`, label: t("nav.contact") },
-  ];
+  // Nav is built from one shared model so the desktop bar, the mobile drawer and
+  // the sitemap cannot drift apart.
+  const navEntries = buildPrimaryNav(resolved, t);
 
   return (
     <>
       <SkipLink>{t("common.skipToContent")}</SkipLink>
-      <SiteHeader locale={resolved} t={t} navItems={navItems} />
+      <SiteHeader locale={resolved} t={t} navEntries={navEntries} />
       <main id="main" className="min-h-[60vh]">
         <TolgeeProvider locale={resolved}>{children}</TolgeeProvider>
       </main>

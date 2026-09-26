@@ -41,8 +41,11 @@
     "insights": "Actualités",
     "admin": "Administration",
     "mobileMenu": "Navigation mobile",
-    "currentDepartment": "Département actuel"
-  },
+    "currentDepartment": "Département actuel",
+    "aboutUs": "À propos",
+    "services": "Services",
+    "gallery": "Galerie",
+    "blog": "Blog"  },
   "departments": {
     "heading": "Nos départements",
     "intro": "Trois départements, une même exigence d'ingénierie.",
@@ -230,12 +233,45 @@
     "mainLandmark": "Contenu principal",
     "footerLandmark": "Pied de page",
     "tableScroll": "Tableau défilable",
-    "loadingContent": "Chargement du contenu"
-  },
+    "loadingContent": "Chargement du contenu",
+    "departmentsMenu": "Menu des départements"  },
   "errors": {
     "notFoundTitle": "Nous n'avons pas trouvé cette page",
     "notFoundDescription": "La page demandée a peut-être été déplacée ou n'existe plus.",
     "serverErrorTitle": "Une erreur est survenue de notre côté",
     "serverErrorDescription": "La page n'a pas pu être chargée. Veuillez réessayer."
+  },
+  "services": {
+    "metaTitle": "Services",
+    "metaDescription": "Les services que KC Technology Corporation fournit par l'intermédiaire de ses départements Marketing digital, Services électriques et Immobilier.",
+    "eyebrow": "Services",
+    "heading": "Ce que nous faisons",
+    "intro": "KC Technology Corporation réalise ses travaux par l'intermédiaire de trois départements. Chaque département tient sa propre liste détaillée de services, et cette page est la vue d'ensemble de l'entreprise qui les relie.",
+    "departmentsHeading": "Services par département",
+    "departmentsIntro": "Les descriptions détaillées des services sont publiées par chaque département.",
+    "howHeading": "Comment nous confier un projet",
+    "howBody": "Dites-nous ce dont vous avez besoin et le département concerné vous répond avec un périmètre, un devis et un interlocuteur nommé. Lorsqu'un projet concerne plusieurs départements, les travaux sont coordonnés sous un seul contrat plutôt que répartis entre plusieurs fournisseurs.",
+    "ctaHeading": "Discuter d'un besoin",
+    "ctaBody": "Décrivez les travaux et nous les transmettrons au département concerné."
+  },
+  "gallery": {
+    "metaTitle": "Galerie",
+    "metaDescription": "Photographies de projets et d'installations de KC Technology Corporation dans ses trois départements.",
+    "eyebrow": "Galerie",
+    "heading": "Nos réalisations",
+    "intro": "Photographies de projets et d'installations achevés dans nos trois départements.",
+    "emptyHeading": "Les photographies ne sont pas encore publiées",
+    "emptyBody": "Nous ne publions que des photographies de travaux réellement réalisés, et uniquement avec l'accord du client. Rien n'est encore prêt à être présenté sur cette page. Contactez le département concerné en attendant et nous vous transmettrons directement des exemples de travaux comparables.",
+    "browseDepartments": "Parcourir nos départements"
+  },
+  "blog": {
+    "metaTitle": "Blog",
+    "metaDescription": "Articles et actualités de KC Technology Corporation sur le marketing digital, les services électriques et l'immobilier.",
+    "eyebrow": "Blog",
+    "heading": "Articles et actualités",
+    "intro": "Notes de nos départements sur le marketing digital, les travaux électriques et l'immobilier au Cameroun.",
+    "emptyHeading": "Aucun article publié pour le moment",
+    "emptyBody": "Les articles apparaissent ici une fois rédigés et relus. Nous ne publions rien que nous ne puissions assumer, il n'y a donc aucun article fictif sur cette page. Contactez-nous en attendant si vous souhaitez échanger sur nos travaux.",
+    "browseDepartments": "Parcourir nos départements"
   }
 }

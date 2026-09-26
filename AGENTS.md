@@ -244,8 +244,14 @@ acceptance criteria pass. Then stop — do not start the next phase.
   system, app shell, admin shell, health endpoint, and Vitest coverage.
 - Phase 1 public surface is now complete: corporate gateway `/`, localized home `/en` + `/fr`,
   the three department entry pages, `/about`, `/contact` with the inquiry pipeline (migration,
-  Zod schema, server action, form), and the shared design/UI kit. 93 Vitest tests pass and the
-  production build prerenders all 23 routes.
+  Zod schema, server action, form), and the shared design/UI kit.
+- Primary navigation is `Home · About us · Departments (dropdown) · Services · Gallery · Contact ·
+  Blog`. Departments are a dropdown on desktop and a labelled group in the mobile drawer; the
+  department anchors stay in the DOM while the panel is closed so all three remain crawlable.
+- `/services` is a corporate index that routes to the three departments. `/gallery` and `/blog`
+  render explicit empty states because no project photography or articles were supplied — see the
+  gotcha below before filling them.
+- 106 Vitest tests pass and the production build prerenders all 31 routes.
 
 ### Phase 1 gotchas worth not rediscovering
 
@@ -291,6 +297,45 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **Verify rendered HTML, not just source.** Several defects in this phase — duplicated titles,
   a stale `theme-color`, three department cards sharing one accent — were invisible in the code and
   only showed up in `curl` output. Prerendered HTML is the ground truth.
+
+### Phase 2 gotchas worth not rediscovering
+
+- **The nav model is shared, not per-surface.** `buildPrimaryNav` in `src/lib/config/navigation.ts`
+  produces a discriminated `link | menu` union consumed by the desktop header, the mobile drawer and
+  the sitemap. Do not rebuild the nav inline in a layout again: the previous inline version could
+  not be unit-tested and made it easy to list a route in one surface but not another. `NAV_PATHS`
+  and the sitemap are wired together so a new entry cannot be added to the header and forgotten in
+  the sitemap.
+- **`/services`, `/gallery` and `/blog` sit beside the `[locale]/[department]` dynamic segment.**
+  Static segments win over dynamic ones in the App Router, so these resolve correctly — but any new
+  top-level localized route must be checked against the department slug list, because a slug added
+  later with the same name as a static route silently shadows it.
+- **Do not fill `/gallery` or `/blog` with placeholder content.** The brief lists only corporate
+  facts; project photos and articles were never supplied. Stock imagery, invented captions or
+  lorem-ipsum posts under the company name misrepresent real work. Both pages state plainly that
+  nothing is published yet. When real content arrives, `BlogPosting`/author/`datePublished`
+  structured data must accompany it — emitting it against empty content is structured-data spam.
+- **The Departments dropdown keeps its panel mounted and hides it with CSS** (`visibility`, not just
+  `opacity`). Unmounting it would remove three indexable department links from the DOM. Hover is
+  scoped under `@media (hover: hover)` on purpose: scoping it positively rather than resetting it
+  under `hover: none` avoids a specificity clash where a tap on a touch screen sets `:hover` and
+  cancels a panel the user explicitly opened.
+- **The desktop nav only appears from `xl`.** Seven entries plus the language switcher and the
+  account action crowd at `lg`; the drawer is used below `xl`. The breakpoint on the desktop block
+  and on the drawer trigger must stay in sync (`xl:block` / `xl:hidden`), or both render at once.
+- **`@testing-library/user-event` is not installed.** Component tests use `fireEvent` from
+  `@testing-library/react`. Do not add the dependency just for a test without a reason.
+- Next 16 emits `hrefLang` (camelCase) in prerendered HTML; HTML attribute parsing is
+  case-insensitive, so `hreflang` alternates are correct. A lowercase `grep hreflang` on raw HTML
+  returns zero and looks like a bug — it is not.
+- **A page title that already contains the brand name must be `title: { absolute: ... }`.** The root
+  layout applies a `%s | <legal name>` template, so a literal string title renders the brand twice
+  ("KC Technology Corporation | KC Technology Corporation"). `buildMetadata` handles this
+  automatically for titles containing `SITE.legalName`; static `metadata` exports must set
+  `absolute` by hand.
+- **Verify rendered HTML, not just source.** Several defects across these phases — duplicated titles,
+  a stale `theme-color`, three department cards sharing one accent, nav order — were invisible in the
+  code and only showed up in `curl` output. Prerendered HTML is the ground truth.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
