@@ -32,7 +32,7 @@ export function Logo({
   return (
     <Link
       href="/"
-      className="group flex items-center gap-3 rounded-card"
+      className="group flex min-w-0 items-center gap-3 rounded-card"
       aria-label={`${SITE.legalName} — ${SITE.shortName}`}
     >
       <span
@@ -51,14 +51,20 @@ export function Logo({
           decoding="async"
         />
       </span>
-      <span className="flex flex-col">
+      {/* `min-w-0` + `truncate` keep the lockup on one line at every width. The
+          legal name wraps to three lines at 320px, which overflows the 64px bar
+          and pushes the header taller than its own rule. */}
+      <span className="flex min-w-0 flex-col">
         <span
-          className={`font-display text-[0.95rem] font-bold leading-tight tracking-tight ${titleClass}`}
+          className={`truncate font-display text-[0.95rem] font-bold leading-tight tracking-tight ${titleClass}`}
         >
-          {SITE.legalName}
+          <span className="sm:hidden">{SITE.shortName}</span>
+          <span className="hidden sm:inline">{SITE.legalName}</span>
         </span>
         {showMotto ? (
-          <span className={`mono-label leading-tight ${mottoClass}`}>
+          <span
+            className={`mono-label hidden truncate leading-tight sm:block ${mottoClass}`}
+          >
             {SITE.shortName}
             {locale ? ` · ${locale.toUpperCase()}` : ""}
           </span>

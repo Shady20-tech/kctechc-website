@@ -67,7 +67,7 @@ export function DepartmentsMenu({
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((current) => !current)}
-        className="nav-menu-trigger inline-flex items-center gap-1 rounded-card px-3 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
+        className="nav-menu-trigger inline-flex items-center gap-1 whitespace-nowrap rounded-card px-1.5 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
       >
         {label}
         <ChevronDown aria-hidden="true" className="nav-menu-chevron h-3.5 w-3.5" />
