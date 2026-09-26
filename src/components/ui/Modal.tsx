@@ -93,7 +93,7 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-navy-950/50"
+        className="absolute inset-0 bg-ink-950/50"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -110,11 +110,11 @@ export function Modal({
         }
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-semibold text-navy-900">{title}</h2>
+          <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-card p-1.5 text-muted transition-soft hover:bg-navy-50 hover:text-navy-900"
+            className="rounded-card p-1.5 text-muted transition-soft hover:bg-ink-50 hover:text-ink-900"
           >
             <X aria-hidden="true" className="h-5 w-5" />
             <span className="visually-hidden">{closeLabel}</span>

@@ -52,7 +52,7 @@ export function DataTable<Row>({
               <th
                 key={column.key}
                 scope="col"
-                className={`px-3 py-2 font-semibold text-navy-900 ${
+                className={`px-3 py-2 font-semibold text-ink-900 ${
                   column.align === "end" ? "text-right" : "text-left"
                 }`}
               >
@@ -86,7 +86,7 @@ export function DataTable<Row>({
                     <th
                       key={column.key}
                       scope="row"
-                      className={`px-3 py-2 font-medium text-navy-900 ${alignClass}`}
+                      className={`px-3 py-2 font-medium text-ink-900 ${alignClass}`}
                     >
                       {content}
                     </th>

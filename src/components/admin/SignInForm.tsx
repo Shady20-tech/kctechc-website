@@ -22,7 +22,7 @@ function SubmitButton({
       type="submit"
       disabled={disabled || pending}
       aria-busy={pending}
-      className="w-full rounded-card bg-navy-900 px-4 py-3 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60"
+      className="w-full rounded-card bg-ink-900 px-4 py-3 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-60"
     >
       {pending ? pendingLabel : label}
     </button>
@@ -63,7 +63,7 @@ export function SignInForm({
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-navy-900"
+          className="block text-sm font-medium text-ink-900"
         >
           {labels.email}
         </label>
@@ -81,7 +81,7 @@ export function SignInForm({
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-navy-900"
+          className="block text-sm font-medium text-ink-900"
         >
           {labels.password}
         </label>

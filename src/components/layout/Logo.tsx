@@ -2,12 +2,13 @@ import Link from "next/link";
 import { SITE } from "@/lib/config/site";
 
 /**
- * Corporate wordmark.
+ * Corporate lockup.
  *
- * No logo artwork has been supplied by the business, so this is a typographic
- * mark built from the company initials rather than an invented or placeholder
- * image. When a real logo asset arrives it replaces the monogram here and every
- * usage updates at once.
+ * Uses the supplied KC monogram, which is black ink with a teal accent, so the
+ * mark and the palette finally agree. Two pre-rendered files are used rather
+ * than a CSS filter: the source artwork is a flattened JPEG on white, and an
+ * inverse pair gives a crisp result on the dark ink bands where a filter would
+ * muddy the teal.
  *
  * The mark always links to `/`, the language-neutral corporate gateway, so the
  * "go home" affordance never silently switches a visitor's language.
@@ -21,28 +22,43 @@ export function Logo({
   showMotto?: boolean;
   tone?: "dark" | "light";
 }) {
-  const href = "/";
-  const titleClass = tone === "light" ? "text-white" : "text-navy-900";
-  const mottoClass = tone === "light" ? "text-white/80" : "text-muted";
+  const titleClass = tone === "light" ? "text-white" : "text-ink-900";
+  const mottoClass = tone === "light" ? "text-white/70" : "text-muted";
+  const src =
+    tone === "light"
+      ? "/brand/kc-monogram-inverse.png"
+      : "/brand/kc-monogram.png";
 
   return (
     <Link
-      href={href}
+      href="/"
       className="group flex items-center gap-3 rounded-card"
       aria-label={`${SITE.legalName} — ${SITE.shortName}`}
     >
       <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-ink-950 transition-soft group-hover:bg-ink-800"
         aria-hidden="true"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-navy-900 font-display text-sm font-bold text-gold-500 transition-soft group-hover:bg-navy-700"
       >
-        KC
+        {/* Plain <img> is deliberate: this is a fixed-size mark with no art
+            direction, and next/image would add a client component for no gain. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          width={44}
+          height={26}
+          className="h-6 w-auto"
+          decoding="async"
+        />
       </span>
       <span className="flex flex-col">
-        <span className={`font-display text-base font-bold leading-tight ${titleClass}`}>
+        <span
+          className={`font-display text-[0.95rem] font-bold leading-tight tracking-tight ${titleClass}`}
+        >
           {SITE.legalName}
         </span>
         {showMotto ? (
-          <span className={`text-[0.7rem] leading-tight ${mottoClass}`}>
+          <span className={`mono-label leading-tight ${mottoClass}`}>
             {SITE.shortName}
             {locale ? ` · ${locale.toUpperCase()}` : ""}
           </span>

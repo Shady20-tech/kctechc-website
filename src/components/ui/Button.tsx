@@ -16,6 +16,7 @@ export type ButtonVariant =
   | "primary"
   | "secondary"
   | "accent"
+  | "accentOnInk"
   | "ghost"
   | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -24,13 +25,18 @@ const BASE =
   "inline-flex items-center justify-center gap-2 font-semibold transition-soft disabled:cursor-not-allowed disabled:opacity-60";
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  // Corporate navy is the default primary action everywhere.
-  primary: "bg-navy-900 text-white hover:bg-navy-700",
+  // Corporate ink is the default primary action everywhere.
+  primary: "bg-ink-900 text-white hover:bg-ink-700",
   secondary:
-    "border border-navy-900 bg-transparent text-navy-900 hover:bg-navy-900 hover:text-white",
-  // Contextual: follows the active department accent.
+    "border border-ink-900 bg-transparent text-ink-900 hover:bg-ink-900 hover:text-white",
+  // Contextual: follows the active department accent. Intended for light
+  // surfaces, where the accent is dark enough for white text.
   accent: "bg-dept-accent text-white hover:opacity-90",
-  ghost: "bg-transparent text-navy-900 hover:bg-navy-50",
+  // The dark-band counterpart. Inside `.on-ink`, `--dept-accent` resolves to the
+  // bright value, where white text would be unreadable (1.7:1), so this pairing
+  // uses ink text on the bright fill instead.
+  accentOnInk: "bg-dept-accent-bright text-ink-950 hover:opacity-90",
+  ghost: "bg-transparent text-ink-900 hover:bg-ink-50",
   danger: "bg-red-700 text-white hover:bg-red-800",
 };
 

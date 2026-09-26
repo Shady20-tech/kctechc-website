@@ -37,9 +37,15 @@ export function buildMetadata({
 }: BuildMetadataInput): Metadata {
   const canonical = canonicalFor(locale, pathWithoutLocale);
 
+  // The root layout applies a `%s | <legal name>` template. Pages whose title is
+  // already the brand name (the gateway and both localized home pages) would
+  // otherwise render it twice, e.g. "KC Technology Corporation | KC Technology
+  // Corporation". Using `absolute` for those bypasses the template.
+  const titleValue = title.includes(SITE.legalName) ? { absolute: title } : title;
+
   return {
     metadataBase: getSiteUrl(),
-    title,
+    title: titleValue,
     description,
     alternates: {
       canonical,

@@ -66,7 +66,7 @@ export function LastDepartmentShortcut({
       </p>
       <Link
         href={`/${locale}/${department.slug}`}
-        className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-navy-900 transition-soft hover:text-dept-accent"
+        className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-ink-900 transition-soft hover:text-dept-accent"
       >
         {heading.replace("{department}", labels[department.slug])}
         <ArrowRight aria-hidden="true" className="h-4 w-4" />

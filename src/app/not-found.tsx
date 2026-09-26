@@ -14,10 +14,10 @@ export default function NotFound() {
 
   return (
     <main id="main" className="container-page section">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">
         404
       </p>
-      <h1 className="mt-3 text-3xl font-bold text-navy-900">
+      <h1 className="mt-3 text-3xl font-bold text-ink-900">
         {en.errors.notFoundTitle} / {fr.errors.notFoundTitle}
       </h1>
       <p className="mt-4 max-w-2xl text-base text-body">
@@ -28,7 +28,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/en"
-            className="inline-block rounded-card bg-navy-900 px-5 py-3 text-sm font-semibold text-white transition-soft hover:bg-navy-700"
+            className="inline-block rounded-card bg-ink-900 px-5 py-3 text-sm font-semibold text-white transition-soft hover:bg-ink-700"
           >
             {en.actions.enterSite} (English)
           </Link>
@@ -36,7 +36,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/fr"
-            className="inline-block rounded-card border border-navy-900 px-5 py-3 text-sm font-semibold text-navy-900 transition-soft hover:bg-navy-900 hover:text-white"
+            className="inline-block rounded-card border border-ink-900 px-5 py-3 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-900 hover:text-white"
           >
             {fr.actions.enterSite} (Français)
           </Link>
@@ -44,7 +44,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/"
-            className="inline-block rounded-card px-5 py-3 text-sm font-semibold text-navy-700 underline underline-offset-4"
+            className="inline-block rounded-card px-5 py-3 text-sm font-semibold text-ink-700 underline underline-offset-4"
           >
             {en.common.backToHome}
           </Link>

@@ -21,12 +21,26 @@ export function Breadcrumbs({
   items,
   ariaLabel,
   className,
+  tone = "dark",
 }: {
   items: readonly BreadcrumbItem[];
   ariaLabel: string;
   className?: string;
+  /** `light` is for the dark ink bands; `dark` for light surfaces. */
+  tone?: "dark" | "light";
 }) {
   if (items.length === 0) return null;
+
+  const currentClass =
+    tone === "light"
+      ? "font-medium text-white"
+      : "font-medium text-ink-900";
+  const linkClass =
+    tone === "light"
+      ? "text-ink-300 transition-soft hover:text-white hover:underline"
+      : "text-muted transition-soft hover:text-ink-900 hover:underline";
+  const separatorClass =
+    tone === "light" ? "text-white/30" : "text-border-strong";
 
   return (
     <nav aria-label={ariaLabel} className={className}>
@@ -36,21 +50,18 @@ export function Breadcrumbs({
           return (
             <li key={item.href} className="flex items-center gap-2">
               {isLast ? (
-                <span aria-current="page" className="font-medium text-navy-900">
+                <span aria-current="page" className={currentClass}>
                   {item.name}
                 </span>
               ) : (
-                <Link
-                  href={item.href}
-                  className="text-muted transition-soft hover:text-navy-900 hover:underline"
-                >
+                <Link href={item.href} className={linkClass}>
                   {item.name}
                 </Link>
               )}
               {!isLast ? (
                 <ChevronRight
                   aria-hidden="true"
-                  className="h-4 w-4 shrink-0 text-border-strong"
+                  className={`h-4 w-4 shrink-0 ${separatorClass}`}
                 />
               ) : null}
             </li>

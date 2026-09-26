@@ -3,42 +3,68 @@
 /**
  * Design tokens.
  *
- * Brand colours come from the business brief. Departments share the corporate
- * navy/gold foundation and differentiate through a single contextual accent
- * variable (`--dept-accent`) rather than a parallel set of component variants.
- * One visual system with a swappable accent is what stops the departments
- * drifting apart into three unrelated sites over time.
+ * The palette is anchored to the supplied KC wordmark, which is black ink with a
+ * teal accent. An earlier revision used an invented navy/gold scheme; that has
+ * been replaced so the site and the logo read as one brand rather than two.
+ *
+ * Departments share the corporate ink/teal foundation and differentiate through
+ * a single contextual accent variable (`--dept-accent`) rather than a parallel
+ * set of component variants. One visual system with a swappable accent is what
+ * stops the departments drifting apart into three unrelated sites over time.
  */
 @theme {
-  --color-navy-50: #f2f5f9;
-  --color-navy-100: #dfe6ef;
-  --color-navy-200: #b9c8dc;
-  --color-navy-500: #1d4e89;
-  --color-navy-700: #123a68;
-  --color-navy-800: #0e2d52;
-  --color-navy-900: #0b2545;
-  --color-navy-950: #071830;
+  /* Ink: the near-black family taken from the logo. Used for dark bands,
+     headings and body text rather than a saturated navy. */
+  --color-ink-50: #f5f7f8;
+  --color-ink-100: #e8ecef;
+  --color-ink-200: #ccd4da;
+  --color-ink-300: #a5b1ba;
+  --color-ink-400: #77848f;
+  --color-ink-500: #4d5964;
+  --color-ink-600: #343e48;
+  --color-ink-700: #232b33;
+  --color-ink-800: #161c22;
+  --color-ink-900: #0d1216;
+  --color-ink-950: #06090b;
 
-  --color-gold-100: #f7efdc;
-  --color-gold-200: #f0e0bc;
-  --color-gold-300: #e0c48a;
-  --color-gold-500: #b8892e;
-  --color-gold-600: #a1751f;
-  --color-gold-700: #8a6520;
+  /* Teal: the logo accent. `teal-600` is the hue sampled from the artwork;
+     `teal-300` is the bright highlight from its gradient. */
+  --color-teal-50: #e7fbfa;
+  --color-teal-100: #c4f4f2;
+  --color-teal-200: #8ce9e5;
+  --color-teal-300: #4ed9d4;
+  --color-teal-400: #1cc4bd;
+  --color-teal-500: #00a9a3;
+  --color-teal-600: #008c87;
+  --color-teal-700: #006e6a;
+  --color-teal-800: #00514e;
 
-  --color-body: #3c4858;
-  --color-muted: #64748b;
+  /* Neutral surfaces and text. */
+  --color-body: #414d57;
+  --color-muted: #66717b;
   --color-surface: #ffffff;
-  --color-surface-alt: #f7f8fa;
-  --color-surface-sunken: #eef1f5;
-  --color-border: #dfe3e9;
-  --color-border-strong: #c6ced9;
+  --color-surface-alt: #f7f8f9;
+  --color-surface-sunken: #eef1f3;
+  --color-border: #e2e6ea;
+  --color-border-strong: #c8d0d7;
 
-  --color-dept-marketing: #2e6fb8;
-  --color-dept-electrical: #d98e04;
-  --color-dept-realestate: #1e7a5c;
+  /* Department accents, in two variants.
+     `--dept-accent` is the text-safe value for light surfaces and is also used
+     for accent button fills, so it is dark enough for white text on it (all four
+     clear 4.5:1 both as text on white and as a fill behind white text).
+     `--dept-accent-bright` is the counterpart for the dark ink bands, where the
+     light-surface value would fall below 4.5:1. Splitting them is what lets one
+     accent serve both surface types without a contrast failure either way. */
+  --color-dept-marketing: #1e6fd9;
+  --color-dept-marketing-bright: #6fa8f5;
+  --color-dept-electrical: #b45309;
+  --color-dept-electrical-bright: #f0a94a;
+  --color-dept-realestate: #127a5b;
+  --color-dept-realestate-bright: #4fd1a5;
 
-  --color-focus: #0b2545;
+  /* Focus colour must clear 3:1 against both the light page and the dark ink
+     bands, so it is a deep teal rather than the bright brand highlight. */
+  --color-focus: #007d78;
 
   /* Font families are injected by next/font as CSS variables, with a system
      stack fallback so the site stays legible if a webfont fails to load. */
@@ -48,38 +74,60 @@
   --font-display:
     var(--font-heading), var(--font-body), ui-sans-serif, system-ui, Georgia,
     serif;
+  --font-mono:
+    var(--font-mono-code), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
 
-  --radius-card: 0.75rem;
+  --radius-card: 0.5rem;
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px rgb(11 37 69 / 0.04), 0 1px 3px rgb(11 37 69 / 0.06);
+  --shadow-card: 0 1px 2px rgb(13 18 22 / 0.04), 0 1px 3px rgb(13 18 22 / 0.06);
   --shadow-raised:
-    0 4px 6px -1px rgb(11 37 69 / 0.08), 0 2px 4px -2px rgb(11 37 69 / 0.06);
-  --shadow-overlay: 0 20px 40px -12px rgb(11 37 69 / 0.25);
+    0 12px 24px -8px rgb(13 18 22 / 0.12), 0 4px 8px -4px rgb(13 18 22 / 0.08);
+  --shadow-lifted:
+    0 24px 48px -16px rgb(13 18 22 / 0.2), 0 8px 16px -8px rgb(13 18 22 / 0.1);
+  --shadow-overlay: 0 20px 40px -12px rgb(13 18 22 / 0.25);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ---------------------------------------------------------------------------
    Department accent scoping
    ---------------------------------------------------------------------------
-   Corporate surfaces leave the accent at premium gold. A department surface
+   Corporate surfaces leave the accent at the brand teal. A department surface
    sets it once on its subtree and every shared component follows. Declared by
-   data attribute so React never has to build class-name strings. */
+   data attribute so React never has to build class-name strings.
+
+   Each department declares two values: the text-safe accent for light surfaces,
+   and a brighter counterpart for the dark ink bands. `[data-department]` inside
+   `.on-ink` re-binds `--dept-accent` to the bright value, so a single class name
+   (`text-dept-accent`) is correct on both surface types and no component has to
+   know which band it renders into. */
 :root {
-  --dept-accent: var(--color-gold-500);
+  --dept-accent: var(--color-teal-700);
+  --dept-accent-bright: var(--color-teal-300);
 }
 
 [data-department="digital-marketing"] {
   --dept-accent: var(--color-dept-marketing);
+  --dept-accent-bright: var(--color-dept-marketing-bright);
 }
 
 [data-department="electrical-services"] {
   --dept-accent: var(--color-dept-electrical);
+  --dept-accent-bright: var(--color-dept-electrical-bright);
 }
 
 [data-department="real-estate"] {
   --dept-accent: var(--color-dept-realestate);
+  --dept-accent-bright: var(--color-dept-realestate-bright);
+}
+
+/* On the dark ink bands the bright accent takes over. Corporate teal-300 and the
+   bright department values all clear 4.5:1 against the ink background. */
+.on-ink {
+  --dept-accent: var(--dept-accent-bright);
 }
 
 .text-dept-accent {
@@ -92,6 +140,21 @@
 
 .border-dept-accent {
   border-color: var(--dept-accent);
+}
+
+/* Explicit bright counterparts. Needed because `.on-ink` re-binds
+   `--dept-accent` to the bright value, so a filled accent control on an ink band
+   must take its fill and its text from the bright pairing to stay legible. */
+.text-dept-accent-bright {
+  color: var(--dept-accent-bright);
+}
+
+.bg-dept-accent-bright {
+  background-color: var(--dept-accent-bright);
+}
+
+.border-dept-accent-bright {
+  border-color: var(--dept-accent-bright);
 }
 
 .accent-rule {
@@ -128,8 +191,9 @@ h1,
 h2,
 h3,
 h4 {
-  color: var(--color-navy-900);
-  line-height: 1.2;
+  color: var(--color-ink-900);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -144,6 +208,32 @@ p {
   border-radius: 2px;
 }
 
+/* On the dark ink bands the deep teal outline loses contrast, so the ring is
+   swapped for the bright brand highlight there. */
+.on-ink :where(a, button, [tabindex]):focus-visible {
+  outline-color: var(--color-teal-300);
+}
+
+/* ---------------------------------------------------------------------------
+   Typography utilities
+   --------------------------------------------------------------------------- */
+
+/* Monospace annotation: eyebrows, section indices, spec labels and figures.
+   This is the detail that gives the corporate surfaces their engineering
+   character, and it is used for metadata only — never for body copy. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.display-tight {
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
 /* ---------------------------------------------------------------------------
    Accessibility helpers
    --------------------------------------------------------------------------- */
@@ -155,7 +245,7 @@ p {
   top: -100%;
   z-index: 100;
   padding: 0.75rem 1rem;
-  background-color: var(--color-navy-900);
+  background-color: var(--color-ink-900);
   color: #ffffff;
   border-radius: 0 0 var(--radius-card) var(--radius-card);
   transition: top 150ms ease-in;
@@ -182,31 +272,31 @@ p {
    --------------------------------------------------------------------------- */
 .container-page {
   width: 100%;
-  max-width: 76rem;
+  max-width: 78rem;
   margin-inline: auto;
-  padding-inline: 1rem;
+  padding-inline: 1.25rem;
 }
 
 @media (min-width: 640px) {
   .container-page {
-    padding-inline: 1.5rem;
+    padding-inline: 1.75rem;
   }
 }
 
 @media (min-width: 1024px) {
   .container-page {
-    padding-inline: 2rem;
+    padding-inline: 2.5rem;
   }
 }
 
 /* Vertical rhythm between major page sections. */
 .section {
-  padding-block: 3rem;
+  padding-block: 3.5rem;
 }
 
 @media (min-width: 768px) {
   .section {
-    padding-block: 4.5rem;
+    padding-block: 5.5rem;
   }
 }
 
@@ -221,22 +311,117 @@ p {
 }
 
 /* ---------------------------------------------------------------------------
+   Surface treatments
+   ---------------------------------------------------------------------------
+   Depth is built from layered gradients rather than flat fills, which is what
+   keeps the dark bands from reading as a plain rectangle of colour. */
+.bg-ink {
+  background-color: var(--color-ink-950);
+  color: var(--color-ink-100);
+}
+
+/* Fine technical grid, evoking a schematic or engineering drawing. */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 68px 68px;
+}
+
+/* Radial brand glow, placed behind hero content for atmosphere. */
+.bg-glow {
+  background-image: radial-gradient(
+    58% 74% at 12% 0%,
+    rgb(0 169 163 / 0.24),
+    transparent 68%
+  );
+}
+
+.bg-glow-warm {
+  background-image: radial-gradient(
+    48% 64% at 92% 8%,
+    rgb(0 217 210 / 0.14),
+    transparent 70%
+  );
+}
+
+/* Hairline used to separate stacked items without heavy borders. */
+.hairline {
+  border-top: 1px solid color-mix(in srgb, var(--color-ink-900) 10%, transparent);
+}
+
+.on-ink .hairline {
+  border-top-color: rgb(255 255 255 / 0.12);
+}
+
+/* ---------------------------------------------------------------------------
    Motion
    ---------------------------------------------------------------------------
    Transitions are subtle and additive: every section is fully readable with
    them disabled. The reduced-motion block below neutralises all of it. */
 .transition-soft {
   transition:
-    color 150ms var(--ease-out-soft),
-    background-color 150ms var(--ease-out-soft),
-    border-color 150ms var(--ease-out-soft),
-    box-shadow 150ms var(--ease-out-soft),
-    transform 150ms var(--ease-out-soft);
+    color 180ms var(--ease-out-soft),
+    background-color 180ms var(--ease-out-soft),
+    border-color 180ms var(--ease-out-soft),
+    box-shadow 180ms var(--ease-out-soft),
+    transform 180ms var(--ease-out-soft);
 }
 
 .hover-lift:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-raised);
+}
+
+/* Staggered entrance for above-the-fold content. Each element sets its own
+   `--reveal-delay`, so one keyframe serves the whole group. */
+.reveal {
+  animation: reveal-up 760ms var(--ease-out-soft) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Department card: the accent edge grows on hover, and the arrow slides. */
+.card-edge {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-edge::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--dept-accent);
+  transform: scaleX(0.22);
+  transform-origin: left;
+  transition: transform 420ms var(--ease-out-soft);
+}
+
+.card-edge:hover::before,
+.card-edge:focus-within::before {
+  transform: scaleX(1);
+}
+
+.card-arrow {
+  transition: transform 260ms var(--ease-out-soft);
+}
+
+.card-edge:hover .card-arrow,
+.card-edge:focus-within .card-arrow {
+  transform: translateX(0.3rem);
 }
 
 /* Rotating gateway statement: the line is always present and readable in the
@@ -263,12 +448,18 @@ p {
     scroll-behavior: auto;
   }
 
-  .statement-fade {
+  .statement-fade,
+  .reveal {
     animation: none;
   }
 
   .hover-lift:hover {
     transform: none;
+  }
+
+  .card-edge::before,
+  .card-arrow {
+    transition: none;
   }
 
   *,

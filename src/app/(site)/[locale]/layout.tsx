@@ -59,6 +59,8 @@ export default async function LocaleLayout({
     DEPARTMENTS.map((department) => [department.slug, t(department.labelKey)]),
   ) as Record<(typeof DEPARTMENTS)[number]["slug"], string>;
 
+  // Departments are ordinary nav entries rather than a dropdown, so every
+  // department is one click away and crawlable as a real anchor.
   const navItems = [
     { href: `/${resolved}`, label: t("nav.home") },
     ...DEPARTMENTS.map((department) => ({
@@ -72,12 +74,7 @@ export default async function LocaleLayout({
   return (
     <>
       <SkipLink>{t("common.skipToContent")}</SkipLink>
-      <SiteHeader
-        locale={resolved}
-        t={t}
-        navItems={navItems}
-        departmentLabels={departmentLabels}
-      />
+      <SiteHeader locale={resolved} t={t} navItems={navItems} />
       <main id="main" className="min-h-[60vh]">
         <TolgeeProvider locale={resolved}>{children}</TolgeeProvider>
       </main>

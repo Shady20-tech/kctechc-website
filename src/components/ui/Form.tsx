@@ -10,9 +10,9 @@ import type { ComponentProps, ReactNode } from "react";
  */
 
 const CONTROL_BASE =
-  "w-full rounded-card border bg-surface px-3 py-2.5 text-sm text-navy-900 transition-soft placeholder:text-muted focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-sunken";
+  "w-full rounded-card border bg-surface px-3 py-2.5 text-sm text-ink-900 transition-soft placeholder:text-muted focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-sunken";
 
-const CONTROL_VALID = "border-border-strong hover:border-navy-500";
+const CONTROL_VALID = "border-border-strong hover:border-ink-500";
 const CONTROL_INVALID = "border-red-600 bg-red-50";
 
 type FieldShellProps = {
@@ -44,7 +44,7 @@ function FieldShell({
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-navy-900">
+      <label htmlFor={id} className="block text-sm font-medium text-ink-900">
         {label}
         {required ? (
           <span className="ml-1 text-red-700" aria-hidden="true">
