@@ -152,7 +152,7 @@ export default async function CorporateGatewayPage() {
             </p>
 
             <h1
-              className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-teal-300 sm:text-5xl lg:text-6xl"
+              className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-electric-300 sm:text-5xl lg:text-6xl"
               style={{ "--reveal-delay": "80ms" } as React.CSSProperties}
             >
               {EN.home.gatewayHeading}
