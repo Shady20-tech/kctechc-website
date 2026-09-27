@@ -17,6 +17,10 @@ import { useEffect, useRef, type ReactNode } from "react";
  *
  * Rendering is driven by the parent's `open` state, so the panel is absent from
  * the DOM (not merely hidden) when closed.
+ *
+ * `tone="ink"` renders the dark variant used by the mobile drawer. The drawer is
+ * the same surface family as the header it opens from, so it reads as the header
+ * unfolding rather than as a white sheet appearing over a dark site.
  */
 export function Modal({
   open,
@@ -25,6 +29,8 @@ export function Modal({
   children,
   placement = "center",
   closeLabel,
+  tone = "light",
+  heading,
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,6 +38,14 @@ export function Modal({
   children: ReactNode;
   placement?: "center" | "side";
   closeLabel: string;
+  tone?: "light" | "ink";
+  /**
+   * Replaces the default text heading while keeping the close control and the
+   * `aria-label`. The drawer supplies its own branding row here; the accessible
+   * name still comes from `title`, so the two cannot disagree in the way a
+   * separately-written `aria-label` would.
+   */
+  heading?: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -89,11 +103,12 @@ export function Modal({
   if (!open) return null;
 
   const isSide = placement === "side";
+  const isInk = tone === "ink";
 
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-ink-950/50"
+        className={isInk ? "absolute inset-0 bg-ink-950/70" : "absolute inset-0 bg-ink-950/50"}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -105,22 +120,38 @@ export function Modal({
         tabIndex={-1}
         className={
           isSide
-            ? "absolute right-0 top-0 h-full w-[min(20rem,90vw)] overflow-y-auto bg-surface p-5 shadow-overlay"
+            ? isInk
+              ? "absolute right-0 top-0 flex h-full w-[min(22rem,92vw)] flex-col overflow-y-auto bg-ink-950 text-white shadow-overlay"
+              : "absolute right-0 top-0 h-full w-[min(20rem,90vw)] overflow-y-auto bg-surface p-5 shadow-overlay"
             : "absolute left-1/2 top-1/2 w-[min(32rem,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-card bg-surface p-6 shadow-overlay"
         }
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
+        <div
+          className={
+            isInk
+              ? "flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4"
+              : "flex items-start justify-between gap-4"
+          }
+        >
+          {heading ?? (
+            <h2 className={isInk ? "text-lg font-semibold text-white" : "text-lg font-semibold text-ink-900"}>
+              {title}
+            </h2>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="rounded-card p-1.5 text-muted transition-soft hover:bg-ink-50 hover:text-ink-900"
+            className={
+              isInk
+                ? "-mr-1.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-card text-white/70 transition-soft hover:bg-white/10 hover:text-white"
+                : "rounded-card p-1.5 text-muted transition-soft hover:bg-ink-50 hover:text-ink-900"
+            }
           >
             <X aria-hidden="true" className="h-5 w-5" />
             <span className="visually-hidden">{closeLabel}</span>
           </button>
         </div>
-        <div className="mt-4">{children}</div>
+        <div className={isInk ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "mt-4"}>{children}</div>
       </div>
     </div>
   );

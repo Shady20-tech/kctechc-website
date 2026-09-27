@@ -159,7 +159,7 @@ export default async function DepartmentPage({
               <p className="mono-label text-dept-accent">
                 {t("nav.departments")}
               </p>
-              <h1 className="display-tight mt-4 font-display text-4xl font-bold text-white sm:text-5xl">
+              <h1 className="display-tight mt-4 font-display text-4xl font-bold text-electric-300 sm:text-5xl">
                 {hasContent ? t(`${copy}.heroHeading`) : label}
               </h1>
               <p className="mt-5 text-base leading-relaxed text-ink-200 sm:text-lg">
