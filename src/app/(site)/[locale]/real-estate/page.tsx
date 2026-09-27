@@ -9,6 +9,7 @@ import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
+import { HeroMedia } from "@/components/ui/HeroMedia";
 import { PROPERTY_SEARCH_PATH, REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -130,6 +131,7 @@ export default async function RealEstatePage({
       {listJsonLd ? <JsonLdScript data={listJsonLd} /> : null}
 
       <section className="on-ink relative overflow-hidden bg-ink-950">
+        <HeroMedia src="/hero/real-estate.jpg" />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
         <div className="relative container-page py-16 sm:py-20">

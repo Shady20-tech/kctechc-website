@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SkipLink } from "@/components/layout/Navigation";
+import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
 import { LastDepartmentShortcut } from "@/components/layout/LastDepartment";
 import { RotatingStatement } from "@/components/ui/RotatingStatement";
@@ -138,6 +139,7 @@ export default async function CorporateGatewayPage() {
         {/* Hero. Dark ink with a technical grid and brand glow, so the corporate
             entry point reads as engineered rather than as a plain header block. */}
         <section className="on-ink relative overflow-hidden bg-ink-950">
+          <HeroMedia src="/hero/corporate.jpg" />
           <div aria-hidden="true" className="absolute inset-0 bg-grid" />
           <div aria-hidden="true" className="absolute inset-0 bg-glow" />
           <div
@@ -150,7 +152,7 @@ export default async function CorporateGatewayPage() {
             </p>
 
             <h1
-              className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-white sm:text-5xl lg:text-6xl"
+              className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-teal-300 sm:text-5xl lg:text-6xl"
               style={{ "--reveal-delay": "80ms" } as React.CSSProperties}
             >
               {EN.home.gatewayHeading}
