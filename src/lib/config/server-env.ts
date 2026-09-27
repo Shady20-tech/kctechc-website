@@ -20,9 +20,24 @@ export const serverEnv = {
   emailFrom: optional(process.env.EMAIL_FROM),
   emailContactTo: optional(process.env.EMAIL_CONTACT_TO),
   paymentProvider: optional(process.env.PAYMENT_PROVIDER),
-  flutterwavePublicKey: optional(process.env.FLUTTERWAVE_PUBLIC_KEY),
-  flutterwaveSecretKey: optional(process.env.FLUTTERWAVE_SECRET_KEY),
-  flutterwaveWebhookSecret: optional(process.env.FLUTTERWAVE_WEBHOOK_SECRET),
+  /** Fapshi API credentials. `apiuser` and `apikey` request headers. */
+  fapshiApiUser: optional(process.env.FAPSHI_API_USER),
+  fapshiApiKey: optional(process.env.FAPSHI_API_KEY),
+  /**
+   * Fapshi base URL. Defaults to the live host in the adapter.
+   *
+   * Configuration rather than inference: the base URL and the credentials must
+   * move together, so a sandbox key cannot be pointed at the live host by
+   * accident. `sandbox` selects the sandbox host; anything else is treated as an
+   * explicit URL.
+   */
+  fapshiBaseUrl: (() => {
+    const raw = optional(process.env.FAPSHI_BASE_URL);
+    if (!raw) return null;
+    return raw === "sandbox" ? "https://sandbox.fapshi.com" : raw;
+  })(),
+  /** The `x-wh-secret` value configured on the Fapshi service dashboard. */
+  fapshiWebhookSecret: optional(process.env.FAPSHI_WEBHOOK_SECRET),
   /** Bot verification (Turnstile/hCaptcha). Absent means the check is skipped. */
   botVerificationSecretKey: optional(process.env.BOT_VERIFICATION_SECRET_KEY),
   botVerificationEndpoint: optional(process.env.BOT_VERIFICATION_ENDPOINT),
@@ -33,8 +48,7 @@ export const serverEnv = {
  * this rather than simulating a successful charge.
  */
 export const isPaymentProviderConfigured = (): boolean =>
-  serverEnv.flutterwaveSecretKey !== null &&
-  serverEnv.flutterwavePublicKey !== null;
+  serverEnv.fapshiApiUser !== null && serverEnv.fapshiApiKey !== null;
 
 export const isTolgeeServerConfigured = (): boolean =>
   serverEnv.tolgeeApiKey !== null;

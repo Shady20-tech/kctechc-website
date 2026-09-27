@@ -8,7 +8,10 @@ import {
   newTransactionReference,
   verifyTransaction,
   type ProviderChargeResult,
-} from "./flutterwave";
+} from "./fapshi";
+
+/** The provider recorded on every payment row and webhook event. */
+export const PAYMENT_PROVIDER = "fapshi";
 
 /**
  * Payment orchestration.
@@ -29,20 +32,8 @@ import {
 
 export type InitiatePaymentResult =
   | { ok: true; kind: "redirect"; link: string; paymentId: string }
-  | { ok: true; kind: "pending"; paymentId: string }
   | { ok: true; kind: "manual"; paymentId: string }
   | { ok: false; error: string; retryable: boolean };
-
-/** Map an order's chosen method to the provider's supported set. */
-function isProviderMethod(
-  method: string,
-): method is "card" | "mobile_money_mtn" | "mobile_money_orange" {
-  return (
-    method === "card" ||
-    method === "mobile_money_mtn" ||
-    method === "mobile_money_orange"
-  );
-}
 
 /**
  * Begin payment for an order.
@@ -69,8 +60,11 @@ export async function initiatePayment(input: {
   if (!admin) return { ok: false, error: "unconfigured", retryable: false };
 
   // Reuse an existing attempt with this key rather than creating a second
-  // charge. This is the application half of the idempotency guarantee; the
-  // unique index on `provider_tx_ref` is the database half.
+  // charge. This is the application half of the idempotency guarantee, and on
+  // Fapshi it is the *only* half of it that protects against a duplicate link:
+  // the API has no idempotency header, so a retried `initiate-pay` would create a
+  // second link if we ever called it twice for one attempt key. The unique index
+  // on `provider_tx_ref` is the database half, catching a duplicate record.
   const { data: existing } = await admin
     .from("payments")
     .select("id, status, provider_metadata")
@@ -85,7 +79,10 @@ export async function initiatePayment(input: {
     if (link) {
       return { ok: true, kind: "redirect", link, paymentId: existing.id };
     }
-    return { ok: true, kind: "pending", paymentId: existing.id };
+    // No link and not manual: the attempt already reached the provider and failed
+    // or was abandoned. Reporting it as a redirect would send the customer to a
+    // page that does not exist; the caller treats this as a retryable error.
+    return { ok: false, error: "attempt_exists", retryable: true };
   }
 
   const { data: payment, error: insertError } = await admin
@@ -94,7 +91,7 @@ export async function initiatePayment(input: {
       order_id: input.orderId,
       status: "pending",
       method: input.method,
-      provider: "flutterwave",
+      provider: PAYMENT_PROVIDER,
       amount_minor: input.amountMinor,
       currency: input.currency,
       provider_tx_ref: input.txRef,
@@ -128,19 +125,11 @@ export async function initiatePayment(input: {
     return { ok: false, error: "unconfigured", retryable: false };
   }
 
-  if (!isProviderMethod(input.method)) {
-    return { ok: false, error: "unsupported_method", retryable: false };
-  }
-
   const charge: ProviderChargeResult = await createCharge({
     txRef: input.txRef,
     amountMinor: input.amountMinor,
     currency: input.currency,
-    idempotencyKey: input.idempotencyKey,
     customerEmail: input.customerEmail,
-    customerName: input.customerName,
-    customerPhone: input.customerPhone,
-    method: input.method,
     redirectUrl: input.redirectUrl,
     narration: input.narration,
   });
@@ -184,17 +173,16 @@ export async function initiatePayment(input: {
     return { ok: true, kind: "redirect", link: charge.link, paymentId: payment.id };
   }
 
-  // Mobile money: the charge is pending until the customer approves on their
-  // handset. `requires_action` is the honest state — not success, not failure.
+  // Unreachable while Fapshi returns a link for every charge: the union has one
+  // success variant. Kept as an explicit failure rather than a silent fallthrough
+  // so that a provider which changes shape cannot leave a payment pending with no
+  // way for the customer to act.
   await admin
     .from("payments")
-    .update({
-      provider_reference: charge.providerReference,
-      status: "requires_action",
-    })
+    .update({ status: "failed", failure_reason: "provider_returned_no_link" })
     .eq("id", payment.id);
 
-  return { ok: true, kind: "pending", paymentId: payment.id };
+  return { ok: false, error: "provider_returned_no_link", retryable: true };
 }
 
 /**
@@ -222,13 +210,23 @@ export async function reconcilePayment(input: {
 
   const { data: payment } = await admin
     .from("payments")
-    .select("id, order_id, status")
+    .select("id, order_id, status, provider_reference, provider_tx_ref")
     .eq("provider_tx_ref", input.txRef)
     .maybeSingle();
 
   if (!payment) return { ok: false, error: "payment_not_found" };
 
-  const verification = await verifyTransaction({ txRef: input.txRef });
+  // Fapshi's status endpoint is keyed on `transId`, not on our `externalId`, so
+  // the id captured when the link was created is what verification needs. Without
+  // it there is nothing to verify against, and reporting that is better than
+  // guessing at a reference.
+  if (!payment.provider_reference) {
+    return { ok: false, error: "no_provider_reference" };
+  }
+
+  const verification = await verifyTransaction({
+    transId: payment.provider_reference,
+  });
   if (!verification.ok) {
     return { ok: false, error: verification.error };
   }
@@ -262,6 +260,7 @@ export async function reconcilePayment(input: {
           : undefined,
     p_provider_metadata: {
       provider_status: verification.providerStatus,
+      provider_medium: verification.providerMedium,
       verified_amount_minor: verification.amountMinor,
       verified_currency: verification.currency,
     },

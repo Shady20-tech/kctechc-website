@@ -107,8 +107,13 @@ export function CheckoutForm({
   const deliveryMinor = fulfillment === "pickup" ? 0 : 0;
   const totalMinor = subtotalMinor + deliveryMinor;
 
-  const paymentLabels: Record<PaymentMethod, { label: string; hint: string }> = {
-    card: { label: t("checkout.paymentCard"), hint: t("checkout.paymentCardHint") },
+  // Keyed to the *offered* methods, not to every `PaymentMethod`. `card` is in
+  // the stored enum for legacy rows but is not offered, so requiring a label for
+  // it would put a dead entry in the map that reads like a live option.
+  const paymentLabels: Record<
+    (typeof PAYMENT_METHODS)[number],
+    { label: string; hint: string }
+  > = {
     mobile_money_mtn: { label: t("checkout.paymentMtn"), hint: t("checkout.paymentMtnHint") },
     mobile_money_orange: { label: t("checkout.paymentOrange"), hint: t("checkout.paymentOrangeHint") },
     bank_transfer: { label: t("checkout.paymentBank"), hint: t("checkout.paymentBankHint") },
@@ -301,8 +306,8 @@ export function CheckoutForm({
           })}
         </div>
 
-        {/* Reassurance about card data. Stated because it is true: the card is
-            entered on the provider's page, not here. */}
+        {/* Reassurance about payment data. Stated because it is true: the
+            payment is completed on Fapshi's own page, not here. */}
         <p className="text-sm text-muted">{t("checkout.secureNote")}</p>
       </fieldset>
 

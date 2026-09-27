@@ -39,8 +39,11 @@ export const checkoutSchema = z
     locale: localeSchema,
 
     fulfillment: z.enum(["delivery", "pickup"]),
+    // The three methods the site actually supports through Fapshi. `card` is
+    // deliberately absent: Fapshi has no card channel, so accepting it here would
+    // create an order that can never be paid. It remains a valid *stored* enum
+    // value for legacy rows; this schema governs what may be submitted.
     paymentMethod: z.enum([
-      "card",
       "mobile_money_mtn",
       "mobile_money_orange",
       "bank_transfer",

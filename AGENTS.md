@@ -102,11 +102,12 @@ legal claims, staff, testimonials, or case-study metrics.
   fields, keep the asset→entity→locale relationship, always render through `next/image`.
 
 ### Payments
-- Provider abstraction. **Flutterwave** is the preferred initial provider (documented XAF support
-  with MTN/Orange Mobile Money and cards). Server-side payment creation, idempotency, webhook
-  signature verification, async state handling, server-side verification before order finalization,
-  explicit pending/success/failed states, no card data in our DB, audit trail, sandbox/production
-  separation, and a disabled feature flag when production credentials are absent.
+- Provider abstraction. **Fapshi** is the provider (Cameroon, XAF only, MTN/Orange Mobile Money;
+  it has no card channel). Server-side payment creation via `POST /initiate-pay`, webhook secret
+  verification through the `x-wh-secret` header, async state handling, server-side verification
+  through `GET /payment-status/{transId}` before order finalization, explicit pending/success/failed
+  states, no card data in our DB, audit trail, sandbox/live separation via `FAPSHI_BASE_URL`, and a
+  disabled feature flag when production credentials are absent.
 - **Never fake a successful payment when credentials are missing.**
 - Bank transfer may be offered as a manual/offline method until a verified provider flow exists.
 
