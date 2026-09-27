@@ -1,10 +1,15 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   ADMIN_NAV,
+  ADMIN_NAV_ICON_KEYS,
   isNavItemActive,
   navItemsForRole,
   navSectionsForRole,
+  navSectionsForRoleClient,
 } from "@/lib/admin/navigation";
 import { APP_ROLES, type AppRole } from "@/lib/auth/roles";
 
@@ -104,6 +109,88 @@ describe("ADMIN_NAV integrity", () => {
         expect(item.href.startsWith("/admin")).toBe(true);
       }
     }
+  });
+});
+
+describe("AdminNavItemClient serializability", () => {
+  /**
+   * The console layout is a Server Component and the sidebar is a Client Component,
+   * so the nav crosses the boundary as props. React refuses to serialize a function
+   * and throws at render time — which is how the whole console 500'd. These assert
+   * the projection contains nothing but strings, so that failure cannot come back.
+   */
+  it("sends only serializable values for every role", () => {
+    for (const role of APP_ROLES) {
+      const sections = navSectionsForRoleClient(role);
+      const roundTripped = JSON.parse(JSON.stringify(sections));
+      expect(roundTripped).toEqual(sections);
+    }
+  });
+
+  it("carries no function values", () => {
+    for (const role of APP_ROLES) {
+      const walk = (value: unknown): void => {
+        if (value && typeof value === "object") {
+          for (const nested of Object.values(value)) walk(nested);
+          return;
+        }
+        expect(typeof value).not.toBe("function");
+      };
+      walk(navSectionsForRoleClient(role));
+    }
+  });
+
+  it("preserves the same destinations as the server projection", () => {
+    for (const role of APP_ROLES) {
+      const server = navSectionsForRole(role).flatMap((section) =>
+        section.items.map((item) => item.href),
+      );
+      const client = navSectionsForRoleClient(role).flatMap((section) =>
+        section.items.map((item) => item.href),
+      );
+      expect(client).toEqual(server);
+    }
+  });
+
+  it("every iconKey resolves to a known icon", () => {
+    for (const section of ADMIN_NAV) {
+      for (const item of section.items) {
+        expect(ADMIN_NAV_ICON_KEYS).toContain(item.iconKey);
+      }
+    }
+  });
+
+  it("uses a distinct iconKey per href", () => {
+    const keys = ADMIN_NAV.flatMap((section) =>
+      section.items.map((item) => item.iconKey),
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("every nav destination resolves to a real route", () => {
+  /**
+   * A sidebar entry pointing at a route that does not exist is a 404 one click
+   * behind the console — which is exactly how `/admin/store` shipped, because
+   * only `/admin/store/new` had a page. Checking the file tree is enough here:
+   * App Router folders map to paths, so the page file existing is the condition
+   * for the route rendering at all.
+   */
+  const CONSOLE_ROOT = path.resolve(
+    process.cwd(),
+    "src/app/(static)/admin/(console)",
+  );
+
+  it("has a page file for every ADMIN_NAV href", () => {
+    const missing: string[] = [];
+    for (const section of ADMIN_NAV) {
+      for (const item of section.items) {
+        const relative = item.href.replace(/^\/admin/, "") || "/";
+        const page = path.join(CONSOLE_ROOT, relative, "page.tsx");
+        if (!existsSync(page)) missing.push(`${item.href} -> ${page}`);
+      }
+    }
+    expect(missing).toEqual([]);
   });
 });
 

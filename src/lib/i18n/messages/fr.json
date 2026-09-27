@@ -322,7 +322,21 @@
         "duplicate": "Un produit utilise déjà cet identifiant ou cette référence.",
         "write_failed": "Le produit n'a pas pu être enregistré. Veuillez réessayer."
       },
-      "seoWarning": "Le produit a été créé, mais ses réglages SEO n'ont pas pu être enregistrés. Ajoutez-les à nouveau depuis la page du produit."
+      "seoWarning": "Le produit a été créé, mais ses réglages SEO n'ont pas pu être enregistrés. Ajoutez-les à nouveau depuis la page du produit.",
+      "catalogueHeading": "Produits de la boutique",
+      "catalogueIntro": "Tous les produits de la boutique Marketing digital, les plus récents en premier. Les produits publiés sont visibles par les clients ; les brouillons ne le sont pas.",
+      "noProducts": "Aucun produit pour le moment. Ajoutez le premier pour ouvrir la boutique.",
+      "openProduct": "Ouvrir le produit",
+      "addProduct": "Ajouter un produit",
+      "columnName": "Nom",
+      "columnSku": "UGS",
+      "columnCategory": "Catégorie",
+      "columnPrice": "Prix",
+      "columnStock": "Stock",
+      "columnStatus": "Statut",
+      "statusPublished": "Publié",
+      "statusDraft": "Brouillon",
+      "columnAvailability": "Disponibilité"
     },
     "projectsHeading": "Projets électriques",
     "projectsIntro": "Créez et publiez des fiches de projet. Un projet ne devient public que lorsqu'il est publié, et la publication exige une date de publication.",

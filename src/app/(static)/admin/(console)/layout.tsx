@@ -1,7 +1,7 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
 import { resolveAvatarUrl } from "@/components/admin/Avatar";
-import { navSectionsForRole } from "@/lib/admin/navigation";
+import { navSectionsForRoleClient } from "@/lib/admin/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
 import { createTranslator } from "@/lib/i18n/translator";
 
@@ -29,7 +29,7 @@ export default async function ConsoleLayout({
 }) {
   const profile = await requireAdmin("/admin");
   const t = createTranslator("en").t;
-  const sections = navSectionsForRole(profile.role);
+  const sections = navSectionsForRoleClient(profile.role);
 
   const labels: Record<string, string> = {
     consoleName: t("adminNav.consoleName"),
