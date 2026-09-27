@@ -561,6 +561,20 @@ acceptance criteria pass. Then stop — do not start the next phase.
   merged to `main` via #14, and pushing a follow-up commit onto the merged
   `phase-7-real-estate-platform` branch silently reopened work on a dead branch. Cut a fresh branch
   from `main` instead, and restore any branch you pushed to by accident.
+- **A `next build` does not populate `public/` or `.next/static/` in the standalone bundle, and a
+  silent copy failure makes the whole site render unstyled.** `output: "standalone"` emits only
+  `server.js`, `package.json` and `node_modules`; the assets must be copied in:
+  `cp -r public .next/standalone/public && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static`.
+  Miss it and every `.css`, `woff2` and `public/` request 500s from the standalone server — the page
+  still returns 200 HTML, so it looks like a styling bug rather than a missing-file bug. After
+  starting the server, assert the assets rather than trusting the HTML status:
+  `curl -o /dev/null -w '%{http_code}' localhost:12000/_next/static/chunks/<name>.css` (200, not 500).
+- **Verify a claimed page break by reading computed styles, not by looking at a screenshot.** The
+  CSS-500 above was only caught by evaluating `getComputedStyle` on the running page and by checking
+  each asset's status code. A screenshot alone cannot distinguish "unstyled" from "intentionally dark
+  design", and it is easy to misread a dark hero band as a broken page. Check `document.styleSheets`
+  rule count, the header's `position`/`backgroundColor`, and each `img`'s `naturalWidth` (0 = the
+  file did not load).
 - **A `backdrop-filter` ancestor silently breaks `position: fixed` children.** `Modal` is rendered
   from inside `SiteHeader`, which carries `backdrop-blur`. A `backdrop-filter` on an ancestor makes it
   the containing block for fixed descendants, so the drawer layer's `inset-0` resolved against the
