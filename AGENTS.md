@@ -561,6 +561,23 @@ acceptance criteria pass. Then stop — do not start the next phase.
   merged to `main` via #14, and pushing a follow-up commit onto the merged
   `phase-7-real-estate-platform` branch silently reopened work on a dead branch. Cut a fresh branch
   from `main` instead, and restore any branch you pushed to by accident.
+- **A `backdrop-filter` ancestor silently breaks `position: fixed` children.** `Modal` is rendered
+  from inside `SiteHeader`, which carries `backdrop-blur`. A `backdrop-filter` on an ancestor makes it
+  the containing block for fixed descendants, so the drawer layer's `inset-0` resolved against the
+  64px header instead of the viewport: the backdrop covered the page while the panel sat inside the
+  header box. `Modal` now portals to `document.body` to escape that ancestor. Any new overlay gets
+  the same treatment — do not assume `fixed inset-0` reaches the viewport.
+- **A drawer's width must be pinned in absolute units, not viewport-relative.** `w-[min(22rem,92vw)]`
+  measured 345px at a 375px viewport — 92% of the screen — which reads as a full-screen takeover
+  rather than a drawer. The panel is now a flat 300px with an `82vw` cap, so the page stays visible
+  beside it down to 320px.
+- **Hero assets are resolution-capped by the source, and that cap is invisible in the markup.**
+  `next/image` never upscales, so a `w=2048` request returns the source width and no error. The
+  original assets were 246×113 placeholders and the next round were 736px Pinterest thumbnails,
+  stretched full-bleed. `corporate` (992px) and `real-estate` (626px) are still capped and need
+  genuinely larger source images — confirm a source exceeds `1920px` before wiring it in. Replacing a
+  hero file in place also leaves the URL unchanged, and Next serves optimised images with
+  `max-age=14400`, so the old bytes linger for hours; ship a new filename instead.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
