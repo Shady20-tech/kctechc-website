@@ -285,3 +285,158 @@ export function serializeJsonLd(data: JsonLd): string {
   // `<` is escaped so a value can never terminate the script element early.
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
+
+/**
+ * A residential or commercial property listing.
+ *
+ * Google's structured-data documentation for real estate describes a
+ * `RealEstateListing` wrapping an `Accommodation`/`Place`, and this builds
+ * exactly that: the listing is the offer and the inner object is the thing being
+ * offered. The fields are the ones the page actually renders — the same rule the
+ * product markup follows. A price in the markup that is not on the screen is a
+ * false claim to a search engine, not a richer result.
+ *
+ * Deliberately absent, and for the same reasons as the product markup:
+ *   - `aggregateRating` / `review`: no reviews exist. Inventing them is a
+ *     fabricated endorsement.
+ *   - `priceValidUntil`: a made-up expiry is worse than none.
+ *   - `floorSize` unless a real area was recorded.
+ *   - Any exact address or coordinate. The public page shows an approximate area,
+ *     so the markup must not state a more precise location than the page does —
+ *     that would leak a private listing's position into a public index.
+ */
+export function realEstateListingJsonLd(input: {
+  name: string;
+  description: string;
+  path: string;
+  locale: Locale;
+  reference: string;
+  propertyKind: string;
+  imagePaths?: readonly string[];
+  /** Present only when the listing has a stated price. */
+  priceMinor?: number;
+  currency?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  floorSizeSqm?: number;
+  yearBuilt?: number;
+  locality?: string;
+  regionName?: string;
+  datePublished?: string;
+}): JsonLd {
+  const siteUrl = getSiteUrl();
+  const url = new URL(input.path, siteUrl).toString();
+
+  const accommodation: JsonLd = {
+    "@type": propertyKindSchemaType(input.propertyKind),
+    name: input.name,
+    // `Accommodation` uses `numberOfBedrooms`/`numberOfBathroomsTotal`; the
+    // generic `Place` does not accept them, so they are only attached when the
+    // inner type is one that does.
+    ...(isAccommodation(input.propertyKind) && input.bedrooms !== undefined
+      ? { numberOfBedrooms: input.bedrooms }
+      : {}),
+    ...(isAccommodation(input.propertyKind) && input.bathrooms !== undefined
+      ? { numberOfBathroomsTotal: input.bathrooms }
+      : {}),
+    ...(input.floorSizeSqm !== undefined
+      ? {
+          floorSize: {
+            "@type": "QuantitativeValue",
+            value: input.floorSizeSqm,
+            unitCode: "MTK",
+          },
+        }
+      : {}),
+    ...(input.yearBuilt !== undefined
+      ? { yearBuilt: String(input.yearBuilt) }
+      : {}),
+    // The area is named, never the street address: the inner Place carries the
+    // locality and region the page shows, and nothing finer.
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "CM",
+      ...(input.locality ? { addressLocality: input.locality } : {}),
+      ...(input.regionName ? { addressRegion: input.regionName } : {}),
+    },
+  };
+
+  const offer: JsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: input.name,
+    description: input.description,
+    url,
+    inLanguage: LOCALE_SEO_TAGS[input.locale],
+    ...(input.datePublished ? { datePosted: input.datePublished } : {}),
+    ...(input.imagePaths && input.imagePaths.length > 0
+      ? {
+          image: input.imagePaths.map((path) =>
+            new URL(path, siteUrl).toString(),
+          ),
+        }
+      : {}),
+    // `identifier` carries the reference so two listings with a similar title are
+    // distinguishable, without inventing a GTIN-style identifier.
+    identifier: input.reference,
+    ...(input.priceMinor !== undefined
+      ? {
+          offers: {
+            "@type": "Offer",
+            url,
+            price: priceForFeed(input.priceMinor, input.currency ?? "XAF"),
+            priceCurrency: input.currency ?? "XAF",
+            availability: "https://schema.org/InStock",
+            // Offered by the organisation itself.
+            seller: { "@id": new URL("/#organization", siteUrl).toString() },
+          },
+        }
+      : {}),
+    mainEntity: accommodation,
+  };
+
+  return offer;
+}
+
+/** True when a property kind is described by schema.org's `Accommodation`. */
+function isAccommodation(propertyKind: string): boolean {
+  return !["land", "farm", "office", "shop", "warehouse", "mixed_use", "other"].includes(
+    propertyKind,
+  );
+}
+
+/**
+ * The schema.org type for a property kind.
+ *
+ * Deliberately conservative. Schema.org distinguishes `House`, `Apartment` and
+ * `SingleFamilyResidence`; it does not have a type for every kind this project
+ * supports, and mapping "guesthouse" onto a type that means something else would
+ * be a claim the page does not make. Everything without a faithful match falls
+ * back to `Accommodation` or `Place`, which are true.
+ */
+export function propertyKindSchemaType(propertyKind: string): string {
+  switch (propertyKind) {
+    case "house":
+    case "villa":
+    case "duplex":
+    case "bungalow":
+      return "House";
+    case "apartment":
+    case "studio":
+      return "Apartment";
+    case "hotel":
+      return "Hotel";
+    case "land":
+    case "farm":
+      return "Place";
+    case "office":
+    case "shop":
+    case "warehouse":
+    case "mixed_use":
+    case "restaurant":
+    case "guesthouse":
+      return "Place";
+    default:
+      return "Accommodation";
+  }
+}

@@ -1,5 +1,9 @@
 import { DEPARTMENTS } from "@/lib/config/site";
-import { INSIGHTS_PATH, STORE_PATH } from "@/lib/config/redirects";
+import {
+  INSIGHTS_PATH,
+  PROPERTY_SEARCH_PATH,
+  STORE_PATH,
+} from "@/lib/config/redirects";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 
@@ -44,6 +48,12 @@ export const NAV_PATHS = [
   // because it is a primary nav entry, and this list is what the sitemap and the
   // nav-consistency test both read.
   STORE_PATH,
+  // The property search page is a primary landing surface for the real-estate
+  // department. It is listed here because this list is what the sitemap and the
+  // nav-consistency test both read, so a public route cannot be linked and
+  // unlisted at the same time. The department landing page at `REAL_ESTATE_PATH`
+  // is reached from the departments menu and covered by `DEPARTMENTS`.
+  PROPERTY_SEARCH_PATH,
 ] as const;
 
 /**
@@ -60,7 +70,13 @@ export const INSIGHTS_LABEL_KEY = "nav.insights";
 
 // Defined in `./redirects` so `next.config.ts` can import the redirect table
 // without pulling in this module's dependency chain.
-export { INSIGHTS_PATH, LEGACY_REDIRECTS, STORE_PATH } from "./redirects";
+export {
+  INSIGHTS_PATH,
+  LEGACY_REDIRECTS,
+  PROPERTY_SEARCH_PATH,
+  REAL_ESTATE_PATH,
+  STORE_PATH,
+} from "./redirects";
 
 /**
  * Build the primary nav for a locale.

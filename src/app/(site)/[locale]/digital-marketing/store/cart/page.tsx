@@ -99,7 +99,7 @@ export default async function CartPage({
       ) : (
         <div className="mt-10 grid gap-10 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <CartLines cart={cart} locale={resolved} t={t} />
+            <CartLines cart={cart} locale={resolved} />
           </div>
 
           <aside

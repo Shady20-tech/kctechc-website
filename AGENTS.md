@@ -315,6 +315,15 @@ acceptance criteria pass. Then stop — do not start the next phase.
   dev server, when smoke-testing routes.
 - **`NAV_PATHS` is the sitemap's source of truth.** Adding a nav link without adding its path
   there fails `navigation.test.ts` ("only links to paths the sitemap also advertises").
+- **A translator function cannot be passed into a Client Component.** `createTranslator(locale).t`
+  is a closure over the message dictionary, so the RSC serializer refuses it at render time:
+  "Functions cannot be passed directly to Client Components unless you explicitly expose it by
+  marking it with `use server`". The mistake typechecks, lints, builds and passes every other test —
+  it only throws when the route is actually requested, so an empty data source (the usual pre-launch
+  state) can hide it indefinitely. Client Components therefore take a serializable `locale` prop and
+  call `createTranslator(locale).t` themselves; the translator is pure and isomorphic, so the two
+  forms render identically. `src/lib/i18n/client-boundary.test.ts` enforces the rule by scanning for
+  `t: Translator["t"]` in a `"use client"` file and for `t(` without a `createTranslator` import.
 
 ### Phase 3 gotchas worth not rediscovering
 

@@ -49,7 +49,7 @@ export default async function AdminNewProductPage() {
             <p>{t("admin.store.errors.unconfigured")}</p>
           </Notice>
         ) : (
-          <ProductForm categories={categories} t={t} />
+          <ProductForm categories={categories} locale="en" />
         )}
       </div>
     </>

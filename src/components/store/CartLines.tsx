@@ -7,7 +7,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { STORE_PATH } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
-import type { Translator } from "@/lib/i18n/translator";
+import { createTranslator } from "@/lib/i18n/translator";
 import type { Cart } from "@/lib/store/cart";
 import {
   removeCartItemAction,
@@ -35,12 +35,13 @@ import { formatPrice } from "@/lib/store/types";
 export function CartLines({
   cart,
   locale,
-  t,
 }: {
   cart: Cart;
   locale: Locale;
-  t: Translator["t"];
 }) {
+  // Derived from the locale rather than received: a function cannot cross the
+  // Server/Client boundary, and the translator is pure and isomorphic.
+  const t = createTranslator(locale).t;
   const [pending, startTransition] = useTransition();
 
   const onQuantityChange = (itemId: string, quantity: number) => {

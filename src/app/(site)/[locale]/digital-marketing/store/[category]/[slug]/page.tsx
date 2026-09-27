@@ -237,7 +237,6 @@ export default async function ProductDetailPage({
               <AddToCartButton
                 productId={product.id}
                 locale={resolved}
-                t={t}
                 disabled={!purchasable}
               />
             </div>

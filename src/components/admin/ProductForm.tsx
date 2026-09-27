@@ -4,7 +4,8 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
-import type { Translator } from "@/lib/i18n/translator";
+import type { Locale } from "@/lib/i18n/locales";
+import { createTranslator } from "@/lib/i18n/translator";
 import {
   createProductAction,
   type CreateProductResult,
@@ -27,11 +28,14 @@ const EMPTY: CreateProductResult = { ok: false, error: "" };
 
 export function ProductForm({
   categories,
-  t,
+  locale,
 }: {
   categories: readonly { id: string; name: string }[];
-  t: Translator["t"];
+  locale: Locale;
 }) {
+  // Derived from the locale rather than received: a function cannot cross the
+  // Server/Client boundary, and the translator is pure and isomorphic.
+  const t = createTranslator(locale).t;
   const [state, formAction, pending] = useActionState(
     async (_previous: CreateProductResult, formData: FormData) =>
       createProductAction(formData),

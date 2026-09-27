@@ -19,6 +19,17 @@ type BuildMetadataInput = {
   type?: "website" | "article";
   publishedTime?: string;
   modifiedTime?: string;
+  /**
+   * An absolute URL to a representative image, used for the social preview.
+   *
+   * Absolute rather than a storage path on purpose: this module is part of the
+   * SEO framework and has no business knowing which bucket an image came from.
+   * The caller that already built the public URL passes it in. Omitting it is
+   * valid — a page with no photograph simply has no preview image, which is
+   * better than pointing the crawler at a URL that does not resolve.
+   */
+  imageUrl?: string;
+  imageAlt?: string;
 };
 
 /**
@@ -34,6 +45,8 @@ export function buildMetadata({
   type = "website",
   publishedTime,
   modifiedTime,
+  imageUrl,
+  imageAlt,
 }: BuildMetadataInput): Metadata {
   const canonical = canonicalFor(locale, pathWithoutLocale);
 
@@ -42,6 +55,8 @@ export function buildMetadata({
   // otherwise render it twice, e.g. "KC Technology Corporation | KC Technology
   // Corporation". Using `absolute` for those bypasses the template.
   const titleValue = title.includes(SITE.legalName) ? { absolute: title } : title;
+
+  const images = imageUrl ? [{ url: imageUrl, alt: imageAlt ?? title }] : undefined;
 
   return {
     metadataBase: getSiteUrl(),
@@ -60,11 +75,13 @@ export function buildMetadata({
       locale: LOCALE_SEO_TAGS[locale],
       ...(publishedTime ? { publishedTime } : {}),
       ...(modifiedTime ? { modifiedTime } : {}),
+      ...(images ? { images } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: images ? "summary_large_image" : "summary",
       title,
       description,
+      ...(images ? { images: images.map((image) => image.url) } : {}),
     },
     robots: noindex
       ? { index: false, follow: false, nocache: true }
