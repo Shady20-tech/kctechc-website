@@ -6,12 +6,16 @@ import {
   getRoleDepartment,
   isAdminRole,
   isAppRole,
+  isContentManagerRole,
   isElevatedRole,
   isRealEstateAdminRole,
+  isStoreManagerRole,
   ADMIN_ROLES,
   APP_ROLES,
+  CONTENT_MANAGER_ROLES,
   ELEVATED_ROLES,
   REAL_ESTATE_ADMIN_ROLES,
+  STORE_MANAGER_ROLES,
 } from "@/lib/auth/roles";
 
 describe("isAppRole", () => {
@@ -90,6 +94,46 @@ describe("canAccessDepartment", () => {
   });
 });
 
+describe("isStoreManagerRole and isContentManagerRole", () => {
+  it("gives the store to both marketing departments", () => {
+    // The store is the one surface shared between two departments. This is the
+    // assertion that would fail if someone "simplified" the shared list into a
+    // department comparison, which would give it to exactly one of its owners.
+    expect(isStoreManagerRole("digital_marketing_admin")).toBe(true);
+    expect(isStoreManagerRole("electrical_admin")).toBe(true);
+  });
+
+  it("excludes real estate from the store, despite it being elevated", () => {
+    expect(isRealEstateAdminRole("real_estate_admin")).toBe(true);
+    expect(isStoreManagerRole("real_estate_admin")).toBe(false);
+  });
+
+  it("excludes staff and agents, who do not administer either surface", () => {
+    for (const role of [
+      "digital_marketing_staff",
+      "electrical_staff",
+      "real_estate_agent",
+    ] as const) {
+      expect(isStoreManagerRole(role)).toBe(false);
+      expect(isContentManagerRole(role)).toBe(false);
+    }
+  });
+
+  it("includes department_staff, which is cross-department", () => {
+    expect(isStoreManagerRole("department_staff")).toBe(true);
+    expect(isContentManagerRole("department_staff")).toBe(true);
+  });
+
+  it("gives content to the same roles as the store, and neither to real estate", () => {
+    for (const role of APP_ROLES) {
+      expect(isContentManagerRole(role)).toBe(isStoreManagerRole(role));
+      if (getRoleDepartment(role) === "real-estate") {
+        expect(isStoreManagerRole(role)).toBe(false);
+      }
+    }
+  });
+});
+
 describe("isRealEstateAdminRole", () => {
   it("grants cross-listing access to the real-estate admin roles", () => {
     expect(isRealEstateAdminRole("real_estate_admin")).toBe(true);
@@ -164,6 +208,71 @@ describe("role model matches the database", () => {
     for (const role of ELEVATED_ROLES) {
       expect(ADMIN_ROLES).toContain(role);
     }
+  });
+
+  it("ROLE_DEPARTMENTS matches current_user_department()", () => {
+    // getRoleDepartment() and the SQL helper are read by different code paths —
+    // the sidebar reads the former, RLS reads the latter — so they are asserted
+    // equal here rather than trusted to stay in step.
+    const fn = allSql.match(
+      /create or replace function public\.current_user_department\(\)[\s\S]*?select case[\s\S]*?end;/i,
+    );
+    expect(fn, "current_user_department() not found").not.toBeNull();
+
+    const body = fn?.[0] ?? "";
+    const declared = new Map<string, string>();
+    for (const m of body.matchAll(/when '([^']+)' then '([^']+)'/g)) {
+      if (m[1] && m[2]) declared.set(m[1], m[2]);
+    }
+
+    for (const role of APP_ROLES) {
+      const fromSql = declared.get(role) ?? null;
+      const fromTs = getRoleDepartment(role);
+      expect(fromSql, `department mismatch for ${role}`).toBe(fromTs);
+    }
+  });
+
+  it("STORE_MANAGER_ROLES matches is_store_manager()", () => {
+    const fn = allSql.match(
+      /create or replace function public\.is_store_manager\(\)[\s\S]*?in \(\s*([\s\S]*?)\)\s*\)?/i,
+    );
+    const roleList = fn?.[1];
+    expect(roleList, "is_store_manager() not found").toBeDefined();
+
+    const roles: string[] = [];
+    for (const m of (roleList as string).matchAll(/'([^']+)'/g)) {
+      if (m[1]) roles.push(m[1]);
+    }
+
+    expect([...STORE_MANAGER_ROLES].sort()).toEqual(roles.sort());
+  });
+
+  it("CONTENT_MANAGER_ROLES matches is_content_manager()", () => {
+    const fn = allSql.match(
+      /create or replace function public\.is_content_manager\(\)[\s\S]*?in \(\s*([\s\S]*?)\)\s*\)?/i,
+    );
+    const roleList = fn?.[1];
+    expect(roleList, "is_content_manager() not found").toBeDefined();
+
+    const roles: string[] = [];
+    for (const m of (roleList as string).matchAll(/'([^']+)'/g)) {
+      if (m[1]) roles.push(m[1]);
+    }
+
+    expect([...CONTENT_MANAGER_ROLES].sort()).toEqual(roles.sort());
+  });
+
+  it("the department policies actually call the department helpers", () => {
+    // The gap this whole phase closes: `can_access_department()` existed and was
+    // unit-tested while no policy referenced it, so the separation was declared
+    // and never enforced. This asserts the policies consume the scoping helpers.
+    const policies = allSql.match(
+      /create policy "[^"]+"\s+on public\.(inquiries|services|insights)[\s\S]*?;/gi,
+    );
+    expect(policies, "no department policies found").not.toBeNull();
+
+    const joined = (policies ?? []).join("\n");
+    expect(joined).toMatch(/can_read_department|can_manage_department/);
   });
 
   it("no new account can be provisioned with a privileged role", () => {

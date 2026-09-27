@@ -61,6 +61,25 @@ $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
 
+-- The `storage` schema is owned by Supabase's Storage extension. Migrations
+-- register buckets in `storage.buckets`, so the schema has to exist for the
+-- migration chain to run at all. Only the columns those migrations touch are
+-- declared; this is a stand-in for the real extension, not a reimplementation,
+-- and nothing depending on Storage's own behaviour is validated here.
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null,
+  public boolean not null default false,
+  file_size_limit bigint,
+  allowed_mime_types text[],
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+grant usage on schema storage to anon, authenticated, service_role;
+
 -- Supabase grants table/function access to the API roles by default, and RLS is
 -- what actually restricts rows. Replicating that here means a missing GRANT in a
 -- migration would surface as a permission error rather than being masked, and the

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
+import { isStoreManagerRole } from "@/lib/auth/roles";
 import { STORE_PATH } from "@/lib/config/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -55,7 +55,7 @@ export async function createProductAction(
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!auth.profile || !isElevatedRole(auth.profile.role)) {
+  if (!auth.profile || !isStoreManagerRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
 
@@ -213,7 +213,7 @@ export async function retryTranslationSyncAction(
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false };
   }
-  if (!isElevatedRole(auth.profile.role)) return { ok: false };
+  if (!isStoreManagerRole(auth.profile.role)) return { ok: false };
 
   const supabase = createAdminClient();
   if (!supabase) return { ok: false };

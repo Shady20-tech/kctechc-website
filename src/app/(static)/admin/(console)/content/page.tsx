@@ -6,14 +6,14 @@ import { DataTable } from "@/components/ui/DataTable";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { listAdminInsights } from "@/lib/content/admin-queries";
 import { requireRole } from "@/lib/auth/guards";
-import { ELEVATED_ROLES } from "@/lib/auth/roles";
+import { CONTENT_MANAGER_ROLES } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 
 export const dynamic = "force-dynamic";
 
 /** Admin: the article list, including drafts. */
 export default async function AdminContentPage() {
-  await requireRole([...ELEVATED_ROLES], "/admin/content");
+  await requireRole([...CONTENT_MANAGER_ROLES], "/admin/content");
   const t = createTranslator("en").t;
   const rows = await listAdminInsights();
 

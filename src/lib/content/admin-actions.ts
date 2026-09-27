@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
+import { isContentManagerRole } from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordAudit } from "@/lib/security/audit";
 import { CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
@@ -70,7 +70,7 @@ async function requireElevated(): Promise<
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!isElevatedRole(auth.profile.role)) return { ok: false, error: "forbidden" };
+  if (!isContentManagerRole(auth.profile.role)) return { ok: false, error: "forbidden" };
   return { ok: true, userId: auth.profile.id };
 }
 
