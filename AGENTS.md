@@ -533,13 +533,30 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **A photo behind hero copy needs a scrim, and the contrast must be measured, not assumed.** Hero
   backdrops go through `HeroMedia` (`src/components/ui/HeroMedia.tsx`), which layers the image plus
   the `.hero-scrim` utility from `globals.css`. The scrim is weighted to the inline-start edge where
-  copy sits. To check a new image, sample the rendered screenshot in the heading band: the luminance
-  should stay near-black (p10 ≈ 16–17). The same trap applies to any new hero — the ink band alone
-  is no longer enough once an image sits behind it.
+  copy sits on desktop.
+- **Measure the glyph runs, not the element box.** Checking a heading band by sampling a fixed
+  rectangle reports failures that no reader experiences: an 11px eyebrow is a full-width block whose
+  text covers a small part of its own box, so the sample includes empty photo the glyphs never touch.
+  Walk the element's `Range.getClientRects()` and sample those boxes. Two of the "failures" in the
+  first pass at this hero were artefacts of box-sampling.
+- **An element with its own background is not on the photo.** The hero CTA is an opaque pill on
+  `bg-dept-accent`; comparing its label against the photo behind the pill gives 2.0:1 for every
+  department. Compare a label against its own background when one is set.
+- **Set the scrim against the actual image, and check it at 1024px too.** These stops suit dark
+  photography (headline-band luminance 0.05–0.26 before the scrim). Lighter images need the left and
+  middle stops raised back toward 0.9. The 1024px width matters: it is inside the `md` container
+  where the copy column is still narrow but the scrim gradient is already the desktop one, and it is
+  where the breadcrumb lands near the start of the gradient. Tune on 1440 *and* 1024.
+- **On narrow viewports the scrim must be vertical.** Below `1023px` the hero copy runs edge to edge
+  and stacks from ~10% to ~90% of the hero, so a rightward taper leaves the wrapped line ends over
+  open photo. The mobile rule in `globals.css` flattens the gradient and strengthens it downward.
 - **Hero images are per-department data, not a hardcoded path.** Each entry in `DEPARTMENTS`
   (`src/lib/config/site.ts`) carries `heroImage`, and the shared department page renders
   `definition.heroImage`. `src/lib/config/hero-images.test.ts` asserts every path resolves to a
-  complete JPEG under `public/hero/`; a mistyped path otherwise fails silently as an empty box.
+  complete JPEG under `public/hero/`; a mistyped path otherwise fails silently as an empty box. The
+  original assets were 246×113 placeholders — valid JPEGs that passed those checks — so the test now
+  also asserts a minimum width and a landscape ratio, and covers `/hero/corporate.jpg`, which is
+  referenced by path from two pages rather than from `DEPARTMENTS`.
 - **PR hygiene: check the target PR is still open before pushing to its branch.** Phase 7 was already
   merged to `main` via #14, and pushing a follow-up commit onto the merged
   `phase-7-real-estate-platform` branch silently reopened work on a dead branch. Cut a fresh branch

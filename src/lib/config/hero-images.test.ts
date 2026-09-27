@@ -46,4 +46,56 @@ describe("department hero images", () => {
     const paths = DEPARTMENTS.map((department) => department.heroImage);
     expect(new Set(paths).size).toBe(paths.length);
   });
+
+  // A hero renders full-bleed and 16:9, so a thumbnail would be stretched
+  // across the viewport. The placeholder assets that shipped first were
+  // 246x113–275x183 — valid JPEGs that the two structural tests above happily
+  // accepted. These bounds catch a regression to a placeholder-sized asset.
+  it("ships hero-sized, landscape images", () => {
+    // The corporate backdrop is referenced by path from two pages rather than
+    // from DEPARTMENTS, so it is checked explicitly instead of being missed.
+    const paths = [
+      ...DEPARTMENTS.map((department) => department.heroImage),
+      "/hero/corporate.jpg",
+    ];
+    for (const path of paths) {
+      const file = join(PUBLIC_DIR, path);
+      expect(existsSync(file), `${path} is missing`).toBe(true);
+      const { width, height } = jpegDimensions(readFileSync(file));
+      expect(
+        width,
+        `${path}: ${width}x${height} is too small for a full-bleed hero`,
+      ).toBeGreaterThanOrEqual(600);
+      expect(width, `${path}: ${width}x${height} is not landscape`).toBeGreaterThan(
+        height,
+      );
+    }
+  });
 });
+
+/** Reads width/height from a JPEG's first SOF marker. */
+function jpegDimensions(bytes: Buffer): { width: number; height: number } {
+  let offset = 2; // skip SOI
+  while (offset < bytes.length - 1) {
+    if (bytes[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1] ?? 0;
+    // SOF0-SOF15, excluding the non-frame markers DHT (c4), JPG (c8) and DAC (cc).
+    if (
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      marker !== 0xc4 &&
+      marker !== 0xc8 &&
+      marker !== 0xcc
+    ) {
+      return {
+        height: bytes.readUInt16BE(offset + 5),
+        width: bytes.readUInt16BE(offset + 7),
+      };
+    }
+    offset += 2 + bytes.readUInt16BE(offset + 2);
+  }
+  throw new Error("no SOF marker found");
+}
