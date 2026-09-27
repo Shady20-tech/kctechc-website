@@ -240,6 +240,37 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"geo_landing_content": {
+                  Row: {
+                    "created_at": string,"division_id": string | null,"geo_id": string | null,"heading": string | null,"id": string,"intro": string,"level": Database["public"]['Enums']["geo_landing_level"],"locale": Database["public"]['Enums']["locale_code"],"region_id": string | null,"seo_description": string | null,"seo_title": string | null,"state": Database["public"]['Enums']["publish_state"],"subdivision_id": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"division_id"?: string | null,"geo_id"?: never,"heading"?: string | null,"id"?: string,"intro": string,"level": Database["public"]['Enums']["geo_landing_level"],"locale": Database["public"]['Enums']["locale_code"],"region_id"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"state"?: Database["public"]['Enums']["publish_state"],"subdivision_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"division_id"?: string | null,"geo_id"?: never,"heading"?: string | null,"id"?: string,"intro"?: string,"level"?: Database["public"]['Enums']["geo_landing_level"],"locale"?: Database["public"]['Enums']["locale_code"],"region_id"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"state"?: Database["public"]['Enums']["publish_state"],"subdivision_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "geo_landing_content_division_id_fkey"
+      columns: ["division_id"]
+isOneToOne: false
+      referencedRelation: "divisions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "geo_landing_content_region_id_fkey"
+      columns: ["region_id"]
+isOneToOne: false
+      referencedRelation: "regions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "geo_landing_content_subdivision_id_fkey"
+      columns: ["subdivision_id"]
+isOneToOne: false
+      referencedRelation: "subdivisions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"inquiries": {
                   Row: {
                     "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"contact_method": Database["public"]['Enums']["contact_method"] | null,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"locality": string | null,"message": string,"phone": string | null,"preferred_contact": string | null,"property_type": Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id": string | null,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
@@ -391,6 +422,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "listing_events_listing_id_fkey"
+      columns: ["listing_id"]
+isOneToOne: false
+      referencedRelation: "property_listings"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"listing_favorites": {
+                  Row: {
+                    "created_at": string,"id": string,"listing_id": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"listing_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"listing_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "listing_favorites_listing_id_fkey"
       columns: ["listing_id"]
 isOneToOne: false
       referencedRelation: "property_listings"
@@ -682,6 +732,38 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"saved_searches": {
+                  Row: {
+                    "created_at": string,"id": string,"label": string,"locale": Database["public"]['Enums']["locale_code"],"query_string": string,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"label": string,"locale"?: Database["public"]['Enums']["locale_code"],"query_string"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"label"?: string,"locale"?: Database["public"]['Enums']["locale_code"],"query_string"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"search_alert_preferences": {
+                  Row: {
+                    "created_at": string,"enabled": boolean,"frequency": Database["public"]['Enums']["search_alert_frequency"],"id": string,"saved_search_id": string,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"enabled"?: boolean,"frequency"?: Database["public"]['Enums']["search_alert_frequency"],"id"?: string,"saved_search_id": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"enabled"?: boolean,"frequency"?: Database["public"]['Enums']["search_alert_frequency"],"id"?: string,"saved_search_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "search_alert_preferences_saved_search_id_fkey"
+      columns: ["saved_search_id"]
+isOneToOne: true
+      referencedRelation: "saved_searches"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"seo_metadata": {
                   Row: {
                     "canonical_override": string | null,"created_at": string,"description": string | null,"id": string,"locale": Database["public"]['Enums']["locale_code"],"noindex": boolean,"og_image_path": string | null,"path": string,"structured_data": Json | null,"title": string | null,"updated_at": string,"updated_by": string | null
@@ -915,6 +997,11 @@ isOneToOne: true
 "is_super_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"listing_geography_counts":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "geo_id": string,"level": Database["public"]['Enums']["geo_landing_level"],"parent_id": string,"total": number
+            }[]
+                           },
 "listing_status_transition_allowed":
 { Args: { "p_from": Database["public"]['Enums']["listing_status"],"p_to": Database["public"]['Enums']["listing_status"] }; Returns: boolean
                            },
@@ -945,8 +1032,8 @@ isOneToOne: true
 { Args: { "p_decision": Database["public"]['Enums']["submission_status"],"p_publish"?: boolean,"p_review_notes"?: string,"p_submission_id": string }; Returns: undefined
                            },
 "search_property_listings":
-{ Args: { "p_amenities"?: (string)[],"p_limit"?: number,"p_listing_type"?: Database["public"]['Enums']["listing_type"],"p_max_price"?: number,"p_min_bedrooms"?: number,"p_min_price"?: number,"p_offset"?: number,"p_property_kind"?: Database["public"]['Enums']["listing_property_kind"],"p_query"?: string,"p_region_id"?: string }; Returns: {
-              "bathrooms": number,"bedrooms": number,"building_area_sqm": number,"currency": string,"id": string,"is_featured": boolean,"land_area_sqm": number,"listing_type": Database["public"]['Enums']["listing_type"],"locality": string,"price_minor": number,"price_on_request": boolean,"price_period": Database["public"]['Enums']["price_period"],"property_kind": Database["public"]['Enums']["listing_property_kind"],"published_at": string,"rank": number,"reference": string,"region_slug": string,"slug": string,"title": string
+{ Args: { "p_amenities"?: (string)[],"p_division_id"?: string,"p_limit"?: number,"p_listing_type"?: Database["public"]['Enums']["listing_type"],"p_locale"?: Database["public"]['Enums']["locale_code"],"p_max_price"?: number,"p_max_size"?: number,"p_min_bathrooms"?: number,"p_min_bedrooms"?: number,"p_min_price"?: number,"p_min_size"?: number,"p_offset"?: number,"p_property_kind"?: Database["public"]['Enums']["listing_property_kind"],"p_property_type"?: Database["public"]['Enums']["property_type"],"p_query"?: string,"p_region_id"?: string,"p_sort"?: Database["public"]['Enums']["listing_sort_order"],"p_statuses"?: (Database["public"]['Enums']["listing_status"])[],"p_subdivision_id"?: string }; Returns: {
+              "bathrooms": number,"bedrooms": number,"building_area_sqm": number,"currency": string,"id": string,"is_featured": boolean,"land_area_sqm": number,"listing_type": Database["public"]['Enums']["listing_type"],"locality": string,"price_minor": number,"price_on_request": boolean,"price_period": Database["public"]['Enums']["price_period"],"property_kind": Database["public"]['Enums']["listing_property_kind"],"published_at": string,"rank": number,"reference": string,"region_slug": string,"slug": string,"title": string,"total_count": number,"view_count": number
             }[]
                            },
 "set_listing_localized_slug":
@@ -954,16 +1041,17 @@ isOneToOne: true
                            },
 "set_listing_private_details":
 { Args: { "p_exact_address"?: string,"p_internal_notes"?: string,"p_latitude"?: number,"p_listing_id": string,"p_longitude"?: number,"p_owner_email"?: string,"p_owner_name"?: string,"p_owner_notes"?: string,"p_owner_phone"?: string }; Returns: undefined
-                           },
+                           }
 "soundex":
 { Args: { "": string }; Returns: string
                            },
 "text_soundex":
 { Args: { "": string }; Returns: string
                            }
+
           }
           Enums: {
-            "appointment_status": "requested"|"confirmed"|"completed"|"cancelled","appointment_window": "morning"|"afternoon"|"anytime","cart_status": "active"|"converted"|"abandoned"|"expired","contact_method": "email"|"phone"|"whatsapp","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry"|"site_visit_request","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","listing_event_type": "view"|"inquiry"|"share"|"save"|"contact_reveal","listing_property_kind": "house"|"apartment"|"villa"|"duplex"|"studio"|"bungalow"|"land"|"farm"|"office"|"shop"|"warehouse"|"hotel"|"guesthouse"|"restaurant"|"mixed_use"|"other","listing_source": "admin"|"agent"|"owner_submission"|"import","listing_status": "draft"|"pending_review"|"published"|"under_offer"|"sold"|"rented"|"archived"|"rejected","listing_type": "sale"|"rent"|"lease"|"short_term","locale_code": "en"|"fr","price_period": "total"|"monthly"|"quarterly"|"yearly"|"weekly"|"nightly","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","project_media_role": "before"|"after"|"general","property_type": "residential"|"commercial"|"industrial","publish_state": "draft"|"published"|"archived","submission_status": "pending_review"|"approved"|"rejected"|"changes_requested","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media"|"project_media"|"property_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"|"real_estate_admin"
+            "appointment_status": "requested"|"confirmed"|"completed"|"cancelled","appointment_window": "morning"|"afternoon"|"anytime","cart_status": "active"|"converted"|"abandoned"|"expired","contact_method": "email"|"phone"|"whatsapp","geo_landing_level": "region"|"division"|"subdivision","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry"|"site_visit_request","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","listing_event_type": "view"|"inquiry"|"share"|"save"|"contact_reveal","listing_property_kind": "house"|"apartment"|"villa"|"duplex"|"studio"|"bungalow"|"land"|"farm"|"office"|"shop"|"warehouse"|"hotel"|"guesthouse"|"restaurant"|"mixed_use"|"other","listing_sort_order": "newest"|"price_asc"|"price_desc"|"most_viewed","listing_source": "admin"|"agent"|"owner_submission"|"import","listing_status": "draft"|"pending_review"|"published"|"under_offer"|"sold"|"rented"|"archived"|"rejected","listing_type": "sale"|"rent"|"lease"|"short_term","locale_code": "en"|"fr","price_period": "total"|"monthly"|"quarterly"|"yearly"|"weekly"|"nightly","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","project_media_role": "before"|"after"|"general","property_type": "residential"|"commercial"|"industrial","publish_state": "draft"|"published"|"archived","search_alert_frequency": "instant"|"daily"|"weekly","submission_status": "pending_review"|"approved"|"rejected"|"changes_requested","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media"|"project_media"|"property_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"|"real_estate_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1079,7 +1167,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "appointment_status": ["requested", "confirmed", "completed", "cancelled"],"appointment_window": ["morning", "afternoon", "anytime"],"cart_status": ["active", "converted", "abandoned", "expired"],"contact_method": ["email", "phone", "whatsapp"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry", "site_visit_request"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"listing_event_type": ["view", "inquiry", "share", "save", "contact_reveal"],"listing_property_kind": ["house", "apartment", "villa", "duplex", "studio", "bungalow", "land", "farm", "office", "shop", "warehouse", "hotel", "guesthouse", "restaurant", "mixed_use", "other"],"listing_source": ["admin", "agent", "owner_submission", "import"],"listing_status": ["draft", "pending_review", "published", "under_offer", "sold", "rented", "archived", "rejected"],"listing_type": ["sale", "rent", "lease", "short_term"],"locale_code": ["en", "fr"],"price_period": ["total", "monthly", "quarterly", "yearly", "weekly", "nightly"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"project_media_role": ["before", "after", "general"],"property_type": ["residential", "commercial", "industrial"],"publish_state": ["draft", "published", "archived"],"submission_status": ["pending_review", "approved", "rejected", "changes_requested"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media", "project_media", "property_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin", "real_estate_admin"]
+            "appointment_status": ["requested", "confirmed", "completed", "cancelled"],"appointment_window": ["morning", "afternoon", "anytime"],"cart_status": ["active", "converted", "abandoned", "expired"],"contact_method": ["email", "phone", "whatsapp"],"geo_landing_level": ["region", "division", "subdivision"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry", "site_visit_request"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"listing_event_type": ["view", "inquiry", "share", "save", "contact_reveal"],"listing_property_kind": ["house", "apartment", "villa", "duplex", "studio", "bungalow", "land", "farm", "office", "shop", "warehouse", "hotel", "guesthouse", "restaurant", "mixed_use", "other"],"listing_sort_order": ["newest", "price_asc", "price_desc", "most_viewed"],"listing_source": ["admin", "agent", "owner_submission", "import"],"listing_status": ["draft", "pending_review", "published", "under_offer", "sold", "rented", "archived", "rejected"],"listing_type": ["sale", "rent", "lease", "short_term"],"locale_code": ["en", "fr"],"price_period": ["total", "monthly", "quarterly", "yearly", "weekly", "nightly"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"project_media_role": ["before", "after", "general"],"property_type": ["residential", "commercial", "industrial"],"publish_state": ["draft", "published", "archived"],"search_alert_frequency": ["instant", "daily", "weekly"],"submission_status": ["pending_review", "approved", "rejected", "changes_requested"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media", "project_media", "property_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin", "real_estate_admin"]
           }
         }
 } as const

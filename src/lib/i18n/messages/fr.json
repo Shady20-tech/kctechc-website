@@ -363,7 +363,34 @@
       "mapApproxNotice": "Les repères indiquent la zone approximative de chaque bien, pas son adresse exacte.",
       "mapUnavailable": "La carte n'a pas pu être chargée. La liste ci-dessous présente les mêmes biens.",
       "mapLoading": "Chargement de la carte…",
-      "countOnMap": "{count} biens avec une localisation"
+      "countOnMap": "{count} biens avec une localisation",
+      "divisionLabel": "Département",
+      "divisionAll": "Tous les départements",
+      "subdivisionLabel": "Arrondissement",
+      "subdivisionAll": "Tous les arrondissements",
+      "optionWithCount": "{name} ({count})",
+      "propertyTypeLabel": "Catégorie de bien",
+      "propertyTypeAll": "Toutes les catégories",
+      "bathroomsLabel": "Salles de bain",
+      "bathroomsAny": "Indifférent",
+      "minSizeLabel": "Surface minimale (m²)",
+      "maxSizeLabel": "Surface maximale (m²)",
+      "statusLabel": "Disponibilité",
+      "statusHint": "Laissez tout décoché pour inclure tous les statuts.",
+      "activeFilters": "Filtres",
+      "removeFilter": "Retirer le filtre {filter}",
+      "chipQuery": "Recherche",
+      "minPriceShort": "Prix min",
+      "maxPriceShort": "Prix max",
+      "minSizeShort": "Surface min",
+      "maxSizeShort": "Surface max",
+      "bedroomsChip": "{count}+ chambres",
+      "bathroomsChip": "{count}+ salles de bain",
+      "sortMostViewed": "Les plus consultés",
+      "paginationLabel": "Pages de résultats",
+      "previousPage": "Page précédente",
+      "nextPage": "Page suivante",
+      "pageNumber": "Page {page}"
     },
     "types": {
       "sale": "À vendre",
@@ -629,6 +656,54 @@
         "already_decided": "Cette soumission a déjà été décidée.",
         "parse_failed": "Le fichier n'a pas pu être lu comme CSV. Vérifiez qu'il sépare les valeurs par des virgules et comporte une ligne d'en-tête."
       }
+    },
+    "favorites": {
+      "add": "Enregistrer {title}",
+      "remove": "Retirer {title} des favoris",
+      "heading": "Biens enregistrés",
+      "intro": "Les biens que vous avez enregistrés. Vos favoris sont privés.",
+      "empty": "Vous n'avez pas encore enregistré de bien.",
+      "errors": {
+        "unconfigured": "L'enregistrement est indisponible car la plateforme n'est pas entièrement configurée.",
+        "error": "L'enregistrement a échoué. Veuillez réessayer."
+      },
+      "metaTitle": "Biens enregistrés",
+      "metaDescription": "Les biens que vous avez enregistrés auprès de KC Technology Corporation.",
+      "resultsCount": "{count} biens enregistrés",
+      "resultsCountOne": "1 bien enregistré"
+    },
+    "savedSearches": {
+      "heading": "Recherches enregistrées",
+      "intro": "Vos recherches enregistrées. Rouvrez-en une pour la relancer sur les biens actuels.",
+      "empty": "Vous n'avez pas encore enregistré de recherche.",
+      "saveThisSearch": "Enregistrer cette recherche",
+      "save": "Enregistrer",
+      "labelField": "Nommez cette recherche",
+      "saved": "Recherche enregistrée.",
+      "open": "Lancer cette recherche",
+      "delete": "Supprimer",
+      "alertLabel": "M'avertir par e-mail des nouveaux résultats",
+      "alertFrequencyLabel": "Fréquence",
+      "frequencies": {
+        "instant": "Dès leur publication",
+        "daily": "Quotidienne",
+        "weekly": "Hebdomadaire"
+      },
+      "errors": {
+        "unconfigured": "L'enregistrement est indisponible car la plateforme n'est pas entièrement configurée.",
+        "labelRequired": "Donnez un nom à la recherche.",
+        "labelTaken": "Vous avez déjà une recherche enregistrée portant ce nom. Choisissez-en un autre.",
+        "writeFailed": "Cette recherche n'a pas pu être enregistrée. Veuillez réessayer.",
+        "limitReached": "Vous avez atteint le nombre maximal de recherches enregistrées. Supprimez-en une pour en enregistrer une autre."
+      },
+      "metaTitle": "Recherches enregistrées",
+      "metaDescription": "Vos recherches de biens enregistrées auprès de KC Technology Corporation.",
+      "alertSaved": "Préférence d'alerte mise à jour.",
+      "alertUnavailable": "Les alertes sont indisponibles car la plateforme n'est pas entièrement configurée.",
+      "alertFailed": "Cette préférence n'a pas pu être enregistrée. Veuillez réessayer.",
+      "deleted": "Recherche supprimée.",
+      "deleteFailed": "Cette recherche n'a pas pu être supprimée. Veuillez réessayer.",
+      "backToListings": "Retour aux annonces"
     }
   },
   "seo": {

@@ -28,7 +28,7 @@ export function ViewToggle({
   filters: ListingFilters;
   view: "list" | "map";
 }) {
-  const basePath = `/${locale}/real-estate/properties`;
+  const basePath = `/${locale}/real-estate/listings`;
   const query = buildListingQuery(filters);
 
   const options = [

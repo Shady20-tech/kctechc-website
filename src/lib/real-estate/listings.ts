@@ -1,3 +1,4 @@
+import { PROPERTY_SEARCH_PATH } from "@/lib/config/redirects";
 import type { Locale } from "@/lib/i18n/locales";
 
 import { localizeListing, listingSlugForLocale } from "./records";
@@ -26,7 +27,7 @@ export type QualifiedListing = {
 export function qualifyListing(
   record: PropertyListingRecord,
   locale: Locale,
-  pathPrefix = "/real-estate/properties",
+  pathPrefix = PROPERTY_SEARCH_PATH,
 ): QualifiedListing {
   const localized = localizeListing(record, locale);
   const slug = listingSlugForLocale(record, locale);
@@ -42,7 +43,7 @@ export function qualifyListing(
 export function qualifyListings(
   records: readonly PropertyListingRecord[],
   locale: Locale,
-  pathPrefix = "/real-estate/properties",
+  pathPrefix = PROPERTY_SEARCH_PATH,
 ): QualifiedListing[] {
   return records.map((record) => qualifyListing(record, locale, pathPrefix));
 }

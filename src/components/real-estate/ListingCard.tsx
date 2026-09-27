@@ -2,6 +2,7 @@ import { ArrowRight, BedDouble, Bath, MapPin, Ruler } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { FavoriteButton } from "@/components/real-estate/FavoriteButton";
 import { Badge } from "@/components/ui/Badge";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
@@ -22,7 +23,7 @@ import type { PropertyListingRecord } from "@/lib/real-estate/types";
  * in each component.
  */
 
-const PROPERTY_PATH = "/real-estate/properties";
+const PROPERTY_PATH = "/real-estate/listings";
 
 /** The URL for a listing in a locale, using the locale's slug. */
 export function listingHref(
@@ -112,10 +113,20 @@ export function ListingCard({
   record,
   locale,
   t,
+  isFavorite,
 }: {
   record: PropertyListingRecord;
   locale: Locale;
   t: Translator["t"];
+  /**
+   * Whether the signed-in customer has saved this listing.
+   *
+   * Optional, and `undefined` means "do not render the save control". The landing
+   * page and the detail page's related-listings rail pass nothing, because a save
+   * control there would be a write offered in a place the customer is browsing
+   * rather than choosing.
+   */
+  isFavorite?: boolean;
 }) {
   const image = record.images.find((entry) => entry.isPrimary) ?? record.images[0];
   const imageUrl = image ? propertyMediaPublicUrl(image.storagePath) : null;
@@ -123,7 +134,18 @@ export function ListingCard({
   const chips = listingFactChips(record, t);
 
   return (
-    <li className="group">
+    <li className="group relative">
+      {isFavorite !== undefined ? (
+        <div className="absolute right-3 top-3 z-10">
+          <FavoriteButton
+            locale={locale}
+            listingId={record.id}
+            isFavorite={isFavorite}
+            returnPath={href}
+            title={record.title}
+          />
+        </div>
+      ) : null}
       <Link
         href={href}
         className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface transition-soft hover:border-border-strong"
@@ -206,15 +228,31 @@ export function ListingGrid({
   listings,
   locale,
   t,
+  favoriteIds,
 }: {
   listings: readonly PropertyListingRecord[];
   locale: Locale;
   t: Translator["t"];
+  /**
+   * The ids the signed-in customer has saved.
+   *
+   * A Set rather than a per-card boolean, so the grid stays a plain list: the
+   * membership test happens here, once per card, against data the page already
+   * loaded for the whole result set. Passing `undefined` omits the save control
+   * entirely, which is what the surfaces that are not a browse context do.
+   */
+  favoriteIds?: ReadonlySet<string>;
 }) {
   return (
     <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {listings.map((record) => (
-        <ListingCard key={record.id} record={record} locale={locale} t={t} />
+        <ListingCard
+          key={record.id}
+          record={record}
+          locale={locale}
+          t={t}
+          isFavorite={favoriteIds ? favoriteIds.has(record.id) : undefined}
+        />
       ))}
     </ul>
   );

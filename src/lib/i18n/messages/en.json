@@ -363,7 +363,34 @@
       "mapApproxNotice": "Markers show the approximate area of each property, not its exact address.",
       "mapUnavailable": "The map could not be loaded. The list below shows the same properties.",
       "mapLoading": "Loading the map…",
-      "countOnMap": "{count} properties with a location"
+      "countOnMap": "{count} properties with a location",
+      "divisionLabel": "Division",
+      "divisionAll": "All divisions",
+      "subdivisionLabel": "Subdivision",
+      "subdivisionAll": "All subdivisions",
+      "optionWithCount": "{name} ({count})",
+      "propertyTypeLabel": "Property class",
+      "propertyTypeAll": "All classes",
+      "bathroomsLabel": "Bathrooms",
+      "bathroomsAny": "Any",
+      "minSizeLabel": "Minimum size (m²)",
+      "maxSizeLabel": "Maximum size (m²)",
+      "statusLabel": "Availability",
+      "statusHint": "Leave all unticked to include every status.",
+      "activeFilters": "Filters",
+      "removeFilter": "Remove filter {filter}",
+      "chipQuery": "Search",
+      "minPriceShort": "Min price",
+      "maxPriceShort": "Max price",
+      "minSizeShort": "Min size",
+      "maxSizeShort": "Max size",
+      "bedroomsChip": "{count}+ bedrooms",
+      "bathroomsChip": "{count}+ bathrooms",
+      "sortMostViewed": "Most viewed",
+      "paginationLabel": "Search results pages",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "pageNumber": "Page {page}"
     },
     "types": {
       "sale": "For sale",
@@ -629,6 +656,54 @@
         "already_decided": "That submission has already been decided.",
         "parse_failed": "The file could not be read as CSV. Check that it is a comma-separated file with a header row."
       }
+    },
+    "favorites": {
+      "add": "Save {title}",
+      "remove": "Remove {title} from saved",
+      "heading": "Saved properties",
+      "intro": "The properties you have saved. Saving is private to your account.",
+      "empty": "You have not saved any properties yet.",
+      "errors": {
+        "unconfigured": "Saving is unavailable because the platform is not fully configured.",
+        "error": "That could not be saved. Please try again."
+      },
+      "metaTitle": "Saved properties",
+      "metaDescription": "The properties you have saved with KC Technology Corporation.",
+      "resultsCount": "{count} saved properties",
+      "resultsCountOne": "1 saved property"
+    },
+    "savedSearches": {
+      "heading": "Saved searches",
+      "intro": "Searches you have saved. Reopen one to run it again against the current listings.",
+      "empty": "You have not saved any searches yet.",
+      "saveThisSearch": "Save this search",
+      "save": "Save",
+      "labelField": "Name this search",
+      "saved": "Search saved.",
+      "open": "Run this search",
+      "delete": "Delete",
+      "alertLabel": "Email me about new matches",
+      "alertFrequencyLabel": "How often",
+      "frequencies": {
+        "instant": "As they are listed",
+        "daily": "Daily",
+        "weekly": "Weekly"
+      },
+      "errors": {
+        "unconfigured": "Saving is unavailable because the platform is not fully configured.",
+        "labelRequired": "Give the search a name.",
+        "labelTaken": "You already have a saved search with that name. Choose another.",
+        "writeFailed": "That search could not be saved. Please try again.",
+        "limitReached": "You have reached the maximum number of saved searches. Delete one to save another."
+      },
+      "metaTitle": "Saved searches",
+      "metaDescription": "Your saved property searches with KC Technology Corporation.",
+      "alertSaved": "Alert preference updated.",
+      "alertUnavailable": "Alerts are unavailable because the platform is not fully configured.",
+      "alertFailed": "That preference could not be saved. Please try again.",
+      "deleted": "Search deleted.",
+      "deleteFailed": "That search could not be deleted. Please try again.",
+      "backToListings": "Back to listings"
     }
   },
   "seo": {
