@@ -8,7 +8,7 @@ export default function UnauthorizedPage() {
   const t = createTranslator("en").t;
 
   return (
-    <>
+    <main id="main" className="container-page py-12">
       <PageIntro heading={t("auth.unauthorizedHeading")} />
       <div className="mt-6 max-w-2xl space-y-4">
         <Notice tone="error">
@@ -21,6 +21,6 @@ export default function UnauthorizedPage() {
           {t("actions.signIn")}
         </Link>
       </div>
-    </>
+    </main>
   );
 }

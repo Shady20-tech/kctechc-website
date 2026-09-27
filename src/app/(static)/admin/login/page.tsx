@@ -30,34 +30,36 @@ export default async function AdminLoginPage({
   const configured = isSupabaseConfigured();
 
   return (
-    <div className="mx-auto max-w-md">
-      <PageIntro
-        heading={t("auth.signInHeading")}
-        intro={t("auth.signInDescription")}
-      />
-
-      <div className="mt-6 space-y-4">
-        {!configured || reason === "unconfigured" ? (
-          <Notice tone="warning" title={t("auth.notConfigured")}>
-            <p>
-              Set NEXT_PUBLIC_SUPABASE_URL and
-              NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable sign-in.
-            </p>
-          </Notice>
-        ) : null}
-
-        <SignInForm
-          labels={{
-            email: t("auth.emailLabel"),
-            password: t("auth.passwordLabel"),
-            submit: t("auth.signInSubmit"),
-            submitting: t("auth.signingIn"),
-            invalid: t("auth.invalidCredentials"),
-          }}
-          nextPath={next}
-          disabled={!configured}
+    <main id="main" className="container-page py-12">
+      <div className="mx-auto max-w-md">
+          <PageIntro
+          heading={t("auth.signInHeading")}
+          intro={t("auth.signInDescription")}
         />
+
+        <div className="mt-6 space-y-4">
+          {!configured || reason === "unconfigured" ? (
+            <Notice tone="warning" title={t("auth.notConfigured")}>
+              <p>
+                Set NEXT_PUBLIC_SUPABASE_URL and
+                NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable sign-in.
+              </p>
+            </Notice>
+          ) : null}
+
+          <SignInForm
+            labels={{
+              email: t("auth.emailLabel"),
+              password: t("auth.passwordLabel"),
+              submit: t("auth.signInSubmit"),
+              submitting: t("auth.signingIn"),
+              invalid: t("auth.invalidCredentials"),
+            }}
+            nextPath={next}
+            disabled={!configured}
+          />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

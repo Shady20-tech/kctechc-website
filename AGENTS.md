@@ -641,6 +641,14 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **A server-mutating action needs `revalidatePath` on both the list and, when one exists, the detail
   route.** Revalidating only `/admin/content` leaves the article's own edit page serving the old row.
 
+- **Moving admin pages into a `(console)` route group silently drops the chrome the outer
+  layout used to provide.** The outer `admin/layout.tsx` rendered `<main id="main" className="container-page py-12">`.
+  Relocating pages under `(console)` and giving the console its own `<main>` left `login` and
+  `unauthorized` — which are outside the group — rendering bare, with no page container and no
+  landmark. The build stayed green; only looking at the rendered pages shows it. When a layout hands
+  off a wrapper to a child group, every sibling that did not move must take it on. `src/lib/admin/
+  layout-integrity.test.ts` now pins one `main` landmark per admin route and asserts the shell is
+  rendered by the console layout alone.
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->
