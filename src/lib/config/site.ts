@@ -72,7 +72,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.digitalMarketing.description",
     summaryKey: "departments.digitalMarketing.summary",
     icon: "digital-marketing",
-    heroImage: "/hero/digital-marketing.jpg",
+    heroImage: "/hero/digital-marketing-v2.jpg",
   },
   {
     slug: "electrical-services",
@@ -81,7 +81,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.electricalServices.description",
     summaryKey: "departments.electricalServices.summary",
     icon: "electrical-services",
-    heroImage: "/hero/electrical-services.jpg",
+    heroImage: "/hero/electrical-services-v2.jpg",
   },
   {
     slug: "real-estate",
@@ -90,7 +90,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.realEstate.description",
     summaryKey: "departments.realEstate.summary",
     icon: "real-estate",
-    heroImage: "/hero/real-estate.jpg",
+    heroImage: "/hero/real-estate-v2.jpg",
   },
 ] as const;
 

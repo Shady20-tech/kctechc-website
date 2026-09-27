@@ -120,11 +120,13 @@ export function SiteHeader({
             entries={navEntries}
             signInHref={signInHref}
             labels={{
-              open: t("actions.openMenu"),
+              menuLabel: t("common.menu"),
               close: t("actions.closeMenu"),
-              title: t("nav.mobileMenu"),
+              title: t("common.menu"),
               language: t("common.language"),
               signIn: t("actions.signIn"),
+              brand: t("common.brandShort"),
+              brandSubtitle: `${t("common.brandShort")} · ${locale.toUpperCase()}`,
             }}
           />
         </div>

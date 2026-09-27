@@ -58,7 +58,7 @@ export default async function LocalizedHomePage({
       {/* Hero. The dark ink band is what gives the localized home the same
           corporate weight as the gateway, instead of a pale page header. */}
       <section className="on-ink relative overflow-hidden bg-ink-950">
-        <HeroMedia src="/hero/corporate.jpg" />
+        <HeroMedia src="/hero/corporate-v2.jpg" />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
         <div className="relative container-page py-20 sm:py-24 lg:py-28">
@@ -66,7 +66,7 @@ export default async function LocalizedHomePage({
             {t("home.heroEyebrow")}
           </p>
           <h1
-            className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-teal-300 sm:text-5xl lg:text-6xl"
+            className="reveal display-tight mt-6 max-w-4xl font-display text-4xl font-bold text-electric-300 sm:text-5xl lg:text-6xl"
             style={{ "--reveal-delay": "80ms" } as React.CSSProperties}
           >
             {t("home.gatewayHeading")}

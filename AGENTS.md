@@ -533,17 +533,65 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **A photo behind hero copy needs a scrim, and the contrast must be measured, not assumed.** Hero
   backdrops go through `HeroMedia` (`src/components/ui/HeroMedia.tsx`), which layers the image plus
   the `.hero-scrim` utility from `globals.css`. The scrim is weighted to the inline-start edge where
-  copy sits. To check a new image, sample the rendered screenshot in the heading band: the luminance
-  should stay near-black (p10 ≈ 16–17). The same trap applies to any new hero — the ink band alone
-  is no longer enough once an image sits behind it.
+  copy sits on desktop.
+- **Measure the glyph runs, not the element box.** Checking a heading band by sampling a fixed
+  rectangle reports failures that no reader experiences: an 11px eyebrow is a full-width block whose
+  text covers a small part of its own box, so the sample includes empty photo the glyphs never touch.
+  Walk the element's `Range.getClientRects()` and sample those boxes. Two of the "failures" in the
+  first pass at this hero were artefacts of box-sampling.
+- **An element with its own background is not on the photo.** The hero CTA is an opaque pill on
+  `bg-dept-accent`; comparing its label against the photo behind the pill gives 2.0:1 for every
+  department. Compare a label against its own background when one is set.
+- **Set the scrim against the actual image, and check it at 1024px too.** These stops suit dark
+  photography (headline-band luminance 0.05–0.26 before the scrim). Lighter images need the left and
+  middle stops raised back toward 0.9. The 1024px width matters: it is inside the `md` container
+  where the copy column is still narrow but the scrim gradient is already the desktop one, and it is
+  where the breadcrumb lands near the start of the gradient. Tune on 1440 *and* 1024.
+- **On narrow viewports the scrim must be vertical.** Below `1023px` the hero copy runs edge to edge
+  and stacks from ~10% to ~90% of the hero, so a rightward taper leaves the wrapped line ends over
+  open photo. The mobile rule in `globals.css` flattens the gradient and strengthens it downward.
 - **Hero images are per-department data, not a hardcoded path.** Each entry in `DEPARTMENTS`
   (`src/lib/config/site.ts`) carries `heroImage`, and the shared department page renders
   `definition.heroImage`. `src/lib/config/hero-images.test.ts` asserts every path resolves to a
-  complete JPEG under `public/hero/`; a mistyped path otherwise fails silently as an empty box.
+  complete JPEG under `public/hero/`; a mistyped path otherwise fails silently as an empty box. The
+  original assets were 246×113 placeholders — valid JPEGs that passed those checks — so the test now
+  also asserts a minimum width and a landscape ratio, and covers `/hero/corporate.jpg`, which is
+  referenced by path from two pages rather than from `DEPARTMENTS`.
 - **PR hygiene: check the target PR is still open before pushing to its branch.** Phase 7 was already
   merged to `main` via #14, and pushing a follow-up commit onto the merged
   `phase-7-real-estate-platform` branch silently reopened work on a dead branch. Cut a fresh branch
   from `main` instead, and restore any branch you pushed to by accident.
+- **A `next build` does not populate `public/` or `.next/static/` in the standalone bundle, and a
+  silent copy failure makes the whole site render unstyled.** `output: "standalone"` emits only
+  `server.js`, `package.json` and `node_modules`; the assets must be copied in:
+  `cp -r public .next/standalone/public && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static`.
+  Miss it and every `.css`, `woff2` and `public/` request 500s from the standalone server — the page
+  still returns 200 HTML, so it looks like a styling bug rather than a missing-file bug. After
+  starting the server, assert the assets rather than trusting the HTML status:
+  `curl -o /dev/null -w '%{http_code}' localhost:12000/_next/static/chunks/<name>.css` (200, not 500).
+- **Verify a claimed page break by reading computed styles, not by looking at a screenshot.** The
+  CSS-500 above was only caught by evaluating `getComputedStyle` on the running page and by checking
+  each asset's status code. A screenshot alone cannot distinguish "unstyled" from "intentionally dark
+  design", and it is easy to misread a dark hero band as a broken page. Check `document.styleSheets`
+  rule count, the header's `position`/`backgroundColor`, and each `img`'s `naturalWidth` (0 = the
+  file did not load).
+- **A `backdrop-filter` ancestor silently breaks `position: fixed` children.** `Modal` is rendered
+  from inside `SiteHeader`, which carries `backdrop-blur`. A `backdrop-filter` on an ancestor makes it
+  the containing block for fixed descendants, so the drawer layer's `inset-0` resolved against the
+  64px header instead of the viewport: the backdrop covered the page while the panel sat inside the
+  header box. `Modal` now portals to `document.body` to escape that ancestor. Any new overlay gets
+  the same treatment — do not assume `fixed inset-0` reaches the viewport.
+- **A drawer's width must be pinned in absolute units, not viewport-relative.** `w-[min(22rem,92vw)]`
+  measured 345px at a 375px viewport — 92% of the screen — which reads as a full-screen takeover
+  rather than a drawer. The panel is now a flat 300px with an `82vw` cap, so the page stays visible
+  beside it down to 320px.
+- **Hero assets are resolution-capped by the source, and that cap is invisible in the markup.**
+  `next/image` never upscales, so a `w=2048` request returns the source width and no error. The
+  original assets were 246×113 placeholders and the next round were 736px Pinterest thumbnails,
+  stretched full-bleed. `corporate` (992px) and `real-estate` (626px) are still capped and need
+  genuinely larger source images — confirm a source exceeds `1920px` before wiring it in. Replacing a
+  hero file in place also leaves the URL unchanged, and Next serves optimised images with
+  `max-age=14400`, so the old bytes linger for hours; ship a new filename instead.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

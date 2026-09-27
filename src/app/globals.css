@@ -39,6 +39,15 @@
   --color-teal-700: #006e6a;
   --color-teal-800: #00514e;
 
+  /* Electric blue: the hero heading accent. Deliberately outside the teal ramp,
+     because the teal reads as the logo's own colour rather than as a distinct
+     highlight on photography. Hue 193 sits between the brand teal (178) and the
+     marketing accent (210), so it is clearly "blue" next to the teal eyebrows
+     above the headings while still belonging to the same cool family. */
+  --color-electric-300: #62e2ff;
+  --color-electric-400: #2bc9f0;
+  --color-electric-500: #0aa8d4;
+
   /* Neutral surfaces and text. */
   --color-body: #414d57;
   --color-muted: #66717b;
@@ -173,45 +182,57 @@
 
 /* ---------------------------------------------------------------------------
    Base
-   --------------------------------------------------------------------------- */
-html {
-  -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
-}
+   ---------------------------------------------------------------------------
+   Everything here sits in `@layer base`, not at the top level, and that is
+   load-bearing rather than tidiness. An unlayered rule beats *every* layered
+   rule regardless of specificity, so a bare `h1 { color: … }` here outranks any
+   `text-*` utility a component puts on that heading. Tailwind emits its own
+   preflight and utilities inside layers, so leaving these rules outside one
+   silently disabled every heading colour in the app — headings all rendered ink
+   on the dark hero bands, and the intended `focus-visible:outline-focus` on
+   form fields never applied either. Keeping the defaults in `base` restores the
+   normal utilities-win-over-base order while still giving unstyled elements a
+   sane default. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
 
-body {
-  background-color: var(--color-surface);
-  color: var(--color-body);
-  font-family: var(--font-sans);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-h1,
-h2,
-h3,
-h4 {
-  color: var(--color-ink-900);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-}
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink-900);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
 
-p {
-  text-wrap: pretty;
-}
+  p {
+    text-wrap: pretty;
+  }
 
-/* A single, visible focus treatment for every interactive element. */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
+  /* A single, visible focus treatment for every interactive element. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 
-/* On the dark ink bands the deep teal outline loses contrast, so the ring is
-   swapped for the bright brand highlight there. */
-.on-ink :where(a, button, [tabindex]):focus-visible {
-  outline-color: var(--color-teal-300);
+  /* On the dark ink bands the deep teal outline loses contrast, so the ring is
+     swapped for the bright brand highlight there. */
+  .on-ink :where(a, button, [tabindex]):focus-visible {
+    outline-color: var(--color-teal-300);
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -346,16 +367,46 @@ p {
 }
 
 /* Legibility scrim for hero photography. Weighted to the inline-start edge,
-   where hero copy sits, and lighter toward the far edge so the photo still
-   reads as a photo. Tuned so the ink band's text contrast holds over a light
-   image — a photo behind text is only safe with something like this. */
+   where hero copy sits, and much lighter toward the far edge so the photo still
+   reads as a photo rather than as a dark rectangle. The stopped gradient is
+   deliberate: a single-strength wash dark enough to protect the heading would
+   flatten the image, so the protection is concentrated under the copy instead.
+   Tuned by sampling the rendered heading band, not chosen by eye.
+
+   The stops are set for the current hero photography, which runs from very dark
+   (digital-marketing) to a bright sunset sky (electrical-services). They are
+   deliberately lighter than a generic overlay: at the old 0.9 the darker photos
+   flattened into a black band while the heading sat at 12:1, roughly double the
+   contrast it needs. The left stop stays close to 0.9 because the breadcrumb
+   sits at the start of the gradient over electrical-services' bright sky, which
+   is the tightest case; contrast is bought back there rather than across the
+   whole image. Verified over every hero at 1440/1024/768/390/320: heading and
+   body copy clear 4.5:1 with the photo still visible on the right. */
 .hero-scrim {
   background-image: linear-gradient(
     to right,
-    rgb(6 9 11 / 0.94),
-    rgb(6 9 11 / 0.88) 45%,
-    rgb(6 9 11 / 0.74)
+    rgb(6 9 11 / 0.88),
+    rgb(6 9 11 / 0.72) 40%,
+    rgb(6 9 11 / 0.3) 78%,
+    rgb(6 9 11 / 0.14)
   );
+}
+
+/* On narrow viewports the hero copy runs edge to edge and stacks down the full
+   height — measured across the department and real-estate heroes, the copy
+   occupies roughly 10%–90% of the hero. A rightward taper is the wrong shape
+   for that: it leaves the ends of the wrapped lines over open photo. Layer the
+   protection top-to-bottom instead, dead flat across the width, so it holds
+   wherever a line wraps. */
+@media (max-width: 1023px) {
+  .hero-scrim {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(6 9 11 / 0.88),
+      rgb(6 9 11 / 0.88) 55%,
+      rgb(6 9 11 / 0.92)
+    );
+  }
 }
 
 /* Hairline used to separate stacked items without heavy borders. */
@@ -384,6 +435,25 @@ p {
 .hover-lift:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-raised);
+}
+
+/* Side drawer entrance. A drawer that simply appears reads as a glitch — the
+   motion is what tells the visitor it came from the edge it is anchored to.
+   Animating `transform` (not `right`) keeps this off the layout path, and the
+   panel is positioned by `right-0` in the markup, so the resting state needs no
+   translate of its own. The global reduced-motion block below collapses the
+   duration to 0.01ms, which lands on the same resting state. */
+.drawer-panel {
+  animation: drawer-in 220ms var(--ease-out-soft) both;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Staggered entrance for above-the-fold content. Each element sets its own
