@@ -23,16 +23,21 @@ const LOCALE_COOKIE = "kc_locale";
 /**
  * Unprefixed admin paths that have a localized counterpart.
  *
- * Sign-in and sign-up are customer-facing doors and are bilingual; every other
- * admin path is internal and English-only. They are therefore served from
- * `/[locale]/admin/...` so they inherit the site header, footer and language
- * switcher, while these unprefixed forms stay working — they are what the shared
- * header, the guards and existing bookmarks link to.
+ * Sign-in, sign-up and the password-recovery pages are customer-facing doors and
+ * are bilingual; every other admin path is internal and English-only. They are
+ * therefore served from `/[locale]/admin/...` so they inherit the site header,
+ * footer and language switcher, while these unprefixed forms stay working — they
+ * are what the shared header, the guards and existing bookmarks link to.
  *
- * Only these two are remapped. An arbitrary `/admin/anything` must not be
- * rewritten, or the mapping would leak into the internal console.
+ * Only these are remapped. An arbitrary `/admin/anything` must not be rewritten,
+ * or the mapping would leak into the internal console.
  */
-const LOCALIZED_ADMIN_PATHS = new Set(["/admin/login", "/admin/sign-up"]);
+const LOCALIZED_ADMIN_PATHS = new Set([
+  "/admin/login",
+  "/admin/sign-up",
+  "/admin/forgot-password",
+  "/admin/reset-password",
+]);
 
 function detectLocale(request: NextRequest): string {
   // 1. An explicit choice made by the visitor.
