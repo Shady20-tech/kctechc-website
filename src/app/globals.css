@@ -371,15 +371,42 @@
    reads as a photo rather than as a dark rectangle. The stopped gradient is
    deliberate: a single-strength wash dark enough to protect the heading would
    flatten the image, so the protection is concentrated under the copy instead.
-   Tuned by sampling the rendered heading band, not chosen by eye. */
+   Tuned by sampling the rendered heading band, not chosen by eye.
+
+   The stops are set for the current hero photography, which runs from very dark
+   (digital-marketing) to a bright sunset sky (electrical-services). They are
+   deliberately lighter than a generic overlay: at the old 0.9 the darker photos
+   flattened into a black band while the heading sat at 12:1, roughly double the
+   contrast it needs. The left stop stays close to 0.9 because the breadcrumb
+   sits at the start of the gradient over electrical-services' bright sky, which
+   is the tightest case; contrast is bought back there rather than across the
+   whole image. Verified over every hero at 1440/1024/768/390/320: heading and
+   body copy clear 4.5:1 with the photo still visible on the right. */
 .hero-scrim {
   background-image: linear-gradient(
     to right,
-    rgb(6 9 11 / 0.9),
-    rgb(6 9 11 / 0.8) 38%,
-    rgb(6 9 11 / 0.55) 68%,
-    rgb(6 9 11 / 0.3)
+    rgb(6 9 11 / 0.88),
+    rgb(6 9 11 / 0.72) 40%,
+    rgb(6 9 11 / 0.3) 78%,
+    rgb(6 9 11 / 0.14)
   );
+}
+
+/* On narrow viewports the hero copy runs edge to edge and stacks down the full
+   height — measured across the department and real-estate heroes, the copy
+   occupies roughly 10%–90% of the hero. A rightward taper is the wrong shape
+   for that: it leaves the ends of the wrapped lines over open photo. Layer the
+   protection top-to-bottom instead, dead flat across the width, so it holds
+   wherever a line wraps. */
+@media (max-width: 1023px) {
+  .hero-scrim {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(6 9 11 / 0.88),
+      rgb(6 9 11 / 0.88) 55%,
+      rgb(6 9 11 / 0.92)
+    );
+  }
 }
 
 /* Hairline used to separate stacked items without heavy borders. */
