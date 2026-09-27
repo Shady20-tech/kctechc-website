@@ -5,7 +5,7 @@ import { InsightForm } from "@/components/admin/InsightForm";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { ELEVATED_ROLES } from "@/lib/auth/roles";
+import { CONTENT_MANAGER_ROLES } from "@/lib/auth/roles";
 import { updateInsightAction } from "@/lib/content/admin-actions";
 import { getAdminInsight, loadContentOptions } from "@/lib/content/admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -19,7 +19,7 @@ export default async function AdminInsightEditorPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole([...ELEVATED_ROLES], "/admin/content");
+  await requireRole([...CONTENT_MANAGER_ROLES], "/admin/content");
   const { id } = await params;
   const t = createTranslator("en").t;
 

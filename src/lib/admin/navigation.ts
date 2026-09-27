@@ -14,8 +14,9 @@ import {
 
 import {
   isAdminRole,
-  isElevatedRole,
+  isContentManagerRole,
   isRealEstateAdminRole,
+  isStoreManagerRole,
   type AppRole,
 } from "@/lib/auth/roles";
 
@@ -51,7 +52,11 @@ export type AdminNavSection = {
 };
 
 const anyAdmin = (role: AppRole) => isAdminRole(role);
-const elevated = (role: AppRole) => isElevatedRole(role);
+// The store and the blog are the two department-gated admin surfaces. Each is a
+// predicate rather than a role list so the sidebar, the page guard and the RLS
+// policy all answer the question the same way.
+const storeManager = (role: AppRole) => isStoreManagerRole(role);
+const contentManager = (role: AppRole) => isContentManagerRole(role);
 const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
 
@@ -83,7 +88,12 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         icon: ShoppingCart,
         canSee: anyAdmin,
       },
-      { href: "/admin/store", labelKey: "store", icon: Package, canSee: elevated },
+      {
+        href: "/admin/store",
+        labelKey: "store",
+        icon: Package,
+        canSee: storeManager,
+      },
     ],
   },
   {
@@ -116,7 +126,7 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         href: "/admin/content",
         labelKey: "content",
         icon: FileText,
-        canSee: elevated,
+        canSee: contentManager,
       },
       { href: "/admin/users", labelKey: "users", icon: Users, canSee: superOnly },
     ],

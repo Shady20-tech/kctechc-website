@@ -99,3 +99,55 @@ export function canAccessDepartment(role: AppRole, slug: string): boolean {
   if (role === "super_admin" || role === "department_staff") return true;
   return getRoleDepartment(role) === slug;
 }
+
+/**
+ * Roles that administer the store.
+ *
+ * The store is the one surface shared between two departments: the corporate
+ * gateway presents Digital Marketing and Electrical Services as equal storefront
+ * owners, and the catalogue is electrical. That is why this is an explicit role
+ * list rather than a department comparison — a comparison would have given the
+ * store to exactly one of its two owners.
+ *
+ * Real Estate is deliberately absent. `real_estate_admin` is elevated for the
+ * property portfolio, which does not make it a shop administrator; the two
+ * questions are separate, the same way `isRealEstateAdminRole` is separate from
+ * `isElevatedRole`. `department_staff` is cross-department, so it is included.
+ *
+ * Mirrors `is_store_manager()` in
+ * `20260101000038_department_administration.sql`; `roles.test.ts` asserts the two
+ * agree.
+ */
+export const STORE_MANAGER_ROLES: readonly AppRole[] = [
+  "digital_marketing_admin",
+  "electrical_admin",
+  "department_staff",
+  "super_admin",
+];
+
+/**
+ * Roles that may author content.
+ *
+ * Same departmental boundary as the store: Marketing and Electrical, not Real
+ * Estate. Which department's posts a manager may edit is a per-row decision made
+ * by `can_access_department`, not by this predicate.
+ *
+ * Mirrors `is_content_manager()` in
+ * `20260101000038_department_administration.sql`.
+ */
+export const CONTENT_MANAGER_ROLES: readonly AppRole[] = [
+  "digital_marketing_admin",
+  "electrical_admin",
+  "department_staff",
+  "super_admin",
+];
+
+/** True when `role` may administer the shared store. */
+export function isStoreManagerRole(role: AppRole): boolean {
+  return STORE_MANAGER_ROLES.includes(role);
+}
+
+/** True when `role` may author content, within its own department. */
+export function isContentManagerRole(role: AppRole): boolean {
+  return CONTENT_MANAGER_ROLES.includes(role);
+}

@@ -3,7 +3,7 @@ import { ProductForm } from "@/components/admin/ProductForm";
 import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
+import { isStoreManagerRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import { loadCategoryOptions } from "@/lib/store/loaders";
 
@@ -27,7 +27,7 @@ export default async function AdminNewProductPage() {
   if (state.status !== "authenticated") {
     redirect("/admin/login?next=%2Fadmin%2Fstore%2Fnew");
   }
-  if (!state.profile || !isElevatedRole(state.profile.role)) {
+  if (!state.profile || !isStoreManagerRole(state.profile.role)) {
     redirect("/admin/unauthorized");
   }
 

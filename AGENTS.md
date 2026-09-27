@@ -643,6 +643,48 @@ acceptance criteria pass. Then stop — do not start the next phase.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
+
+- **A declared permission helper is not an enforced one. Check that a policy actually references it.**
+  `can_access_department()` existed in SQL since the identity migration and `canAccessDepartment()`
+  existed in TypeScript, fully unit-tested — and `grep` for either name in a policy returned nothing.
+  Every admin role could read every department's data, including property-inquiry PII. The lesson is
+  not "write more helpers"; it is that a helper with no call site is indistinguishable from a comment.
+  `select tablename, policyname from pg_policies where qual like '%helper_name%'` is the check. A test
+  in `roles.test.ts` now asserts the department policies consume the scoping helpers.
+
+- **RLS is the real boundary only if the request uses the user-scoped client.** The admin reads in
+  `src/lib/admin` go through the cookie-bound client, so policies apply. Server Actions use the
+  service-role client for writes that must bypass RLS (Storage, audit actors) — those need an explicit
+  role check in the action, because the database will not stop them.
+
+- **Department-scoped policies must handle `department_id IS NULL` explicitly.** A subquery that
+  resolves the slug returns NULL for a corporate row, and `NULL = anything` is NULL, so the row
+  silently disappears — for the super_admin too. All the department predicates are written so a NULL
+  slug short-circuits to true. `inquiries` and `insights` genuinely have unowned rows; do not "fix"
+  this by making the column NOT NULL.
+
+- **A shared surface cannot be expressed as a department comparison.** The store belongs to Digital
+  Marketing *and* Electrical Services. `slug = current_user_department()` would have given it to
+  exactly one of them, so it is an explicit role list (`is_store_manager()` /
+  `STORE_MANAGER_ROLES`) with the two layers asserted equal in `roles.test.ts`.
+
+- **`isElevatedRole` and "may administer a given surface" are different questions, and conflating them
+  shipped a leak.** `ELEVATED_ROLES` included `real_estate_admin`, so the store nav and the store
+  Server Action both admitted a real-estate admin to the shop. Per-surface predicates
+  (`isStoreManagerRole`, `isContentManagerRole`) now answer the real question. When adding a
+  department-gated surface, add a predicate rather than reusing an elevation list.
+
+- **The SQL validation harness needs `storage.buckets` to run the migration chain.** Migration 37
+  registers buckets, so without the schema every run aborts there and the later migrations — including
+  all the RLS under test — never apply. `00_supabase_shim.sql` now declares a minimal stand-in.
+  A green run on a partially applied schema is worse than a red one.
+
+- **Supabase's Docker was unavailable here; PostgreSQL 17 + PostGIS from the PGDG apt repo was enough.**
+  `initdb -A trust`, `pg_ctl -o "-p 5433"`, then apply `00_supabase_shim.sql`, every migration, and
+  `seed.sql`. The shim's `auth.uid()` reads `request.jwt.claim.sub`, so impersonating an actor is
+  `set local role authenticated; set local request.jwt.claim.sub = '<uuid>'`. That is enough to assert
+  cross-department isolation for real instead of reasoning about it.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

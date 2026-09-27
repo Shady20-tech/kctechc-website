@@ -2,7 +2,7 @@ import { InsightForm } from "@/components/admin/InsightForm";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { ELEVATED_ROLES } from "@/lib/auth/roles";
+import { CONTENT_MANAGER_ROLES } from "@/lib/auth/roles";
 import { createInsightAction } from "@/lib/content/admin-actions";
 import { loadContentOptions } from "@/lib/content/admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /** Admin: write a new article. The cover image is added once the article exists. */
 export default async function AdminNewInsightPage() {
-  await requireRole([...ELEVATED_ROLES], "/admin/content/new");
+  await requireRole([...CONTENT_MANAGER_ROLES], "/admin/content/new");
   const t = createTranslator("en").t;
   const options = await loadContentOptions();
 
