@@ -10,6 +10,8 @@ export type Profile = {
   fullName: string | null;
   role: AppRole;
   locale: string | null;
+  phone: string | null;
+  avatarPath: string | null;
   isActive: boolean;
 };
 
@@ -43,7 +45,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
 
   const { data: profileRow } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, locale, is_active")
+    .select("id, email, full_name, role, locale, phone, avatar_path, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -57,6 +59,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
         fullName: profileRow.full_name,
         role,
         locale: profileRow.locale,
+        phone: profileRow.phone,
+        avatarPath: profileRow.avatar_path,
         isActive: profileRow.is_active ?? true,
       }
     : null;

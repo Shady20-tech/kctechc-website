@@ -208,3 +208,48 @@ describe("sanitizeOriginalFilename", () => {
     expect(name.length).toBeLessThanOrEqual(255);
   });
 });
+
+
+/**
+ * The product- and property-image kinds share the project-image MIME set but have
+ * their own size ceilings, matching each bucket's `file_size_limit`. Pinning the
+ * per-kind ceilings here means a future bucket change that forgets one of them
+ * fails a test rather than silently allowing an oversized file.
+ */
+describe("per-kind upload limits", () => {
+  const jpeg = withHeader(JPEG, 1024);
+
+  it("accepts a small image under every image kind", () => {
+    for (const kind of [
+      "project-image",
+      "content-image",
+      "product-image",
+      "property-image",
+    ] as const) {
+      expect(validateUpload(jpeg, "image/jpeg", { kind }).ok).toBe(true);
+    }
+  });
+
+  it("rejects a 6 MB image where the ceiling is 5 MB", () => {
+    const big = withHeader(JPEG, 6 * 1024 * 1024);
+    expect(validateUpload(big, "image/jpeg", { kind: "product-image" }).ok).toBe(false);
+    expect(validateUpload(big, "image/jpeg", { kind: "content-image" }).ok).toBe(false);
+  });
+
+  it("accepts a 6 MB image for a property, whose ceiling is 10 MB", () => {
+    const big = withHeader(JPEG, 6 * 1024 * 1024);
+    expect(validateUpload(big, "image/jpeg", { kind: "property-image" }).ok).toBe(true);
+  });
+
+  it("refuses a PDF as a product image", () => {
+    const pdf = withHeader(PDF, 1024);
+    const verdict = validateUpload(pdf, "application/pdf", { kind: "product-image" });
+    expect(verdict.ok).toBe(false);
+  });
+
+  it("refuses an SVG disguised as a product image", () => {
+    const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+    const verdict = validateUpload(svg, "image/svg+xml", { kind: "product-image" });
+    expect(verdict.ok).toBe(false);
+  });
+});

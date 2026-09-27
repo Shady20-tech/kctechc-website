@@ -107,7 +107,9 @@ async function loadLines(orderId: string): Promise<OrderLine[]> {
     slug: row.slug,
     quantity: row.quantity,
     unitPriceMinor: row.unit_price_minor,
-    lineTotalMinor: row.line_total_minor,
+    // `line_total_minor` is a generated column, so the type system sees it as
+    // nullable; the arithmetic mirrors the generated expression for the fallback.
+    lineTotalMinor: row.line_total_minor ?? row.unit_price_minor * row.quantity,
     currency: row.currency,
   }));
 }

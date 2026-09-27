@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getSiteUrl } from "@/lib/config/env";
 import { STORE_PATH } from "@/lib/config/navigation";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/validation/checkout";
 import { initiatePayment, transactionReferenceFor } from "@/lib/payments/service";
 import { readOrderTokens, rememberOrderToken } from "./tokens";
+import { buildPlaceOrderArgs } from "./place-order-args";
 
 /**
  * Checkout Server Actions.
@@ -97,26 +99,23 @@ export async function submitCheckout(
 
   const deliveryMinor = input.fulfillment === "pickup" ? 0 : DELIVERY_FEE_MINOR;
 
-  const { data: orderData, error: orderError } = await admin.rpc("place_order", {
-    p_idempotency_key: input.idempotencyKey,
-    p_cart_id: cart.id,
-    p_customer_id: customerId ?? undefined,
-    p_email: input.email,
-    p_full_name: input.fullName,
-    p_phone: input.phone ?? undefined,
-    p_locale: input.locale,
-    p_fulfillment: input.fulfillment,
-    p_payment_method: input.paymentMethod,
-    p_delivery_address_line1:
-      input.fulfillment === "delivery" ? input.deliveryAddressLine1 : undefined,
-    p_delivery_address_line2:
-      input.fulfillment === "delivery" ? input.deliveryAddressLine2 : undefined,
-    p_delivery_city:
-      input.fulfillment === "delivery" ? input.deliveryCity : undefined,
-    p_delivery_region_id: undefined,
-    p_delivery_notes: input.deliveryNotes,
-    p_delivery_minor: deliveryMinor,
-  });
+  // Every optional argument is sent as an explicit `null` rather than `undefined`
+  // by this builder: supabase-js drops `undefined` keys from the request body,
+  // and PostgREST resolves an RPC by the exact set of named arguments it
+  // receives, so an omitted key makes it look for a different overload.
+  //
+  // The cast is needed because the generated types describe a function argument
+  // as its base type (`string`), not as nullable. PostgreSQL function arguments
+  // accept null regardless, and `place_order` is written to receive it.
+  const { data: orderData, error: orderError } = await admin.rpc(
+    "place_order",
+    buildPlaceOrderArgs({
+      input,
+      cartId: cart.id,
+      customerId,
+      deliveryMinor,
+    }) as never,
+  );
 
   if (orderError || !orderData) {
     // The database raises specific messages for the two conditions a customer can
@@ -190,19 +189,22 @@ export async function submitCheckout(
   revalidatePath(`/${input.locale}${STORE_PATH}/cart`);
   revalidatePath(`/${input.locale}${STORE_PATH}/orders`);
 
-  // The redirect link is not a secret: it is the checkout page the customer is
-  // about to be sent to.
+  // Hand the browser to the next page from the server.
+  //
+  // Placing the order clears the cart cookie, which makes the checkout route
+  // re-render into its empty-cart branch before a client-side effect on the form
+  // could navigate. The form is unmounted by that re-render, so `redirect` here —
+  // which Next.js turns into the action's response — is the reliable hop.
+  const orderPath = `/${input.locale}${STORE_PATH}/orders/${encodeURIComponent(order.reference)}`;
+
+  // A hosted payment page is the next step when the provider returned one.
   if (payment.ok && payment.kind === "redirect") {
-    return {
-      status: "ready",
-      orderReference: order.reference,
-      redirectUrl: payment.link,
-    };
+    redirect(payment.link);
   }
 
   // A provider failure, a bank transfer or a pending mobile-money charge: the
   // confirmation page explains the actual state and offers a retry.
-  return { status: "ready", orderReference: order.reference };
+  redirect(orderPath);
 }
 
 /**

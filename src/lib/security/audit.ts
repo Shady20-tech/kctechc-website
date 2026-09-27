@@ -13,8 +13,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const AUDIT_ACTIONS = [
   "role_changed",
   "profile_created",
+  "profile_updated",
   "profile_deactivated",
+  "avatar_changed",
+  "password_changed",
   "content_published",
+  "content_created",
+  "content_updated",
+  "content_deleted",
+  "product_created",
+  "product_updated",
+  "product_published",
   "property_approved",
   "property_rejected",
   "payment_state_changed",
@@ -22,8 +31,10 @@ export const AUDIT_ACTIONS = [
   "site_setting_changed",
   "sign_in_succeeded",
   "sign_in_failed",
+  "sign_out",
   "inquiry_received",
   "inquiry_status_changed",
+  "inquiry_assigned",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

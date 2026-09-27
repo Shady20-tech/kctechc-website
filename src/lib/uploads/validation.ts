@@ -21,10 +21,28 @@ export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 /** The largest project image accepted, matching the public bucket's limit. */
 export const MAX_PROJECT_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** The largest editorial image (article cover) accepted. */
+export const MAX_CONTENT_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** The largest profile picture accepted, matching the `avatars` bucket. */
+export const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+
+/** The largest product image accepted, matching the `product-media` bucket. */
+export const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** The largest property image accepted, matching the `property-media` bucket. */
+export const MAX_PROPERTY_IMAGE_BYTES = 10 * 1024 * 1024;
+
 /** How many files one quote request may attach. */
 export const MAX_ATTACHMENT_COUNT = 5;
 
-export type UploadKind = "attachment" | "project-image";
+export type UploadKind =
+  | "attachment"
+  | "project-image"
+  | "content-image"
+  | "avatar"
+  | "product-image"
+  | "property-image";
 
 /**
  * The MIME types an attachment may have.
@@ -52,6 +70,40 @@ export const ALLOWED_PROJECT_IMAGE_TYPES = [
   "image/webp",
   "image/avif",
 ] as const;
+
+/**
+ * Avatar images.
+ *
+ * The same conservative image set as project media, minus AVIF: a profile
+ * picture is rendered small and uploaded rarely, and every browser that can
+ * display the site supports JPEG/PNG/WebP. Dropping AVIF keeps the accepted set
+ * aligned with the `avatars` bucket's own `allowed_mime_types`.
+ */
+export const ALLOWED_AVATAR_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+/** Byte limit per upload kind, matching each bucket's `file_size_limit`. */
+const LIMIT_FOR_KIND: Record<UploadKind, number> = {
+  attachment: MAX_ATTACHMENT_BYTES,
+  "project-image": MAX_PROJECT_IMAGE_BYTES,
+  "content-image": MAX_CONTENT_IMAGE_BYTES,
+  avatar: MAX_AVATAR_BYTES,
+  "product-image": MAX_PRODUCT_IMAGE_BYTES,
+  "property-image": MAX_PROPERTY_IMAGE_BYTES,
+};
+
+/** Accepted MIME types per upload kind. */
+const TYPES_FOR_KIND: Record<UploadKind, readonly string[]> = {
+  attachment: ALLOWED_ATTACHMENT_TYPES,
+  "project-image": ALLOWED_PROJECT_IMAGE_TYPES,
+  "content-image": ALLOWED_PROJECT_IMAGE_TYPES,
+  avatar: ALLOWED_AVATAR_TYPES,
+  "product-image": ALLOWED_PROJECT_IMAGE_TYPES,
+  "property-image": ALLOWED_PROJECT_IMAGE_TYPES,
+};
 
 /** The file extension to use for a detected type. Never taken from the upload. */
 const EXTENSION_FOR_MIME: Record<string, string> = {
@@ -199,16 +251,10 @@ export function validateUpload(
 ): UploadVerdict {
   if (bytes.length === 0) return { ok: false, reason: "empty" };
 
-  const limit =
-    options.kind === "project-image"
-      ? MAX_PROJECT_IMAGE_BYTES
-      : MAX_ATTACHMENT_BYTES;
+  const limit = LIMIT_FOR_KIND[options.kind];
   if (bytes.length > limit) return { ok: false, reason: "too_large" };
 
-  const allowed: readonly string[] =
-    options.kind === "project-image"
-      ? ALLOWED_PROJECT_IMAGE_TYPES
-      : ALLOWED_ATTACHMENT_TYPES;
+  const allowed = TYPES_FOR_KIND[options.kind];
 
   // The declared type is only used to reject early when it is not even in the
   // accepted set. It is never used to accept: passing this check is not
@@ -288,11 +334,7 @@ export function sanitizeOriginalFilename(name: string): string {
 
 /** A short, human-readable description of the allowed types, for a message. */
 export function describeAllowedTypes(kind: UploadKind): string {
-  const types =
-    kind === "project-image"
-      ? ALLOWED_PROJECT_IMAGE_TYPES
-      : ALLOWED_ATTACHMENT_TYPES;
-  return types
+  return TYPES_FOR_KIND[kind]
     .map((type) => (EXTENSION_FOR_MIME[type] ?? type).toUpperCase())
     .join(", ");
 }
