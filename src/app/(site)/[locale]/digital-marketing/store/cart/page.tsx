@@ -116,8 +116,17 @@ export default async function CartPage({
               <p className="mt-3 font-display text-2xl font-bold text-ink-900">
                 {formatPrice(cart.subtotalMinor, cart.currency, resolved)}
               </p>
-              <p className="mt-4 text-sm text-body">
-                {t("store.cart.checkoutUnavailable")}
+              <p className="mt-5">
+                <ButtonLink
+                  href={`/${resolved}${STORE_PATH}/checkout`}
+                  variant="primary"
+                  className="w-full"
+                >
+                  {t("store.cart.checkout")}
+                </ButtonLink>
+              </p>
+              <p className="mt-3 text-sm text-muted">
+                {t("store.cart.totalNote")}
               </p>
             </div>
           </aside>
