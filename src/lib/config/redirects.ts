@@ -32,8 +32,19 @@ export const STORE_PATH = "/digital-marketing/store";
  */
 export const REAL_ESTATE_PATH = "/real-estate";
 
-/** The property search and browse surface. */
-export const PROPERTY_SEARCH_PATH = "/real-estate/properties";
+/** The property browse, filter and search surface. */
+export const PROPERTY_SEARCH_PATH = "/real-estate/listings";
+
+/**
+ * The browse surface's former path.
+ *
+ * Phase 6 shipped the browser at `/real-estate/properties` and the department
+ * landing page linked to it, so the URL is live in bookmarks and possibly in an
+ * index. `/listings` is the canonical name — the page lists and filters listings,
+ * and "properties" read as a second department name beside Real Estate — so the
+ * old path redirects rather than being dropped.
+ */
+const LEGACY_PROPERTY_PATH = "/real-estate/properties";
 
 /** The articles section's former path, still linked from Phase 2 pages. */
 const LEGACY_INSIGHTS_PATH = "/blog";
@@ -52,4 +63,16 @@ export const LEGACY_REDIRECTS: readonly { from: string; to: string }[] = [
     from: `/${locale}${LEGACY_INSIGHTS_PATH}`,
     to: `/${locale}${INSIGHTS_PATH}`,
   })),
+  // The property browser's old path, both bare and locale-prefixed. A listing
+  // detail page keeps working under either path because the detail route also
+  // moves, so the redirect is written for the subtree.
+  { from: LEGACY_PROPERTY_PATH, to: PROPERTY_SEARCH_PATH },
+  { from: `${LEGACY_PROPERTY_PATH}/:slug`, to: `${PROPERTY_SEARCH_PATH}/:slug` },
+  ...LOCALES.flatMap((locale) => [
+    { from: `/${locale}${LEGACY_PROPERTY_PATH}`, to: `/${locale}${PROPERTY_SEARCH_PATH}` },
+    {
+      from: `/${locale}${LEGACY_PROPERTY_PATH}/:slug`,
+      to: `/${locale}${PROPERTY_SEARCH_PATH}/:slug`,
+    },
+  ]),
 ];

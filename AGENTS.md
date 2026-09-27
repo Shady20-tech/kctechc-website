@@ -284,6 +284,62 @@ acceptance criteria pass. Then stop — do not start the next phase.
     `/cart`, plus `/admin/store/new` for editors.
   - `Product`/`Offer`/`ItemList` JSON-LD; store paths added to nav, `NAV_PATHS` and the sitemap.
 - 255 Vitest tests pass and the production build prerenders all store routes.
+- Phase 7 (Real Estate platform) is implemented:
+  - Migrations `20260101000028_customer_favorites_and_saved_searches.sql`,
+    `20260101000029_geo_landing_content.sql`, `20260101000030_listing_search_filters.sql` and
+    `20260101000031_public_listing_status_policy.sql`, plus a regenerated
+    `src/lib/db/database.types.ts` (`search_property_listings` gained `p_property_type`).
+  - `supabase/validate/20_real_estate_platform_behaviour.sql` proves the listing search, the
+    public status policy, the favourites/saved-search RLS and the geographic landing-page
+    indexability rule on a fresh database.
+  - Search layer `src/lib/real-estate/search.ts`: typed `ListingFilters`, defensive parsing of
+    every URL value, a canonical serializer, `normalizeSearchQuery` (used to store a saved
+    search), active-filter derivation and single-filter removal.
+  - Customer layer `src/lib/real-estate/customer-actions.ts`: favourites, saved searches and
+    alert preferences, all written with the **session** client so RLS is the control.
+  - Surfaces: `/real-estate/listings` (browse + map, filter panel, active-filter chips,
+    pagination, per-card save control, save-this-search), `/real-estate/listings/[slug]`,
+    `/real-estate/favorites` and `/real-estate/saved-searches`.
+  - `ListingFilterPanel`, `ActiveFilterChips`, `ListingPagination`, `FavoriteButton`,
+    `SaveSearchControl` and `SavedSearchCard` components; `ListingFiltersForm` was deleted as
+    superseded dead code.
+- 498 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
+  succeeds.
+
+### Phase 7 gotchas worth not rediscovering
+
+- **A `"use server"` module may only export async functions.** The directive turns every export
+  into a callable endpoint, so a plain helper or a constant beside the actions passes `tsc` and
+  every unit test and then fails the production build with "Server Actions must be async
+  functions". Shared logic belongs in a module *without* the directive. `normalizeSearchQuery`
+  lives in `search.ts` for exactly this reason. `src/lib/security/server-actions.test.ts` scans
+  every `"use server"` file and rejects a non-async export.
+- **A renamed route needs a redirect for its whole subtree, not just the index.** The browse
+  surface moved from `/real-estate/properties` to `/real-estate/listings`, and the detail route
+  moved with it — so `/real-estate/properties/:slug` has to redirect too, for the bare and the
+  locale-prefixed forms. Redirecting only the index would leave every saved property link 404ing.
+  `redirects.test.ts` pins all six.
+- **Listing status labels are under `realEstate.statuses.<status>`, not `realEstate.search.*`.**
+  `listingStatusLabelKey` returned `realEstate.search.status_${status}` while the labels live
+  beside the other enum labels. The translator falls through to the raw key, so the filter panel
+  rendered `realEstate.search.status_published` as visible text. A missing key is silent — it
+  never throws.
+- **Numeric filters must be truncated to integers.** Prices are `bigint`, counts `smallint` and
+  areas `integer`, so `?minBedrooms=1.5` reaching the RPC is refused by PostgREST and becomes a
+  failed request rather than a filter. `parsePositive` floors the value; `search.test.ts` pins it.
+- **A per-customer page needs `export const dynamic = "force-dynamic"`.** `/real-estate/favorites`
+  and `/real-estate/saved-searches` prerendered as static (`●`), which bakes in the signed-out
+  redirect and serves it to everyone regardless of session.
+- **Favourite and saved-search writes use the session client, never the service-role client.**
+  The three tables restrict every row to `auth.uid() = user_id`, so the database is the control
+  and the page guard is only for the experience. Using the admin client here would have made
+  those policies decorative.
+- **`saved_searches` is `unique (user_id, label)`.** A duplicate save is a distinct outcome, not a
+  generic failure — "please try again" is advice that cannot work. Map Postgres `23505` to its own
+  message rather than reporting every insert error as retryable.
+- **The sign-in route is `/admin/login`, and its `next` parameter is Zod-validated.** It rejects
+  anything not starting with a single `/`, so a customer returning from a save control lands back
+  on the listings view.
 
 ### Phase 4 gotchas worth not rediscovering
 

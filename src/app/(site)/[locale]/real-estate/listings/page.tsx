@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 
 import { SectionBand } from "@/components/layout/PageShell";
 import { PropertyMap } from "@/components/maps/PropertyMap";
+import { ActiveFilterChips } from "@/components/real-estate/ActiveFilterChips";
 import { ListingGrid, listingHref } from "@/components/real-estate/ListingCard";
-import { ListingFiltersForm } from "@/components/real-estate/ListingFiltersForm";
+import { ListingFilterPanel } from "@/components/real-estate/ListingFilterPanel";
+import { ListingPagination } from "@/components/real-estate/ListingPagination";
+import { SaveSearchControl } from "@/components/real-estate/SaveSearchControl";
 import { ViewToggle } from "@/components/real-estate/ViewToggle";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -20,59 +23,74 @@ import {
   type MapPoint,
 } from "@/lib/maps/adapter";
 import {
-  loadListingRegionOptions,
-  loadPublishedListings,
+  loadFavoriteListingIds,
+  loadListingGeographyTree,
+  queryListings,
 } from "@/lib/real-estate/loaders";
+import { qualifyListings } from "@/lib/real-estate/listings";
 import {
-  filterListings,
+  buildListingQuery,
+  firstParam,
   hasActiveFilters,
-  isListingSort,
-  parseListingType,
-  parseNumberParam,
-  parsePropertyKind,
-  type ListingFilters,
+  parseListingFilters,
 } from "@/lib/real-estate/search";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo/structured-data";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
- * Property search.
+ * Property listings browser.
  *
  * One route serves the list and the map, and the view is a query parameter rather
  * than a second URL. Two URLs for one result set is the duplicate-content problem
  * the locale routing already avoids.
  *
- * Filtering happens here over the already-localized listings, so the searchable
- * text is the translated text — the store's reason, applied to property. The
- * ranked full-text RPC is not used on this page: it matches the canonical English
- * columns, which is right for the admin search and wrong for a French visitor
- * searching "terrain".
+ * Filtering, counting and pagination happen in the database, in
+ * `search_property_listings`. The page used to filter a fetched list in
+ * TypeScript, which meant the result count described the fetched page rather than
+ * the market, and pagination would have required loading the whole catalogue into
+ * the browser. The RPC returns the page and its total from one query, so the
+ * number shown and the rows returned cannot disagree.
+ *
+ * The search is localized inside the RPC: it matches the canonical English
+ * columns and the French translations, so a French visitor searching "terrain"
+ * finds a listing whose English title says "land". Doing that here would mean the
+ * browser holding both languages for every listing.
+ *
+ * ## Indexability
+ *
+ * A filtered view is `noindex, follow`. An arbitrary combination of region, price
+ * and bedrooms is a view of the catalogue, not a page with content of its own;
+ * indexing every combination would flood the index with near-duplicates and dilute
+ * the pages that do have content. The unfiltered browser is indexable, and so is a
+ * geographic landing page once an editor has published content for it — that is
+ * what `geo_landing_content` is for.
  */
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = createTranslator(locale).t;
+  const query = await searchParams;
+  const filters = parseListingFilters(query);
+
   return buildMetadata({
     locale,
     pathWithoutLocale: PROPERTY_SEARCH_PATH,
     title: t("realEstate.search.metaTitle"),
     description: t("realEstate.search.metaDescription"),
+    // See the indexability note above: a filtered view is a view, not a page.
+    noindex: hasActiveFilters(filters),
   });
 }
 
-/** The first value of a possibly-repeated query parameter. */
-function first(value: string | string[] | undefined): string | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
-
-export default async function PropertySearchPage({
+export default async function PropertyListingsPage({
   params,
   searchParams,
 }: {
@@ -86,43 +104,49 @@ export default async function PropertySearchPage({
   const t = createTranslator(resolved).t;
   const query = await searchParams;
 
-  const view = first(query.view) === "map" ? "map" : "list";
-  const sortParam = first(query.sort);
-  const minPrice = parseNumberParam(first(query.minPrice));
-  const maxPrice = parseNumberParam(first(query.maxPrice));
-  const minBedrooms = parseNumberParam(first(query.minBedrooms));
+  const view = firstParam(query.view) === "map" ? "map" : "list";
+  const filters = parseListingFilters(query);
 
-  const sortCandidate = sortParam ?? undefined;
-  const filters: ListingFilters = {
-    query: first(query.q)?.trim() || undefined,
-    regionSlug: first(query.region)?.trim() || undefined,
-    listingType: parseListingType(first(query.type)),
-    propertyKind: parsePropertyKind(first(query.kind)),
-    minPrice,
-    maxPrice,
-    minBedrooms:
-      minBedrooms !== undefined && minBedrooms > 0 ? minBedrooms : undefined,
-    sort: isListingSort(sortCandidate) ? sortCandidate : undefined,
-  };
-
-  const [allListings, regions] = await Promise.all([
-    loadPublishedListings({ limit: 48 }),
-    loadListingRegionOptions(),
+  const [page, geography, favoriteIds] = await Promise.all([
+    queryListings({
+      query: filters.query,
+      regionSlug: filters.regionSlug,
+      divisionSlug: filters.divisionSlug,
+      subdivisionSlug: filters.subdivisionSlug,
+      listingType: filters.listingType,
+      propertyKind: filters.propertyKind,
+      propertyType: filters.propertyType,
+      statuses: filters.statuses,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minBedrooms: filters.minBedrooms,
+      minBathrooms: filters.minBathrooms,
+      minSize: filters.minSize,
+      maxSize: filters.maxSize,
+      sort: filters.sort,
+      page: filters.page,
+      locale: resolved,
+    }),
+    loadListingGeographyTree(),
+    loadFavoriteListingIds(),
   ]);
 
-  const listings = filterListings(allListings, filters);
+  const qualified = qualifyListings(page.items, resolved);
   const active = hasActiveFilters(filters);
+  // A total of zero with no filters means the portfolio is genuinely empty, which
+  // is a different message from "your filters matched nothing".
+  const hasPortfolio = page.total > 0 || active;
 
   // Only listings with a published, coarsened position can be drawn. Exact
   // coordinates never reach this component: the loader reads the API view, which
   // exposes the already-snapped point.
-  const points: MapPoint[] = listings.flatMap((record) => {
-    const location = record.publicLocation;
+  const points: MapPoint[] = qualified.flatMap((entry) => {
+    const location = entry.record.publicLocation;
     if (!location) return [];
     return [
       {
-        id: record.id,
-        label: record.reference,
+        id: entry.record.id,
+        label: entry.record.reference,
         longitude: location.longitude,
         latitude: location.latitude,
         precisionMetres: location.precisionMetres,
@@ -131,7 +155,7 @@ export default async function PropertySearchPage({
   });
 
   const hrefById = Object.fromEntries(
-    listings.map((record) => [record.id, listingHref(record, resolved)]),
+    qualified.map((entry) => [entry.record.id, listingHref(entry.record, resolved)]),
   );
 
   const breadcrumbs: BreadcrumbItem[] = [
@@ -146,13 +170,14 @@ export default async function PropertySearchPage({
   const listJsonLd = itemListJsonLd({
     name: t("realEstate.search.heading"),
     path: `/${resolved}${PROPERTY_SEARCH_PATH}`,
-    items: listings.map((record) => ({
-      name: record.title,
-      path: listingHref(record, resolved),
+    items: qualified.map((entry) => ({
+      name: entry.record.title,
+      path: entry.href,
     })),
   });
 
   const mapStyle = mapStyleFor(activeMapProvider());
+  const currentQuery = buildListingQuery(filters);
 
   return (
     <>
@@ -194,9 +219,9 @@ export default async function PropertySearchPage({
         <h2 id="property-filters-heading" className="visually-hidden">
           {t("realEstate.search.filterLabel")}
         </h2>
-        <ListingFiltersForm
+        <ListingFilterPanel
           locale={resolved}
-          regions={regions}
+          geography={geography}
           filters={filters}
           view={view}
         />
@@ -207,13 +232,31 @@ export default async function PropertySearchPage({
           <h2 id="property-results-heading" className="visually-hidden">
             {t("realEstate.search.heading")}
           </h2>
-          {allListings.length > 0 ? (
-            <ViewToggle locale={resolved} t={t} filters={filters} view={view} />
+          {page.total > 0 ? (
+            <div className="flex flex-wrap items-center gap-4">
+              <ViewToggle locale={resolved} t={t} filters={filters} view={view} />
+              <SaveSearchControl
+                locale={resolved}
+                queryString={currentQuery}
+                filters={filters}
+              />
+            </div>
           ) : null}
         </div>
 
-        {allListings.length === 0 ? (
-          <div className="max-w-2xl">
+        {active ? (
+          <div className="mt-6">
+            <ActiveFilterChips
+              locale={resolved}
+              t={t}
+              filters={filters}
+              view={view}
+            />
+          </div>
+        ) : null}
+
+        {!hasPortfolio ? (
+          <div className="mt-10 max-w-2xl">
             <h3 className="text-xl font-semibold text-ink-900">
               {t("realEstate.search.emptyHeading")}
             </h3>
@@ -229,8 +272,8 @@ export default async function PropertySearchPage({
               </ButtonLink>
             </p>
           </div>
-        ) : listings.length === 0 ? (
-          <div className="max-w-2xl">
+        ) : page.items.length === 0 ? (
+          <div className="mt-10 max-w-2xl">
             <h3 className="text-xl font-semibold text-ink-900">
               {t("realEstate.search.noResultsHeading")}
             </h3>
@@ -248,12 +291,10 @@ export default async function PropertySearchPage({
           </div>
         ) : (
           <>
-            <p className="mb-6 text-sm text-muted" aria-live="polite">
-              {listings.length === 1
+            <p className="mt-6 mb-6 text-sm text-muted" aria-live="polite">
+              {page.total === 1
                 ? t("realEstate.search.resultsCountOne")
-                : t("realEstate.search.resultsCount", {
-                    count: listings.length,
-                  })}
+                : t("realEstate.search.resultsCount", { count: page.total })}
               {active ? ` · ${t("realEstate.search.filterLabel")}` : ""}
             </p>
 
@@ -277,9 +318,16 @@ export default async function PropertySearchPage({
                   {t("realEstate.search.countOnMap", { count: points.length })}
                 </p>
                 {/* The list is always rendered under the map, so every property
-                    remains reachable by keyboard and to a reader without WebGL. */}
+                    remains reachable by keyboard and to a reader without WebGL.
+                    The map and the list are two views of the SAME page of results,
+                    so the counts cannot diverge. */}
                 <div className="mt-10">
-                  <ListingGrid listings={listings} locale={resolved} t={t} />
+                  <ListingGrid
+                    listings={qualified.map((entry) => entry.record)}
+                    locale={resolved}
+                    t={t}
+                    favoriteIds={favoriteIds}
+                  />
                 </div>
               </div>
             ) : (
@@ -289,9 +337,23 @@ export default async function PropertySearchPage({
                     {t("realEstate.search.mapUnavailable")}
                   </p>
                 ) : null}
-                <ListingGrid listings={listings} locale={resolved} t={t} />
+                <ListingGrid
+                  listings={qualified.map((entry) => entry.record)}
+                  locale={resolved}
+                  t={t}
+                  favoriteIds={favoriteIds}
+                />
               </>
             )}
+
+            <ListingPagination
+              locale={resolved}
+              t={t}
+              filters={filters}
+              page={page.page}
+              pageCount={page.pageCount}
+              view={view}
+            />
           </>
         )}
       </SectionBand>
