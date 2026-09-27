@@ -196,7 +196,7 @@ export async function recordManualPayment(
       order_id: order.id,
       status: "succeeded",
       method: "bank_transfer",
-      // `manual` (not `flutterwave`) marks this as operator-confirmed.
+      // `manual` (not the provider name) marks this as operator-confirmed.
       provider: "manual",
       amount_minor: order.total_minor,
       currency: order.currency,

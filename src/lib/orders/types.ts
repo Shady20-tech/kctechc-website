@@ -52,12 +52,27 @@ export const PAYMENT_STATUSES: readonly PaymentStatus[] = [
   "manual_pending",
 ];
 
-export const PAYMENT_METHODS: readonly PaymentMethod[] = [
-  "card",
+/**
+ * Payment methods a customer may choose today.
+ *
+ * Fapshi settles mobile money (MTN, Orange) and the site's own bank-transfer
+ * flow; it has no card channel (its `medium` enum is `mobile money`,
+ * `orange money`, `fapshi`). `card` therefore stays in `PaymentMethod` — the
+ * database enum still contains it, and removing a value from a live enum would
+ * be a destructive migration for no gain — but it is not offered and cannot be
+ * submitted: the checkout schema accepts only the three below.
+ *
+ * A legacy order whose stored method is `card` remains readable; it simply cannot
+ * be paid again through this integrator.
+ */
+export const PAYMENT_METHODS = [
   "mobile_money_mtn",
   "mobile_money_orange",
   "bank_transfer",
-];
+] as const satisfies readonly PaymentMethod[];
+
+/** The methods a customer may choose today, as a narrow union. */
+export type OfferedPaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const FULFILLMENT_METHODS: readonly FulfillmentMethod[] = [
   "delivery",

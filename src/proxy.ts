@@ -20,6 +20,20 @@ import { isNonLocalizedPath } from "@/lib/i18n/routing";
 
 const LOCALE_COOKIE = "kc_locale";
 
+/**
+ * Unprefixed admin paths that have a localized counterpart.
+ *
+ * Sign-in and sign-up are customer-facing doors and are bilingual; every other
+ * admin path is internal and English-only. They are therefore served from
+ * `/[locale]/admin/...` so they inherit the site header, footer and language
+ * switcher, while these unprefixed forms stay working — they are what the shared
+ * header, the guards and existing bookmarks link to.
+ *
+ * Only these two are remapped. An arbitrary `/admin/anything` must not be
+ * rewritten, or the mapping would leak into the internal console.
+ */
+const LOCALIZED_ADMIN_PATHS = new Set(["/admin/login", "/admin/sign-up"]);
+
 function detectLocale(request: NextRequest): string {
   // 1. An explicit choice made by the visitor.
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
@@ -78,6 +92,21 @@ export async function proxy(request: NextRequest) {
   }
 
   // Keep the Supabase auth cookie pair fresh. Cookie handling only.
+  //
+  // The localized sign-in and sign-up aliases are forwarded here, before the
+  // refresh, because there is nothing to refresh for a stateless hop and the
+  // destination will run the refresh itself. `rememberLocale` is called so the
+  // guess this redirect just made is honoured on the visitor's next unprefixed
+  // visit, exactly as the public tree does.
+  if (LOCALIZED_ADMIN_PATHS.has(pathname)) {
+    const locale = detectLocale(request);
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${pathname}`;
+    const redirect = NextResponse.redirect(url, 307);
+    rememberLocale(redirect, locale);
+    return redirect;
+  }
+
   return refreshSession(request, NextResponse.next());
 }
 

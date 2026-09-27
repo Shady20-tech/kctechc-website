@@ -6,16 +6,21 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Payment return URL.
  *
- * Where Flutterwave sends the customer after the hosted page. This route does
- * **not** mark anything paid on the strength of the query string: the redirect is
- * a hint that a payment attempt finished, and the outcome is decided by asking
- * the provider (`reconcilePayment`).
+ * Where Fapshi sends the customer after the hosted page. This route does **not**
+ * mark anything paid on the strength of the query string: the redirect is a hint
+ * that a payment attempt finished, and the outcome is decided by asking Fapshi
+ * (`reconcilePayment`).
  *
- * That distinction is the whole point. A customer can edit the return URL, and
- * Flutterwave's own documentation notes the redirect is not a reliable signal.
- * The webhook is the primary path; this is the secondary one so a customer whose
- * webhook is delayed by a few seconds still sees the correct state rather than a
- * "pending" page they would then refresh.
+ * That distinction is the whole point. A customer can edit the return URL, and a
+ * redirect is never a reliable payment signal. On Fapshi this route carries more
+ * of the load than it would with a provider that retries webhooks — Fapshi sends
+ * each webhook once with no redelivery, so a delivery that is missed (a deploy, a
+ * blip) would otherwise leave the order stuck in `pending_payment` forever. This
+ * route is the recovery path for exactly that case.
+ *
+ * The `tx_ref` parameter is our own order reference, which we placed on the
+ * `redirectUrl` when creating the link, so it is present regardless of what the
+ * provider chooses to append.
  *
  * The route always redirects to the order page, carrying the outcome as a query
  * flag for messaging only — never as the source of truth. The order page re-reads
@@ -28,7 +33,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
   const txRef = url.searchParams.get("tx_ref");
-  // Flutterwave may append its own status and transaction id; neither is trusted.
+  // Any extra parameters the provider appends are ignored; only our own
+  // `tx_ref` identifies the payment, and even that is not trusted for state.
   const locale = url.searchParams.get("locale") === "fr" ? "fr" : "en";
 
   const admin = createAdminClient();

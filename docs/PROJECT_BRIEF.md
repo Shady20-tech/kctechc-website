@@ -56,7 +56,8 @@ exact versions in the lockfile.
 | `@tolgee/react` | `7.2.1` | Runtime/translation layer. |
 
 Also required but not version-checked yet: `lucide-react`, `maplibre-gl`, `resend`, `playwright`,
-`@supabase/supabase-js`, and the payment-provider SDK (Flutterwave) added in the payments phase.
+`@supabase/supabase-js`, and the payment provider (Fapshi, called over its REST API) added in the
+payments phase.
 
 > Note on TypeScript 7: verify that Next.js 16.3.6 tooling, ESLint, and `@types/react` resolve
 > cleanly with TypeScript 7 before locking it. If a peer conflict appears, fall back to the latest
@@ -123,8 +124,9 @@ original spec; the summary below tracks progress.
   translation entries on publish.
 
 ### Phase 4 — Store, cart, orders, payments
-- Catalog, cart, checkout, Flutterwave adapter with idempotency + webhook verification, order and
-  payment state machine, audit trail, disabled state when credentials are absent.
+- Catalog, cart, checkout, Fapshi adapter (hosted payment link + status verification) with
+  idempotency + webhook secret verification, order and payment state machine, audit trail, disabled
+  state when credentials are absent.
 
 ### Phase 5 — Real estate platform
 - Listings, media, amenities, agent workflows, inquiry + approval queue, map adapter

@@ -56,7 +56,7 @@ Full details, version notes, and constraints are in `AGENTS.md` and `docs/PROJEC
 | 1 | Next.js foundations, design tokens, locale scaffold, SEO baseline | ⏳ Next |
 | 2 | Supabase foundation, migrations, RLS, auth, region seed | Planned |
 | 3 | Department surfaces & content, translation pipeline | Planned |
-| 4 | Store, cart, orders, Flutterwave payments | Planned |
+| 4 | Store, cart, orders, Fapshi payments | Planned |
 | 5 | Real estate platform, map adapter, geographic search | Planned |
 | 6 | CRM, admin panel, translation health, audit logs | Planned |
 | 7 | Analytics, SEO hardening, performance, launch | Planned |
