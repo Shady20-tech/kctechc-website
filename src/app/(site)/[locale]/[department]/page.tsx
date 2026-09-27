@@ -9,6 +9,7 @@ import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
+import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import { departmentHasServices } from "@/lib/content/defaults";
@@ -137,6 +138,7 @@ export default async function DepartmentPage({
       />
 
       <section className="on-ink relative overflow-hidden bg-ink-950">
+        <HeroMedia src={definition.heroImage} />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
         <div className="relative container-page py-16 sm:py-20">

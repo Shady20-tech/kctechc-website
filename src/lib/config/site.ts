@@ -52,6 +52,8 @@ export type DepartmentDefinition = {
   summaryKey: string;
   /** Key into the icon map in `DepartmentIcon`. */
   icon: DepartmentSlug;
+  /** Hero backdrop photo, served from `/public`. */
+  heroImage: string;
 };
 
 /**
@@ -70,6 +72,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.digitalMarketing.description",
     summaryKey: "departments.digitalMarketing.summary",
     icon: "digital-marketing",
+    heroImage: "/hero/digital-marketing.jpg",
   },
   {
     slug: "electrical-services",
@@ -78,6 +81,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.electricalServices.description",
     summaryKey: "departments.electricalServices.summary",
     icon: "electrical-services",
+    heroImage: "/hero/electrical-services.jpg",
   },
   {
     slug: "real-estate",
@@ -86,6 +90,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.realEstate.description",
     summaryKey: "departments.realEstate.summary",
     icon: "real-estate",
+    heroImage: "/hero/real-estate.jpg",
   },
 ] as const;
 

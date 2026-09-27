@@ -345,6 +345,19 @@ p {
   );
 }
 
+/* Legibility scrim for hero photography. Weighted to the inline-start edge,
+   where hero copy sits, and lighter toward the far edge so the photo still
+   reads as a photo. Tuned so the ink band's text contrast holds over a light
+   image — a photo behind text is only safe with something like this. */
+.hero-scrim {
+  background-image: linear-gradient(
+    to right,
+    rgb(6 9 11 / 0.94),
+    rgb(6 9 11 / 0.88) 45%,
+    rgb(6 9 11 / 0.74)
+  );
+}
+
 /* Hairline used to separate stacked items without heavy borders. */
 .hairline {
   border-top: 1px solid color-mix(in srgb, var(--color-ink-900) 10%, transparent);
