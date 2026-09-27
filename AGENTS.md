@@ -530,6 +530,20 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **Verify rendered HTML, not just source.** Several defects across these phases — duplicated titles,
   a stale `theme-color`, three department cards sharing one accent, nav order — were invisible in the
   code and only showed up in `curl` output. Prerendered HTML is the ground truth.
+- **A photo behind hero copy needs a scrim, and the contrast must be measured, not assumed.** Hero
+  backdrops go through `HeroMedia` (`src/components/ui/HeroMedia.tsx`), which layers the image plus
+  the `.hero-scrim` utility from `globals.css`. The scrim is weighted to the inline-start edge where
+  copy sits. To check a new image, sample the rendered screenshot in the heading band: the luminance
+  should stay near-black (p10 ≈ 16–17). The same trap applies to any new hero — the ink band alone
+  is no longer enough once an image sits behind it.
+- **Hero images are per-department data, not a hardcoded path.** Each entry in `DEPARTMENTS`
+  (`src/lib/config/site.ts`) carries `heroImage`, and the shared department page renders
+  `definition.heroImage`. `src/lib/config/hero-images.test.ts` asserts every path resolves to a
+  complete JPEG under `public/hero/`; a mistyped path otherwise fails silently as an empty box.
+- **PR hygiene: check the target PR is still open before pushing to its branch.** Phase 7 was already
+  merged to `main` via #14, and pushing a follow-up commit onto the merged
+  `phase-7-real-estate-platform` branch silently reopened work on a dead branch. Cut a fresh branch
+  from `main` instead, and restore any branch you pushed to by accident.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
