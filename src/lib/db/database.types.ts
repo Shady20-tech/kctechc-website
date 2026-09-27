@@ -1175,7 +1175,7 @@ isOneToOne: true
 { Args: { "p_from": Database["public"]["Enums"]["order_status"], "p_to": Database["public"]["Enums"]["order_status"] }; Returns: boolean
                            }
             ,"place_order":
-{ Args: { "p_cart_id": string, "p_customer_id"?: string, "p_delivery_address_line1"?: string, "p_delivery_address_line2"?: string, "p_delivery_city"?: string, "p_delivery_minor"?: number, "p_delivery_notes"?: string, "p_delivery_region_id"?: string, "p_email": string, "p_full_name": string, "p_fulfillment": Database["public"]["Enums"]["order_fulfillment"], "p_idempotency_key": string, "p_locale": Database["public"]["Enums"]["locale_code"], "p_payment_method": Database["public"]["Enums"]["payment_method"], "p_phone"?: string }; Returns: Json
+{ Args: { "p_cart_id": string, "p_customer_id": string, "p_delivery_address_line1"?: string, "p_delivery_address_line2"?: string, "p_delivery_city"?: string, "p_delivery_minor"?: number, "p_delivery_notes"?: string, "p_delivery_region_id"?: string, "p_email": string, "p_full_name": string, "p_fulfillment": Database["public"]["Enums"]["order_fulfillment"], "p_idempotency_key": string, "p_locale": Database["public"]["Enums"]["locale_code"], "p_payment_method": Database["public"]["Enums"]["payment_method"], "p_phone": string }; Returns: Json
                            }
             ,"release_order_inventory":
 { Args: { "p_order_id": string }; Returns: undefined

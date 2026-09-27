@@ -135,14 +135,4 @@ export type CheckoutState =
   | { status: "unconfigured" }
   | { status: "empty_cart" }
   | { status: "out_of_stock"; item: string }
-  | { status: "error" }
-  | {
-      status: "ready";
-      orderReference: string;
-      /**
-       * Where to send the customer next, when the provider returned a hosted
-       * page. Absent for a bank transfer or a pending mobile-money charge, where
-       * the confirmation page is the destination instead.
-       */
-      redirectUrl?: string;
-    };
+  | { status: "error" };

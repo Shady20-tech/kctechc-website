@@ -604,6 +604,22 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **The checkout schema reports stable codes, not sentences.** The form must map a field to its
   message key (`CHECKOUT_ERROR_KEYS`); interpolating the raw code put `consentRequired` in front of a
   customer.
+- **A successful Server Action must `redirect()`, not hand a success state back for the client to
+  act on.** `submitCheckout` cleared the cart cookie and revalidated before returning
+  `{ status: "ready" }`. The cleared cookie made the checkout route re-render into its empty-cart
+  branch, which unmounted `CheckoutForm` before its `useEffect` could `router.push` to the
+  confirmation — so a real order was created while the browser stayed on a page reading "Your cart is
+  empty". The order existed and the cookie was set, which makes this look like a routing bug rather
+  than a missing navigation. Call `redirect()` from the action; Next.js turns it into the action
+  response, and it works with and without JavaScript.
+- **A Server Action that mutates a cookie the same route reads will re-render that route before any
+  client effect runs.** Any post-action navigation designed as a client `useEffect` on the returned
+  state is racing an unavoidable re-render. Prefer the server-side redirect for the success path.
+- **Test the JSON and the no-JS paths separately, with a real browser.** `curl`-style POSTs with a
+  hand-rolled body produced `Connection closed` / HTTP 500 and created no order — an artifact of the
+  request, not the app. Driving a real browser (and one with `setJavaScriptEnabled(false)`) is what
+  showed the order was placeable and only the redirect was missing. A harness click is also not proof:
+  reproduce with `page.mouse.click`/`page.type` before concluding the app is broken.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

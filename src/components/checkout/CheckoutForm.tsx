@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextAreaField, TextField } from "@/components/ui/Form";
@@ -59,7 +58,6 @@ export function CheckoutForm({
   currency: string;
 }) {
   const t = createTranslator(locale).t;
-  const router = useRouter();
 
   const [fulfillment, setFulfillment] = useState<FulfillmentMethod>("delivery");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mobile_money_mtn");
@@ -95,22 +93,9 @@ export function CheckoutForm({
     });
   }, [items, subtotalMinor, currency]);
 
-  // When the order is placed, hand the customer to the provider's hosted page.
-  useEffect(() => {
-    if (state.status === "ready" && state.redirectUrl) {
-      window.location.assign(state.redirectUrl);
-    }
-  }, [state]);
-
-  // Navigate to the confirmation for a manual or pending method, where the state
-  // and next step are explained.
-  useEffect(() => {
-    if (state.status === "ready") {
-      router.push(
-        `/${locale}/digital-marketing/store/orders/${encodeURIComponent(state.orderReference)}`,
-      );
-    }
-  }, [state, router, locale]);
+  // On success the Server Action redirects the browser itself, so there is no
+  // post-submit navigation to perform here. The form only reports the states the
+  // customer has to act on.
 
   const errors = state.status === "invalid" ? state.errors : {};
   const errorText = (field: keyof CheckoutFieldErrors): string | undefined => {
