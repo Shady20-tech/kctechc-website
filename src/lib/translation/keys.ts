@@ -18,7 +18,9 @@ import type { Locale } from "@/lib/i18n/locales";
 export type TranslatableEntityType =
   | "product"
   | "product_media"
-  | "product_category";
+  | "product_category"
+  | "property_listing"
+  | "property_media";
 
 /**
  * The product fields that are indexed for translation.
@@ -71,6 +73,50 @@ export function buildProductTranslationKeys(
   return fields.map((field) =>
     buildTranslationKey("product", productId, field, locale),
   );
+}
+
+/**
+ * The listing fields that are indexed for translation.
+ *
+ * Mirrors `property_translatable_fields()` in migration 22. Kept in step with
+ * `PROPERTY_TRANSLATABLE_FIELDS` in `src/lib/real-estate/enums.ts` by a test, so
+ * the TypeScript mirror and the SQL function cannot drift apart.
+ */
+export const PROPERTY_TRANSLATABLE_FIELDS = [
+  "title",
+  "description",
+  "highlights",
+  "slug",
+  "seo_title",
+  "seo_description",
+] as const;
+
+export type PropertyTranslatableField =
+  (typeof PROPERTY_TRANSLATABLE_FIELDS)[number];
+
+/**
+ * Build the full set of keys for a listing's translatable fields.
+ *
+ * `fields` defaults to every listing field; a caller narrows it to the fields
+ * that actually have a value, so an unset SEO description does not produce a key
+ * for an empty string.
+ */
+export function buildPropertyTranslationKeys(
+  listingId: string,
+  locale: Locale,
+  fields: readonly string[] = PROPERTY_TRANSLATABLE_FIELDS,
+): string[] {
+  return fields.map((field) =>
+    buildTranslationKey("property_listing", listingId, field, locale),
+  );
+}
+
+/** The key for one listing image's alt text. */
+export function buildPropertyMediaTranslationKey(
+  mediaId: string,
+  locale: Locale,
+): string {
+  return buildTranslationKey("property_media", mediaId, "alt_text", locale);
 }
 
 const KEY_PATTERN = /^[a-z_]+\.[0-9a-f-]{36}\.[a-z0-9_]+\.[a-z]{2}$/;

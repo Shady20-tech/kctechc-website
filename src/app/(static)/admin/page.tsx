@@ -44,9 +44,12 @@ export default async function AdminDashboardPage() {
           <p>{t("admin.phaseNotice")}</p>
         </Notice>
 
-        <p>
+        <p className="flex flex-wrap gap-3">
           <ButtonLink href="/admin/store/new" variant="primary">
             {t("admin.store.heading")}
+          </ButtonLink>
+          <ButtonLink href="/admin/real-estate" variant="secondary">
+            {t("realEstate.admin.heading")}
           </ButtonLink>
         </p>
       </div>

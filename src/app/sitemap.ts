@@ -1,5 +1,10 @@
 import type { MetadataRoute } from "next";
-import { INSIGHTS_PATH, NAV_PATHS, STORE_PATH } from "@/lib/config/navigation";
+import {
+  INSIGHTS_PATH,
+  NAV_PATHS,
+  PROPERTY_SEARCH_PATH,
+  STORE_PATH,
+} from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
 import { DEPARTMENTS } from "@/lib/config/site";
 import {
@@ -9,6 +14,8 @@ import {
 } from "@/lib/content/defaults";
 import { loadInsights } from "@/lib/content/loaders";
 import { LOCALES } from "@/lib/i18n/locales";
+import { loadPublishedListings } from "@/lib/real-estate/loaders";
+import { listingSlugForLocale } from "@/lib/real-estate/records";
 import { alternatesFor, canonicalFor } from "@/lib/seo/canonical";
 import { loadCategoryRecords, loadProductRecords } from "@/lib/store/loaders";
 import { slugForLocale } from "@/lib/store/slug-resolution";
@@ -111,6 +118,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           alternates: { languages: alternatesFor(productPath) },
         });
       }
+    }
+  }
+
+  // Property listings are data-driven, for the same reason the store records
+  // are: the portfolio changes without a deploy. Each listing is advertised
+  // under its own locale's slug so the French sitemap points at the French URL.
+  const propertyRecords = await loadPublishedListings({ limit: 500 });
+  for (const locale of LOCALES) {
+    for (const record of propertyRecords) {
+      const path = `${PROPERTY_SEARCH_PATH}/${listingSlugForLocale(record, locale)}`;
+      entries.push({
+        url: canonicalFor(locale, path),
+        lastModified: record.updatedAt ? new Date(record.updatedAt) : lastModified,
+        changeFrequency: "weekly",
+        priority: 0.7,
+        alternates: { languages: alternatesFor(path) },
+      });
     }
   }
 

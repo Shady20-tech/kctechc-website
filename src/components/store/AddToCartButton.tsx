@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
-import type { Translator } from "@/lib/i18n/translator";
+import { createTranslator } from "@/lib/i18n/translator";
 import { addToCartAction } from "@/lib/store/cart-actions";
 
 /**
@@ -20,16 +20,17 @@ import { addToCartAction } from "@/lib/store/cart-actions";
 export function AddToCartButton({
   productId,
   locale,
-  t,
   disabled = false,
   disabledReason,
 }: {
   productId: string;
   locale: Locale;
-  t: Translator["t"];
   disabled?: boolean;
   disabledReason?: string;
 }) {
+  // Derived from the locale rather than received: a function cannot cross the
+  // Server/Client boundary, and the translator is pure and isomorphic.
+  const t = createTranslator(locale).t;
   const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);

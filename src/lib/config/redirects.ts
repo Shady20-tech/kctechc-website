@@ -24,6 +24,17 @@ export const INSIGHTS_PATH = "/insights";
  */
 export const STORE_PATH = "/digital-marketing/store";
 
+/**
+ * Canonical path for the Nationwide Real Estate department.
+ *
+ * The department is addressed as a sibling of the other departments under the
+ * active locale, so the gateway link and the redirect table agree on one URL.
+ */
+export const REAL_ESTATE_PATH = "/real-estate";
+
+/** The property search and browse surface. */
+export const PROPERTY_SEARCH_PATH = "/real-estate/properties";
+
 /** The articles section's former path, still linked from Phase 2 pages. */
 const LEGACY_INSIGHTS_PATH = "/blog";
 
