@@ -621,6 +621,26 @@ acceptance criteria pass. Then stop — do not start the next phase.
   showed the order was placeable and only the redirect was missing. A harness click is also not proof:
   reproduce with `page.mouse.click`/`page.type` before concluding the app is broken.
 
+- **Regenerating `database.types.ts` from the live schema can surface long-dormant nullability.** The
+  hand-maintained types had drifted; a generated column (`order_items.line_total_minor`) types as
+  nullable even though its expression never yields null. Existing mappers then stop compiling. Fix
+  the mapper (`row.line_total_minor ?? row.unit_price_minor * row.quantity`) rather than loosening the
+  consumer's contract, and re-check every file that reads a regenerated table.
+- **`.next/dev/types/validator.ts` is stale after a route group move, and it breaks `next build`.**
+  Moving pages under a `(console)` group left the generated validator requiring the old
+  `src/app/(static)/admin/<route>/page.js` files, so the build failed type-checking on files that do
+  not exist. `rm -rf .next` regenerates it. `npx tsc --noEmit` on its own will not catch this if the
+  stale file is excluded.
+- **The i18n parity test splits keys on dots, so a literal `"state.draft"` key is read as nested.**
+  It reduces the tree by each segment, hits `undefined`, and throws `Cannot read properties of
+  undefined`. Message keys with a dot must be nested objects (`state: { draft: ... }`), not flat keys.
+- **The admin sidebar's active-link check must not use `startsWith` for `/admin` alone**, or the
+  dashboard entry stays highlighted on every console route. `isNavItemActive` special-cases `/admin`
+  to an exact match and uses `href + "/"` boundaries elsewhere so `/admin/logs` does not match
+  `/admin/logs-archive`.
+- **A server-mutating action needs `revalidatePath` on both the list and, when one exists, the detail
+  route.** Revalidating only `/admin/content` leaves the article's own edit page serving the old row.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->
