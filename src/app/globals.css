@@ -437,6 +437,25 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Side drawer entrance. A drawer that simply appears reads as a glitch — the
+   motion is what tells the visitor it came from the edge it is anchored to.
+   Animating `transform` (not `right`) keeps this off the layout path, and the
+   panel is positioned by `right-0` in the markup, so the resting state needs no
+   translate of its own. The global reduced-motion block below collapses the
+   duration to 0.01ms, which lands on the same resting state. */
+.drawer-panel {
+  animation: drawer-in 220ms var(--ease-out-soft) both;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 /* Staggered entrance for above-the-fold content. Each element sets its own
    `--reveal-delay`, so one keyframe serves the whole group. */
 .reveal {

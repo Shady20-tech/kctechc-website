@@ -64,6 +64,76 @@ describe("MobileMenu", () => {
     }
   });
 
+  // This was a full-screen sheet in practice. `w-[min(22rem,92vw)]` is 345px at
+  // a 375px viewport — 92% of the screen — so almost nothing of the page stayed
+  // visible and the drawer read as a takeover. Pinning the real numbers keeps it
+  // from silently drifting back, and a pure viewport-relative width would fail
+  // the desktop-width case below just as badly as a fixed 22rem fails the phone.
+  it("sizes the drawer to leave the page visible beside it", () => {
+    setup();
+    fireEvent.click(trigger());
+
+    const layer = screen.getByRole("dialog").parentElement!;
+    const panel = layer.lastElementChild! as HTMLElement;
+    const [, maxRem, maxVw] = panel.className.match(
+      /w-\[min\(([\d.]+)rem,([\d.]+)vw\)\]/,
+    )!;
+
+    // Mirrors the CSS `min()`: the panel is the smaller of the two terms. The
+    // viewport term only wins below ~366px, so the panel is a flat 300px on
+    // most phones and a proportional 82% on the narrowest ones.
+    const width = (vw: number) => Math.min(Number(maxRem) * 16, (Number(maxVw) / 100) * vw);
+
+    expect(Number(maxRem) * 16).toBe(300); // the requested width
+    expect(width(375)).toBe(300);
+    expect(width(1440)).toBe(300); // and it does not grow with the viewport
+    expect(width(360)).toBeCloseTo(295.2, 1); // cap binds on small screens
+
+    for (const vw of [320, 360, 375, 390, 414]) {
+      expect(width(vw), `${vw}px: drawer too wide`).toBeLessThanOrEqual(vw * 0.85);
+      // The page has to stay identifiable behind the drawer, not just be
+      // technically uncovered.
+      expect(vw - width(vw), `${vw}px: nothing left visible`).toBeGreaterThanOrEqual(54);
+    }
+
+    // A drawer needs its own height; a bottom sheet would need `auto`.
+    expect(panel.className).toContain("h-full");
+  });
+
+  // The drawer renders from inside the sticky header, which carries
+  // `backdrop-blur`. A `backdrop-filter` ancestor becomes the containing block
+  // for `position: fixed` descendants, so the panel's `inset-0` resolved against
+  // the header instead of the viewport and the drawer collapsed to the height of
+  // the header row. It is portalled to `document.body` to escape that ancestor.
+  it("renders outside the header so fixed positioning is not trapped", () => {
+    const t = createTranslator("en").t;
+    const { container } = render(
+      <div className="backdrop-blur">
+        <MobileMenu
+          locale="en"
+          entries={buildPrimaryNav("en", t)}
+          signInHref="/admin/login"
+          labels={{
+            menuLabel: t("common.menu"),
+            close: t("actions.closeMenu"),
+            title: t("common.menu"),
+            language: t("common.language"),
+            signIn: t("actions.signIn"),
+            brand: t("common.brandShort"),
+            brandSubtitle: `${t("common.brandShort")} · EN`,
+          }}
+        />
+      </div>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+
+    const dialog = screen.getByRole("dialog");
+    // The panel must not be inside the blur wrapper, and must live on `body`.
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(dialog.closest(".backdrop-blur")).toBeNull();
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+  });
+
   it("lists every department as a link, grouped under one heading", () => {
     setup();
     fireEvent.click(trigger());
