@@ -592,6 +592,18 @@ acceptance criteria pass. Then stop — do not start the next phase.
   genuinely larger source images — confirm a source exceeds `1920px` before wiring it in. Replacing a
   hero file in place also leaves the URL unchanged, and Next serves optimised images with
   `max-age=14400`, so the old bytes linger for hours; ship a new filename instead.
+- **A local branch whose tip is already merged is not a safe base.** `phase-8-payments-orders-crm`
+  sat on a commit that `main` had already absorbed via #16, so `git status` looked clean and the
+  branch looked current, but a PR opened from it would have carried nothing. Check with
+  `git merge-base --is-ancestor <branch> origin/main` before building on a branch, and cut fresh
+  from `origin/main` when it returns true.
+- **`order_events.event_type` is constrained to `^[a-z][a-z0-9_]*$`.** A dotted name like
+  `payment.manual_recorded` is plausible and reads well, but the check rejects it at insert time —
+  which only surfaces on the manual-payment path, not in any test that stops before the write. Use
+  `payment_manual_recorded`.
+- **The checkout schema reports stable codes, not sentences.** The form must map a field to its
+  message key (`CHECKOUT_ERROR_KEYS`); interpolating the raw code put `consentRequired` in front of a
+  customer.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

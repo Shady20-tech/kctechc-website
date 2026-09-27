@@ -273,7 +273,7 @@ isOneToOne: false
                   ]
                 },"inquiries": {
                   Row: {
-                    "assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"contact_method": Database["public"]['Enums']["contact_method"] | null,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"locality": string | null,"message": string,"phone": string | null,"preferred_contact": string | null,"property_type": Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id": string | null,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
+                    "assigned_at": string | null,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"last_activity_at": string,"priority": Database["public"]["Enums"]["inquiry_priority"],"assigned_to": string | null,"closed_at": string | null,"consent_at": string | null,"consent_given": boolean,"contact_method": Database["public"]['Enums']["contact_method"] | null,"created_at": string,"department_id": string | null,"email": string,"full_name": string,"id": string,"ip_hash": string | null,"locale": Database["public"]['Enums']["locale_code"],"locality": string | null,"message": string,"phone": string | null,"preferred_contact": string | null,"property_type": Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id": string | null,"responded_at": string | null,"service_id": string | null,"source": Database["public"]['Enums']["inquiry_source"],"status": Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at": string,"user_agent": string | null
                   }
                   Insert: {
                     "assigned_to"?: string | null,"closed_at"?: string | null,"consent_at"?: string | null,"consent_given"?: boolean,"contact_method"?: Database["public"]['Enums']["contact_method"] | null,"created_at"?: string,"department_id"?: string | null,"email": string,"full_name": string,"id"?: string,"ip_hash"?: string | null,"locale"?: Database["public"]['Enums']["locale_code"],"locality"?: string | null,"message": string,"phone"?: string | null,"preferred_contact"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"] | null,"reference": string,"region_id"?: string | null,"responded_at"?: string | null,"service_id"?: string | null,"source"?: Database["public"]['Enums']["inquiry_source"],"status"?: Database["public"]['Enums']["inquiry_status"],"subject": string,"updated_at"?: string,"user_agent"?: string | null
@@ -873,6 +873,119 @@ isOneToOne: false
     }
                   ]
                 }
+                ,"order_events": {
+                  Row: {
+                    "actor_id": string | null,"actor_kind": string,"created_at": string,"event_type": string,"from_status": Database["public"]["Enums"]["order_status"] | null,"id": number,"metadata": NonNullable<Json>,"note": string | null,"order_id": string,"to_status": Database["public"]["Enums"]["order_status"] | null
+                  }
+                  Insert: {
+                    "actor_id"?: string | null,"actor_kind"?: string,"created_at"?: string,"event_type": string,"from_status"?: Database["public"]["Enums"]["order_status"] | null,"metadata"?: NonNullable<Json>,"note"?: string | null,"order_id": string,"to_status"?: Database["public"]["Enums"]["order_status"] | null
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"actor_kind"?: string,"created_at"?: string,"event_type"?: string,"from_status"?: Database["public"]["Enums"]["order_status"] | null,"metadata"?: NonNullable<Json>,"note"?: string | null,"order_id"?: string,"to_status"?: Database["public"]["Enums"]["order_status"] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_events_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
+                ,"order_items": {
+                  Row: {
+                    "created_at": string,"currency": string,"id": string,"line_total_minor": number,"order_id": string,"product_id": string | null,"quantity": number,"sku": string,"slug": string,"title": string,"unit_price_minor": number
+                  }
+                  Insert: {
+                    "created_at"?: string,"currency"?: string,"id"?: string,"order_id": string,"product_id"?: string | null,"quantity": number,"sku": string,"slug": string,"title": string,"unit_price_minor": number
+                  }
+                  Update: {
+                    "created_at"?: string,"currency"?: string,"id"?: string,"order_id"?: string,"product_id"?: string | null,"quantity"?: number,"sku"?: string,"slug"?: string,"title"?: string,"unit_price_minor"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_items_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "order_items_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
+                ,"orders": {
+                  Row: {
+                    "access_token": string,"cancelled_at": string | null,"cart_id": string | null,"created_at": string,"currency": string,"customer_id": string | null,"delivery_address_line1": string | null,"delivery_address_line2": string | null,"delivery_city": string | null,"delivery_minor": number,"delivery_notes": string | null,"delivery_region_id": string | null,"email": string,"fulfilled_at": string | null,"full_name": string,"fulfillment": Database["public"]["Enums"]["order_fulfillment"],"id": string,"idempotency_key": string,"inventory_applied": boolean,"inventory_released_at": string | null,"locale": Database["public"]["Enums"]["locale_code"],"manual_payment_reference": string | null,"paid_at": string | null,"paid_minor": number,"payment_method": Database["public"]["Enums"]["payment_method"] | null,"phone": string | null,"placed_at": string,"reference": string,"refunded_at": string | null,"status": Database["public"]["Enums"]["order_status"],"subtotal_minor": number,"total_minor": number,"updated_at": string
+                  }
+                  Insert: {
+                    "access_token": string,"cancelled_at"?: string | null,"cart_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string | null,"delivery_address_line1"?: string | null,"delivery_address_line2"?: string | null,"delivery_city"?: string | null,"delivery_minor"?: number,"delivery_notes"?: string | null,"delivery_region_id"?: string | null,"email": string,"fulfilled_at"?: string | null,"full_name": string,"fulfillment"?: Database["public"]["Enums"]["order_fulfillment"],"id"?: string,"idempotency_key": string,"inventory_applied"?: boolean,"inventory_released_at"?: string | null,"locale"?: Database["public"]["Enums"]["locale_code"],"manual_payment_reference"?: string | null,"paid_at"?: string | null,"paid_minor"?: number,"payment_method"?: Database["public"]["Enums"]["payment_method"] | null,"phone"?: string | null,"placed_at"?: string,"reference": string,"refunded_at"?: string | null,"status"?: Database["public"]["Enums"]["order_status"],"subtotal_minor"?: number,"total_minor"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "access_token"?: string,"cancelled_at"?: string | null,"cart_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string | null,"delivery_address_line1"?: string | null,"delivery_address_line2"?: string | null,"delivery_city"?: string | null,"delivery_minor"?: number,"delivery_notes"?: string | null,"delivery_region_id"?: string | null,"email"?: string,"fulfilled_at"?: string | null,"full_name"?: string,"fulfillment"?: Database["public"]["Enums"]["order_fulfillment"],"id"?: string,"idempotency_key"?: string,"inventory_applied"?: boolean,"inventory_released_at"?: string | null,"locale"?: Database["public"]["Enums"]["locale_code"],"manual_payment_reference"?: string | null,"paid_at"?: string | null,"paid_minor"?: number,"payment_method"?: Database["public"]["Enums"]["payment_method"] | null,"phone"?: string | null,"placed_at"?: string,"reference"?: string,"refunded_at"?: string | null,"status"?: Database["public"]["Enums"]["order_status"],"subtotal_minor"?: number,"total_minor"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "orders_cart_id_fkey"
+      columns: ["cart_id"]
+isOneToOne: false
+      referencedRelation: "carts"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "orders_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "orders_delivery_region_id_fkey"
+      columns: ["delivery_region_id"]
+isOneToOne: false
+      referencedRelation: "regions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
+                ,"payment_webhook_events": {
+                  Row: {
+                    "event_type": string | null,"id": string,"payload": NonNullable<Json>,"process_note": string | null,"processed": boolean,"provider": string,"provider_event_id": string,"provider_tx_ref": string | null,"received_at": string,"signature_valid": boolean
+                  }
+                  Insert: {
+                    "event_type"?: string | null,"id"?: string,"payload"?: NonNullable<Json>,"process_note"?: string | null,"processed"?: boolean,"provider"?: string,"provider_event_id": string,"provider_tx_ref"?: string | null,"received_at"?: string,"signature_valid"?: boolean
+                  }
+                  Update: {
+                    "event_type"?: string | null,"id"?: string,"payload"?: NonNullable<Json>,"process_note"?: string | null,"processed"?: boolean,"provider"?: string,"provider_event_id"?: string,"provider_tx_ref"?: string | null,"received_at"?: string,"signature_valid"?: boolean
+                  }
+                  Relationships: []
+                }
+                ,"payments": {
+                  Row: {
+                    "amount_minor": number,"authorized_at": string | null,"captured_at": string | null,"created_at": string,"currency": string,"failed_at": string | null,"failure_reason": string | null,"id": string,"idempotency_key": string,"method": Database["public"]["Enums"]["payment_method"],"order_id": string,"provider": string,"provider_metadata": NonNullable<Json>,"provider_reference": string | null,"provider_tx_ref": string,"refunded_at": string | null,"refunded_minor": number,"status": Database["public"]["Enums"]["payment_status"],"updated_at": string
+                  }
+                  Insert: {
+                    "amount_minor": number,"authorized_at"?: string | null,"captured_at"?: string | null,"created_at"?: string,"currency"?: string,"failed_at"?: string | null,"failure_reason"?: string | null,"id"?: string,"idempotency_key": string,"method": Database["public"]["Enums"]["payment_method"],"order_id": string,"provider"?: string,"provider_metadata"?: NonNullable<Json>,"provider_reference"?: string | null,"provider_tx_ref": string,"refunded_at"?: string | null,"refunded_minor"?: number,"status"?: Database["public"]["Enums"]["payment_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_minor"?: number,"authorized_at"?: string | null,"captured_at"?: string | null,"created_at"?: string,"currency"?: string,"failed_at"?: string | null,"failure_reason"?: string | null,"id"?: string,"idempotency_key"?: string,"method"?: Database["public"]["Enums"]["payment_method"],"order_id"?: string,"provider"?: string,"provider_metadata"?: NonNullable<Json>,"provider_reference"?: string | null,"provider_tx_ref"?: string,"refunded_at"?: string | null,"refunded_minor"?: number,"status"?: Database["public"]["Enums"]["payment_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payments_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Views: {
             "listing_locations_api": {
@@ -913,6 +1026,90 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                }
+            ,"crm_inbox": {
+                  Row: {
+                    "assigned_at": string | null,"assigned_to": string | null,"assignee_name": string | null,"awaiting_response": boolean,"closed_at": string | null,"created_at": string,"department_id": string | null,"department_name": string | null,"department_slug": string | null,"email": string,"full_name": string,"hours_since_activity": number,"id": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"last_activity_at": string,"locale": Database["public"]["Enums"]["locale_code"],"phone": string | null,"priority": Database["public"]["Enums"]["inquiry_priority"],"reference": string,"responded_at": string | null,"source": Database["public"]["Enums"]["inquiry_source"],"status": Database["public"]["Enums"]["inquiry_status"],"subject": string,"updated_at": string
+                  }
+                  Insert: {
+                    "assigned_at": string | null,"assigned_to": string | null,"assignee_name": string | null,"awaiting_response": boolean,"closed_at": string | null,"created_at": string,"department_id": string | null,"department_name": string | null,"department_slug": string | null,"email": string,"full_name": string,"hours_since_activity": number,"id": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"last_activity_at": string,"locale": Database["public"]["Enums"]["locale_code"],"phone": string | null,"priority": Database["public"]["Enums"]["inquiry_priority"],"reference": string,"responded_at": string | null,"source": Database["public"]["Enums"]["inquiry_source"],"status": Database["public"]["Enums"]["inquiry_status"],"subject": string,"updated_at": string
+                  }
+                  Update: {
+                    "assigned_at": string | null,"assigned_to": string | null,"assignee_name": string | null,"awaiting_response": boolean,"closed_at": string | null,"created_at": string,"department_id": string | null,"department_name": string | null,"department_slug": string | null,"email": string,"full_name": string,"hours_since_activity": number,"id": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"last_activity_at": string,"locale": Database["public"]["Enums"]["locale_code"],"phone": string | null,"priority": Database["public"]["Enums"]["inquiry_priority"],"reference": string,"responded_at": string | null,"source": Database["public"]["Enums"]["inquiry_source"],"status": Database["public"]["Enums"]["inquiry_status"],"subject": string,"updated_at": string
+                  }
+                  Relationships: []
+                }
+            ,"crm_inbox_summary": {
+                  Row: {
+                    "awaiting_response_count": number,"department_id": string | null,"department_slug": string | null,"escalated_count": number,"inquiry_count": number,"priority": Database["public"]["Enums"]["inquiry_priority"],"status": Database["public"]["Enums"]["inquiry_status"]
+                  }
+                  Insert: {
+                    "awaiting_response_count": number,"department_id": string | null,"department_slug": string | null,"escalated_count": number,"inquiry_count": number,"priority": Database["public"]["Enums"]["inquiry_priority"],"status": Database["public"]["Enums"]["inquiry_status"]
+                  }
+                  Update: {
+                    "awaiting_response_count": number,"department_id": string | null,"department_slug": string | null,"escalated_count": number,"inquiry_count": number,"priority": Database["public"]["Enums"]["inquiry_priority"],"status": Database["public"]["Enums"]["inquiry_status"]
+                  }
+                  Relationships: []
+                }
+            ,"report_inquiries_daily": {
+                  Row: {
+                    "department_slug": string | null,"inquiry_count": number,"inquiry_date": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"responded_count": number,"source": Database["public"]["Enums"]["inquiry_source"]
+                  }
+                  Insert: {
+                    "department_slug": string | null,"inquiry_count": number,"inquiry_date": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"responded_count": number,"source": Database["public"]["Enums"]["inquiry_source"]
+                  }
+                  Update: {
+                    "department_slug": string | null,"inquiry_count": number,"inquiry_date": string,"inquiry_type": Database["public"]["Enums"]["inquiry_type"],"responded_count": number,"source": Database["public"]["Enums"]["inquiry_source"]
+                  }
+                  Relationships: []
+                }
+            ,"report_inventory_status": {
+                  Row: {
+                    "availability": Database["public"]["Enums"]["product_availability"],"currency": string,"low_stock": boolean,"price_minor": number,"product_id": string,"publish_state": Database["public"]["Enums"]["publish_state"],"sku": string,"stock": number,"times_ordered": number,"title": string
+                  }
+                  Insert: {
+                    "availability": Database["public"]["Enums"]["product_availability"],"currency": string,"low_stock": boolean,"price_minor": number,"product_id": string,"publish_state": Database["public"]["Enums"]["publish_state"],"sku": string,"stock": number,"times_ordered": number,"title": string
+                  }
+                  Update: {
+                    "availability": Database["public"]["Enums"]["product_availability"],"currency": string,"low_stock": boolean,"price_minor": number,"product_id": string,"publish_state": Database["public"]["Enums"]["publish_state"],"sku": string,"stock": number,"times_ordered": number,"title": string
+                  }
+                  Relationships: []
+                }
+            ,"report_listing_activity_daily": {
+                  Row: {
+                    "activity_date": string,"event_count": number,"event_type": Database["public"]["Enums"]["listing_event_type"],"listing_status": Database["public"]["Enums"]["listing_status"]
+                  }
+                  Insert: {
+                    "activity_date": string,"event_count": number,"event_type": Database["public"]["Enums"]["listing_event_type"],"listing_status": Database["public"]["Enums"]["listing_status"]
+                  }
+                  Update: {
+                    "activity_date": string,"event_count": number,"event_type": Database["public"]["Enums"]["listing_event_type"],"listing_status": Database["public"]["Enums"]["listing_status"]
+                  }
+                  Relationships: []
+                }
+            ,"report_order_pipeline": {
+                  Row: {
+                    "currency": string,"order_count": number,"status": Database["public"]["Enums"]["order_status"],"total_minor": number
+                  }
+                  Insert: {
+                    "currency": string,"order_count": number,"status": Database["public"]["Enums"]["order_status"],"total_minor": number
+                  }
+                  Update: {
+                    "currency": string,"order_count": number,"status": Database["public"]["Enums"]["order_status"],"total_minor": number
+                  }
+                  Relationships: []
+                }
+            ,"report_sales_daily": {
+                  Row: {
+                    "currency": string,"gross_minor": number,"ordered_minor": number,"overpayment_minor": number,"paid_order_count": number,"sale_date": string
+                  }
+                  Insert: {
+                    "currency": string,"gross_minor": number,"ordered_minor": number,"overpayment_minor": number,"paid_order_count": number,"sale_date": string
+                  }
+                  Update: {
+                    "currency": string,"gross_minor": number,"ordered_minor": number,"overpayment_minor": number,"paid_order_count": number,"sale_date": string
+                  }
+                  Relationships: []
                 }
           }
           Functions: {
@@ -965,7 +1162,24 @@ isOneToOne: true
 "fail_translation_sync_job":
 { Args: { "p_error": string,"p_job_id": string }; Returns: undefined
                            },
-"generate_inquiry_reference":
+"apply_payment_result":
+{ Args: { "p_failure_reason"?: string, "p_payment_id": string, "p_provider_metadata"?: Json, "p_provider_reference"?: string, "p_status": Database["public"]["Enums"]["payment_status"] }; Returns: Json
+                           }
+            ,"cancel_order":
+{ Args: { "p_actor_id"?: string, "p_actor_kind"?: string, "p_note"?: string, "p_order_id": string }; Returns: Json
+                           }
+            ,"generate_order_reference":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           }
+            ,"order_transition_allowed":
+{ Args: { "p_from": Database["public"]["Enums"]["order_status"], "p_to": Database["public"]["Enums"]["order_status"] }; Returns: boolean
+                           }
+            ,"place_order":
+{ Args: { "p_cart_id": string, "p_customer_id"?: string, "p_delivery_address_line1"?: string, "p_delivery_address_line2"?: string, "p_delivery_city"?: string, "p_delivery_minor"?: number, "p_delivery_notes"?: string, "p_delivery_region_id"?: string, "p_email": string, "p_full_name": string, "p_fulfillment": Database["public"]["Enums"]["order_fulfillment"], "p_idempotency_key": string, "p_locale": Database["public"]["Enums"]["locale_code"], "p_payment_method": Database["public"]["Enums"]["payment_method"], "p_phone"?: string }; Returns: Json
+                           }
+            ,"release_order_inventory":
+{ Args: { "p_order_id": string }; Returns: undefined
+                           },"generate_inquiry_reference":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "generate_listing_reference":
@@ -1051,7 +1265,7 @@ isOneToOne: true
 
           }
           Enums: {
-            "appointment_status": "requested"|"confirmed"|"completed"|"cancelled","appointment_window": "morning"|"afternoon"|"anytime","cart_status": "active"|"converted"|"abandoned"|"expired","contact_method": "email"|"phone"|"whatsapp","geo_landing_level": "region"|"division"|"subdivision","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry"|"site_visit_request","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","listing_event_type": "view"|"inquiry"|"share"|"save"|"contact_reveal","listing_property_kind": "house"|"apartment"|"villa"|"duplex"|"studio"|"bungalow"|"land"|"farm"|"office"|"shop"|"warehouse"|"hotel"|"guesthouse"|"restaurant"|"mixed_use"|"other","listing_sort_order": "newest"|"price_asc"|"price_desc"|"most_viewed","listing_source": "admin"|"agent"|"owner_submission"|"import","listing_status": "draft"|"pending_review"|"published"|"under_offer"|"sold"|"rented"|"archived"|"rejected","listing_type": "sale"|"rent"|"lease"|"short_term","locale_code": "en"|"fr","price_period": "total"|"monthly"|"quarterly"|"yearly"|"weekly"|"nightly","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","project_media_role": "before"|"after"|"general","property_type": "residential"|"commercial"|"industrial","publish_state": "draft"|"published"|"archived","search_alert_frequency": "instant"|"daily"|"weekly","submission_status": "pending_review"|"approved"|"rejected"|"changes_requested","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media"|"project_media"|"property_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"|"real_estate_admin"
+            "appointment_status": "requested"|"confirmed"|"completed"|"cancelled","appointment_window": "morning"|"afternoon"|"anytime","cart_status": "active"|"converted"|"abandoned"|"expired","contact_method": "email"|"phone"|"whatsapp","geo_landing_level": "region"|"division"|"subdivision","inquiry_source": "contact_form"|"quote_request"|"property_inquiry"|"viewing_request"|"phone"|"email"|"walk_in"|"service_inquiry"|"site_visit_request","inquiry_status": "new"|"assigned"|"in_progress"|"responded"|"closed"|"spam","inventory_reason": "initial"|"restock"|"sale"|"return"|"correction"|"damage","inquiry_priority": "low"|"normal"|"high"|"urgent","inquiry_type": "general"|"quote"|"property"|"viewing"|"service"|"support","order_fulfillment": "delivery"|"pickup","order_status": "pending_payment"|"paid"|"processing"|"fulfilled"|"cancelled"|"refunded","payment_method": "card"|"mobile_money_mtn"|"mobile_money_orange"|"bank_transfer","payment_status": "pending"|"requires_action"|"succeeded"|"failed"|"cancelled"|"refunded"|"manual_pending","listing_event_type": "view"|"inquiry"|"share"|"save"|"contact_reveal","listing_property_kind": "house"|"apartment"|"villa"|"duplex"|"studio"|"bungalow"|"land"|"farm"|"office"|"shop"|"warehouse"|"hotel"|"guesthouse"|"restaurant"|"mixed_use"|"other","listing_sort_order": "newest"|"price_asc"|"price_desc"|"most_viewed","listing_source": "admin"|"agent"|"owner_submission"|"import","listing_status": "draft"|"pending_review"|"published"|"under_offer"|"sold"|"rented"|"archived"|"rejected","listing_type": "sale"|"rent"|"lease"|"short_term","locale_code": "en"|"fr","price_period": "total"|"monthly"|"quarterly"|"yearly"|"weekly"|"nightly","product_availability": "in_stock"|"out_of_stock"|"preorder"|"backorder"|"discontinued","product_condition": "new"|"refurbished"|"used","project_media_role": "before"|"after"|"general","property_type": "residential"|"commercial"|"industrial","publish_state": "draft"|"published"|"archived","search_alert_frequency": "instant"|"daily"|"weekly","submission_status": "pending_review"|"approved"|"rejected"|"changes_requested","sync_state": "not_required"|"queued"|"syncing"|"synced"|"failed","translatable_entity_type": "department"|"service"|"product"|"category"|"electrical_project"|"property_listing"|"insight"|"site_setting"|"product_media"|"project_media"|"property_media","translation_state": "missing"|"pending"|"in_progress"|"translated"|"reviewed"|"outdated","user_role": "visitor"|"customer"|"real_estate_agent"|"digital_marketing_staff"|"digital_marketing_admin"|"electrical_staff"|"electrical_admin"|"department_staff"|"super_admin"|"real_estate_admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1167,7 +1381,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "appointment_status": ["requested", "confirmed", "completed", "cancelled"],"appointment_window": ["morning", "afternoon", "anytime"],"cart_status": ["active", "converted", "abandoned", "expired"],"contact_method": ["email", "phone", "whatsapp"],"geo_landing_level": ["region", "division", "subdivision"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry", "site_visit_request"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"listing_event_type": ["view", "inquiry", "share", "save", "contact_reveal"],"listing_property_kind": ["house", "apartment", "villa", "duplex", "studio", "bungalow", "land", "farm", "office", "shop", "warehouse", "hotel", "guesthouse", "restaurant", "mixed_use", "other"],"listing_sort_order": ["newest", "price_asc", "price_desc", "most_viewed"],"listing_source": ["admin", "agent", "owner_submission", "import"],"listing_status": ["draft", "pending_review", "published", "under_offer", "sold", "rented", "archived", "rejected"],"listing_type": ["sale", "rent", "lease", "short_term"],"locale_code": ["en", "fr"],"price_period": ["total", "monthly", "quarterly", "yearly", "weekly", "nightly"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"project_media_role": ["before", "after", "general"],"property_type": ["residential", "commercial", "industrial"],"publish_state": ["draft", "published", "archived"],"search_alert_frequency": ["instant", "daily", "weekly"],"submission_status": ["pending_review", "approved", "rejected", "changes_requested"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media", "project_media", "property_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin", "real_estate_admin"]
+            "appointment_status": ["requested", "confirmed", "completed", "cancelled"],"appointment_window": ["morning", "afternoon", "anytime"],"cart_status": ["active", "converted", "abandoned", "expired"],"contact_method": ["email", "phone", "whatsapp"],"geo_landing_level": ["region", "division", "subdivision"],"inquiry_source": ["contact_form", "quote_request", "property_inquiry", "viewing_request", "phone", "email", "walk_in", "service_inquiry", "site_visit_request"],"inquiry_status": ["new", "assigned", "in_progress", "responded", "closed", "spam"],"inventory_reason": ["initial", "restock", "sale", "return", "correction", "damage"],"inquiry_priority": ["low", "normal", "high", "urgent"],"inquiry_type": ["general", "quote", "property", "viewing", "service", "support"],"order_fulfillment": ["delivery", "pickup"],"order_status": ["pending_payment", "paid", "processing", "fulfilled", "cancelled", "refunded"],"payment_method": ["card", "mobile_money_mtn", "mobile_money_orange", "bank_transfer"],"payment_status": ["pending", "requires_action", "succeeded", "failed", "cancelled", "refunded", "manual_pending"],"listing_event_type": ["view", "inquiry", "share", "save", "contact_reveal"],"listing_property_kind": ["house", "apartment", "villa", "duplex", "studio", "bungalow", "land", "farm", "office", "shop", "warehouse", "hotel", "guesthouse", "restaurant", "mixed_use", "other"],"listing_sort_order": ["newest", "price_asc", "price_desc", "most_viewed"],"listing_source": ["admin", "agent", "owner_submission", "import"],"listing_status": ["draft", "pending_review", "published", "under_offer", "sold", "rented", "archived", "rejected"],"listing_type": ["sale", "rent", "lease", "short_term"],"locale_code": ["en", "fr"],"price_period": ["total", "monthly", "quarterly", "yearly", "weekly", "nightly"],"product_availability": ["in_stock", "out_of_stock", "preorder", "backorder", "discontinued"],"product_condition": ["new", "refurbished", "used"],"project_media_role": ["before", "after", "general"],"property_type": ["residential", "commercial", "industrial"],"publish_state": ["draft", "published", "archived"],"search_alert_frequency": ["instant", "daily", "weekly"],"submission_status": ["pending_review", "approved", "rejected", "changes_requested"],"sync_state": ["not_required", "queued", "syncing", "synced", "failed"],"translatable_entity_type": ["department", "service", "product", "category", "electrical_project", "property_listing", "insight", "site_setting", "product_media", "project_media", "property_media"],"translation_state": ["missing", "pending", "in_progress", "translated", "reviewed", "outdated"],"user_role": ["visitor", "customer", "real_estate_agent", "digital_marketing_staff", "digital_marketing_admin", "electrical_staff", "electrical_admin", "department_staff", "super_admin", "real_estate_admin"]
           }
         }
 } as const
