@@ -70,7 +70,10 @@ export function listingStatusTone(
 }
 
 /** Format an area in square metres, or null when unknown. */
-export function formatArea(area: number | undefined, t: Translator["t"]): string | null {
+export function formatArea(
+  area: number | undefined,
+  t: Translator["t"],
+): string | null {
   if (area === undefined) return null;
   return `${new Intl.NumberFormat("en-CM").format(area)} ${t("realEstate.units.sqm")}`;
 }
@@ -128,7 +131,8 @@ export function ListingCard({
    */
   isFavorite?: boolean;
 }) {
-  const image = record.images.find((entry) => entry.isPrimary) ?? record.images[0];
+  const image =
+    record.images.find((entry) => entry.isPrimary) ?? record.images[0];
   const imageUrl = image ? propertyMediaPublicUrl(image.storagePath) : null;
   const href = listingHref(record, locale);
   const chips = listingFactChips(record, t);
@@ -148,7 +152,7 @@ export function ListingCard({
       ) : null}
       <Link
         href={href}
-        className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface transition-soft hover:border-border-strong"
+        className="flex h-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong"
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-alt">
           {imageUrl ? (
@@ -169,7 +173,9 @@ export function ListingCard({
             </div>
           )}
           <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-            <Badge tone="accent">{listingTypeLabel(record.listingType, t)}</Badge>
+            <Badge tone="accent">
+              {listingTypeLabel(record.listingType, t)}
+            </Badge>
             {record.status !== "published" ? (
               <Badge tone={listingStatusTone(record.status)}>
                 {listingStatusLabel(record.status, t)}
@@ -178,7 +184,7 @@ export function ListingCard({
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col p-5">
+        <div className="flex flex-1 flex-col p-6">
           <p className="font-display text-lg font-semibold text-ink-900">
             {formatListingPrice(record, locale)}
           </p>
@@ -196,13 +202,25 @@ export function ListingCard({
           {chips.length > 0 ? (
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-body">
               {chips.map((chip, index) => (
-                <li key={`${chip}-${index}`} className="flex items-center gap-1.5">
+                <li
+                  key={`${chip}-${index}`}
+                  className="flex items-center gap-1.5"
+                >
                   {index === 0 ? (
-                    <BedDouble aria-hidden="true" className="h-3.5 w-3.5 text-muted" />
+                    <BedDouble
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 text-muted"
+                    />
                   ) : index === 1 ? (
-                    <Bath aria-hidden="true" className="h-3.5 w-3.5 text-muted" />
+                    <Bath
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 text-muted"
+                    />
                   ) : (
-                    <Ruler aria-hidden="true" className="h-3.5 w-3.5 text-muted" />
+                    <Ruler
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 text-muted"
+                    />
                   )}
                   {chip}
                 </li>
@@ -259,13 +277,7 @@ export function ListingGrid({
 }
 
 /** A definition-list row, used by the detail page's facts and details blocks. */
-export function FactRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+export function FactRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
       <dt className="text-sm font-medium text-ink-900">{label}</dt>

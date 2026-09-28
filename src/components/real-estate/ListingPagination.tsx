@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
-import { buildListingQuery, type ListingFilters } from "@/lib/real-estate/search";
+import {
+  buildListingQuery,
+  type ListingFilters,
+} from "@/lib/real-estate/search";
 
 /**
  * Pagination for a result set.
@@ -48,7 +51,9 @@ export function ListingPagination({
       // `/listings?page=1` from being two addresses for one page.
       page: target > 1 ? target : undefined,
     };
-    const params = new URLSearchParams(buildListingQuery(next).replace(/^\?/, ""));
+    const params = new URLSearchParams(
+      buildListingQuery(next).replace(/^\?/, ""),
+    );
     if (view === "map") params.set("view", "map");
     const query = params.toString();
     return `${basePath}${query ? `?${query}` : ""}`;
@@ -86,7 +91,11 @@ export function ListingPagination({
           entry === "gap" ? (
             // A gap is rendered as an ellipsis and marked aria-hidden: it carries
             // no destination, and a screen reader announcing "gap" would be noise.
-            <li key={`gap-${index}`} aria-hidden="true" className="px-1 text-muted">
+            <li
+              key={`gap-${index}`}
+              aria-hidden="true"
+              className="px-1 text-muted"
+            >
               …
             </li>
           ) : (
@@ -133,7 +142,7 @@ export function ListingPagination({
 }
 
 const navClasses =
-  "inline-flex items-center gap-1 rounded-card border border-border bg-surface px-3 py-2 text-sm font-medium text-body transition-soft hover:border-dept-accent";
+  "inline-flex items-center gap-1 rounded-control border border-border bg-surface px-3 py-2 text-sm font-medium text-body transition-soft hover:border-dept-accent";
 
 /**
  * The page numbers to show, with `"gap"` marking an omitted run.

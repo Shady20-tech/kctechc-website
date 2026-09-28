@@ -27,7 +27,7 @@ export function CtaBand({
   return (
     <section
       aria-labelledby="cta-heading"
-      className={`rounded-card border border-border p-6 sm:p-8 ${
+      className={`rounded-card border border-border p-7 shadow-card sm:p-10 ${
         accent ? "accent-wash" : "bg-surface-alt"
       }`}
     >
@@ -68,7 +68,7 @@ export function ContactPrompt({
   return (
     <aside
       aria-labelledby="contact-prompt-heading"
-      className="rounded-card border border-border bg-surface p-6 shadow-card"
+      className="rounded-card border border-border bg-surface p-7 shadow-card"
     >
       <h2
         id="contact-prompt-heading"

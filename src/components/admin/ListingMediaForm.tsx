@@ -57,7 +57,8 @@ export function ListingMediaForm({
 
         {uploadState && !uploadState.ok ? (
           <Notice tone="error">
-            {labels[`errors.${uploadState.error}`] ?? labels["errors.upload_failed"]}
+            {labels[`errors.${uploadState.error}`] ??
+              labels["errors.upload_failed"]}
           </Notice>
         ) : null}
         {uploadState?.ok ? (
@@ -124,7 +125,7 @@ export function ListingMediaForm({
               required
               maxLength={300}
               placeholder={labels.altPlaceholder}
-              className="mt-1 block w-full rounded-card border border-border bg-surface px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-field border border-border bg-surface px-3 py-2 text-sm"
             />
             <span className="mt-1 block text-xs text-muted">
               {labels.altHint}
@@ -135,7 +136,7 @@ export function ListingMediaForm({
             name="image"
             accept="image/jpeg,image/png,image/webp,image/avif"
             required
-            className="block text-sm text-body file:mr-3 file:rounded-card file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
+            className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
           />
           <SubmitButton
             label={labels.imageUpload}

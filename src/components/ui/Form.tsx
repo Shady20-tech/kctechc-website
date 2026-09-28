@@ -10,7 +10,7 @@ import type { ComponentProps, ReactNode } from "react";
  */
 
 const CONTROL_BASE =
-  "w-full rounded-card border bg-surface px-3 py-2.5 text-sm text-ink-900 transition-soft placeholder:text-muted focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-sunken";
+  "w-full rounded-field border bg-surface px-3 py-2.5 text-sm text-ink-900 transition-soft placeholder:text-muted focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-sunken";
 
 const CONTROL_VALID = "border-border-strong hover:border-ink-500";
 const CONTROL_INVALID = "border-red-600 bg-red-50";
@@ -199,7 +199,13 @@ export function HoneypotField({ name }: { name: string }) {
   return (
     <div aria-hidden="true" className="absolute h-0 w-0 overflow-hidden">
       <label htmlFor={name}>Leave this field empty</label>
-      <input id={name} name={name} type="text" tabIndex={-1} autoComplete="off" />
+      <input
+        id={name}
+        name={name}
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+      />
     </div>
   );
 }

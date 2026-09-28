@@ -125,7 +125,10 @@ export function QuoteForm({
   );
   const [visitRequested, setVisitRequested] = useState(false);
 
-  const message = (key: string | undefined, values?: Record<string, string>) => {
+  const message = (
+    key: string | undefined,
+    values?: Record<string, string>,
+  ) => {
     if (!key) return undefined;
     const template =
       validationMessages[key] ?? validationMessages.required ?? key;
@@ -142,7 +145,10 @@ export function QuoteForm({
       aria-labelledby="quote-form-heading"
       className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
-      <h2 id="quote-form-heading" className="text-xl font-semibold text-ink-900">
+      <h2
+        id="quote-form-heading"
+        className="text-xl font-semibold text-ink-900"
+      >
         {labels.formHeading}
       </h2>
       <p className="mt-2 text-sm text-body">{labels.formIntro}</p>
@@ -436,7 +442,7 @@ export function QuoteForm({
                 : "attachments-hint"
             }
             aria-invalid={fieldErrors.attachments ? true : undefined}
-            className="mt-1.5 w-full rounded-card border border-border-strong bg-surface px-3 py-2.5 text-sm text-ink-900 transition-soft file:mr-3 file:rounded-pill file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-xs file:font-semibold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            className="mt-1.5 w-full rounded-field border border-border-strong bg-surface px-3 py-2.5 text-sm text-ink-900 transition-soft file:mr-3 file:rounded-pill file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-xs file:font-semibold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           />
           {fieldErrors.attachments ? (
             <p

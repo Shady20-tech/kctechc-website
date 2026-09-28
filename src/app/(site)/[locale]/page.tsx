@@ -91,14 +91,14 @@ export default async function LocalizedHomePage({
           >
             <Link
               href={`/${resolved}/contact`}
-              className="inline-flex items-center gap-2 rounded-card bg-teal-500 px-6 py-3.5 text-base font-semibold text-ink-950 transition-soft hover:bg-teal-400"
+              className="cta-lift inline-flex items-center gap-2 rounded-control bg-teal-500 px-6 py-3.5 text-base font-semibold text-ink-950 transition-soft hover:bg-teal-400"
             >
               {t("actions.getQuote")}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
             <Link
               href={`/${resolved}/about`}
-              className="inline-flex items-center gap-2 rounded-card border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-soft hover:bg-white/10"
+              className="cta-lift inline-flex items-center gap-2 rounded-control border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-soft hover:bg-white/10"
             >
               {t("nav.about")}
             </Link>

@@ -48,10 +48,14 @@ export function AvatarForm({
 
       {state && !state.ok ? (
         <Notice tone="error">
-          {labels[`errors.${state.error}`] ?? labels["errors.update_failed"] ?? ""}
+          {labels[`errors.${state.error}`] ??
+            labels["errors.update_failed"] ??
+            ""}
         </Notice>
       ) : null}
-      {state?.ok ? <Notice tone="success">{labels.avatarUpdated ?? ""}</Notice> : null}
+      {state?.ok ? (
+        <Notice tone="success">{labels.avatarUpdated ?? ""}</Notice>
+      ) : null}
 
       <div className="flex items-center gap-4">
         <Avatar src={currentUrl} name={name} size="lg" />
@@ -64,14 +68,17 @@ export function AvatarForm({
               name="avatar"
               accept="image/jpeg,image/png,image/webp"
               required
-              className="block text-sm text-body file:mr-3 file:rounded-card file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
               aria-describedby="avatar-limits"
             />
             <p id="avatar-limits" className="text-xs text-muted">
-              {labels.avatarChoose ?? ""} · {Math.round(MAX_AVATAR_BYTES / (1024 * 1024))}{" "}
-              MB
+              {labels.avatarChoose ?? ""} ·{" "}
+              {Math.round(MAX_AVATAR_BYTES / (1024 * 1024))} MB
             </p>
-            <UploadButton label={labels.avatarUpload} pendingLabel={labels.avatarUploading} />
+            <UploadButton
+              label={labels.avatarUpload}
+              pendingLabel={labels.avatarUploading}
+            />
           </form>
 
           {currentUrl ? (

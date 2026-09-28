@@ -97,7 +97,7 @@ export default async function CorporateGatewayPage() {
             className="flex items-center gap-3 rounded-card"
             aria-label={site.legalName}
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-white/5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-white/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/brand/kc-monogram-inverse.png"
@@ -120,7 +120,7 @@ export default async function CorporateGatewayPage() {
                   <Link
                     href={`/${locale}`}
                     hrefLang={LOCALE_SEO_TAGS[locale]}
-                    className="inline-flex items-center gap-2 rounded-card border border-white/20 px-3.5 py-2 text-sm font-medium text-white transition-soft hover:border-teal-300 hover:bg-white/5"
+                    className="inline-flex items-center gap-2 rounded-control border border-white/20 px-3.5 py-2 text-sm font-medium text-white transition-soft hover:border-teal-300 hover:bg-white/5"
                   >
                     {LOCALE_LABELS[locale]}
                     <span className="mono-label text-white/50">
@@ -167,14 +167,14 @@ export default async function CorporateGatewayPage() {
             >
               <Link
                 href="#gateway-departments"
-                className="inline-flex items-center gap-2 rounded-card bg-teal-500 px-6 py-3.5 text-base font-semibold text-ink-950 transition-soft hover:bg-teal-400"
+                className="cta-lift inline-flex items-center gap-2 rounded-control bg-teal-500 px-6 py-3.5 text-base font-semibold text-ink-950 transition-soft hover:bg-teal-400"
               >
                 {EN.home.heroPrimaryCta}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
               <Link
                 href="/en/contact"
-                className="inline-flex items-center gap-2 rounded-card border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-soft hover:bg-white/10"
+                className="cta-lift inline-flex items-center gap-2 rounded-control border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-soft hover:bg-white/10"
               >
                 {EN.home.heroSecondaryCta}
               </Link>
@@ -364,7 +364,7 @@ export default async function CorporateGatewayPage() {
                 <Link
                   href={`/${locale}`}
                   hrefLang={LOCALE_SEO_TAGS[locale]}
-                  className="inline-flex items-center gap-3 rounded-card border border-ink-900 px-6 py-3.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-900 hover:text-white"
+                  className="inline-flex items-center gap-3 rounded-control border border-ink-900 px-6 py-3.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-900 hover:text-white"
                 >
                   {LOCALE_LABELS[locale]}
                   <span className="mono-label text-muted">

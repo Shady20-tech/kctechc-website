@@ -27,7 +27,7 @@ export function ServiceCard({
     <li className="h-full">
       <Link
         href={href}
-        className="card-edge hover-lift group flex h-full flex-col rounded-card border border-border bg-surface p-6 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
+        className="card-edge card-lift group flex h-full flex-col rounded-card border border-border bg-surface p-6 shadow-card transition-soft hover:border-border-strong sm:p-7"
       >
         {index !== undefined ? (
           <span

@@ -152,9 +152,9 @@ export function Modal({
         className={
           isSide
             ? isInk
-              ? "drawer-panel absolute right-0 top-0 flex h-full w-[min(18.75rem,82vw)] flex-col overflow-y-auto bg-ink-950 text-white shadow-overlay"
-              : "drawer-panel absolute right-0 top-0 h-full w-[min(20rem,90vw)] overflow-y-auto bg-surface p-5 shadow-overlay"
-            : "absolute left-1/2 top-1/2 w-[min(32rem,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-card bg-surface p-6 shadow-overlay"
+              ? "drawer-panel surface-glass-ink absolute right-0 top-0 flex h-full w-[min(18.75rem,82vw)] flex-col overflow-y-auto rounded-l-panel bg-ink-950 text-white shadow-overlay"
+              : "drawer-panel absolute right-0 top-0 h-full w-[min(20rem,90vw)] overflow-y-auto rounded-l-panel bg-surface p-6 shadow-overlay"
+            : "surface-glass-light absolute left-1/2 top-1/2 w-[min(32rem,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-panel bg-surface p-7 shadow-overlay"
         }
       >
         <div
@@ -165,7 +165,13 @@ export function Modal({
           }
         >
           {heading ?? (
-            <h2 className={isInk ? "text-lg font-semibold text-white" : "text-lg font-semibold text-ink-900"}>
+            <h2
+              className={
+                isInk
+                  ? "text-lg font-semibold text-white"
+                  : "text-lg font-semibold text-ink-900"
+              }
+            >
               {title}
             </h2>
           )}
@@ -174,7 +180,7 @@ export function Modal({
             onClick={onClose}
             className={
               isInk
-                ? "-mr-1.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-card text-white/70 transition-soft hover:bg-white/10 hover:text-white"
+                ? "-mr-1.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-white/70 transition-soft hover:bg-white/10 hover:text-white"
                 : "rounded-card p-1.5 text-muted transition-soft hover:bg-ink-50 hover:text-ink-900"
             }
           >
@@ -182,7 +188,11 @@ export function Modal({
             <span className="visually-hidden">{closeLabel}</span>
           </button>
         </div>
-        <div className={isInk ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "mt-4"}>{children}</div>
+        <div
+          className={isInk ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "mt-4"}
+        >
+          {children}
+        </div>
       </div>
     </div>,
     document.body,

@@ -32,13 +32,7 @@ import { formatPrice } from "@/lib/store/types";
  * change is shown rather than applied silently: the customer was shown one price
  * and must not be charged another without seeing it.
  */
-export function CartLines({
-  cart,
-  locale,
-}: {
-  cart: Cart;
-  locale: Locale;
-}) {
+export function CartLines({ cart, locale }: { cart: Cart; locale: Locale }) {
   // Derived from the locale rather than received: a function cannot cross the
   // Server/Client boundary, and the translator is pure and isomorphic.
   const t = createTranslator(locale).t;
@@ -131,7 +125,7 @@ export function CartLines({
                       onQuantityChange(line.id, next);
                     }
                   }}
-                  className="w-20 rounded-card border border-border-strong bg-surface px-3 py-1.5 text-sm text-ink-900 focus-visible:outline-none"
+                  className="w-20 rounded-field border border-border-strong bg-surface px-3 py-1.5 text-sm text-ink-900 focus-visible:outline-none"
                 />
               </div>
             </div>

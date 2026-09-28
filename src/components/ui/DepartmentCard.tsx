@@ -56,12 +56,12 @@ export function DepartmentCard({
     >
       <Link
         href={`/${locale}/${department.slug}`}
-        className="card-edge hover-lift group flex h-full flex-col rounded-card border border-border bg-surface p-7 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
+        className="card-edge card-lift group flex h-full flex-col rounded-card border border-border bg-surface p-7 shadow-card transition-soft hover:border-border-strong sm:p-8"
       >
         <div className="flex items-start justify-between gap-4">
           <span
             aria-hidden="true"
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-control bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
           >
             <DepartmentIcon slug={department.icon} className="h-7 w-7" />
           </span>

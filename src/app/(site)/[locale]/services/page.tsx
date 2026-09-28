@@ -106,7 +106,7 @@ export default async function ServicesPage({
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-12 w-12 items-center justify-center rounded-card bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
+                  className="flex h-12 w-12 items-center justify-center rounded-control bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
                 >
                   <DepartmentIcon slug={department.slug} className="h-5 w-5" />
                 </span>

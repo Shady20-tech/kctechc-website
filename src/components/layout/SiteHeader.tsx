@@ -43,7 +43,7 @@ export function SiteHeader({
   const signInHref = "/admin/login";
 
   return (
-    <header className="on-ink sticky top-0 z-40 border-b border-white/10 bg-ink-950/95 backdrop-blur">
+    <header className="on-ink surface-glass-ink sticky top-0 z-40 border-b border-white/10 bg-ink-950 shadow-raised">
       {/* A three-column grid, not `justify-between`. With `justify-between` the
           nav sits midway between the logo and the account action, so it drifts
           off the page centre by half the difference between those two widths.
@@ -77,7 +77,7 @@ export function SiteHeader({
                     // `inline-flex` dropdown trigger beside it, so the two end up
                     // on different baselines. Matching the trigger's box model
                     // keeps every item the same height and baseline.
-                    className="inline-flex items-center whitespace-nowrap rounded-card px-1.5 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
+                    className="inline-flex items-center whitespace-nowrap rounded-control px-1.5 py-2 text-sm font-medium text-white/75 transition-soft hover:bg-white/5 hover:text-white"
                   >
                     {entry.label}
                   </Link>

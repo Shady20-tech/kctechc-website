@@ -46,12 +46,12 @@ export function LanguageSwitcher({
 
   const activeClass =
     tone === "light"
-      ? "rounded-card px-2.5 py-1.5 text-sm font-semibold text-white underline decoration-teal-300 decoration-2 underline-offset-4"
-      : "rounded-card px-2.5 py-1.5 text-sm font-semibold text-ink-900 underline decoration-2 underline-offset-4";
+      ? "rounded-control px-2.5 py-1.5 text-sm font-semibold text-white underline decoration-teal-300 decoration-2 underline-offset-4"
+      : "rounded-control px-2.5 py-1.5 text-sm font-semibold text-ink-900 underline decoration-2 underline-offset-4";
   const idleClass =
     tone === "light"
-      ? "rounded-card px-2.5 py-1.5 text-sm text-white/60 transition-soft hover:bg-white/5 hover:text-white"
-      : "rounded-card px-2.5 py-1.5 text-sm text-muted transition-soft hover:text-ink-900";
+      ? "rounded-control px-2.5 py-1.5 text-sm text-white/60 transition-soft hover:bg-white/5 hover:text-white"
+      : "rounded-control px-2.5 py-1.5 text-sm text-muted transition-soft hover:text-ink-900";
 
   return (
     <nav aria-label={label} className={className}>
