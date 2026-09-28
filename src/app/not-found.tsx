@@ -28,7 +28,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/en"
-            className="inline-block rounded-card bg-ink-900 px-5 py-3 text-sm font-semibold text-white transition-soft hover:bg-ink-700"
+            className="inline-block rounded-control bg-ink-900 px-5 py-3 text-sm font-semibold text-white transition-soft hover:bg-ink-700"
           >
             {en.actions.enterSite} (English)
           </Link>
@@ -36,7 +36,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/fr"
-            className="inline-block rounded-card border border-ink-900 px-5 py-3 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-900 hover:text-white"
+            className="inline-block rounded-control border border-ink-900 px-5 py-3 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-900 hover:text-white"
           >
             {fr.actions.enterSite} (Français)
           </Link>
@@ -44,7 +44,7 @@ export default function NotFound() {
         <li>
           <Link
             href="/"
-            className="inline-block rounded-card px-5 py-3 text-sm font-semibold text-ink-700 underline underline-offset-4"
+            className="inline-block rounded-control px-5 py-3 text-sm font-semibold text-ink-700 underline underline-offset-4"
           >
             {en.common.backToHome}
           </Link>

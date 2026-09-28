@@ -23,7 +23,7 @@ export function Card({
   return (
     <Component
       className={[
-        "rounded-card border border-border bg-surface p-6 shadow-card",
+        "rounded-card border border-border bg-surface p-6 shadow-card transition-soft sm:p-7",
         accent ? "accent-rule" : "",
         className,
       ]
@@ -46,11 +46,7 @@ export function CardHeading({
 }) {
   const Tag = `h${level}` as const;
   const size =
-    level === 2
-      ? "text-xl sm:text-2xl"
-      : level === 3
-        ? "text-lg"
-        : "text-base";
+    level === 2 ? "text-xl sm:text-2xl" : level === 3 ? "text-lg" : "text-base";
   return (
     <Tag id={id} className={`${size} font-semibold text-ink-900`}>
       {children}

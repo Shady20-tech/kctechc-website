@@ -40,7 +40,7 @@ export function SocialLinks({ t }: { t: Translator["t"] }) {
               aria-label={t("footer.socialLinkLabel", {
                 network: t(profile.labelKey),
               })}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-card border border-white/15 text-white/75 transition-soft hover:border-teal-300/60 hover:bg-white/10 hover:text-white"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-control border border-white/15 text-white/75 transition-soft hover:border-teal-300/60 hover:bg-white/10 hover:text-white"
             >
               <SocialIcon network={profile.network} />
             </a>

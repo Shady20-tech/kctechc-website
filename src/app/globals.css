@@ -87,15 +87,46 @@
     var(--font-mono-code), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
     Consolas, "Liberation Mono", monospace;
 
-  --radius-card: 0.5rem;
+  /* Radius scale.
+     Four steps rather than one, because a single value cannot be right at every
+     size: the same 20px that reads as generous on a card looks bulbous on a
+     32px-tall input and soft on a full-width panel. The steps are named for the
+     element they belong to, so the choice is made once per element type instead
+     of being re-guessed at each call site.
+
+     `--radius-card` is deliberately the workhorse: it carries the card, panel,
+     image and CTA surfaces, which is where the visual language is set. */
+  --radius-field: 0.625rem; /* 10px — text inputs, selects, file buttons */
+  --radius-control: 0.875rem; /* 14px — buttons, nav pills, small icon tiles */
+  --radius-card: 1.25rem; /* 20px — cards, panels, media, CTA bands */
+  --radius-panel: 1.75rem; /* 28px — hero shells, modals, large containers */
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px rgb(13 18 22 / 0.04), 0 1px 3px rgb(13 18 22 / 0.06);
+  /* Ambient depth.
+     Every shadow is a stack of three or four very low-opacity layers rather than
+     one strong drop. A single `0 4px 8px rgba(…, 0.2)` reads as a hard edge under
+     the element; several wide, heavily-negative-spread layers at 2–8% opacity
+     read as light falling around it, which is what makes a surface look like it
+     sits above the page rather than being outlined onto it.
+
+     The top layer is always a 1px contact shadow — the tight, barely-visible
+     pair that anchors the element — and each successive layer is roughly double
+     the blur and half the alpha. The result is a soft falloff with no visible
+     banding, at opacities low enough to sit on both the white page and the dark
+     ink bands without turning grey. */
+  --shadow-card:
+    0 1px 1px rgb(13 18 22 / 0.02), 0 2px 4px -1px rgb(13 18 22 / 0.03),
+    0 8px 16px -4px rgb(13 18 22 / 0.04);
   --shadow-raised:
-    0 12px 24px -8px rgb(13 18 22 / 0.12), 0 4px 8px -4px rgb(13 18 22 / 0.08);
+    0 1px 1px rgb(13 18 22 / 0.02), 0 4px 8px -2px rgb(13 18 22 / 0.04),
+    0 12px 24px -6px rgb(13 18 22 / 0.07),
+    0 24px 48px -12px rgb(13 18 22 / 0.06);
   --shadow-lifted:
-    0 24px 48px -16px rgb(13 18 22 / 0.2), 0 8px 16px -8px rgb(13 18 22 / 0.1);
-  --shadow-overlay: 0 20px 40px -12px rgb(13 18 22 / 0.25);
+    0 2px 4px -1px rgb(13 18 22 / 0.03), 0 8px 16px -4px rgb(13 18 22 / 0.05),
+    0 20px 32px -8px rgb(13 18 22 / 0.08), 0 40px 72px -16px rgb(13 18 22 / 0.1);
+  --shadow-overlay:
+    0 4px 8px -2px rgb(13 18 22 / 0.06), 0 16px 32px -8px rgb(13 18 22 / 0.12),
+    0 48px 96px -24px rgb(13 18 22 / 0.22);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -310,24 +341,29 @@
   }
 }
 
-/* Vertical rhythm between major page sections. */
+/* Vertical rhythm between major page sections.
+   Widened from 3.5/5.5rem so consecutive sections are separated by a clear band
+   of empty page rather than by their own padding alone. The previous values left
+   roughly 112px between the end of one section's content and the start of the
+   next, which read as a continuous column of blocks; the headings had nothing to
+   sit against. */
 .section {
-  padding-block: 3.5rem;
+  padding-block: 4.5rem;
 }
 
 @media (min-width: 768px) {
   .section {
-    padding-block: 5.5rem;
+    padding-block: 7rem;
   }
 }
 
 .section-tight {
-  padding-block: 2rem;
+  padding-block: 2.5rem;
 }
 
 @media (min-width: 768px) {
   .section-tight {
-    padding-block: 2.5rem;
+    padding-block: 3.5rem;
   }
 }
 
@@ -339,6 +375,40 @@
 .bg-ink {
   background-color: var(--color-ink-950);
   color: var(--color-ink-100);
+}
+
+/* Glass surface: a translucent tint plus a backdrop blur.
+   ---------------------------------------------------------------------------
+   Scoped to `@supports` on purpose. A browser without `backdrop-filter` ignores
+   the blur but still honours the translucent fill, which over the hero photo
+   drops the nav labels to roughly 2:1 — a legibility failure, not a cosmetic
+   one. Declaring the tint inside the `@supports` block means the fill only ever
+   applies where the blur that justifies it also applies; everywhere else the
+   element keeps the opaque background its markup already declares and full
+   contrast.
+
+   These rules set only `background-color` and `backdrop-filter`, deliberately
+   nothing else. That makes them a pure override: the element's own `bg-ink-950`
+   and border utilities stay in the markup and act as the no-support fallback,
+   and because an unlayered rule outranks Tailwind's layered utilities, the tint
+   wins wherever it is supported without needing `!important`.
+
+   The tint is kept deliberately dark (72%) rather than sparkling-translucent:
+   these surfaces carry small white nav type, and the blur cannot restore
+   contrast that a lighter tint gives away. It reads as glass because of the
+   satin blur, not because the page shows through it. */
+@supports (backdrop-filter: blur(1px)) {
+  .surface-glass-ink {
+    background-color: rgb(6 9 11 / 0.78);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+  }
+
+  .surface-glass-light {
+    background-color: rgb(255 255 255 / 0.86);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+  }
 }
 
 /* Fine technical grid, evoking a schematic or engineering drawing. */
@@ -411,7 +481,8 @@
 
 /* Hairline used to separate stacked items without heavy borders. */
 .hairline {
-  border-top: 1px solid color-mix(in srgb, var(--color-ink-900) 10%, transparent);
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-ink-900) 10%, transparent);
 }
 
 .on-ink .hairline {
@@ -432,9 +503,38 @@
     transform 180ms var(--ease-out-soft);
 }
 
+/* Interactive affordances.
+   ---------------------------------------------------------------------------
+   Both lifts animate `transform` and `box-shadow` only — never `top`, `margin`
+   or `height` — so nothing here reflows the page or invalidates layout. The
+   transition itself comes from `.transition-soft`, which every element using
+   these classes also carries; the rules below deliberately set only `transform`
+   so the two do not fight over the `transition` shorthand.
+
+   `:not(:disabled)` is what keeps a disabled control still. Without it a
+   disabled button — which already paints at 60% opacity and refuses the cursor —
+   would still nudge and shadow on hover, quietly promising an action it cannot
+   perform. Anchors are never `:disabled`, so `ButtonLink` gets the lift from the
+   same rule without a second variant. */
 .hover-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-raised);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lifted);
+}
+
+.cta-lift:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cta-lift:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Cards lift toward the viewer on hover. Combined with the accent edge above,
+   this is the primary "this is clickable" signal on the department and service
+   cards. */
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lifted);
 }
 
 /* Side drawer entrance. A drawer that simply appears reads as a glitch — the
@@ -645,7 +745,10 @@
     transition: none;
   }
 
-  .hover-lift:hover {
+  .hover-lift:hover,
+  .card-lift:hover,
+  .cta-lift:hover:not(:disabled),
+  .cta-lift:active:not(:disabled) {
     transform: none;
   }
 

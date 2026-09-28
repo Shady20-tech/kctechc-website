@@ -57,7 +57,7 @@ export function ProductCard({
   const href = `/${locale}${STORE_PATH}/${product.categorySlug}/${product.slug}`;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
+    <article className="group flex h-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
       <Link
         href={href}
         className="flex h-full flex-col focus-visible:outline-none"
@@ -71,7 +71,7 @@ export function ProductCard({
           />
         </div>
 
-        <div className="flex flex-1 flex-col p-5">
+        <div className="flex flex-1 flex-col p-6">
           <div className="flex items-start justify-between gap-3">
             <h3 className="text-base font-semibold text-ink-900 transition-soft group-hover:text-dept-accent">
               {product.title}

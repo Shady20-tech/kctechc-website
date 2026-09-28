@@ -136,7 +136,7 @@ export function MobileMenu({
                         >
                           <span
                             aria-hidden="true"
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card bg-white/5 text-dept-accent"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-white/5 text-dept-accent"
                           >
                             <DepartmentIcon
                               slug={slugFromHref(item.href)}
@@ -160,9 +160,7 @@ export function MobileMenu({
           </ul>
 
           <div className="mt-auto pt-5">
-            <h3 className="mono-label px-3 text-white/45">
-              {labels.language}
-            </h3>
+            <h3 className="mono-label px-3 text-white/45">{labels.language}</h3>
             <ul className="mt-2 flex gap-2 px-3">
               {LOCALES.map((candidate) => {
                 const isCurrent = candidate === locale;

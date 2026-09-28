@@ -59,7 +59,7 @@ export function Logo({
       className="group flex min-w-0 items-center gap-3 rounded-card"
     >
       <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-ink-950 transition-soft group-hover:bg-ink-800"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-ink-950 transition-soft group-hover:bg-ink-800"
         aria-hidden="true"
       >
         {/* Plain <img> is deliberate: this is a fixed-size mark with no art

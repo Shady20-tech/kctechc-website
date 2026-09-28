@@ -48,14 +48,17 @@ export default async function AdminLogsPage({
         aria-label={t("adminLogs.filterAction")}
       >
         <div>
-          <label htmlFor="action" className="block text-sm font-medium text-ink-900">
+          <label
+            htmlFor="action"
+            className="block text-sm font-medium text-ink-900"
+          >
             {t("adminLogs.filterAction")}
           </label>
           <select
             id="action"
             name="action"
             defaultValue={action ?? ""}
-            className="mt-1 rounded-card border border-border-strong bg-surface px-3 py-2 text-sm"
+            className="mt-1 rounded-field border border-border-strong bg-surface px-3 py-2 text-sm"
           >
             <option value="">{t("adminLogs.allActions")}</option>
             {facets.actions.map((value) => (
@@ -67,14 +70,17 @@ export default async function AdminLogsPage({
         </div>
 
         <div>
-          <label htmlFor="entity" className="block text-sm font-medium text-ink-900">
+          <label
+            htmlFor="entity"
+            className="block text-sm font-medium text-ink-900"
+          >
             {t("adminLogs.filterEntity")}
           </label>
           <select
             id="entity"
             name="entity"
             defaultValue={entity ?? ""}
-            className="mt-1 rounded-card border border-border-strong bg-surface px-3 py-2 text-sm"
+            className="mt-1 rounded-field border border-border-strong bg-surface px-3 py-2 text-sm"
           >
             <option value="">{t("adminLogs.allEntities")}</option>
             {facets.entityTypes.map((value) => (
@@ -87,7 +93,7 @@ export default async function AdminLogsPage({
 
         <button
           type="submit"
-          className="rounded-card bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
+          className="rounded-control bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
         >
           {t("adminLogs.applyFilters")}
         </button>
@@ -111,7 +117,9 @@ export default async function AdminLogsPage({
               key: "when",
               header: t("adminLogs.columnWhen"),
               render: (row) => (
-                <span className="whitespace-nowrap">{formatDateTime(row.createdAt)}</span>
+                <span className="whitespace-nowrap">
+                  {formatDateTime(row.createdAt)}
+                </span>
               ),
             },
             {
@@ -124,11 +132,15 @@ export default async function AdminLogsPage({
                       {row.actorName ?? row.actorEmail ?? row.actorId}
                     </span>
                     {row.actorEmail ? (
-                      <span className="block text-xs text-muted">{row.actorEmail}</span>
+                      <span className="block text-xs text-muted">
+                        {row.actorEmail}
+                      </span>
                     ) : null}
                   </span>
                 ) : (
-                  <span className="text-muted">{t("adminLogs.systemActor")}</span>
+                  <span className="text-muted">
+                    {t("adminLogs.systemActor")}
+                  </span>
                 ),
             },
             {

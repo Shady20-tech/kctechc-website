@@ -22,7 +22,7 @@ export type ButtonVariant =
 export type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 font-semibold transition-soft disabled:cursor-not-allowed disabled:opacity-60";
+  "cta-lift inline-flex items-center justify-center gap-2 font-semibold transition-soft disabled:cursor-not-allowed disabled:opacity-60";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   // Corporate ink is the default primary action everywhere.
@@ -41,9 +41,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: "rounded-card px-3 py-1.5 text-sm",
-  md: "rounded-card px-4 py-2.5 text-sm",
-  lg: "rounded-card px-6 py-3 text-base",
+  sm: "rounded-control px-3 py-1.5 text-sm",
+  md: "rounded-control px-4 py-2.5 text-sm",
+  lg: "rounded-control px-6 py-3 text-base",
 };
 
 export function buttonClasses({

@@ -102,7 +102,7 @@ export function SaveSearchControl({
               value={label}
               placeholder={suggested}
               onChange={(event) => setLabel(event.currentTarget.value)}
-              className="mt-1.5 w-56 rounded-card border border-border bg-surface px-3 py-2 text-sm text-ink-900"
+              className="mt-1.5 w-56 rounded-field border border-border bg-surface px-3 py-2 text-sm text-ink-900"
             />
           </div>
           <Button type="submit" variant="primary" size="sm" disabled={pending}>

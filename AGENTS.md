@@ -157,6 +157,37 @@ Feel: premium, corporate, engineering/investment-grade, trustworthy, spacious, r
 template-like. Mobile-first for mid-range Android on mobile data. Subtle motion only for hierarchy;
 all motion is neutralised under `prefers-reduced-motion`.
 
+### Geometry and depth
+
+Radius is a **scale, not a value** — pick the step named for the element rather than re-guessing a
+number per call site. `rounded-field` (10px) for inputs, `rounded-control` (14px) for buttons, nav
+pills and icon tiles, `rounded-card` (20px) for cards, panels, media and CTA bands, `rounded-panel`
+(28px) for hero shells and modals. The old single-step rule is why a 40px icon tile used to look
+bulbous: a value that reads as generous on a card is wrong on a small square.
+
+Shadows are **stacks of 3–4 low-opacity layers**, never one strong drop. A single
+`0 4px 8px rgba(…, 0.2)` reads as a hard edge under the element; several wide, negative-spread layers
+at 2–8% read as light falling around it. Keep the 1px contact layer, and roughly double blur while
+halving alpha for each successive layer. Adding a heavier single shadow to make something "pop"
+breaks the language.
+
+Glass (`surface-glass-ink`, `surface-glass-light`) is `@supports`-scoped and sets **only**
+`background-color` + `backdrop-filter`. That is deliberate: it makes the utility a pure override, so
+the element's own opaque `bg-*` stays in the markup as the no-support fallback and wins wherever blur
+is unavailable. Do not move the border or the opaque background into the utility — a browser without
+`backdrop-filter` would then render a translucent fill with no blur, which fails contrast.
+
+**Glass tint is a contrast decision, not a taste one.** A translucent header composites over whatever
+is behind it, and the worst case is the sticky header at scroll 0 sitting over the *white* page, not
+over the dark hero. At `0.72` the inactive language link (`text-white/60`) measured **4.21:1**; the
+current `0.78` gives **4.98:1**. Anything that lightens the tint, or lowers the opacity of text on
+glass, needs that pair re-measured. Lighthouse catches this — run it, don't eyeball it.
+
+Motion classes `cta-lift` and `card-lift` animate **transform and box-shadow only** (never `top`,
+`margin` or `height`) so nothing reflows. `cta-lift` is guarded with `:not(:disabled)`: without it a
+disabled button still nudges on hover and promises an interaction it refuses. New hover classes must
+be added to the `prefers-reduced-motion` block in `globals.css`.
+
 ## 6. Performance budget
 
 Beat the under-2.5s load goal on realistic 4G, target Core Web Vitals "Good", and stay usable on
