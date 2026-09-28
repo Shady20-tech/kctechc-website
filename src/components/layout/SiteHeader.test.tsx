@@ -121,7 +121,7 @@ describe("SiteHeader alignment", () => {
 
   it("keeps the lockup from wrapping on one line", () => {
     const { container } = setup();
-    const title = container.querySelector("header a[aria-label] span > span");
+    const title = container.querySelector("header a span > span");
 
     // The legal name wrapped to three lines at 320px, which overflowed the 64px
     // bar and pushed the header past its own rule.

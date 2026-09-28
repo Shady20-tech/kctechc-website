@@ -661,6 +661,25 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `prettier --check` flags `RichText.tsx`, `RichText.test.tsx`, and `globals.css`. Confirm against
   `git stash`/HEAD before assuming a clean-up belongs in your diff.
 
+- **`src/proxy.ts`'s `config.matcher` must stay a static string literal.** Next.js parses it at
+  compile time and fails the build with "Entry `matcher[0]` need to be static strings or static
+  objects" if it is a computed value, so it cannot be generated from
+  `NON_LOCALIZED_EXACT_PATHS` / `NON_LOCALIZED_EXTENSIONS` in `src/lib/i18n/routing.ts`. Those
+  exports are the declared intent; `src/proxy.test.ts` asserts the real literal against them, which
+  is what keeps the two in step. Add a root metadata route (like `manifest.webmanifest`) to both.
+- **Emulate the matcher correctly when testing it.** The pattern is `/((?!…).*)`, so the leading `/`
+  is consumed *before* the lookahead: test `/_next/static` as `_next/static`. Passing a
+  slash-prefixed path makes every literal exclusion fail to match, leaving only the extension list
+  doing any work and hiding a broken test behind passing assertions.
+- **Don't put an `aria-label` on the logo lockup.** It renders `shortName` below `sm` and
+  `legalName` at `sm` and up, and `label-content-name-mismatch` reads the DOM, so any hard-coded
+  label omits the other breakpoint's visible text. Let the accessible name come from the link's
+  content. `aria-hidden` on the subtitle does not help — visible text must still be in the name.
+- **Lighthouse's default Lantern throttling overstates LCP on this app.** It reported mobile
+  performance 84 / LCP 4.2s while the page observed LCP at 514ms and the LCP phases summed to
+  ~490ms; with `--throttling-method=devtools` mobile was 98 / LCP 1.67s. Use applied throttling
+  before chasing a simulated LCP regression.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->

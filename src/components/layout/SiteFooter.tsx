@@ -1,5 +1,7 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/layout/Logo";
+import { SocialLinks } from "@/components/layout/SocialLinks";
 import { DEPARTMENTS, type DepartmentSlug } from "@/lib/config/site";
 import type { SiteContent } from "@/lib/config/site-content";
 import type { Locale } from "@/lib/i18n/locales";
@@ -35,14 +37,12 @@ export function SiteFooter({
     >
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h2 className="mono-label text-teal-300">{t("footer.company")}</h2>
-          <p className="mt-3 text-sm font-semibold text-white">
-            {site.legalName}
-          </p>
-          <p className="mono-label mt-1 text-white/50">
+          <Logo locale={locale} tone="light" showMotto={false} />
+          <p className="mono-label mt-4 text-white/50">
             {t("footer.mottoLabel")}
           </p>
           <p className="mt-1 text-sm text-white/80">{site.motto}</p>
+          <SocialLinks t={t} />
         </div>
 
         <nav aria-labelledby="footer-departments">
@@ -120,7 +120,7 @@ export function SiteFooter({
               <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
               <a
                 href={`mailto:${contact.email}`}
-                className="transition-soft hover:text-white hover:underline"
+                className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
               >
                 {contact.email}
               </a>
@@ -132,7 +132,14 @@ export function SiteFooter({
                   <a
                     key={phone}
                     href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                    className="transition-soft hover:text-white hover:underline"
+                    /* `inline-flex` + `min-h-6` are load-bearing, not cosmetic.
+                       A bare inline link measures 20px tall here, which is below
+                       the 24px WCAG 2.2 target minimum, and two stacked phone
+                       links are the worst case for that: a mis-tap dials the
+                       wrong number. As a flex box with a 24px floor the target
+                       clears the minimum through its own box rather than through
+                       the generous-spacing exemption. */
+                    className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
                   >
                     {phone}
                   </a>

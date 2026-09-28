@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import type { DepartmentSlug } from "@/lib/config/site";
@@ -61,5 +61,49 @@ describe("SiteFooter legal links", () => {
     // has its own route, and a fragment link would be a 404-free but wrong answer.
     expect(href).toBe("/en/privacy");
     expect(href).not.toContain("#");
+  });
+});
+
+describe("SiteFooter brand block", () => {
+  it("shows the corporate mark above the company name", () => {
+    setup("en");
+    const footer = screen.getByRole("contentinfo");
+    const mark = footer.querySelector(
+      'img[src="/brand/kc-monogram-inverse.png"]',
+    );
+    expect(mark).not.toBeNull();
+
+    // The mark is decorative; the lockup's accessible name comes from its text.
+    // Scoped to the mark's own ancestor: the footer also has a company-name link
+    // whose accessible name matches the same pattern.
+    expect(mark).toHaveAttribute("alt", "");
+    const homeLink = mark?.closest("a");
+    expect(homeLink).not.toBeNull();
+    expect(homeLink).toHaveAttribute("href", "/");
+    expect(homeLink).toHaveTextContent("KC Technology Corporation");
+  });
+
+  it("renders the social links as a labelled landmark inside the footer", () => {
+    setup("en");
+    const t = createTranslator("en").t;
+    const footer = screen.getByRole("contentinfo");
+    const nav = within(footer).getByRole("navigation", {
+      name: t("footer.socialHeading"),
+    });
+    // Five networks, all outbound, each opening in a new tab.
+    expect(within(nav).getAllByRole("link")).toHaveLength(5);
+  });
+
+  it("keeps the footer's landmark name and the social nav name distinct", () => {
+    setup("en");
+    const t = createTranslator("en").t;
+    // Two navigations named "Site footer" (or an unnamed social nav) would be
+    // ambiguous in a screen reader's landmark list.
+    expect(
+      screen.getByRole("contentinfo", { name: t("a11y.footerLandmark") }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: t("footer.socialHeading") }),
+    ).toBeInTheDocument();
   });
 });
