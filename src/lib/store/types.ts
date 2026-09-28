@@ -122,6 +122,8 @@ export type CategoryRecord = {
   translations?: Partial<
     Record<Locale, { name?: string; description?: string }>
   >;
+  /** Row timestamp, used for the sitemap's `lastmod`. Absent for the fallback. */
+  updatedAt?: string;
 };
 
 /** The primary image, or the first one, for cards and social previews. */

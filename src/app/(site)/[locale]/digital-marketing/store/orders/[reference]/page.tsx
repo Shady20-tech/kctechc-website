@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { OrderPurchaseTracker } from "@/components/checkout/OrderPurchaseTracker";
 import { RetryPaymentButton } from "@/components/checkout/RetryPaymentButton";
@@ -99,6 +100,11 @@ export default async function OrderPage({
         heading={paid ? t("order.confirmationHeading") : t("order.statusHeading")}
         intro={paid ? t("order.thanking") : undefined}
       />
+      {customerId ? (
+        <div className="mt-4">
+          <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />
+        </div>
+      ) : null}
       <h2 id="order-heading" className="visually-hidden">
         {t("order.statusHeading")}
       </h2>

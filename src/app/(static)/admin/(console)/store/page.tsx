@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -70,7 +71,14 @@ export default async function AdminStorePage() {
               {
                 key: "title",
                 header: t("admin.store.columnName"),
-                render: (row) => row.title,
+                render: (row) => (
+                  <Link
+                    href={`/admin/store/${row.id}`}
+                    className="font-medium text-ink-900 underline decoration-border-strong underline-offset-2 hover:decoration-ink-900"
+                  >
+                    {row.title}
+                  </Link>
+                ),
               },
               {
                 key: "sku",

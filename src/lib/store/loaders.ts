@@ -314,7 +314,7 @@ export async function loadCategoryRecords(): Promise<
 
     const { data: rows, error } = await supabase
       .from("product_categories")
-      .select("id, slug, name, description")
+      .select("id, slug, name, description, updated_at")
       .eq("department_id", department.id)
       .eq("publish_state", "published")
       .eq("is_active", true)
@@ -369,6 +369,7 @@ export async function loadCategoryRecords(): Promise<
       description: asString(row.description),
       localizedSlugs: localizedSlugs.get(row.id),
       translations: overlayByName.get(row.id),
+      updatedAt: asString(row.updated_at),
     }));
   } catch {
     return fallback;

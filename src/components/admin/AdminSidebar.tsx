@@ -13,7 +13,6 @@ import {
   Menu,
   Package,
   Settings,
-  ShieldCheck,
   ShoppingCart,
   Users,
   X,
@@ -46,7 +45,6 @@ const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
   content: FileText,
   users: Users,
   logs: Activity,
-  security: ShieldCheck,
   settings: Settings,
 };
 

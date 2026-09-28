@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
+import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { SavedSearchCard } from "@/components/real-estate/SavedSearchCard";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -98,6 +99,9 @@ export default async function SavedSearchesPage({
         heading={t("realEstate.savedSearches.heading")}
         intro={t("realEstate.savedSearches.intro")}
       />
+      <div className="mt-4">
+        <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />
+      </div>
       <h2 id="saved-searches-heading" className="visually-hidden">
         {t("realEstate.savedSearches.heading")}
       </h2>

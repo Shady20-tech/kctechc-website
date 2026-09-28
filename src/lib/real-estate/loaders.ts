@@ -1022,8 +1022,13 @@ export async function loadPublishedListingSlugs(): Promise<string[]> {
 // ---------------------------------------------------------------------------
 
 /** Map an admin row, including the flags the list view shows. */
-function toAdminRecord(row: ListingRow): AdminListingRecord {
-  const base = toListingRecord(row);
+function toAdminRecord(
+  row: ListingRow,
+  media: readonly ListingRow[] = [],
+): AdminListingRecord {
+  const base = toListingRecord(row, {
+    images: media.map((m) => toListingImage(m)),
+  });
   const submission = row.listing_submissions as
     | { id?: unknown; status?: unknown }[]
     | null;
@@ -1099,7 +1104,18 @@ export async function loadAdminListingById(
       .maybeSingle();
 
     if (!data) return null;
-    return toAdminRecord(data as ListingRow);
+
+    // The gallery is read through the session client, whose policies give an
+    // administrator the listings they may manage and an agent only their own —
+    // the same rule the listing row above is subject to. `listing_media` is a
+    // child table, so it carries its own policies rather than inheriting them.
+    const { data: media } = await supabase
+      .from("listing_media")
+      .select("id, storage_path, alt_text, caption, position, is_primary, width, height")
+      .eq("listing_id", id)
+      .order("position", { ascending: true });
+
+    return toAdminRecord(data as ListingRow, media ?? []);
   } catch {
     return null;
   }

@@ -42,10 +42,10 @@ describe("navSectionsForRole", () => {
     }
   });
 
-  it("hides user management and security from everyone but super_admin", () => {
+  it("hides user management from everyone but super_admin", () => {
     for (const role of APP_ROLES) {
       const items = navItemsForRole(role).map((item) => item.href);
-      const restricted = ["/admin/users", "/admin/security"];
+      const restricted = ["/admin/users"];
       for (const href of restricted) {
         expect(items.includes(href)).toBe(role === "super_admin");
       }

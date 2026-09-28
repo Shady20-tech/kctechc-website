@@ -20,6 +20,17 @@ export const SITE = {
 } as const;
 
 /**
+ * The date the static page set last materially changed, as an ISO date.
+ *
+ * Used as the sitemap `lastmod` for routes that have no backing row to read a
+ * timestamp from. It is a constant rather than `new Date()` on purpose: a
+ * `lastmod` that changes on every request tells a crawler nothing and is ignored,
+ * so the honest value is the last revision of the content those routes render.
+ * Bump this when a change to any statically-listed page ships.
+ */
+export const SITE_REVISION_DATE = "2026-09-24";
+
+/**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal
  * accent). These mirror the CSS tokens in `globals.css`; the CSS is what
  * components actually consume, and this object exists so the values have a

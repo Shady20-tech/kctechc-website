@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Package,
   Settings,
-  ShieldCheck,
   ShoppingCart,
   Users,
 } from "lucide-react";
@@ -68,7 +67,6 @@ export const ADMIN_NAV_ICON_KEYS = [
   "content",
   "users",
   "logs",
-  "security",
   "settings",
 ] as const;
 
@@ -198,13 +196,6 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         labelKey: "logs",
         iconKey: "logs",
         icon: Activity,
-        canSee: superOnly,
-      },
-      {
-        href: "/admin/security",
-        labelKey: "security",
-        iconKey: "security",
-        icon: ShieldCheck,
         canSee: superOnly,
       },
       {

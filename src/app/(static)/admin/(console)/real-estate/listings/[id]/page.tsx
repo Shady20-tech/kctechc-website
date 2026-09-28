@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { ListingForm } from "@/components/admin/ListingForm";
+import { ListingMediaForm } from "@/components/admin/ListingMediaForm";
 import { ListingStatusForm } from "@/components/admin/ListingStatusForm";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
@@ -49,6 +50,34 @@ export default async function AdminEditListingPage({
 
   if (!listing) notFound();
 
+  const labels: Record<string, string> = {
+    imagesHeading: t("realEstate.admin.imagesHeading"),
+    imagesIntro: t("realEstate.admin.imagesIntro"),
+    imageUpload: t("realEstate.admin.imageUpload"),
+    imageUploading: t("realEstate.admin.imageUploading"),
+    imageAdded: t("realEstate.admin.imageAdded"),
+    imageRemove: t("realEstate.admin.imageRemove"),
+    noImagesYet: t("realEstate.admin.noImagesYet"),
+    primaryBadge: t("realEstate.admin.primaryBadge"),
+    positionLabel: t("realEstate.admin.positionLabel"),
+    altLabel: t("realEstate.admin.altLabel"),
+    altPlaceholder: t("realEstate.admin.altPlaceholder"),
+    altHint: t("realEstate.admin.altHint"),
+    saving: t("adminContent.saving"),
+  };
+  for (const key of [
+    "unauthenticated",
+    "forbidden",
+    "unconfigured",
+    "not_found",
+    "no_file",
+    "alt_required",
+    "upload_failed",
+    "write_failed",
+  ]) {
+    labels[`errors.${key}`] = t(`realEstate.admin.errors.${key}`);
+  }
+
   return (
     <>
       <PageIntro
@@ -63,6 +92,14 @@ export default async function AdminEditListingPage({
 
       <div className="mt-8 space-y-12">
         <ListingForm locale="en" geography={geography} listing={listing} />
+
+        <section className="border-t border-border pt-10">
+          <ListingMediaForm
+            listingId={listing.id}
+            images={listing.images}
+            labels={labels}
+          />
+        </section>
 
         <section className="border-t border-border pt-10">
           <h2 className="font-display text-xl font-bold text-ink-900">

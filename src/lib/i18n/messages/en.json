@@ -320,7 +320,12 @@
         "unconfigured": "The store is not connected to a database.",
         "invalid": "Some fields need attention. The messages are shown below each one.",
         "duplicate": "A product already uses that slug or SKU.",
-        "write_failed": "The product could not be saved. Please try again."
+        "write_failed": "The product could not be saved. Please try again.",
+        "not_found": "That product no longer exists.",
+        "no_file": "Choose an image to upload.",
+        "alt_required": "Describe the image before saving it.",
+        "upload_failed": "The image could not be uploaded. Please try again.",
+        "no_image": "A product cannot be published without an image."
       },
       "seoWarning": "The product was created, but its SEO overrides could not be saved. Add them again from the product page.",
       "catalogueHeading": "Store products",
@@ -336,7 +341,24 @@
       "columnStatus": "Status",
       "statusPublished": "Published",
       "statusDraft": "Draft",
-      "columnAvailability": "Availability"
+      "columnAvailability": "Availability",
+      "detailsHeading": "Product details",
+      "imageHeading": "Product image",
+      "imageIntro": "A product needs at least one image before it can be published, so the storefront and Google Shopping both have something to show.",
+      "imageUpload": "Upload image",
+      "imageUploading": "Uploading…",
+      "imageAdded": "The image was saved. The product can now be published.",
+      "noImageYet": "No image yet.",
+      "altLabel": "Image description",
+      "altPlaceholder": "ThinkPad X1 Carbon laptop, open, three-quarter view",
+      "altHint": "Describe the image for screen readers and search engines. Required.",
+      "publishHeading": "Publish",
+      "publishIntro": "Publishing makes the product visible on the site and adds it to the sitemap.",
+      "publishNeedsImage": "Add an image first. A product cannot be published without one.",
+      "publish": "Publish product",
+      "unpublish": "Unpublish",
+      "publishedNotice": "The product is live on the website.",
+      "unpublishedNotice": "The product was returned to draft and is no longer public."
     },
     "projectsHeading": "Electrical projects",
     "projectsIntro": "Create and publish project records. A project only becomes public when it is published, and publishing requires a published date.",
@@ -711,8 +733,23 @@
         "submission_not_approved": "The listing cannot be published until its owner submission has been approved.",
         "private_details_write_failed": "The private details could not be written.",
         "already_decided": "That submission has already been decided.",
-        "parse_failed": "The file could not be read as CSV. Check that it is a comma-separated file with a header row."
-      }
+        "parse_failed": "The file could not be read as CSV. Check that it is a comma-separated file with a header row.",
+        "no_file": "Choose an image to upload.",
+        "alt_required": "Describe the image before saving it.",
+        "upload_failed": "The image could not be uploaded. Please try again."
+      },
+      "imagesHeading": "Listing gallery",
+      "imagesIntro": "A property is sold on its photographs. The first image becomes the card image; every image appears in the gallery on the listing page. Each one needs a description before it can be saved.",
+      "imageUpload": "Upload image",
+      "imageUploading": "Uploading…",
+      "imageAdded": "The image was added to the gallery.",
+      "imageRemove": "Remove",
+      "noImagesYet": "No images yet. Add the first one below.",
+      "primaryBadge": "Card image",
+      "positionLabel": "Position",
+      "altLabel": "Image description",
+      "altPlaceholder": "Three-bedroom house with a red roof, front view",
+      "altHint": "Describe the image for screen readers and search engines. Required."
     },
     "favorites": {
       "add": "Save {title}",
@@ -1605,7 +1642,6 @@
     "content": "Blog & Content",
     "users": "Users & Roles",
     "logs": "System logs",
-    "security": "Security",
     "settings": "Settings",
     "profile": "My profile",
     "password": "Change password",
@@ -1794,17 +1830,5 @@
     "unassigned": "—",
     "noteHeading": "Role changes",
     "noteBody": "Changing a role is a privileged operation that must be audited; it is performed with the role-change action that writes a system log entry, not by editing this table."
-  },
-  "adminSecurity": {
-    "heading": "Security",
-    "intro": "The controls that protect the console, and how they are enforced.",
-    "authHeading": "Authentication",
-    "authBody": "Sign-in is handled by Supabase Auth. Passwords are hashed by the auth service and never stored by the application.",
-    "rlsHeading": "Row-level security",
-    "rlsBody": "Every table holding customer or internal data carries row-level security policies; the console reads and writes through those policies rather than bypassing them.",
-    "uploadsHeading": "Uploads",
-    "uploadsBody": "Uploaded files are typed by inspecting their leading bytes, not by their filename or declared type, and are stored under a path built from a fresh identifier.",
-    "auditHeading": "Audit trail",
-    "auditBody": "Privileged changes are recorded. Super administrators can read the trail in System logs."
   }
 }
