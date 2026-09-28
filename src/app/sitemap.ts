@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import {
   INSIGHTS_PATH,
   NAV_PATHS,
+  LEGAL_PATHS,
   PROPERTY_SEARCH_PATH,
   STORE_PATH,
 } from "@/lib/config/navigation";
@@ -44,6 +45,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/",
     ...DEPARTMENTS.map((department) => `/${department.slug}`),
     ...NAV_PATHS,
+    // Legal pages are footer-linked rather than in the primary bar, so they are
+    // listed from their own constant.
+    ...LEGAL_PATHS,
     // Only departments with published content expose these surfaces, so listing
     // them unconditionally would advertise 404s for the departments whose phases
     // have not landed yet.
@@ -65,7 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     localizedPaths.map((pathWithoutLocale) => ({
       url: canonicalFor(locale, pathWithoutLocale),
       lastModified: staticLastModified,
-      changeFrequency: "weekly" as const,
+      changeFrequency: pathChangeFrequency(pathWithoutLocale),
       priority: pathPriority(pathWithoutLocale),
       alternates: {
         languages: alternatesFor(pathWithoutLocale),
@@ -141,7 +145,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const path = `${PROPERTY_SEARCH_PATH}/${listingSlugForLocale(record, locale)}`;
       entries.push({
         url: canonicalFor(locale, path),
-        lastModified: record.updatedAt ? new Date(record.updatedAt) : staticLastModified,
+        lastModified: record.updatedAt
+          ? new Date(record.updatedAt)
+          : staticLastModified,
         changeFrequency: "weekly",
         priority: 0.7,
         alternates: { languages: alternatesFor(path) },
@@ -170,6 +176,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
  */
 function pathPriority(pathWithoutLocale: string): number {
   if (pathWithoutLocale === "/") return 1;
+  if (isLegalPath(pathWithoutLocale)) return 0.3;
   if (pathWithoutLocale === "/about" || pathWithoutLocale === "/contact") {
     return 0.6;
   }
@@ -177,4 +184,19 @@ function pathPriority(pathWithoutLocale: string): number {
   if (pathWithoutLocale.includes(INSIGHTS_PATH)) return 0.6;
   if (pathWithoutLocale.endsWith("/portfolio")) return 0.6;
   return 0.8;
+}
+
+/**
+ * How often a route changes.
+ *
+ * Legal pages change on revision of the terms rather than on a publishing cycle,
+ * so advertising them as weekly would be a claim the page itself does not
+ * support. Everything else here is content that genuinely moves.
+ */
+function pathChangeFrequency(pathWithoutLocale: string): "weekly" | "yearly" {
+  return isLegalPath(pathWithoutLocale) ? "yearly" : "weekly";
+}
+
+function isLegalPath(pathWithoutLocale: string): boolean {
+  return (LEGAL_PATHS as readonly string[]).includes(pathWithoutLocale);
 }

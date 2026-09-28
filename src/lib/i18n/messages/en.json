@@ -1830,5 +1830,14 @@
     "unassigned": "—",
     "noteHeading": "Role changes",
     "noteBody": "Changing a role is a privileged operation that must be audited; it is performed with the role-change action that writes a system log entry, not by editing this table."
+  },
+  "legal": {
+    "termsMetaTitle": "Terms of Service",
+    "termsMetaDescription": "The terms governing use of the KC Technology Corporation website, our online store orders, account holders and our services.",
+    "privacyMetaTitle": "Privacy Policy",
+    "privacyMetaDescription": "What personal data KC Technology Corporation collects through this website, why we collect it, who we share it with, how long we keep it and the choices you have.",
+    "contentsHeading": "Contents",
+    "updatedLabel": "Last updated",
+    "retentionNoteLabel": "Note:"
   }
 }

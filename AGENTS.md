@@ -641,6 +641,25 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `/admin/logs-archive`.
 - **A server-mutating action needs `revalidatePath` on both the list and, when one exists, the detail
   route.** Revalidating only `/admin/content` leaves the article's own edit page serving the old row.
+- **Client-code animation state must never reach the server HTML.** The scroll reveal works because
+  the resting state is the *visible* one: the component adds `data-reveal="pending"` in a `useEffect`,
+  so a crawler, a no-JS visitor and the pre-hydration paint all get full-opacity markup with no
+  attribute. Setting the offset state during render instead would emit `data-reveal="pending"` in
+  `en.html` and publish an invisible block. Verify by grepping the built HTML, not by eyeballing the
+  page in a browser — `grep -c data-reveal .next/server/app/en.html` must be `0`.
+- **A reveal wrapper must render the semantic element itself (`as="li"`), not a `<div>`.** A `<div>`
+  between `<ul>` and `<li>` is invalid markup, and it also moves the `data-department` accent scope
+  off the grid item that the department CSS targets, so the accent silently stops applying.
+- **Legal clause ids are a cross-locale contract.** Terms and Privacy keep identical section ids in
+  English and French so a language switch lands on the same clause; the test asserts en↔fr parity
+  rather than just uniqueness within a document.
+- **`getSiteContent()` is `async` and hits `site_settings`; tests that only need the layout use the
+  synchronous `FALLBACK_SITE_CONTENT` constant.** `SiteFooter` also takes `departmentLabels` as a
+  required prop, so a footer test must supply it or it throws on `department.slug`.
+- **Pre-existing lint/format debt is not yours to fix in a feature PR.** On this repo `eslint .`
+  reports an unused `MAX_PRODUCT_IMAGE_BYTES` in `src/lib/store/media-actions.ts`, and
+  `prettier --check` flags `RichText.tsx`, `RichText.test.tsx`, and `globals.css`. Confirm against
+  `git stash`/HEAD before assuming a clean-up belongs in your diff.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

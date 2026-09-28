@@ -57,6 +57,16 @@ export const NAV_PATHS = [
 ] as const;
 
 /**
+ * Legal pages, linked from the footer rather than the primary navigation.
+ *
+ * Kept out of `NAV_PATHS` because that list is the primary bar's own contract
+ * (`buildPrimaryNav` and the sitemap both read it), and terms and privacy are not
+ * primary destinations. They are still public, indexable routes, so the sitemap
+ * lists them from here — a page is either linked and listed, or neither.
+ */
+export const LEGAL_PATHS = ["/terms", "/privacy"] as const;
+
+/**
  * Translation key for the articles section label.
  *
  * Phase 2 rendered this entry as "Blog" at `/blog`; Phase 3 names the section

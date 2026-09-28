@@ -6,6 +6,7 @@ import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SectionBand } from "@/components/layout/PageShell";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DEPARTMENTS, SITE } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
@@ -106,7 +107,7 @@ export default async function LocalizedHomePage({
       </section>
 
       <SectionBand labelledBy="departments-heading">
-        <div className="max-w-2xl">
+        <ScrollReveal className="max-w-2xl">
           <p className="mono-label text-dept-accent">
             01 — {t("nav.departments")}
           </p>
@@ -117,7 +118,7 @@ export default async function LocalizedHomePage({
             {t("departments.heading")}
           </h2>
           <p className="mt-4 text-base text-body">{t("departments.intro")}</p>
-        </div>
+        </ScrollReveal>
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {DEPARTMENTS.map((department, index) => (
             <DepartmentCard
@@ -128,6 +129,7 @@ export default async function LocalizedHomePage({
               summary={t(department.summaryKey)}
               actionLabel={t("actions.exploreDepartment")}
               index={index + 1}
+              revealDelayMs={index * 100}
             />
           ))}
         </ul>

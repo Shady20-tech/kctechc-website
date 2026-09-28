@@ -35,9 +35,7 @@ export function SiteFooter({
     >
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h2 className="mono-label text-teal-300">
-            {t("footer.company")}
-          </h2>
+          <h2 className="mono-label text-teal-300">{t("footer.company")}</h2>
           <p className="mt-3 text-sm font-semibold text-white">
             {site.legalName}
           </p>
@@ -48,10 +46,7 @@ export function SiteFooter({
         </div>
 
         <nav aria-labelledby="footer-departments">
-          <h2
-            id="footer-departments"
-            className="mono-label text-teal-300"
-          >
+          <h2 id="footer-departments" className="mono-label text-teal-300">
             {t("footer.departmentsHeading")}
           </h2>
           <ul className="mt-3 space-y-2">
@@ -90,6 +85,27 @@ export function SiteFooter({
                 className="text-sm text-white/80 transition-soft hover:text-white"
               >
                 {t("footer.contactLink")}
+              </Link>
+            </li>
+          </ul>
+          <h2 id="footer-legal" className="mono-label mt-8 text-teal-300">
+            {t("footer.legalHeading")}
+          </h2>
+          <ul className="mt-3 space-y-2" aria-labelledby="footer-legal">
+            <li>
+              <Link
+                href={`/${locale}/terms`}
+                className="text-sm text-white/80 transition-soft hover:text-white"
+              >
+                {t("footer.terms")}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={`/${locale}/privacy`}
+                className="text-sm text-white/80 transition-soft hover:text-white"
+              >
+                {t("footer.privacy")}
               </Link>
             </li>
           </ul>
