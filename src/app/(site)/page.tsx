@@ -5,6 +5,7 @@ import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SkipLink } from "@/components/layout/Navigation";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { LastDepartmentShortcut } from "@/components/layout/LastDepartment";
 import { RotatingStatement } from "@/components/ui/RotatingStatement";
 import { DEPARTMENTS, SITE } from "@/lib/config/site";
@@ -142,10 +143,7 @@ export default async function CorporateGatewayPage() {
           <HeroMedia src="/hero/corporate-v2.jpg" />
           <div aria-hidden="true" className="absolute inset-0 bg-grid" />
           <div aria-hidden="true" className="absolute inset-0 bg-glow" />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-glow-warm"
-          />
+          <div aria-hidden="true" className="absolute inset-0 bg-glow-warm" />
           <div className="relative container-page py-20 sm:py-28 lg:py-32">
             <p className="reveal mono-label text-teal-300">
               {site.legalName} — Half-Mile, Limbe
@@ -211,7 +209,7 @@ export default async function CorporateGatewayPage() {
           aria-labelledby="gateway-departments-heading"
           className="container-page section"
         >
-          <div className="max-w-2xl">
+          <ScrollReveal className="max-w-2xl">
             <p className="mono-label text-dept-accent">
               01 — {EN.nav.departments}
             </p>
@@ -222,7 +220,7 @@ export default async function CorporateGatewayPage() {
               {EN.departments.heading}
             </h2>
             <p className="mt-4 text-base text-body">{EN.home.gatewayNote}</p>
-          </div>
+          </ScrollReveal>
 
           <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {DEPARTMENTS.map((department, index) => (
@@ -236,6 +234,7 @@ export default async function CorporateGatewayPage() {
                 }
                 actionLabel={EN.actions.exploreDepartment}
                 index={index + 1}
+                revealDelayMs={index * 100}
               />
             ))}
           </ul>
@@ -377,7 +376,10 @@ export default async function CorporateGatewayPage() {
           </ul>
 
           <h3 className="mt-14 flex items-center gap-2 font-display text-lg font-bold text-ink-900">
-            <Building2 aria-hidden="true" className="h-5 w-5 text-dept-accent" />
+            <Building2
+              aria-hidden="true"
+              className="h-5 w-5 text-dept-accent"
+            />
             {EN.departments.heading}
           </h3>
           <ul className="mt-5 grid gap-4 sm:grid-cols-3">

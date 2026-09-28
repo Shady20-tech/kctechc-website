@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { DepartmentDefinition } from "@/lib/config/site";
 import type { Locale } from "@/lib/i18n/locales";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
@@ -20,6 +21,12 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
  * The whole card is one link, which gives a large touch target on mobile; the
  * "explore" text is a visual affordance rather than a nested link, avoiding two
  * tab stops for one destination.
+ *
+ * The card slides in as it scrolls into view. `ScrollReveal` renders the `<li>`
+ * itself, so the reveal adds no wrapper element between the `<ul>` and its items
+ * and the `data-department` scope stays on the grid item where the accent CSS
+ * expects it. The card is still rendered into the HTML on the server in its
+ * resting, visible state.
  */
 export function DepartmentCard({
   department,
@@ -28,6 +35,7 @@ export function DepartmentCard({
   summary,
   actionLabel,
   index,
+  revealDelayMs = 0,
 }: {
   department: DepartmentDefinition;
   locale: Locale;
@@ -36,9 +44,16 @@ export function DepartmentCard({
   actionLabel: string;
   /** Position in the department set, shown as a technical index. */
   index: number;
+  /** Stagger offset for the scroll reveal, in milliseconds. */
+  revealDelayMs?: number;
 }) {
   return (
-    <li className="h-full" {...departmentScopeProps(department.slug)}>
+    <ScrollReveal
+      as="li"
+      delayMs={revealDelayMs}
+      className="h-full"
+      {...departmentScopeProps(department.slug)}
+    >
       <Link
         href={`/${locale}/${department.slug}`}
         className="card-edge hover-lift group flex h-full flex-col rounded-card border border-border bg-surface p-7 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
@@ -77,6 +92,6 @@ export function DepartmentCard({
           </span>
         </span>
       </Link>
-    </li>
+    </ScrollReveal>
   );
 }

@@ -474,6 +474,38 @@
   }
 }
 
+/* Scroll-triggered entrance.
+   ---------------------------------------------------------------------------
+   A section that animates when it enters the viewport rather than on page load,
+   so content further down is not already finished by the time it is seen.
+
+   The resting state is the visible one: the base rule below has no opacity or
+   transform of its own, so a crawler, a no-JavaScript visitor or a search engine
+   snapshot receives fully visible markup. Only once `data-reveal="pending"` is
+   set — which the client component does on mount, after hydration — does the
+   element start transparent and offset, and `data-reveal="visible"` returns it to
+   rest. Content is never unmounted, never `hidden`, and never removed from the
+   DOM: the two states differ only in `opacity` and `transform`.
+
+   Only `transform` and `opacity` animate, so this stays off the layout path and
+   is composited by the GPU. */
+[data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(1.25rem);
+}
+
+[data-reveal] {
+  transition:
+    opacity 620ms var(--ease-out-soft),
+    transform 620ms var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal="visible"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Department card: the accent edge grows on hover, and the arrow slides. */
 .card-edge {
   position: relative;
@@ -599,6 +631,18 @@
   .statement-fade,
   .reveal {
     animation: none;
+  }
+
+  /* Scroll reveals must land in their resting state, not part-way. The global
+     `transition-duration: 0.01ms` below would otherwise still apply the
+     `pending` offset to an element whose observer callback has not fired yet, so
+     the offset itself is removed as well as its transition. */
+  [data-reveal],
+  [data-reveal="pending"],
+  [data-reveal="visible"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 
   .hover-lift:hover {

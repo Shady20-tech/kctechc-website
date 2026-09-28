@@ -1830,5 +1830,14 @@
     "unassigned": "—",
     "noteHeading": "Changements de rôle",
     "noteBody": "Changer un rôle est une opération privilégiée qui doit être auditée ; elle s'effectue via l'action de changement de rôle qui écrit une entrée de journal, et non en modifiant ce tableau."
+  },
+  "legal": {
+    "termsMetaTitle": "Conditions d'utilisation",
+    "termsMetaDescription": "Les conditions qui régissent l'utilisation du site de KC Technology Corporation, les commandes passées sur notre boutique en ligne, les comptes et nos services.",
+    "privacyMetaTitle": "Politique de confidentialité",
+    "privacyMetaDescription": "Quelles données personnelles KC Technology Corporation collecte via ce site, pourquoi, avec qui elles sont partagées, combien de temps elles sont conservées et les choix dont vous disposez.",
+    "contentsHeading": "Sommaire",
+    "updatedLabel": "Dernière mise à jour",
+    "retentionNoteLabel": "Remarque :"
   }
 }

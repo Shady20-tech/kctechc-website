@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSyncExternalStore, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
@@ -88,10 +89,24 @@ export function ConsentBanner({ locale }: { locale: Locale }) {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border-strong bg-surface px-4 py-4 shadow-card sm:px-6"
     >
       <div className="container-page">
-        <h2 id="consent-heading" className="text-base font-semibold text-ink-900">
+        <h2
+          id="consent-heading"
+          className="text-base font-semibold text-ink-900"
+        >
           {t("consent.heading")}
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-body">{t("consent.body")}</p>
+        {/* The privacy notice is linked at the point the choice is made, not only
+            in the footer: a consent request that does not offer the notice
+            alongside it asks the visitor to decide without the information. */}
+        <p className="mt-2 text-sm">
+          <Link
+            href={`/${locale}/privacy`}
+            className="font-medium text-ink-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
+          >
+            {t("consent.privacyLink")}
+          </Link>
+        </p>
 
         {expanded ? (
           <fieldset className="mt-4 space-y-3">
@@ -116,7 +131,10 @@ export function ConsentBanner({ locale }: { locale: Locale }) {
                 <span className="font-medium text-ink-900">
                   {t("consent.analyticsLabel")}
                 </span>
-                <span id="consent-analytics-hint" className="mt-0.5 block text-muted">
+                <span
+                  id="consent-analytics-hint"
+                  className="mt-0.5 block text-muted"
+                >
                   {t("consent.analyticsHint")}
                 </span>
               </span>
@@ -139,7 +157,10 @@ export function ConsentBanner({ locale }: { locale: Locale }) {
                 <span className="font-medium text-ink-900">
                   {t("consent.marketingLabel")}
                 </span>
-                <span id="consent-marketing-hint" className="mt-0.5 block text-muted">
+                <span
+                  id="consent-marketing-hint"
+                  className="mt-0.5 block text-muted"
+                >
                   {t("consent.marketingHint")}
                 </span>
               </span>

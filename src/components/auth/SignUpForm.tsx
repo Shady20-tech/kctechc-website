@@ -59,11 +59,9 @@ export function SignUpForm({
   const t = createTranslator(locale).t;
   const [state, formAction] = useActionState(signUpAction, INITIAL_STATE);
 
-  // Where the privacy notice lives. The site has no dedicated privacy route yet,
-  // so the acknowledgement links to the contact page's data-use note rather than
-  // to a page that does not exist — a checkbox whose link 404s is worse than no
-  // link.
-  const privacyHref = `/${locale}/contact#privacy`;
+  // The privacy notice now has its own route, so the acknowledgement links
+  // straight to the policy rather than to a note on the contact page.
+  const privacyHref = `/${locale}/privacy`;
 
   if (state.status === "check_email") {
     return (
@@ -82,7 +80,9 @@ export function SignUpForm({
   }
 
   const errors = state.status === "error" ? state.errors : {};
-  const errorFor = (field: keyof typeof SIGN_UP_ERROR_KEYS): string | undefined =>
+  const errorFor = (
+    field: keyof typeof SIGN_UP_ERROR_KEYS,
+  ): string | undefined =>
     errors[field] ? t(`auth.${SIGN_UP_ERROR_KEYS[field]}`) : undefined;
 
   return (
