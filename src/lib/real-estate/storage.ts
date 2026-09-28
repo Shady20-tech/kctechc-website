@@ -36,18 +36,21 @@ export function propertyMediaPublicUrl(objectPath: string): string | null {
  * The storage path for a listing image.
  *
  * Namespaced by listing id so two listings cannot collide on a filename, and so
- * removing a listing's media is a single prefix delete. The extension is taken
- * from the supplied name and validated by the caller; this function does not
- * trust it beyond lowercasing it.
+ * removing a listing's media is a single prefix delete.
+ *
+ * The base name is preserved rather than replaced with a position. A positional
+ * name (`000.jpg`, `001.jpg`) looks tidier in the bucket but collides: delete the
+ * first image and the next upload is assigned position 0 again, overwriting a
+ * live object. Callers pass a UUID base name, which cannot collide, and this
+ * function only sanitizes it. The extension is validated rather than trusted.
  */
-export function listingMediaPath(
-  listingId: string,
-  fileName: string,
-  ordinal = 0,
-): string {
-  const extension = fileName.includes(".")
-    ? fileName.split(".").pop()!.toLowerCase()
-    : "jpg";
-  const safeExtension = /^[a-z0-9]{1,5}$/.test(extension) ? extension : "jpg";
-  return `${listingId}/${String(ordinal).padStart(3, "0")}.${safeExtension}`;
+export function listingMediaPath(listingId: string, fileName: string): string {
+  const dot = fileName.lastIndexOf(".");
+  const rawBase = dot > 0 ? fileName.slice(0, dot) : fileName;
+  const rawExtension = dot > 0 ? fileName.slice(dot + 1).toLowerCase() : "jpg";
+
+  const base = rawBase.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 60);
+  const extension = /^[a-z0-9]{1,5}$/.test(rawExtension) ? rawExtension : "jpg";
+
+  return `${listingId}/${base || "image"}.${extension}`;
 }

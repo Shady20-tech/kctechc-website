@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
+import { recoveryRedirectUrlFor } from "@/lib/auth/redirects";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import {
@@ -24,9 +25,10 @@ function confirmationRedirectUrl(): string {
   return new URL("/auth/callback?next=/admin", getSiteUrl()).toString();
 }
 
-/** The recovery email lands here, on the page that sets the new password. */
-function recoveryRedirectUrl(): string {
-  return new URL("/auth/reset-password", getSiteUrl()).toString();
+/** The recovery email lands here; see {@link recoveryRedirectUrlFor}. */
+async function recoveryRedirectUrl(): Promise<string> {
+  const cookieStore = await cookies();
+  return recoveryRedirectUrlFor(cookieStore.get("kc_locale")?.value);
 }
 
 /**
@@ -283,7 +285,7 @@ export async function forgotPasswordAction(
   if (!supabase) return { status: "unconfigured" };
 
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: recoveryRedirectUrl(),
+    redirectTo: await recoveryRedirectUrl(),
   });
 
   return { status: "sent" };

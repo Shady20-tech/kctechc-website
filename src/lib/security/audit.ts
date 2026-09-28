@@ -24,6 +24,8 @@ export const AUDIT_ACTIONS = [
   "product_created",
   "product_updated",
   "product_published",
+  "listing_created",
+  "listing_updated",
   "property_approved",
   "property_rejected",
   "payment_state_changed",

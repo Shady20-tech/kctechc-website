@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -112,6 +113,14 @@ export default async function OrderHistoryPage({
     >
       <Breadcrumbs items={breadcrumbs} ariaLabel={t("a11y.breadcrumb")} className="mb-8" />
       <PageIntro heading={t("order.historyHeading")} intro={t("order.historyIntro")} />
+      {customerId ? (
+        <div className="mt-4">
+          <CustomerSignOutForm
+            locale={resolved}
+            label={t("actions.signOut")}
+          />
+        </div>
+      ) : null}
       <h2 id="orders-heading" className="visually-hidden">
         {t("order.historyHeading")}
       </h2>

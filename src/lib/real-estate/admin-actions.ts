@@ -133,6 +133,10 @@ function revalidateListings(listingSlug?: string) {
   revalidatePath(`/en${REAL_ESTATE_PATH}`);
   revalidatePath(`/fr${REAL_ESTATE_PATH}`);
   revalidatePath("/admin/real-estate");
+  // The sitemap carries each listing's `lastmod`, so publishing, editing or
+  // unpublishing one changes the feed. Without this the crawler would keep the
+  // timestamp it was last served and not revisit the page.
+  revalidatePath("/sitemap.xml");
   if (listingSlug) {
     revalidatePath(`/en${REAL_ESTATE_PATH}/properties/${listingSlug}`);
     revalidatePath(`/fr${REAL_ESTATE_PATH}/properties/${listingSlug}`);

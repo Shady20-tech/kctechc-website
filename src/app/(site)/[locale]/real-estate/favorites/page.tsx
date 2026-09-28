@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
+import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { ListingGrid } from "@/components/real-estate/ListingCard";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -104,6 +105,9 @@ export default async function FavoriteListingsPage({
         heading={t("realEstate.favorites.heading")}
         intro={t("realEstate.favorites.intro")}
       />
+      <div className="mt-4">
+        <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />
+      </div>
       <h2 id="saved-properties-heading" className="visually-hidden">
         {t("realEstate.favorites.heading")}
       </h2>

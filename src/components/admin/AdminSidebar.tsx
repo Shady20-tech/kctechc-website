@@ -3,11 +3,50 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Building2,
+  FileText,
+  Inbox,
+  LayoutDashboard,
+  Menu,
+  Package,
+  Settings,
+  ShoppingCart,
+  Users,
+  X,
+} from "lucide-react";
 
 import { Avatar } from "@/components/admin/Avatar";
 import { Button } from "@/components/ui/Button";
-import { isNavItemActive, type AdminNavSection } from "@/lib/admin/navigation";
+import {
+  isNavItemActive,
+  type AdminNavIconKey,
+  type AdminNavSectionClient,
+} from "@/lib/admin/navigation";
+
+/**
+ * Resolves a nav entry's icon from its serializable key.
+ *
+ * The icons live here rather than in the nav model because this is the module that
+ * actually renders them, and because a key is the only form in which an icon can
+ * cross into a Client Component.
+ */
+const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
+  dashboard: LayoutDashboard,
+  reports: BarChart3,
+  crm: Inbox,
+  orders: ShoppingCart,
+  store: Package,
+  listings: Building2,
+  submissions: FileText,
+  import: FileText,
+  content: FileText,
+  users: Users,
+  logs: Activity,
+  settings: Settings,
+};
 
 /**
  * The admin sidebar.
@@ -27,7 +66,7 @@ export function AdminSidebar({
   labels,
   user,
 }: {
-  sections: readonly AdminNavSection[];
+  sections: readonly AdminNavSectionClient[];
   /** Fully resolved labels, keyed by the nav entry's `labelKey`. */
   labels: Record<string, string>;
   user: { name: string; email: string; role: string; avatarUrl: string | null };
@@ -45,7 +84,7 @@ export function AdminSidebar({
           <ul className="mt-2 space-y-1">
             {section.items.map((item) => {
               const active = isNavItemActive(item.href, pathname);
-              const Icon = item.icon;
+              const Icon = NAV_ICONS[item.iconKey];
               return (
                 <li key={item.href}>
                   <Link

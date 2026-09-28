@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Package,
   Settings,
-  ShieldCheck,
   ShoppingCart,
   Users,
 } from "lucide-react";
@@ -39,15 +38,64 @@ export type AdminNavItem = {
   href: string;
   /** Translation key for the label, under the `adminNav` namespace. */
   labelKey: string;
+  /**
+   * Client-safe icon identity.
+   *
+   * The icon is looked up from this string on the client rather than passed as a
+   * component reference. A Server Component cannot hand a component (or any
+   * function) across the boundary to a Client Component, so the sidebar — which is
+   * a Client Component and therefore receives the nav as props — would throw on
+   * every render if it were given `icon`. The dashboard page is a Server Component
+   * and still uses `icon` directly, which is why both exist.
+   */
+  iconKey: AdminNavIconKey;
   icon: typeof LayoutDashboard;
   /** True when the user's role may see this entry. */
   canSee: (role: AppRole) => boolean;
 };
 
+/** The icons the admin nav may use, addressed by a serializable key. */
+export const ADMIN_NAV_ICON_KEYS = [
+  "dashboard",
+  "reports",
+  "crm",
+  "orders",
+  "store",
+  "listings",
+  "submissions",
+  "import",
+  "content",
+  "users",
+  "logs",
+  "settings",
+] as const;
+
+export type AdminNavIconKey = (typeof ADMIN_NAV_ICON_KEYS)[number];
+
 export type AdminNavSection = {
   /** Translation key for the section heading, under `adminNav`. */
   headingKey: string;
   items: readonly AdminNavItem[];
+};
+
+/**
+ * The nav as a Client Component can receive it.
+ *
+ * No functions, no component references — only strings. `navSectionsForRoleClient`
+ * produces this, and it is the only shape that may cross the server/client
+ * boundary. Keeping it a distinct type means the compiler rejects an attempt to
+ * hand a Client Component the full `AdminNavItem`, which is the bug this prevents
+ * from recurring.
+ */
+export type AdminNavItemClient = {
+  href: string;
+  labelKey: string;
+  iconKey: AdminNavIconKey;
+};
+
+export type AdminNavSectionClient = {
+  headingKey: string;
+  items: readonly AdminNavItemClient[];
 };
 
 const anyAdmin = (role: AppRole) => isAdminRole(role);
@@ -62,12 +110,14 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
       {
         href: "/admin",
         labelKey: "dashboard",
+        iconKey: "dashboard",
         icon: LayoutDashboard,
         canSee: anyAdmin,
       },
       {
         href: "/admin/reports",
         labelKey: "reports",
+        iconKey: "reports",
         icon: BarChart3,
         canSee: anyAdmin,
       },
@@ -76,14 +126,27 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
   {
     headingKey: "sectionOperations",
     items: [
-      { href: "/admin/crm", labelKey: "crm", icon: Inbox, canSee: anyAdmin },
+      {
+        href: "/admin/crm",
+        labelKey: "crm",
+        iconKey: "crm",
+        icon: Inbox,
+        canSee: anyAdmin,
+      },
       {
         href: "/admin/orders",
         labelKey: "orders",
+        iconKey: "orders",
         icon: ShoppingCart,
         canSee: anyAdmin,
       },
-      { href: "/admin/store", labelKey: "store", icon: Package, canSee: elevated },
+      {
+        href: "/admin/store",
+        labelKey: "store",
+        iconKey: "store",
+        icon: Package,
+        canSee: elevated,
+      },
     ],
   },
   {
@@ -92,18 +155,21 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
       {
         href: "/admin/real-estate/listings",
         labelKey: "listings",
+        iconKey: "listings",
         icon: Building2,
         canSee: realEstateAdmin,
       },
       {
         href: "/admin/real-estate/submissions",
         labelKey: "submissions",
+        iconKey: "submissions",
         icon: FileText,
         canSee: realEstateAdmin,
       },
       {
         href: "/admin/real-estate/import",
         labelKey: "import",
+        iconKey: "import",
         icon: FileText,
         canSee: realEstateAdmin,
       },
@@ -115,10 +181,11 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
       {
         href: "/admin/content",
         labelKey: "content",
+        iconKey: "content",
         icon: FileText,
         canSee: elevated,
       },
-      { href: "/admin/users", labelKey: "users", icon: Users, canSee: superOnly },
+      { href: "/admin/users", labelKey: "users", iconKey: "users", icon: Users, canSee: superOnly },
     ],
   },
   {
@@ -127,18 +194,14 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
       {
         href: "/admin/logs",
         labelKey: "logs",
+        iconKey: "logs",
         icon: Activity,
-        canSee: superOnly,
-      },
-      {
-        href: "/admin/security",
-        labelKey: "security",
-        icon: ShieldCheck,
         canSee: superOnly,
       },
       {
         href: "/admin/settings",
         labelKey: "settings",
+        iconKey: "settings",
         icon: Settings,
         canSee: anyAdmin,
       },
@@ -158,6 +221,24 @@ export function navSectionsForRole(role: AppRole): AdminNavSection[] {
     ...section,
     items: section.items.filter((item) => item.canSee(role)),
   })).filter((section) => section.items.length > 0);
+}
+
+/**
+ * The same filtered nav, stripped to what a Client Component may receive.
+ *
+ * Filtering still happens on the server against the database role; this only drops
+ * the `icon` and `canSee` functions that cannot cross the boundary. The sidebar
+ * resolves each icon from `iconKey` via its own registry.
+ */
+export function navSectionsForRoleClient(role: AppRole): AdminNavSectionClient[] {
+  return navSectionsForRole(role).map((section) => ({
+    headingKey: section.headingKey,
+    items: section.items.map((item) => ({
+      href: item.href,
+      labelKey: item.labelKey,
+      iconKey: item.iconKey,
+    })),
+  }));
 }
 
 /**

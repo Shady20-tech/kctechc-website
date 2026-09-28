@@ -6,7 +6,7 @@ import {
   STORE_PATH,
 } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { DEPARTMENTS, SITE_REVISION_DATE } from "@/lib/config/site";
 import {
   allCategories,
   departmentHasServices,
@@ -32,7 +32,13 @@ import { slugForLocale } from "@/lib/store/slug-resolution";
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
-  const lastModified = new Date();
+
+  // `lastmod` must mean "when this page actually changed", not "when this request
+  // ran". A value that moves on every fetch is one a crawler learns to distrust
+  // and then ignores, which defeats the point of listing the URL at all. So the
+  // static routes carry an explicit site revision date and the data-driven ones
+  // carry their own row timestamp.
+  const staticLastModified = new Date(SITE_REVISION_DATE);
 
   const localizedPaths = [
     "/",
@@ -58,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = LOCALES.flatMap((locale) =>
     localizedPaths.map((pathWithoutLocale) => ({
       url: canonicalFor(locale, pathWithoutLocale),
-      lastModified,
+      lastModified: staticLastModified,
       changeFrequency: "weekly" as const,
       priority: pathPriority(pathWithoutLocale),
       alternates: {
@@ -71,14 +77,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // than enumerated from a constant. `loadInsights` returns an empty list when
   // Supabase is unconfigured or unreachable, so a database outage contributes
   // nothing here instead of failing the whole sitemap.
-  const articleSlugs = (await loadInsights("en")).map(
-    (article) => `${INSIGHTS_PATH}/${article.slug}`,
-  );
+  //
+  // Each article carries its own timestamp. `lastModified` moving on every
+  // request would tell a crawler nothing about which article actually changed,
+  // which is precisely the signal this feed exists to send.
+  const articles = await loadInsights("en");
   for (const locale of LOCALES) {
-    for (const path of articleSlugs) {
+    for (const article of articles) {
+      const path = `${INSIGHTS_PATH}/${article.slug}`;
       entries.push({
         url: canonicalFor(locale, path),
-        lastModified,
+        lastModified: new Date(article.updatedAt ?? article.publishedAt),
         changeFrequency: "monthly",
         priority: 0.6,
         alternates: { languages: alternatesFor(path) },
@@ -99,7 +108,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const path = `${STORE_PATH}/${categorySlug}`;
       entries.push({
         url: canonicalFor(locale, path),
-        lastModified,
+        lastModified: category.updatedAt
+          ? new Date(category.updatedAt)
+          : staticLastModified,
         changeFrequency: "weekly",
         priority: 0.7,
         alternates: { languages: alternatesFor(path) },
@@ -112,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: canonicalFor(locale, productPath),
           lastModified: product.updatedAt
             ? new Date(product.updatedAt)
-            : lastModified,
+            : staticLastModified,
           changeFrequency: "weekly",
           priority: 0.7,
           alternates: { languages: alternatesFor(productPath) },
@@ -130,7 +141,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const path = `${PROPERTY_SEARCH_PATH}/${listingSlugForLocale(record, locale)}`;
       entries.push({
         url: canonicalFor(locale, path),
-        lastModified: record.updatedAt ? new Date(record.updatedAt) : lastModified,
+        lastModified: record.updatedAt ? new Date(record.updatedAt) : staticLastModified,
         changeFrequency: "weekly",
         priority: 0.7,
         alternates: { languages: alternatesFor(path) },
@@ -142,7 +153,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // because it is the x-default target rather than a localized page.
   entries.push({
     url: new URL("/", siteUrl).toString(),
-    lastModified,
+    lastModified: staticLastModified,
     changeFrequency: "monthly",
     priority: 1,
   });

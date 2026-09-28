@@ -135,6 +135,8 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
   });
 
   revalidatePath("/admin/content");
+  // A new article is a new sitemap entry with a new `lastmod`.
+  revalidatePath("/sitemap.xml");
   return { ok: true, id: data.id, message: "created" };
 }
 
@@ -215,6 +217,9 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
 
   revalidatePath("/admin/content");
   revalidatePath(`/admin/content/${id}`);
+  // Editing or publishing an article moves its `lastmod`; so does unpublishing,
+  // which removes the entry.
+  revalidatePath("/sitemap.xml");
   return { ok: true, id, message: "updated" };
 }
 
