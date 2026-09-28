@@ -12,6 +12,15 @@ import Image from "next/image";
  * sits, so the heading keeps a high contrast ratio over any photo. Without it a
  * light image would wash the heading out — which is the whole reason a plain
  * `bg-ink-950` band was safe to put text on and a photo is not.
+ *
+ * Loading is eager with an explicit high fetch priority. Next.js 16 deprecated
+ * the `priority` prop in favour of these two, and the distinction is not
+ * cosmetic: `priority` emitted the `<link rel="preload">` but no
+ * `fetchpriority` attribute on the `<img>`, so the image still queued behind the
+ * stylesheet and the scripts. This is the LCP element on every page that renders
+ * it, and on a throttled mobile run that queueing was most of the LCP. Do not
+ * add `preload` here — the docs are explicit that it must not be combined with
+ * `fetchPriority`, and `fetchPriority` is the one that fixes the queue order.
  */
 export function HeroMedia({ src }: { src: string }) {
   return (
@@ -20,7 +29,8 @@ export function HeroMedia({ src }: { src: string }) {
         src={src}
         alt=""
         fill
-        priority
+        loading="eager"
+        fetchPriority="high"
         sizes="100vw"
         className="object-cover"
       />

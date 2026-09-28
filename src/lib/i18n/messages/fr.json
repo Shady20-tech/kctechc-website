@@ -174,7 +174,16 @@
     "addressLabel": "Adresse",
     "aboutLink": "À propos de l'entreprise",
     "contactLink": "Nous contacter",
-    "mottoLabel": "Notre devise"
+    "mottoLabel": "Notre devise",
+    "socialHeading": "Suivez-nous",
+    "socialLinkLabel": "KC Technology Corporation sur {network}"
+  },
+  "social": {
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "instagram": "Instagram",
+    "x": "X",
+    "tiktok": "TikTok"
   },
   "auth": {
     "signInHeading": "Connexion",

@@ -64,6 +64,30 @@ describe("organizationJsonLd", () => {
     expect(data.priceRange).toBeUndefined();
     expect(data.award).toBeUndefined();
   });
+
+  it("lists the configured social profiles as sameAs", () => {
+    const data = organizationJsonLd("en");
+    const sameAs = data.sameAs as string[];
+    // `sameAs` is the machine-readable half of the footer's social links. Both
+    // read `SOCIAL_PROFILES`, so the visible links and the published claim cannot
+    // disagree — whereas hand-typed URLs in two places eventually would.
+    expect(Array.isArray(sameAs)).toBe(true);
+    expect(sameAs.length).toBe(5);
+    expect(sameAs).toContain(
+      "https://www.facebook.com/kctechnologycorporation",
+    );
+  });
+
+  it("emits absolute https URLs, never relative or same-site ones", () => {
+    const sameAs = (organizationJsonLd("en").sameAs as string[]) ?? [];
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    const ownHost = siteUrl ? new URL(siteUrl).hostname : null;
+    for (const raw of sameAs) {
+      const url = new URL(raw);
+      expect(url.protocol).toBe("https:");
+      if (ownHost) expect(url.hostname).not.toBe(ownHost);
+    }
+  });
 });
 
 describe("websiteJsonLd", () => {

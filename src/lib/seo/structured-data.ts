@@ -1,4 +1,5 @@
 import { SITE } from "@/lib/config/site";
+import { organizationSameAs } from "@/lib/config/social";
 import { getSiteUrl } from "@/lib/config/env";
 import type { FaqItem } from "@/lib/content/types";
 import { priceForFeed } from "@/lib/store/types";
@@ -16,6 +17,7 @@ export type JsonLd = Record<string, unknown>;
 
 export function organizationJsonLd(locale: Locale): JsonLd {
   const siteUrl = getSiteUrl();
+  const sameAs = organizationSameAs();
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -32,6 +34,11 @@ export function organizationJsonLd(locale: Locale): JsonLd {
       addressRegion: SITE.address.region,
       addressCountry: SITE.address.countryCode,
     },
+    // `sameAs` is how a search engine is told that the accounts it already knows
+    // about belong to the same entity as this site, which is what feeds the
+    // knowledge panel. Omitted entirely when no profile is configured rather than
+    // emitted as an empty array, which asserts nothing and reads as a mistake.
+    ...(sameAs ? { sameAs } : {}),
     inLanguage: LOCALE_SEO_TAGS[locale],
   };
 }
@@ -400,9 +407,15 @@ export function realEstateListingJsonLd(input: {
 
 /** True when a property kind is described by schema.org's `Accommodation`. */
 function isAccommodation(propertyKind: string): boolean {
-  return !["land", "farm", "office", "shop", "warehouse", "mixed_use", "other"].includes(
-    propertyKind,
-  );
+  return ![
+    "land",
+    "farm",
+    "office",
+    "shop",
+    "warehouse",
+    "mixed_use",
+    "other",
+  ].includes(propertyKind);
 }
 
 /**

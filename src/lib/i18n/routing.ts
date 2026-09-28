@@ -1,9 +1,4 @@
-import {
-  DEFAULT_LOCALE,
-  LOCALES,
-  isLocale,
-  type Locale,
-} from "./locales";
+import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from "./locales";
 
 /**
  * Path helpers shared by `src/proxy.ts`, server components and the language
@@ -19,6 +14,55 @@ export function isNonLocalizedPath(pathname: string): boolean {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
+
+/**
+ * Paths the locale rewrite must never touch, matched by prefix.
+ *
+ * These are the root-level metadata routes and asset directories. They have no
+ * localized variant, so rewriting them to `/{locale}{path}` produces a 404 while
+ * the page itself still renders — a silent failure that shows up only as console
+ * errors and a missing manifest.
+ *
+ * `manifest.webmanifest` is here for exactly that reason: it was missed, because
+ * the extension list below did not include `webmanifest`, so every page load
+ * logged two 404s and the browser could not read the manifest.
+ *
+ * These lists are the *declared intent*. Next.js requires the matcher to be a
+ * static string literal, so it cannot be generated from them at runtime — the
+ * literal lives in `src/proxy.ts` and `src/proxy.test.ts` asserts that the real
+ * pattern excludes everything listed here. That test is what keeps the two in
+ * step; without it the lists would be documentation that quietly goes stale.
+ */
+export const NON_LOCALIZED_EXACT_PATHS = [
+  "_next/static",
+  "_next/image",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  "manifest.webmanifest",
+] as const;
+
+/** File extensions that are assets, never localized pages. */
+export const NON_LOCALIZED_EXTENSIONS = [
+  "svg",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "avif",
+  "ico",
+  "webmanifest",
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "css",
+  "js",
+  "map",
+  "txt",
+  "xml",
+] as const;
 
 /** Split `/en/real-estate` into its locale and the locale-relative path. */
 export function stripLocaleFromPath(pathname: string): {
@@ -36,7 +80,9 @@ export function stripLocaleFromPath(pathname: string): {
 
 export function withLocale(locale: Locale, pathWithoutLocale: string): string {
   const normalized =
-    pathWithoutLocale === "/" ? "" : `/${pathWithoutLocale.replace(/^\/+/, "")}`;
+    pathWithoutLocale === "/"
+      ? ""
+      : `/${pathWithoutLocale.replace(/^\/+/, "")}`;
   return `/${locale}${normalized}`;
 }
 

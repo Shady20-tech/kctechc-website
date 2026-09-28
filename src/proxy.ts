@@ -120,7 +120,17 @@ export const config = {
     /*
      * Run on every path except Next.js internals, the metadata routes, and
      * static assets, which must never be locale-rewritten.
+     *
+     * This must be a static string literal — Next.js parses it at compile time and
+     * rejects a computed value, so it cannot be generated from
+     * `NON_LOCALIZED_EXACT_PATHS` / `NON_LOCALIZED_EXTENSIONS` in
+     * `src/lib/i18n/routing.ts`. `src/proxy.test.ts` asserts that this pattern
+     * excludes every path and extension those lists declare, which is what keeps
+     * the literal and the intent from drifting apart.
+     *
+     * `manifest.webmanifest` was the gap: it is a root metadata route with no
+     * localized variant, so rewriting it produced a 404 on every page load.
      */
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff|woff2|ttf|otf|css|js|map|txt|xml)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|webmanifest|woff|woff2|ttf|otf|css|js|map|txt|xml)$).*)",
   ],
 };

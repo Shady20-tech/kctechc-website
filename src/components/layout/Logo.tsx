@@ -12,6 +12,17 @@ import { SITE } from "@/lib/config/site";
  *
  * The mark always links to `/`, the language-neutral corporate gateway, so the
  * "go home" affordance never silently switches a visitor's language.
+ *
+ * The accessible name is derived from the link's own content rather than an
+ * `aria-label`, which is what `label-content-name-mismatch` requires: visible text
+ * must be contained in the accessible name, because a speech-input user can only
+ * refer to the control by what they see. An explicit label cannot satisfy that
+ * here — the title has two variants, `shortName` below `sm` and `legalName` at `sm`
+ * and up, so the label would omit the other breakpoint's visible text, and the
+ * audit reads the DOM rather than the painted layout. The subtitle sits inside the
+ * link for the same reason; `aria-hidden` would not help, since the text stays
+ * visible. Both variants are `truncate`, so a long legal name is clipped visually
+ * without changing what the name is.
  */
 export function Logo({
   locale,
@@ -29,11 +40,23 @@ export function Logo({
       ? "/brand/kc-monogram-inverse.png"
       : "/brand/kc-monogram.png";
 
+  const subtitle = showMotto
+    ? `${SITE.shortName}${locale ? ` · ${locale.toUpperCase()}` : ""}`
+    : null;
+
+  // No `aria-label`. The accessible name is taken from the link's own content,
+  // which is the only formulation that satisfies `label-content-name-mismatch`
+  // here. The title has two variants — `shortName` below `sm`, `legalName` at `sm`
+  // and up — so whichever string an `aria-label` hard-coded, the *other*
+  // breakpoint's visible text would not be a substring of it, and the audit reads
+  // the DOM rather than the painted layout. Letting the name come from the content
+  // means it always contains the visible text, at every width. The subtitle is
+  // inside the link for the same reason: hiding it with `aria-hidden` does not
+  // help, because the text stays visible.
   return (
     <Link
       href="/"
       className="group flex min-w-0 items-center gap-3 rounded-card"
-      aria-label={`${SITE.legalName} — ${SITE.shortName}`}
     >
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-ink-950 transition-soft group-hover:bg-ink-800"
@@ -61,12 +84,11 @@ export function Logo({
           <span className="sm:hidden">{SITE.shortName}</span>
           <span className="hidden sm:inline">{SITE.legalName}</span>
         </span>
-        {showMotto ? (
+        {subtitle ? (
           <span
             className={`mono-label hidden truncate leading-tight sm:block ${mottoClass}`}
           >
-            {SITE.shortName}
-            {locale ? ` · ${locale.toUpperCase()}` : ""}
+            {subtitle}
           </span>
         ) : null}
       </span>
