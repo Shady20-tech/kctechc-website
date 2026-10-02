@@ -1159,11 +1159,11 @@
     "servicesIntroFull": "Neuf domaines de service, chacun décrit en détail, y compris la façon dont le travail est cadré et ce que vous recevez à la remise. Chacun commence par une évaluation de ce qui existe et de ce qu'il devra supporter."
   },
   "projects": {
-    "metaTitle": "Projets",
-    "metaDescription": "Projets réalisés des Services électriques : le périmètre, la région et les photographies lorsqu'elles ont été fournies.",
-    "eyebrow": "Services électriques",
-    "heading": "Projets",
-    "intro": "Travaux réalisés, avec les domaines concernés et la région. Les photographies sont présentées lorsqu'elles ont été fournies et légendées.",
+    "metaTitle": "Réalisations",
+    "metaDescription": "Travaux réalisés, avec l'étendue, le lieu et la photographie lorsqu'elle a été fournie.",
+    "eyebrow": "Réalisations",
+    "heading": "Réalisations",
+    "intro": "Travaux réalisés par ce département, avec les services concernés et le lieu d'exécution. Les photographies sont présentées lorsqu'elles ont été fournies et légendées.",
     "emptyHeading": "Aucun projet n'est encore publié",
     "emptyBody": "Nous n'avons publié aucune fiche de projet. Une fiche de projet affirme que des travaux ont été réalisés à un endroit précis une année précise : nous n'en publions donc une que lorsque les travaux et leurs photographies sont réels. Plutôt que de remplir cette page d'images d'illustration et de légendes inventées, elle reste vide tant qu'il n'y a rien d'authentique à montrer.",
     "emptyCta": "Discuter d'un projet",
@@ -1197,7 +1197,8 @@
     "translationNotice": "Ce projet est affiché en anglais car aucune traduction française n'est encore publiée.",
     "propertyTypeResidential": "Résidentiel",
     "propertyTypeCommercial": "Commercial",
-    "propertyTypeIndustrial": "Industriel"
+    "propertyTypeIndustrial": "Industriel",
+    "heroCta": "Réalisations"
   },
   "quote": {
     "metaTitle": "Demander un devis ou une visite",
@@ -1667,7 +1668,8 @@
     "settings": "Paramètres",
     "profile": "Mon profil",
     "password": "Changer le mot de passe",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "work": "Réalisations"
   },
   "roleName": {
     "super_admin": "Super administrateur",
@@ -1823,6 +1825,89 @@
       "draft": "Brouillon",
       "published": "Publié",
       "archived": "Archivé"
+    }
+  },
+  "adminWork": {
+    "heading": "Réalisations",
+    "intro": "Travaux terminés publiés par les départements. Seuls les départements que vous pouvez modifier sont affichés.",
+    "newProject": "Ajouter une réalisation",
+    "newHeading": "Ajouter une réalisation",
+    "editHeading": "Modifier une réalisation",
+    "formIntro": "Enregistrez comme brouillon jusqu'à ce que le travail et ses photographies soient prêts à publier.",
+    "emptyHeading": "Aucune réalisation pour l'instant",
+    "emptyBody": "Rien n'a encore été publié pour votre département. Ajoutez le premier travail terminé.",
+    "noDepartmentHeading": "Aucun département pour publier",
+    "noDepartmentBody": "Votre rôle ne gère aucun département, il n'y a donc pas de galerie où publier.",
+    "colTitle": "Titre",
+    "colDepartment": "Département",
+    "colCompleted": "Achevé",
+    "colMedia": "Images",
+    "colState": "État",
+    "colUpdated": "Mis à jour",
+    "slugLabel": "Identifiant d'URL",
+    "slugHint": "Mots en minuscules séparés par des tirets. Le modifier change l'URL publique.",
+    "titleLabel": "Titre",
+    "summaryLabel": "Résumé",
+    "summaryHint": "Une ou deux phrases affichées sur la carte de la galerie.",
+    "descriptionLabel": "Description complète",
+    "scopeLabel": "Étendue",
+    "outcomeLabel": "Résultat",
+    "departmentLabel": "Département",
+    "locationLabel": "Lieu",
+    "locationHint": "Une ville ou le nom du site. Jamais de coordonnées précises.",
+    "propertyTypeLabel": "Type de bien",
+    "completedYearLabel": "Année d'achèvement",
+    "servicesLabel": "Domaines de service",
+    "servicesEmpty": "Aucun service n'est encore disponible pour ce département.",
+    "stateLabel": "État",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "created": "L'enregistrement a été créé. Ajoutez ensuite les photographies.",
+    "updated": "L'enregistrement a été sauvegardé.",
+    "state": {
+      "draft": "Brouillon",
+      "published": "Publié",
+      "archived": "Archivé"
+    },
+    "propertyType": {
+      "residential": "Résidentiel",
+      "commercial": "Commercial",
+      "industrial": "Industriel"
+    },
+    "mediaHeading": "Photographies",
+    "mediaIntro": "Chaque image nécessite un texte alternatif. Une paire avant/après peut comporter une image de chaque.",
+    "mediaEmpty": "Aucune photographie n'a encore été ajoutée.",
+    "mediaAdded": "L'image a été ajoutée.",
+    "mediaUpload": "Téléverser une image",
+    "mediaUploading": "Téléversement…",
+    "mediaRemove": "Retirer",
+    "altLabel": "Texte alternatif",
+    "altHint": "Décrivez ce que montre l'image, pour une personne qui ne peut pas la voir.",
+    "captionLabel": "Légende",
+    "creditLabel": "Crédit photo",
+    "roleLabel": "Rôle de l'image",
+    "role": {
+      "general": "Vue générale",
+      "before": "Avant",
+      "after": "Après"
+    },
+    "errors": {
+      "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+      "forbidden": "Vous n'êtes pas autorisé à publier des réalisations pour ce département.",
+      "unconfigured": "Les services de contenu ne sont pas configurés.",
+      "invalid": "Vérifiez les champs signalés.",
+      "duplicate": "Cet identifiant est déjà utilisé.",
+      "write_failed": "L'enregistrement n'a pas pu être sauvegardé. Réessayez.",
+      "not_found": "Cet enregistrement est introuvable.",
+      "no_file": "Choisissez une image à téléverser.",
+      "alt_required": "Un texte alternatif est requis pour chaque image.",
+      "role_taken": "Ce projet possède déjà une image avec ce rôle.",
+      "empty": "Ce fichier est vide.",
+      "too_large": "Cette image dépasse la limite de 5 Mo.",
+      "type_not_allowed": "Seules les images JPEG, PNG, WebP ou AVIF sont acceptées.",
+      "unknown_type": "Ce fichier n'est pas une image reconnue.",
+      "upload_failed": "L'image n'a pas pu être téléversée. Réessayez.",
+      "update_failed": "La modification n'a pas pu être enregistrée. Réessayez."
     }
   },
   "adminSettings": {

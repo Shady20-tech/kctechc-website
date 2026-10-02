@@ -46,6 +46,7 @@ declare
     'match_region_by_name', 'record_listing_view',
     'is_admin', 'is_super_admin', 'is_real_estate_admin', 'is_inquiry_manager',
     'current_user_role', 'current_agent_id', 'can_access_department',
+    'is_department_editor',
     'inquiry_is_for_agent_listing',
     'gtin_is_valid', 'generate_listing_reference', 'publish_state_is_consistent',
     'immutable_array_to_string',
@@ -138,9 +139,6 @@ begin
   -- ---------------------------------------------------------------------------
   for v_role in select unnest(v_browser_roles)
   loop
-    if not has_function_privilege(v_role, 'public.place_order(text, uuid, uuid, text, text, text, public.locale_code, public.order_fulfillment, public.payment_method, text, text, text, uuid, text, integer)', 'EXECUTE') then
-      raise exception 'VALIDATION FAIL: % cannot execute place_order (guest checkout would break)', v_role;
-    end if;
     if not has_function_privilege(v_role, 'public.search_property_listings(text, uuid, uuid, uuid, public.listing_type, public.listing_property_kind, public.property_type, bigint, bigint, smallint, smallint, integer, integer, public.listing_status[], text[], public.locale_code, public.listing_sort_order, integer, integer)', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute search_property_listings (browse would break)', v_role;
     end if;
@@ -153,9 +151,40 @@ begin
     if not has_function_privilege(v_role, 'public.generate_listing_reference()', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute generate_listing_reference (property writes would fail the default)', v_role;
     end if;
+    if not has_function_privilege(v_role, 'public.is_department_editor(text)', 'EXECUTE') then
+      raise exception 'VALIDATION FAIL: % cannot execute is_department_editor (the project write policies would fail)', v_role;
+    end if;
   end loop;
 
   raise notice 'PASS  the deliberate public functions remain executable';
+end
+$$;
+
+-- -----------------------------------------------------------------------------
+-- `place_order` is service-role only.
+--
+-- It was briefly on the allow-list above. The application never called it from a
+-- browser key — the checkout action uses the service-role client — so the grant
+-- was pure attack surface: a SECURITY DEFINER write that bypasses RLS and takes
+-- a caller-supplied cart id and customer id. This asserts the revoke holds, so a
+-- future allow-list edit that re-adds it fails here.
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  v_role text;
+begin
+  foreach v_role in array array['anon', 'authenticated']
+  loop
+    if has_function_privilege(v_role, 'public.place_order(text, uuid, uuid, text, text, text, public.locale_code, public.order_fulfillment, public.payment_method, text, text, text, uuid, text, integer)', 'EXECUTE') then
+      raise exception 'VALIDATION FAIL: % can execute place_order (checkout is service-role only)', v_role;
+    end if;
+  end loop;
+
+  if not has_function_privilege('service_role', 'public.place_order(text, uuid, uuid, text, text, text, public.locale_code, public.order_fulfillment, public.payment_method, text, text, text, uuid, text, integer)', 'EXECUTE') then
+    raise exception 'VALIDATION FAIL: service_role cannot execute place_order (checkout would break)';
+  end if;
+
+  raise notice 'PASS  place_order is callable by service_role only';
 end
 $$;
 

@@ -349,11 +349,106 @@ acceptance criteria pass. Then stop — do not start the next phase.
     which is what makes a new, unclassified function fail the check.
   - `supabase/validate/00_supabase_shim.sql` now also creates the `storage.buckets` table the
     admin-console migration inserts into, so the harness builds from a clean database.
+- Phase 13 (department-scoped "Work Done" authoring) is implemented:
+  - Migration `20260101000042_department_project_editing.sql` adds `is_department_editor(slug)` and
+    replaces the `is_admin()` write policies on `electrical_projects`, `project_media` and
+    `electrical_project_services` with a department-scoped predicate, so a department's staff and
+    admins can author their own finished work and no other department's. The service-link policy
+    additionally requires the linked service to belong to the project's own department.
+  - Content layer `src/lib/content/project-admin-queries.ts` (`departmentsForRole`,
+    `listAdminProjects`, `loadProjectOptions`, `getAdminProject`) and `project-admin-actions.ts`
+    (create/update/publish/delete, media upload/remove) plus `project-form-labels.ts`.
+    `getAdminProject` is scoped to the departments the caller may author, so a guessed id for
+    another department's published project 404s rather than opening a form the write policy refuses.
+  - Admin console `src/app/(static)/admin/(console)/work/` (`page.tsx`, `new/page.tsx`,
+    `[id]/page.tsx`) with `ProjectForm.tsx` and `ProjectMediaForm.tsx`.
+  - `DEPARTMENT_EDITOR_ROLES` in `src/lib/auth/roles.ts` drives the admin nav entry, the page
+    guards and the Server Action guards; `roles.test.ts` asserts it agrees with the SQL predicate.
+  - The department hero gained a "Work Done" CTA (EN/FR) linking to `/{locale}/{department}/projects`,
+    shown only for departments that have a projects surface.
+  - Audit actions `project_created` / `project_updated` / `project_media_uploaded` /
+    `project_media_removed` in `src/lib/security/audit.ts`; the never-emitted `project_published`
+    was removed as dead code.
+  - `supabase/validate/40_department_work_behaviour.sql` proves the department boundary, the
+    published/draft visibility split, the child-row scope and the service-department rule.
+- Phase 13 also carries the first security-audit fixes:
+  - Migration `20260101000043_revoke_place_order_public_execute.sql` revokes the browser `EXECUTE`
+    grant on `place_order` (Phase 12 had allow-listed it as "guest checkout"). The only caller is
+    `submitCheckout`, which uses the service-role client, so the grant was pure attack surface: a
+    `SECURITY DEFINER` write that bypasses RLS and authorizes a cart by id alone. `service_role`
+    keeps the grant; checkout is unchanged. `30_function_execute_hardening.sql` now asserts the
+    revoke instead of the grant.
+  - Migration `20260101000044_project_and_inquiry_storage_buckets.sql` declares `project-media`
+    (public, 5 MiB) and `inquiry-attachments` (private, 10 MiB) as schema. Both were only in
+    `supabase/config.toml`, so a hosted project had no such bucket and every project-photo and
+    inquiry-attachment upload failed. `supabase/validate/50_storage_bucket_behaviour.sql` asserts
+    the visibility split and the limits.
+  - `uploadProjectMediaAction` validated with `kind: "property-image"` (10 MiB) while writing to the
+    5 MiB `project-media` bucket; it now uses the purpose-built `project-image` kind.
+  - Audit figures on a fresh database (43 migrations): 50 public tables, all 50 with RLS enabled
+    and at least one policy; 45 `SECURITY DEFINER` functions, every one with a pinned
+    `search_path`; `place_order`, `apply_payment_result`, `cancel_order` and the other privileged
+    RPCs reachable by `service_role` only.
 - Resend transactional email is wired into the inquiry, quote-request and order-confirmation paths
   (`src/lib/email/send.ts`), gated on `isEmailConfigured()` so an unconfigured deployment reports
   `unconfigured` rather than pretending to send.
-- 763 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
-  succeeds. The `supabase/validate/*.sql` scripts pass on a fresh Postgres 17 database.
+- 765 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
+  succeeds. The `supabase/validate/*.sql` scripts pass on a fresh Postgres 17 database (43
+  migrations).
+
+### Phase 13 gotchas worth not rediscovering
+
+- **The console page guard is a message, the write policy is the control.** `requireEditor` and
+  `departmentsForRole` run in the Server Action so the editor sees "not your department" instead of
+  a raw policy violation, but a department editor's real boundary is the RLS policy from
+  `20260101000042_department_project_editing.sql`. The row writes deliberately use the cookie-bound
+  client (never the service-role client) so that policy is what refuses a cross-department write.
+- **`getAdminProject` must be scoped, not just the list.** The public select policy makes another
+  department's *published* project world-readable, so a guessed id would otherwise open an edit
+  form whose save the write policy then refuses. Scoping the detail read to
+  `departmentsForRole(role)` turns that into a 404, so the page and the database agree.
+- **A comment that promises a constraint is not the constraint.** The department-scoped write policy
+  on `electrical_project_services` initially checked only that the *project* was in an editable
+  department, while the migration comment said services were scoped too. Nothing in the schema ties
+  `service_id`'s department to the project's, so a crafted POST could link an Electrical Services
+  service to a Digital Marketing project; the console's picker was only a UI filter. The policy now
+  joins `services` and requires `s.department_id = p.department_id`, and
+  `40_department_work_behaviour.sql` proves both the accepted and the refused link. When a comment
+  claims a boundary, implement it in the policy or delete the claim.
+- **An allow-list entry is a claim about the *caller*, so verify it against the code, not the
+  function's name.** `place_order` sat on the Phase 12 browser allow-list as "guest checkout" on the
+  assumption the storefront called it through the publishable key. It does not: the only caller is
+  `submitCheckout`, which uses the service-role client, so the grant only widened the surface of a
+  `SECURITY DEFINER` write that authorizes a cart by id alone and takes a caller-supplied
+  `p_customer_id`. Before granting a function to `anon`/`authenticated`, grep for its `rpc(` call
+  sites and check which client each one holds (`createAdminClient` vs the cookie-bound or public
+  client), and ask whether the function's *internal* authorization is real.
+- **A bucket declared only in `supabase/config.toml` does not exist in production.** `config.toml`
+  is local-dev tooling; a hosted project gets its buckets from `storage.buckets`. Migration 37 moved
+  four buckets into the schema for exactly this reason but omitted `project-media` and
+  `inquiry-attachments`, so the project-photo and inquiry-attachment uploads would have failed on
+  any real deployment while passing every local check. Add a bucket to `supabase/migrations/`, not
+  just to `config.toml`. `supabase/validate/50_storage_bucket_behaviour.sql` asserts the two now
+  exist and that `inquiry-attachments` (a visitor's own photographs) is private.
+- **An upload validator's `kind` must match the bucket it writes to.** `uploadProjectMediaAction`
+  passed `kind: "property-image"` (10 MiB) while uploading to the 5 MiB `project-media` bucket, so a
+  6-10 MB file passed the application check and was then refused by the bucket with a generic
+  failure. The purpose-built `project-image` kind (`MAX_PROJECT_IMAGE_BYTES`, the same accepted
+  types) had existed since Phase 5 and was unused. Check the bucket's `file_size_limit` and
+  `allowed_mime_types` against the `kind` before wiring an upload path.
+- **A `project_published` audit action with no emitter is dead code.** Publishing happens through
+  `publishState` on create/update, which already emits `project_created` / `project_updated` with the
+  state in metadata. Do not add an action name until a code path actually records it.
+- **Pre-existing format debt is not yours to fix in a feature PR.** `src/lib/admin/navigation.ts`
+  and `src/lib/auth/roles.test.ts` already failed `prettier --check` before this phase. Running
+  `prettier --write` on them adds unrelated reformatting churn to a feature diff; make the minimal
+  edit by hand and leave the pre-existing debt alone.
+- **A file's *encoding* is part of the diff, and a byte-level fix can corrupt unrelated characters.**
+  An em-dash written through the editor landed as a lone `0x97` byte, and a naive
+  `replace(b"\x97", ...)` then also hit the `0x97` inside `●` (U+25CF = `E2 97 8F`), corrupting
+  every bullet in the file. Repair by rewriting the *whole* mis-encoded sequence
+  (`\xe2\x80\x94`) rather than a single byte, verify with `python3 -c "...decode('utf-8')"`, and
+  prefer plain ASCII in new doc prose.
 
 ### Phase 12 gotchas worth not rediscovering
 
