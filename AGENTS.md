@@ -335,8 +335,72 @@ acceptance criteria pass. Then stop — do not start the next phase.
   - `ListingFilterPanel`, `ActiveFilterChips`, `ListingPagination`, `FavoriteButton`,
     `SaveSearchControl` and `SavedSearchCard` components; `ListingFiltersForm` was deleted as
     superseded dead code.
-- 498 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
-  succeeds.
+- Phase 8 (orders, payments, CRM) and Phase 11 (Fapshi payment provider) are implemented:
+  orders/order-items/payments migrations, the order state machine, the CRM inbox, the admin console,
+  and the Fapshi adapter behind a provider seam (`src/lib/payments/`).
+- Phase 12 (function EXECUTE hardening) is implemented:
+  - Migration `20260101000041_function_execute_hardening.sql` makes the `EXECUTE` surface
+    default-deny: it revokes `EXECUTE` from `PUBLIC` **and** from `anon`/`authenticated` on every
+    `public` function, re-grants `service_role`, and re-grants only the deliberate browser-callable
+    functions to `anon`/`authenticated`. It also redefines `review_listing_submission` with the
+    `is_real_estate_admin()` guard it was missing. See the gotchas below.
+  - `supabase/validate/30_function_execute_hardening.sql` asserts the *subset* property — no
+    non-trigger `public` function is executable by a browser key unless it is on the allow-list —
+    which is what makes a new, unclassified function fail the check.
+  - `supabase/validate/00_supabase_shim.sql` now also creates the `storage.buckets` table the
+    admin-console migration inserts into, so the harness builds from a clean database.
+- Resend transactional email is wired into the inquiry, quote-request and order-confirmation paths
+  (`src/lib/email/send.ts`), gated on `isEmailConfigured()` so an unconfigured deployment reports
+  `unconfigured` rather than pretending to send.
+- 763 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
+  succeeds. The `supabase/validate/*.sql` scripts pass on a fresh Postgres 17 database.
+
+### Phase 12 gotchas worth not rediscovering
+
+- **Supabase grants function `EXECUTE` to `anon` and `authenticated` *by name*, not through
+  `PUBLIC`.** `REVOKE ALL ON FUNCTION ... FROM PUBLIC` removes only the `=X` ACL entry; the
+  `anon=X` and `authenticated=X` entries survive, so every function stays callable from a browser
+  key. Supabase's own guidance is to revoke from *both* `public` and the role. The first revision
+  of migration 41 revoked from `PUBLIC` alone and so secured nothing — and its assertion only
+  checked the named privileged functions, which still held their per-role grants, so it passed.
+  The migration now revokes from `anon, authenticated` explicitly, and the assertion is a *subset*
+  check (nothing reachable is outside the allow-list) rather than a deny-list. Reproduce the
+  difference against a clean database before trusting a grant migration; the ACL is
+  `{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}` after a plain
+  `REVOKE ... FROM PUBLIC`.
+- **Postgres checks `EXECUTE` for RLS policy functions, CHECK constraints, column defaults and
+  stored generated columns — but *not* for trigger functions.** A blanket revoke therefore breaks
+  browser writes in three non-obvious places and leaves triggers working:
+  - role predicates used inside RLS policies (`is_admin`, `is_real_estate_admin`,
+    `current_agent_id`, `inquiry_is_for_agent_listing`, …) — without them the table becomes
+    unreadable for the role the policy is evaluated as;
+  - helper functions in CHECK constraints (`gtin_is_valid`, `publish_state_is_consistent`) and
+    column defaults (`generate_listing_reference`);
+  - helper functions inside a **stored generated column** (`immutable_array_to_string` in
+    `property_listings.search_vector`) — this one is the easiest to miss because the dependency is
+    in the column expression, not a constraint.
+  Enumerate these from `pg_proc`/`pg_attrdef`/`pg_constraint`/`pg_index` rather than by eye, and
+  allow-list them in the same migration that revokes.
+- **`review_listing_submission` was `SECURITY DEFINER` with no internal role check.** It publishes
+  a listing, and the only check was the Server Action's `authorize()` — which a direct PostgREST
+  call never runs. The application calls it with the *session* client (so `auth.uid()` attributes
+  the reviewer), which means it must stay reachable by `authenticated`; the fix is the
+  `is_real_estate_admin()` guard inside the function, not a revoke. The same predicate backs the
+  `listing_submissions_write_admin` policy and `REAL_ESTATE_ADMIN_ROLES` in `src/lib/auth/roles.ts`.
+- **`set_listing_private_details` and `set_listing_localized_slug` are `security invoker` on
+  purpose**, so `listing_private_details` / `listing_slugs` RLS is the control (own listing for an
+  agent, any listing for an admin). They need the `authenticated` grant to run at all, but a
+  revoke-then-regrant must keep them or the admin form breaks.
+- **The local validation harness needs a `storage` shim.** `20260101000037_admin_console.sql`
+  inserts the media bucket definitions into `storage.buckets`, so a bare `00_supabase_shim.sql`
+  fails the migration set with `relation "storage.buckets" does not exist`. The shim now creates
+  the table. The `\set ON_ERROR_STOP` / `\i` psql meta-commands also have to be stripped when the
+  scripts are driven through a non-psql client.
+- **`psql` is not installed in this environment and the Docker socket is not reachable, but a
+  Postgres 17 server is on `localhost:5432`.** The harness can be built and exercised with
+  `psycopg2` (`pip install psycopg2-binary`): create a scratch database, apply the shim then the
+  migrations in filename order, then run each `supabase/validate/*.sql` with the backslash lines
+  removed. This is how the EXECUTE defect above was reproduced and fixed.
 
 ### Phase 7 gotchas worth not rediscovering
 
@@ -710,6 +774,32 @@ acceptance criteria pass. Then stop — do not start the next phase.
   performance 84 / LCP 4.2s while the page observed LCP at 514ms and the LCP phases summed to
   ~490ms; with `--throttling-method=devtools` mobile was 98 / LCP 1.67s. Use applied throttling
   before chasing a simulated LCP regression.
+
+### Phase 12 gotchas worth not rediscovering
+
+- **Supabase grants `EXECUTE` on every new `public` function to `anon` and `authenticated` by
+  default, and a `SECURITY DEFINER` function runs as its owner.** That combination turned
+  `apply_payment_result` (mark any order paid), `cancel_order`, `import_administrative_divisions`
+  and `review_listing_submission` (publish a listing) into browser-callable RPCs with RLS bypassed.
+  `20260101000041_function_execute_hardening.sql` revokes from `PUBLIC` schema-wide, re-grants
+  `service_role`, and re-grants only the deliberate public RPCs (`place_order`,
+  `search_property_listings`, the role predicates RLS policies call, …). **A new function gets the
+  default grant again**, so any future migration that creates one must classify it in the same
+  migration — the assertion at the end of the hardening migration is what catches a miss.
+- **The default grant is invisible to TypeScript and to every unit test.** The RPC wrapper only
+  checks the response shape; only a `has_function_privilege`/`set role` probe against a real
+  database sees it. That is why the proof lives in `supabase/validate/30_function_execute_hardening.sql`
+  rather than in Vitest.
+- **A hardcoded `script-src` that omits Google blocks the analytics script at runtime with no
+  visible error.** `gtag.js` is injected after consent, so a blocked load never appears in the page
+  source or in any test — the measurement layer just reports nothing. The CSP now adds
+  `googletagmanager.com` to `script-src` and the GA beacon hosts to `connect-src` only when
+  `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set.
+- **An unconfigured external service must be reported, never simulated.** `src/lib/email/send.ts`
+  returns `{ ok: false, error: "unconfigured" }` when `RESEND_API_KEY` or `EMAIL_FROM` is absent,
+  and `{ ok: false, error: "send_failed" }` on a provider error or a thrown network error — it never
+  throws into the request that triggered the notification. `send.test.ts` pins both, plus HTML
+  escaping of visitor input.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

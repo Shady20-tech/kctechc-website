@@ -42,7 +42,7 @@ export function SiteFooter({
             {t("footer.mottoLabel")}
           </p>
           <p className="mt-1 text-sm text-white/80">{site.motto}</p>
-          <SocialLinks t={t} />
+          <SocialLinks t={t} headingId="footer-social-heading" />
         </div>
 
         <nav aria-labelledby="footer-departments">

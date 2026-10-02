@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SectionBand } from "@/components/layout/PageShell";
+import { SocialLinks } from "@/components/layout/SocialLinks";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { CtaBand } from "@/components/ui/Cta";
@@ -19,10 +20,15 @@ import {
 /**
  * About the company.
  *
- * Written from the supplied business facts only — headquarters, the three
- * departments, and the national scope of real estate. No founding date, staff
- * count, certifications or client names are stated, because none were provided;
- * inventing them would be a credibility and compliance problem.
+ * Written from the supplied business profile only — the company overview,
+ * vision, mission, core values, leadership and headquarters. No founding date,
+ * staff count, certifications, client names or project metrics are stated,
+ * because none were provided; inventing them would be a credibility and
+ * compliance problem.
+ *
+ * The social row is rendered from `SOCIAL_PROFILES`, the same source the footer
+ * and the `Organization` structured data read, so the visible links and the
+ * machine-readable `sameAs` cannot drift apart.
  *
  * Contact details come from editable settings, so they cannot drift from the
  * footer.
@@ -68,6 +74,8 @@ export default async function AboutPage({
     { title: t("about.value1Title"), body: t("about.value1Body") },
     { title: t("about.value2Title"), body: t("about.value2Body") },
     { title: t("about.value3Title"), body: t("about.value3Body") },
+    { title: t("about.value4Title"), body: t("about.value4Body") },
+    { title: t("about.value5Title"), body: t("about.value5Body") },
   ];
 
   return (
@@ -100,24 +108,27 @@ export default async function AboutPage({
               id="about-who-heading"
               className="text-xl font-semibold text-ink-900"
             >
-              {t("about.whoHeading")}
+              {t("about.overviewHeading")}
             </h2>
             <p className="mt-3 max-w-2xl text-base text-body">
-              {t("about.whoBody")}
+              {t("about.overviewBody1")}
+            </p>
+            <p className="mt-3 max-w-2xl text-base text-body">
+              {t("about.overviewBody2")}
             </p>
 
             <h2 className="mt-8 text-xl font-semibold text-ink-900">
-              {t("about.whereHeading")}
+              {t("about.visionHeading")}
             </h2>
             <p className="mt-3 max-w-2xl text-base text-body">
-              {t("about.whereBody")}
+              {t("about.visionBody")}
             </p>
 
             <h2 className="mt-8 text-xl font-semibold text-ink-900">
-              {t("about.howHeading")}
+              {t("about.missionHeading")}
             </h2>
             <p className="mt-3 max-w-2xl text-base text-body">
-              {t("about.howBody")}
+              {t("about.missionBody")}
             </p>
           </div>
 
@@ -146,7 +157,8 @@ export default async function AboutPage({
                   <address className="not-italic">
                     {site.contact.address.street}, {site.contact.address.city},
                     <br />
-                    {site.contact.address.region}, {site.contact.address.country}
+                    {site.contact.address.region},{" "}
+                    {site.contact.address.country}
                   </address>
                 </dd>
               </div>
@@ -210,6 +222,42 @@ export default async function AboutPage({
             </li>
           ))}
         </ul>
+      </SectionBand>
+
+      <SectionBand labelledBy="about-leadership-heading">
+        <h2
+          id="about-leadership-heading"
+          className="text-xl font-semibold text-ink-900"
+        >
+          {t("about.leadershipHeading")}
+        </h2>
+        <div className="mt-6 rounded-card border border-border bg-surface p-6 shadow-card lg:max-w-3xl">
+          <p className="text-base font-semibold text-ink-900">
+            {t("about.leaderName")}
+          </p>
+          <p className="mono-label mt-1 text-ink-500">
+            {t("about.leaderRole")}
+          </p>
+          <p className="mt-4 text-base text-body">{t("about.leaderBody")}</p>
+        </div>
+      </SectionBand>
+
+      <SectionBand tone="alt" labelledBy="about-social-heading">
+        <h2
+          id="about-social-heading"
+          className="text-xl font-semibold text-ink-900"
+        >
+          {t("about.socialHeading")}
+        </h2>
+        <p className="mt-3 max-w-2xl text-base text-body">
+          {t("about.socialBody")}
+        </p>
+        <SocialLinks
+          t={t}
+          tone="light"
+          className="mt-6"
+          ariaLabel={t("a11y.socialLinks")}
+        />
       </SectionBand>
 
       <SectionBand labelledBy="about-departments-heading">

@@ -90,8 +90,8 @@ describe("SiteFooter brand block", () => {
     const nav = within(footer).getByRole("navigation", {
       name: t("footer.socialHeading"),
     });
-    // Five networks, all outbound, each opening in a new tab.
-    expect(within(nav).getAllByRole("link")).toHaveLength(5);
+    // Six networks, all outbound, each opening in a new tab.
+    expect(within(nav).getAllByRole("link")).toHaveLength(6);
   });
 
   it("keeps the footer's landmark name and the social nav name distinct", () => {

@@ -9,13 +9,22 @@ import { getAuthState } from "@/lib/auth/session";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCartByToken, readCartToken, clearCartToken } from "@/lib/store/cart";
+import {
+  getCartByToken,
+  readCartToken,
+  clearCartToken,
+} from "@/lib/store/cart";
 import {
   checkoutSchema,
   toCheckoutFieldErrors,
   type CheckoutState,
 } from "@/lib/validation/checkout";
-import { initiatePayment, transactionReferenceFor } from "@/lib/payments/service";
+import {
+  initiatePayment,
+  transactionReferenceFor,
+} from "@/lib/payments/service";
+import { formatPrice } from "@/lib/store/types";
+import { sendOrderConfirmation } from "@/lib/email/send";
 import { readOrderTokens, rememberOrderToken } from "./tokens";
 import { buildPlaceOrderArgs } from "./place-order-args";
 
@@ -80,7 +89,10 @@ export async function submitCheckout(
   const input = parsed.data;
   const requestHeaders = await headers();
 
-  const rate = checkRateLimit(clientKeyFrom(requestHeaders, "checkout"), RATE_LIMIT);
+  const rate = checkRateLimit(
+    clientKeyFrom(requestHeaders, "checkout"),
+    RATE_LIMIT,
+  );
   if (!rate.allowed) return { status: "rate_limited" };
 
   const admin = createAdminClient();
@@ -95,7 +107,8 @@ export async function submitCheckout(
   if (!cart || cart.lines.length === 0) return { status: "empty_cart" };
 
   const authState = await getAuthState();
-  const customerId = authState.status === "authenticated" ? authState.userId : null;
+  const customerId =
+    authState.status === "authenticated" ? authState.userId : null;
 
   const deliveryMinor = input.fulfillment === "pickup" ? 0 : DELIVERY_FEE_MINOR;
 
@@ -169,6 +182,28 @@ export async function submitCheckout(
   // attempt instead of creating a second charge.
   const paymentIdempotencyKey = `pay-${input.idempotencyKey}`;
 
+  // Confirm receipt to the customer before handing off to the payment page. The
+  // email states the order is awaiting payment, not that it is paid — payment is
+  // confirmed only by the verified provider callback. A failed send is logged and
+  // does not block checkout: the order is already stored and the customer must
+  // still reach the payment page.
+  const confirmation = await sendOrderConfirmation({
+    reference: order.reference,
+    email: input.email,
+    fullName: input.fullName,
+    totalFormatted: formatPrice(
+      order.total_minor,
+      order.currency,
+      input.locale,
+    ),
+    locale: input.locale,
+  });
+  if (!confirmation.ok) {
+    console.error(
+      `[email] order ${order.reference} confirmation not sent: ${confirmation.error}`,
+    );
+  }
+
   const payment = await initiatePayment({
     orderId: order.id,
     amountMinor: order.total_minor,
@@ -222,7 +257,9 @@ export async function submitCheckout(
  * The token is read from the cookie rather than accepted as an argument, so it
  * does not travel through the client.
  */
-export async function retryPaymentAction(input: { orderReference: string }): Promise<
+export async function retryPaymentAction(input: {
+  orderReference: string;
+}): Promise<
   | { ok: true; link: string }
   | { ok: true; manual: true }
   | { ok: true; pending: true }
@@ -232,7 +269,8 @@ export async function retryPaymentAction(input: { orderReference: string }): Pro
   if (!admin) return { ok: false, error: "unconfigured" };
 
   const authState = await getAuthState();
-  const customerId = authState.status === "authenticated" ? authState.userId : null;
+  const customerId =
+    authState.status === "authenticated" ? authState.userId : null;
 
   const { data: order } = await admin
     .from("orders")

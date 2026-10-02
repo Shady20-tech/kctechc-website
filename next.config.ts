@@ -25,6 +25,9 @@ const contentSecurityPolicy = buildContentSecurityPolicy({
     process.env.NEXT_PUBLIC_TOLGEE_API_URL?.trim() ||
     "https://app.tolgee.io",
   isDevelopment,
+  analyticsEnabled: Boolean(
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim(),
+  ),
 });
 
 const nextConfig: NextConfig = {

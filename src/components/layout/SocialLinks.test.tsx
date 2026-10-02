@@ -15,7 +15,14 @@ import { createTranslator } from "@/lib/i18n/translator";
  * real absolute URL on the expected host.
  */
 
-const NETWORKS = ["facebook", "linkedin", "instagram", "x", "tiktok"] as const;
+const NETWORKS = [
+  "facebook",
+  "linkedin",
+  "instagram",
+  "x",
+  "tiktok",
+  "youtube",
+] as const;
 
 function setup(locale: "en" | "fr" = "en") {
   render(<SocialLinks t={createTranslator(locale).t} />);
@@ -62,6 +69,7 @@ describe("SocialLinks", () => {
         "instagram.com",
         "x.com",
         "tiktok.com",
+        "youtube.com",
       ]).toContain(host);
     },
   );
@@ -118,5 +126,19 @@ describe("SocialLinks", () => {
       expect(link.className).toContain("justify-center");
       expect(link.className).toContain("items-center");
     }
+  });
+
+  it("omits its own heading and labels the landmark when a page supplies one", () => {
+    // The About page renders this row inside a section that already has a heading.
+    // If the component still rendered `footer-social-heading`, the document would
+    // carry two elements with that id and two "Follow us" headings.
+    const t = createTranslator("en").t;
+    render(<SocialLinks t={t} ariaLabel={t("a11y.socialLinks")} />);
+
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(document.getElementById("footer-social-heading")).toBeNull();
+    expect(
+      screen.getByRole("navigation", { name: t("a11y.socialLinks") }),
+    ).toBeInTheDocument();
   });
 });

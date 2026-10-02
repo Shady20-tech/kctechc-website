@@ -72,10 +72,8 @@ describe("organizationJsonLd", () => {
     // read `SOCIAL_PROFILES`, so the visible links and the published claim cannot
     // disagree — whereas hand-typed URLs in two places eventually would.
     expect(Array.isArray(sameAs)).toBe(true);
-    expect(sameAs.length).toBe(5);
-    expect(sameAs).toContain(
-      "https://www.facebook.com/kctechnologycorporation",
-    );
+    expect(sameAs.length).toBe(6);
+    expect(sameAs).toContain("https://www.facebook.com/share/1BAqM3Jua8/");
   });
 
   it("emits absolute https URLs, never relative or same-site ones", () => {

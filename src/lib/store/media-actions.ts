@@ -8,10 +8,7 @@ import { isElevatedRole } from "@/lib/auth/roles";
 import { recordAudit } from "@/lib/security/audit";
 import { PRODUCT_MEDIA_BUCKET, productMediaPath } from "@/lib/store/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  MAX_PRODUCT_IMAGE_BYTES,
-  validateUpload,
-} from "@/lib/uploads/validation";
+import { validateUpload } from "@/lib/uploads/validation";
 
 /**
  * Product media and publishing.
@@ -38,7 +35,8 @@ async function requireElevated(): Promise<
   | { ok: false; error: "unauthenticated" | "forbidden" | "unconfigured" }
 > {
   const auth = await getAuthState();
-  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }

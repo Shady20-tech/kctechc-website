@@ -9,10 +9,10 @@ three department experiences: **Digital Marketing**, **Electrical Services**, an
 
 ## Repository status
 
-**Phase 0 — specification capture is complete. No application code exists yet.**
-
-The repository currently contains only the project specification, agent rules, and an environment
-template. The Next.js application is scaffolded in Phase 1.
+**Phases 0–8 are implemented on `main`.** The application is a working Next.js 16 App Router site
+with Supabase (PostgreSQL, Auth, Storage, RLS), the three department surfaces, the Digital Marketing
+store, the real-estate platform, an admin console, and an orders/payments path. The `main` branch is
+the current state; the phase table below records what each phase delivered.
 
 | File | Purpose |
 | --- | --- |
@@ -20,6 +20,8 @@ template. The Next.js application is scaffolded in Phase 1.
 | `AGENTS.md` | Persistent rules for any agent working in this repo (stack, architecture, quality bar, per-phase workflow). **Read this first.** |
 | `docs/PROJECT_BRIEF.md` | Full business/product brief, verified data, package versions, schema domains, and the phase roadmap. |
 | `.env.example` | Safe placeholder environment template. Copy to `.env.local` and fill in real values. |
+| `supabase/migrations/` | Version-controlled schema, RLS policies and functions. |
+| `supabase/validate/` | Behavioural validation scripts run against a local Postgres 17. |
 
 ## Corporate data
 
@@ -53,18 +55,19 @@ Full details, version notes, and constraints are in `AGENTS.md` and `docs/PROJEC
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Specification capture, agent rules, env template | ✅ Complete |
-| 1 | Next.js foundations, design tokens, locale scaffold, SEO baseline | ⏳ Next |
-| 2 | Supabase foundation, migrations, RLS, auth, region seed | Planned |
-| 3 | Department surfaces & content, translation pipeline | Planned |
-| 4 | Store, cart, orders, Fapshi payments | Planned |
-| 5 | Real estate platform, map adapter, geographic search | Planned |
-| 6 | CRM, admin panel, translation health, audit logs | Planned |
-| 7 | Analytics, SEO hardening, performance, launch | Planned |
+| 1 | Next.js foundations, design tokens, locale scaffold, SEO baseline | ✅ Complete |
+| 2 | Supabase foundation, migrations, RLS, auth, region seed | ✅ Complete |
+| 3 | Department surfaces & content, translation pipeline | ✅ Complete |
+| 4 | Store, cart, orders, Fapshi payments | ✅ Complete |
+| 5 | Electrical projects, private attachments, quote requests | ✅ Complete |
+| 6 | Real estate listings, geography, map adapter, admin console | ✅ Complete |
+| 7 | Customer favourites, saved searches, geographic landing pages | ✅ Complete |
+| 8 | Orders/payments, CRM inbox, function EXECUTE hardening | ✅ Complete |
 
 Each phase is executed as a self-contained prompt and must pass its acceptance criteria and
 verification commands before the next phase begins. See `docs/PROJECT_BRIEF.md` §7.
 
-## Getting started (once Phase 1 lands)
+## Getting started
 
 ```bash
 cp .env.example .env.local   # then fill in real values
@@ -72,7 +75,9 @@ npm install
 npm run dev
 ```
 
-Additional scripts (`build`, `start`, `lint`, `typecheck`, `test`, `test:e2e`) are added in Phase 1.
+Verification commands: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+Prettier is pinned but not yet enforced as a gate — run `npm run format` on files you touch, or
+`npm run format:check` for the full check.
 
 ## Conventions
 

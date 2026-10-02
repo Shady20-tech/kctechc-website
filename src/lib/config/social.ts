@@ -20,7 +20,8 @@ export type SocialNetwork =
   | "linkedin"
   | "instagram"
   | "x"
-  | "tiktok";
+  | "tiktok"
+  | "youtube";
 
 export type SocialProfile = {
   network: SocialNetwork;
@@ -31,46 +32,44 @@ export type SocialProfile = {
 };
 
 /**
- * The official profiles, verified as far as each could be.
+ * The official profiles, taken from the company's own business profile.
  *
- * **Facebook is verified.** `facebook.com/kctechnologycorporation` is a real
- * page titled "KC Technology Corporation Ltd | Limbe" whose own description
- * matches the company's three departments. It is live.
- *
- * **The other four are placeholders.** Facebook and LinkedIn both serve a login
- * wall to an unauthenticated request, and Instagram, X and TikTok all answer
- * `200` for a handle that does not exist, so none of them can be confirmed or
- * ruled out without the account owner — a `200` from those hosts is not evidence
- * that the account exists. Rather than leave the links off (which would fail the
- * requirement) or invent four unrelated URLs, each uses the same corporate slug
- * as the one page we could verify. **They must be replaced with the real handles
- * before launch**, and this comment should be deleted once they are.
+ * Every URL below is copied from section 5.5 ("Social Media Handles") of the
+ * supplied KC Technology Corporation business profile, so each is the company's
+ * own published link rather than an assumed handle. Instagram's entry in the
+ * source document is written without a scheme (`instragram.com/kctechc`); the
+ * host is normalised to `https://www.instagram.com` and the handle preserved.
  */
 export const SOCIAL_PROFILES: readonly SocialProfile[] = [
   {
     network: "facebook",
-    url: "https://www.facebook.com/kctechnologycorporation",
+    url: "https://www.facebook.com/share/1BAqM3Jua8/",
     labelKey: "social.facebook",
   },
   {
     network: "linkedin",
-    url: "https://www.linkedin.com/company/kctechnologycorporation",
+    url: "https://www.linkedin.com/company/kc-technology-corporation/",
     labelKey: "social.linkedin",
   },
   {
     network: "instagram",
-    url: "https://www.instagram.com/kctechnologycorporation",
+    url: "https://www.instagram.com/kctechc",
     labelKey: "social.instagram",
   },
   {
     network: "x",
-    url: "https://x.com/kctechnologycorporation",
+    url: "https://x.com/kctechnologyco",
     labelKey: "social.x",
   },
   {
     network: "tiktok",
-    url: "https://www.tiktok.com/@kctechnologycorporation",
+    url: "https://www.tiktok.com/@kctechc",
     labelKey: "social.tiktok",
+  },
+  {
+    network: "youtube",
+    url: "https://www.youtube.com/@KCTechnologyCorporation",
+    labelKey: "social.youtube",
   },
 ] as const;
 
@@ -108,9 +107,6 @@ export function organizationSameAs(): readonly string[] | undefined {
   const urls = socialProfileUrls();
   return urls.length > 0 ? urls : undefined;
 }
-
-/** Guard for the corporate slug used by the placeholder profiles. */
-export const SOCIAL_HANDLE_SLUG = "kctechnologycorporation";
 
 /** Referenced so a rename of the corporate brand is caught by the type checker. */
 export const SOCIAL_OWNER = SITE.legalName;

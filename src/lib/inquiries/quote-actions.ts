@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { serverEnv } from "@/lib/config/server-env";
 import { findRegion } from "@/lib/content/regions";
+import { sendInquiryNotification } from "@/lib/email/send";
 import { recordAudit } from "@/lib/security/audit";
 import { verifySubmission } from "@/lib/security/bot-verification";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
@@ -16,7 +17,10 @@ import {
   sanitizeOriginalFilename,
   validateUpload,
 } from "@/lib/uploads/validation";
-import { removeInquiryAttachment, uploadInquiryAttachment } from "@/lib/uploads/storage";
+import {
+  removeInquiryAttachment,
+  uploadInquiryAttachment,
+} from "@/lib/uploads/storage";
 import {
   quoteRequestSchema,
   todayIso,
@@ -86,7 +90,10 @@ function generateReference(): string {
 }
 
 /** Build the inquiry subject line from the chosen service and property type. */
-function buildSubject(serviceLabel: string | null, propertyType: string): string {
+function buildSubject(
+  serviceLabel: string | null,
+  propertyType: string,
+): string {
   const scope = serviceLabel ? `Quote: ${serviceLabel}` : "Quote request";
   return `${scope} (${propertyType})`.slice(0, 200);
 }
@@ -124,7 +131,10 @@ export async function submitQuoteRequest(
   });
 
   if (!parsed.success) {
-    return { status: "invalid", errors: toQuoteFieldErrors(parsed.error.issues) };
+    return {
+      status: "invalid",
+      errors: toQuoteFieldErrors(parsed.error.issues),
+    };
   }
 
   // File count is checked after the text fields so the visitor fixes their text
@@ -238,7 +248,9 @@ export async function submitQuoteRequest(
     serviceLabel = service?.title ?? null;
   }
 
-  const region = parsed.data.region ? findRegion(parsed.data.region) : undefined;
+  const region = parsed.data.region
+    ? findRegion(parsed.data.region)
+    : undefined;
   let regionId: string | null = null;
   if (region) {
     const { data: regionRow } = await admin
@@ -381,6 +393,27 @@ export async function submitQuoteRequest(
       siteVisitRequested: appointmentRequested,
     },
   });
+
+  // Notify the business after the rows exist, for the same reason as the contact
+  // form: the lead is stored, so an email failure is logged and does not fail the
+  // submission. The quote body is long, so the message carries it in full.
+  const notification = await sendInquiryNotification({
+    reference,
+    fullName: parsed.data.fullName,
+    email: parsed.data.email,
+    phone: parsed.data.phone ? parsed.data.phone : null,
+    subject: buildSubject(serviceLabel, parsed.data.propertyType),
+    message: parsed.data.description,
+    department: ELECTRICAL_DEPARTMENT_SLUG,
+    service: serviceId ? serviceSlug : null,
+    source,
+    locale: parsed.data.locale,
+  });
+  if (!notification.ok) {
+    console.error(
+      `[email] quote ${reference} notification not sent: ${notification.error}`,
+    );
+  }
 
   return { status: "success", reference, appointmentRequested };
 }

@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { serverEnv } from "@/lib/config/server-env";
+import { sendInquiryNotification } from "@/lib/email/send";
 import { verifySubmission } from "@/lib/security/bot-verification";
 import { recordAudit } from "@/lib/security/audit";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
@@ -170,6 +171,28 @@ export async function submitInquiry(
       locale: parsed.data.locale,
     },
   });
+
+  // Notify the business after the row exists. A missing or failing provider is
+  // recorded, never allowed to fail the submission: the inquiry is already
+  // stored, and a visitor must not be told their message was lost because an
+  // email bounced. The reference is the only identifier in the log line.
+  const notification = await sendInquiryNotification({
+    reference,
+    fullName: parsed.data.fullName,
+    email: parsed.data.email,
+    phone: parsed.data.phone ? parsed.data.phone : null,
+    subject: parsed.data.subject,
+    message: parsed.data.message,
+    department: departmentSlug || null,
+    service: serviceId ? serviceSlug : null,
+    source: serviceId ? "service_inquiry" : "contact_form",
+    locale: parsed.data.locale,
+  });
+  if (!notification.ok) {
+    console.error(
+      `[email] inquiry ${reference} notification not sent: ${notification.error}`,
+    );
+  }
 
   return { status: "success", reference };
 }

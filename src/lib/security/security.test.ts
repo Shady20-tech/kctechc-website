@@ -145,6 +145,31 @@ describe("buildContentSecurityPolicy", () => {
     });
     expect(csp).toContain("unsafe-eval");
   });
+
+  it("allows Google's analytics hosts only when analytics is enabled", () => {
+    // The gtag script is injected at runtime, so a blocked host never shows up
+    // in the page source: the measurement layer would simply record nothing.
+    // This pins the allowance that keeps it working, and its absence otherwise.
+    const withoutAnalytics = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+    });
+    expect(withoutAnalytics).not.toContain("googletagmanager.com");
+    expect(withoutAnalytics).not.toContain("google-analytics.com");
+
+    const withAnalytics = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+      analyticsEnabled: true,
+    });
+    expect(withAnalytics).toContain(
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+    );
+    expect(withAnalytics).toContain("https://www.google-analytics.com");
+    expect(withAnalytics).toContain("https://*.analytics.google.com");
+  });
 });
 
 describe("translator", () => {

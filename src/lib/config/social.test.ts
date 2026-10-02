@@ -16,7 +16,14 @@ import {
  * are well-formed, absolute and on the network's own host.
  */
 
-const NETWORKS = ["facebook", "linkedin", "instagram", "x", "tiktok"] as const;
+const NETWORKS = [
+  "facebook",
+  "linkedin",
+  "instagram",
+  "x",
+  "tiktok",
+  "youtube",
+] as const;
 
 /** The host each network's profile URLs must live on. */
 const EXPECTED_HOST: Record<(typeof NETWORKS)[number], string> = {
@@ -25,6 +32,7 @@ const EXPECTED_HOST: Record<(typeof NETWORKS)[number], string> = {
   instagram: "instagram.com",
   x: "x.com",
   tiktok: "tiktok.com",
+  youtube: "youtube.com",
 };
 
 describe("SOCIAL_PROFILES", () => {
