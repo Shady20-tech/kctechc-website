@@ -142,3 +142,20 @@ original spec; the summary below tracks progress.
 
 Progress is tracked per phase; do not start a phase until the previous phase's acceptance criteria
 and verification commands pass.
+
+## 8. Known follow-up work (security audit)
+
+Recorded rather than silently deferred. None of these is reachable through the current application.
+
+- **`place_order` should take the cart *token*, not the cart id, and derive the customer from
+  `auth.uid()`.** The function is now service-role only (migration
+  `20260101000043_revoke_place_order_public_execute.sql`), so there is no untrusted caller today.
+  Its internal authorization is nevertheless id-only — it checks `carts.status = 'active'` and
+  nothing that binds the cart to the visitor — and `p_customer_id` is caller-supplied. A redesign
+  that receives the opaque token and reads the customer from the JWT would make the function safe
+  to expose even if a future client calls it directly. It is a behaviour change to a payment path,
+  so it belongs in its own phase with its own tests, not in a hardening commit.
+- **`record_listing_view` is `SECURITY DEFINER` and browser-callable with a caller-supplied
+  listing id.** It is bounded (published-only, and de-duped per visitor), so it is not a write
+  primitive, but it is worth revisiting whether a view counter needs `SECURITY DEFINER` at all
+  rather than a narrow insert policy on a views table.

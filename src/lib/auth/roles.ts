@@ -60,6 +60,32 @@ export const REAL_ESTATE_ADMIN_ROLES: readonly AppRole[] = [
 /** Role granted to a self-registered public user. */
 export const DEFAULT_ROLE: AppRole = "customer";
 
+/**
+ * Roles that may author completed work ("Work Done") for a department.
+ *
+ * Both the staff and the admin tier of a department can post finished work — the
+ * person who did the job is often the best placed to record it — so this is a
+ * broader set than `ELEVATED_ROLES`. The scope is still the department, enforced
+ * by `canAccessDepartment` in the application and by `is_department_editor()` in
+ * RLS (`20260101000042_department_project_editing.sql`); `department_staff` and
+ * `super_admin` are cross-department.
+ *
+ * Mirrors `is_department_editor()`; `roles.test.ts` asserts the two agree.
+ */
+export const DEPARTMENT_EDITOR_ROLES: readonly AppRole[] = [
+  "digital_marketing_staff",
+  "digital_marketing_admin",
+  "electrical_staff",
+  "electrical_admin",
+  "department_staff",
+  "super_admin",
+];
+
+/** True when `role` may author work for at least one department. */
+export function isDepartmentEditorRole(role: AppRole): boolean {
+  return DEPARTMENT_EDITOR_ROLES.includes(role);
+}
+
 export function isAppRole(value: string): value is AppRole {
   return (APP_ROLES as readonly string[]).includes(value);
 }

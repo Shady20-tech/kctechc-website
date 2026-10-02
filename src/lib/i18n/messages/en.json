@@ -1159,11 +1159,11 @@
     "servicesIntroFull": "Nine service areas, each described in detail including how the work is scoped and what you receive at handover. Every one begins with an assessment of what exists and what it will be asked to carry."
   },
   "projects": {
-    "metaTitle": "Projects",
-    "metaDescription": "Completed Electrical Services projects: the scope, the region and the photography where it has been supplied.",
-    "eyebrow": "Electrical Services",
-    "heading": "Projects",
-    "intro": "Completed work, with the service areas involved and the region. Photography is shown where it has been supplied and captioned.",
+    "metaTitle": "Work Done",
+    "metaDescription": "Completed work, with the scope, the location and the photography where it has been supplied.",
+    "eyebrow": "Work Done",
+    "heading": "Work Done",
+    "intro": "Completed work by this department, with the service areas involved and where it was carried out. Photography is shown where it has been supplied and captioned.",
     "emptyHeading": "No projects are published yet",
     "emptyBody": "We have not published any project records. A project entry states that work was carried out at a particular place in a particular year, so we publish one only when the work and its photography are real. Rather than fill this page with stock imagery and invented captions, it stays empty until there is something genuine to show.",
     "emptyCta": "Discuss a project",
@@ -1197,7 +1197,8 @@
     "translationNotice": "This project is shown in English because no French translation is published yet.",
     "propertyTypeResidential": "Residential",
     "propertyTypeCommercial": "Commercial",
-    "propertyTypeIndustrial": "Industrial"
+    "propertyTypeIndustrial": "Industrial",
+    "heroCta": "Work Done"
   },
   "quote": {
     "metaTitle": "Request a Quote or Site Visit",
@@ -1667,7 +1668,8 @@
     "settings": "Settings",
     "profile": "My profile",
     "password": "Change password",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "work": "Work Done"
   },
   "roleName": {
     "super_admin": "Super administrator",
@@ -1823,6 +1825,89 @@
       "draft": "Draft",
       "published": "Published",
       "archived": "Archived"
+    }
+  },
+  "adminWork": {
+    "heading": "Work Done",
+    "intro": "Finished work posted by the departments. Only the departments you can edit are shown.",
+    "newProject": "Add finished work",
+    "newHeading": "Add finished work",
+    "editHeading": "Edit finished work",
+    "formIntro": "Save as a draft until the work and its photography are ready to publish.",
+    "emptyHeading": "No finished work yet",
+    "emptyBody": "Nothing has been posted for your department yet. Add the first finished job.",
+    "noDepartmentHeading": "No department to post for",
+    "noDepartmentBody": "Your role does not manage a department, so there is no work gallery to post to.",
+    "colTitle": "Title",
+    "colDepartment": "Department",
+    "colCompleted": "Completed",
+    "colMedia": "Images",
+    "colState": "State",
+    "colUpdated": "Updated",
+    "slugLabel": "URL slug",
+    "slugHint": "Lowercase words separated by hyphens. Changing it changes the public URL.",
+    "titleLabel": "Title",
+    "summaryLabel": "Summary",
+    "summaryHint": "One or two sentences shown on the gallery card.",
+    "descriptionLabel": "Full description",
+    "scopeLabel": "Scope",
+    "outcomeLabel": "Outcome",
+    "departmentLabel": "Department",
+    "locationLabel": "Location",
+    "locationHint": "A town or site name. Never a precise coordinate.",
+    "propertyTypeLabel": "Property type",
+    "completedYearLabel": "Year completed",
+    "servicesLabel": "Service areas",
+    "servicesEmpty": "No services are available for this department yet.",
+    "stateLabel": "State",
+    "save": "Save",
+    "saving": "Saving…",
+    "created": "The record was created. Add photography next.",
+    "updated": "The record was saved.",
+    "state": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "propertyType": {
+      "residential": "Residential",
+      "commercial": "Commercial",
+      "industrial": "Industrial"
+    },
+    "mediaHeading": "Photography",
+    "mediaIntro": "Each image needs alternative text. A before/after pair may have one image of each.",
+    "mediaEmpty": "No photography has been added yet.",
+    "mediaAdded": "The image was added.",
+    "mediaUpload": "Upload image",
+    "mediaUploading": "Uploading…",
+    "mediaRemove": "Remove",
+    "altLabel": "Alternative text",
+    "altHint": "Describe what the image shows, for someone who cannot see it.",
+    "captionLabel": "Caption",
+    "creditLabel": "Photo credit",
+    "roleLabel": "Image role",
+    "role": {
+      "general": "General view",
+      "before": "Before",
+      "after": "After"
+    },
+    "errors": {
+      "unauthenticated": "Your session has expired. Sign in again.",
+      "forbidden": "You do not have permission to post work for that department.",
+      "unconfigured": "Content services are not configured.",
+      "invalid": "Check the highlighted fields.",
+      "duplicate": "That slug is already used.",
+      "write_failed": "The record could not be saved. Try again.",
+      "not_found": "That record could not be found.",
+      "no_file": "Choose an image to upload.",
+      "alt_required": "Alternative text is required for every image.",
+      "role_taken": "This project already has an image with that role.",
+      "empty": "That file is empty.",
+      "too_large": "That image is larger than the 5 MB limit.",
+      "type_not_allowed": "Only JPEG, PNG, WebP or AVIF images are accepted.",
+      "unknown_type": "That file is not a recognised image.",
+      "upload_failed": "The image could not be uploaded. Try again.",
+      "update_failed": "The change could not be saved. Try again."
     }
   },
   "adminSettings": {

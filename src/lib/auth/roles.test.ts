@@ -6,10 +6,12 @@ import {
   getRoleDepartment,
   isAdminRole,
   isAppRole,
+  isDepartmentEditorRole,
   isElevatedRole,
   isRealEstateAdminRole,
   ADMIN_ROLES,
   APP_ROLES,
+  DEPARTMENT_EDITOR_ROLES,
   ELEVATED_ROLES,
   REAL_ESTATE_ADMIN_ROLES,
 } from "@/lib/auth/roles";
@@ -164,6 +166,38 @@ describe("role model matches the database", () => {
     for (const role of ELEVATED_ROLES) {
       expect(ADMIN_ROLES).toContain(role);
     }
+  });
+
+  it("DEPARTMENT_EDITOR_ROLES matches is_department_editor()", () => {
+    // The predicate is written as a CASE over role names, so the agreement is
+    // asserted by executing the same mapping in the test rather than by scraping
+    // a role list out of the SQL. A role added to the function and forgotten here
+    // (or the reverse) fails this, which is the drift that matters: the nav link,
+    // the action's guard and the RLS policy must all name the same roles.
+    const fn = allSql.match(
+      /create or replace function public\.is_department_editor\([\s\S]*?\$\$;/i,
+    );
+    const body = fn?.[0];
+    expect(body, "is_department_editor() not found").toBeDefined();
+
+    const roles: string[] = [];
+    for (const m of (body as string).matchAll(/when\s+'([^']+)'/g)) {
+      if (m[1]) roles.push(m[1]);
+    }
+
+    expect([...DEPARTMENT_EDITOR_ROLES].sort()).toEqual(roles.sort());
+  });
+
+  it("confines a department editor to a department it may access", () => {
+    // A role is an editor only for a department `canAccessDepartment` allows.
+    // `real_estate_agent` reaches the console but authors no work, and a
+    // Digital Marketing editor is not an editor of Electrical Services.
+    expect(isDepartmentEditorRole("real_estate_agent")).toBe(false);
+    expect(isDepartmentEditorRole("customer")).toBe(false);
+    expect(isDepartmentEditorRole("electrical_staff")).toBe(true);
+    expect(canAccessDepartment("electrical_staff", "digital-marketing")).toBe(
+      false,
+    );
   });
 
   it("no new account can be provisioned with a privileged role", () => {
