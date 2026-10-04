@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Activity,
   BarChart3,
+  Briefcase,
   Building2,
   FileText,
   Inbox,
@@ -39,6 +40,7 @@ const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
   crm: Inbox,
   orders: ShoppingCart,
   store: Package,
+  work: Briefcase,
   listings: Building2,
   submissions: FileText,
   import: FileText,

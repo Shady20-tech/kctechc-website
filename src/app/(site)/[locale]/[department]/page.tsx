@@ -175,6 +175,12 @@ export default async function DepartmentPage({
                     <ArrowRight aria-hidden="true" className="h-4 w-4" />
                   </Link>
                   <Link
+                    href={`/${resolved}/${definition.slug}/projects`}
+                    className="inline-flex items-center rounded-pill border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-soft hover:border-white/40"
+                  >
+                    {t("projects.heroCta")}
+                  </Link>
+                  <Link
                     href={`/${resolved}/contact?department=${definition.slug}`}
                     className="inline-flex items-center rounded-pill border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-soft hover:border-white/40"
                   >

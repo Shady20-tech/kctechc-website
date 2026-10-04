@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  Briefcase,
   Building2,
   FileText,
   Inbox,
@@ -13,6 +14,7 @@ import {
 
 import {
   isAdminRole,
+  isDepartmentEditorRole,
   isElevatedRole,
   isRealEstateAdminRole,
   type AppRole,
@@ -61,6 +63,7 @@ export const ADMIN_NAV_ICON_KEYS = [
   "crm",
   "orders",
   "store",
+  "work",
   "listings",
   "submissions",
   "import",
@@ -102,6 +105,7 @@ const anyAdmin = (role: AppRole) => isAdminRole(role);
 const elevated = (role: AppRole) => isElevatedRole(role);
 const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
+const departmentEditor = (role: AppRole) => isDepartmentEditorRole(role);
 
 export const ADMIN_NAV: readonly AdminNavSection[] = [
   {
@@ -146,6 +150,13 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "store",
         icon: Package,
         canSee: elevated,
+      },
+      {
+        href: "/admin/work",
+        labelKey: "work",
+        iconKey: "work",
+        icon: Briefcase,
+        canSee: departmentEditor,
       },
     ],
   },
