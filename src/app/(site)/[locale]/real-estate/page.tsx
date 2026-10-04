@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -26,6 +26,7 @@ import {
 import { qualifyListings } from "@/lib/real-estate/listings";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo/structured-data";
+import { themeColorFor } from "@/lib/theme/department-theme";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
@@ -60,6 +61,14 @@ export async function generateMetadata({
     title: t("realEstate.metaTitle"),
     description: t("realEstate.metaDescription"),
   });
+}
+
+/**
+ * Real Estate's mobile browser chrome, taken from its theme's dark band so the
+ * chrome matches the page rather than the corporate ink.
+ */
+export function generateViewport(): Viewport {
+  return { themeColor: themeColorFor("real-estate") };
 }
 
 export default async function RealEstatePage({

@@ -59,16 +59,17 @@
 
   /* Department accents, in two variants.
      `--dept-accent` is the text-safe value for light surfaces and is also used
-     for accent button fills, so it is dark enough for white text on it (all four
-     clear 4.5:1 both as text on white and as a fill behind white text).
-     `--dept-accent-bright` is the counterpart for the dark ink bands, where the
-     light-surface value would fall below 4.5:1. Splitting them is what lets one
-     accent serve both surface types without a contrast failure either way. */
-  --color-dept-marketing: #1e6fd9;
+     for accent button fills, so it is dark enough for white text on it (all three
+     clear 4.5:1 both as text on the department canvas and as a fill behind white
+     text). `--dept-accent-bright` is the counterpart for the dark ink bands,
+     where the light-surface value would fall below 4.5:1. Splitting them is what
+     lets one accent serve both surface types without a contrast failure either
+     way. Values mirror `BRAND_COLORS` in `src/lib/config/site.ts`. */
+  --color-dept-marketing: #0066cc;
   --color-dept-marketing-bright: #6fa8f5;
-  --color-dept-electrical: #b45309;
+  --color-dept-electrical: #c2410c;
   --color-dept-electrical-bright: #f0a94a;
-  --color-dept-realestate: #127a5b;
+  --color-dept-realestate: #1e5631;
   --color-dept-realestate-bright: #4fd1a5;
 
   /* Focus colour must clear 3:1 against both the light page and the dark ink
@@ -147,6 +148,11 @@
 :root {
   --dept-accent: var(--color-teal-700);
   --dept-accent-bright: var(--color-teal-300);
+  /* Document-level accent, used by shared chrome that should follow the active
+     theme (footer column headings, the active language link). Corporate teal by
+     default; each `html[data-theme]` block below re-points it. */
+  --color-accent: var(--color-teal-700);
+  --color-accent-bright: var(--color-teal-300);
 }
 
 [data-department="digital-marketing"] {
@@ -197,6 +203,25 @@
   border-color: var(--dept-accent-bright);
 }
 
+/* Document-level accent. Unlike `--dept-accent`, these are not scoped to a
+   subtree and do not flip under `.on-ink`; they carry the theme's own light and
+   dark pair explicitly. Used by shared chrome that follows the active theme. */
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-accent-bright {
+  color: var(--color-accent-bright);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
+
+.border-accent-bright {
+  border-color: var(--color-accent-bright);
+}
+
 .accent-rule {
   border-top: 4px solid var(--dept-accent);
 }
@@ -209,6 +234,129 @@
     color-mix(in srgb, var(--dept-accent) 8%, transparent),
     transparent
   );
+}
+
+/* ---------------------------------------------------------------------------
+   Department micro-theme
+   ---------------------------------------------------------------------------
+   Each department repaints the whole shared palette — canvas, copy, headings,
+   borders and accent — by setting `data-theme` on the document element. A page
+   opts in with `themeScopeProps`, which writes `data-theme` on its root wrapper;
+   the small controller in the root layout lifts that to `<html>` so the shared
+   header and footer adopt it too, and a tiny bootstrap script in `<head>` does
+   the same before the first paint so a deep link never flashes the corporate
+   palette first.
+
+   The values are declared here rather than generated so the cascade stays
+   legible, and `theme-contrast.test.ts` reads this block back and asserts every
+   text-on-canvas pair clears WCAG AA — the two cannot drift apart silently.
+
+   `--color-accent` and `--color-accent-bright` are new names on purpose. The
+   `--dept-accent` pairing already exists and is scoped to a subtree; these
+   document-level accents let the shared chrome (footer headings, the active
+   language link) follow the theme too. `--dept-accent` is re-derived from
+   `--color-accent` here so there is one literal per colour.
+
+   Only colour is repainted. The ink bands stay dark in every theme, so the white
+   header and footer type keeps its contrast, and the hero photography scrim is
+   untouched. Values mirror `DEPARTMENT_THEME_TOKENS` in `src/lib/config/site.ts`.
+
+   The block sits in `@layer base` for the same reason the element defaults below
+   do: an unlayered rule beats every layered one, and `globals.test.ts` forbids a
+   top-level `html` selector so a utility can always win. `base` also outranks
+   Tailwind's `theme` layer, so these values override the `:root` defaults above. */
+@layer base {
+  html[data-theme="digital-marketing"] {
+    --color-surface: #fdfbf7;
+    --color-surface-alt: #f6f1e7;
+    --color-surface-sunken: #efe8da;
+    --color-body: #3a3f63;
+    --color-muted: #5b5f82;
+    --color-ink-50: #f1efe9;
+    --color-ink-100: #e9e5dc;
+    --color-ink-200: #d6d2c7;
+    --color-ink-500: #5b5f82;
+    --color-ink-900: #101438;
+    --color-ink-700: #1e2348;
+    --color-border: #e6decb;
+    --color-border-strong: #cbbfa3;
+    --color-ink-950: #0a0c22;
+    --color-ink-800: #171b38;
+    --color-ink-600: #2a2f55;
+    --color-accent: #0066cc;
+    --color-accent-bright: #6fa8f5;
+    --dept-accent: var(--color-accent);
+    --dept-accent-bright: var(--color-accent-bright);
+  }
+
+  html[data-theme="electrical-services"] {
+    --color-surface: #ffffff;
+    --color-surface-alt: #f6f6f6;
+    --color-surface-sunken: #ededed;
+    --color-body: #3d3d3d;
+    --color-muted: #5a5a5a;
+    --color-ink-50: #f2f2f2;
+    --color-ink-100: #e8e8e8;
+    --color-ink-200: #d2d2d2;
+    --color-ink-500: #5a5a5a;
+    --color-ink-900: #222222;
+    --color-ink-700: #3a3a3a;
+    --color-border: #e2e2e2;
+    --color-border-strong: #c6c6c6;
+    --color-ink-950: #141414;
+    --color-ink-800: #2b2b2b;
+    --color-ink-600: #333333;
+    --color-accent: #c2410c;
+    --color-accent-bright: #f0a94a;
+    --dept-accent: var(--color-accent);
+    --dept-accent-bright: var(--color-accent-bright);
+  }
+
+  html[data-theme="real-estate"] {
+    --color-surface: #f4f7f5;
+    --color-surface-alt: #e9efeb;
+    --color-surface-sunken: #dee7e1;
+    --color-body: #2e4a38;
+    --color-muted: #4a6b55;
+    --color-ink-50: #edf3ef;
+    --color-ink-100: #e2ebe5;
+    --color-ink-200: #c9d8ce;
+    --color-ink-500: #4a6b55;
+    --color-ink-900: #133322;
+    --color-ink-700: #1e4a32;
+    --color-border: #d6e0d9;
+    --color-border-strong: #c6d3c9;
+    --color-ink-950: #0a1f14;
+    --color-ink-800: #10291a;
+    --color-ink-600: #1a4029;
+    --color-accent: #1e5631;
+    --color-accent-bright: #4fd1a5;
+    --dept-accent: var(--color-accent);
+    --dept-accent-bright: var(--color-accent-bright);
+  }
+
+  /* A theme only ever repaints a light canvas, so form controls and scrollbars
+     keep their light rendering. */
+  html[data-theme] {
+    color-scheme: light;
+  }
+
+  /* Theme cross-fade.
+     -------------------------------------------------------------------------
+     Colours are transitioned, never `transform`, so nothing reflows. The
+     selector is wrapped in `:where()` to keep its specificity at zero, so
+     `.transition-soft` and `[data-reveal]` — which are in Tailwind's utility
+     layer, above `base` — still win and keep the hover lifts and scroll reveals
+     the transition they depend on. Everything else gets the cross-fade here.
+
+     The global `prefers-reduced-motion` block collapses the duration to 0.01ms,
+     so a visitor who has asked for less motion gets an instant switch instead. */
+  :where(html[data-theme]) :where(body, body *) {
+    transition:
+      background-color 320ms ease,
+      border-color 320ms ease,
+      color 320ms ease;
+  }
 }
 
 /* ---------------------------------------------------------------------------

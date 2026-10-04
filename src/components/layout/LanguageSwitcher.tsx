@@ -46,7 +46,7 @@ export function LanguageSwitcher({
 
   const activeClass =
     tone === "light"
-      ? "rounded-control px-2.5 py-1.5 text-sm font-semibold text-white underline decoration-teal-300 decoration-2 underline-offset-4"
+      ? "rounded-control px-2.5 py-1.5 text-sm font-semibold text-white underline decoration-accent-bright decoration-2 underline-offset-4"
       : "rounded-control px-2.5 py-1.5 text-sm font-semibold text-ink-900 underline decoration-2 underline-offset-4";
   const idleClass =
     tone === "light"

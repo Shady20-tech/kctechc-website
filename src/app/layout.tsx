@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { ThemeController } from "@/components/layout/ThemeController";
 import { fontClassNames } from "@/lib/fonts";
 import { BRAND_COLORS } from "@/lib/config/site";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
+import { themeBootstrapScript } from "@/lib/theme/department-theme";
 import "./globals.css";
 
 /**
@@ -38,7 +40,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={fontClassNames}>
-      <body>{children}</body>
+      <head>
+        {/* Department theme bootstrap. Runs before the first paint so a deep link
+            into a department page paints its palette immediately instead of
+            flashing the corporate theme; `ThemeController` then keeps `<html>`
+            in step across client-side navigation. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }}
+        />
+      </head>
+      <body>
+        <ThemeController />
+        {children}
+      </body>
     </html>
   );
 }

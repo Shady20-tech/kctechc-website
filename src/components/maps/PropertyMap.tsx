@@ -127,7 +127,7 @@ export function PropertyMap({
               source: "properties",
               filter: ["has", "point_count"],
               paint: {
-                "circle-color": "#127A5B",
+                "circle-color": "#1E5631",
                 "circle-opacity": 0.85,
                 "circle-radius": [
                   "step",
@@ -161,7 +161,7 @@ export function PropertyMap({
             source: "properties",
             filter: cluster ? ["!", ["has", "point_count"]] : undefined,
             paint: {
-              "circle-color": "#127A5B",
+              "circle-color": "#1E5631",
               "circle-radius": 7,
               "circle-stroke-width": 2,
               "circle-stroke-color": "#ffffff",

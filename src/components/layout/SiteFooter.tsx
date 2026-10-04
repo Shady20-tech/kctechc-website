@@ -46,7 +46,7 @@ export function SiteFooter({
         </div>
 
         <nav aria-labelledby="footer-departments">
-          <h2 id="footer-departments" className="mono-label text-teal-300">
+          <h2 id="footer-departments" className="mono-label text-accent-bright">
             {t("footer.departmentsHeading")}
           </h2>
           <ul className="mt-3 space-y-2">
@@ -67,7 +67,7 @@ export function SiteFooter({
             ))}
           </ul>
 
-          <h2 className="mono-label mt-8 text-teal-300">
+          <h2 className="mono-label mt-8 text-accent-bright">
             {t("footer.company")}
           </h2>
           <ul className="mt-3 space-y-2">
@@ -88,7 +88,7 @@ export function SiteFooter({
               </Link>
             </li>
           </ul>
-          <h2 id="footer-legal" className="mono-label mt-8 text-teal-300">
+          <h2 id="footer-legal" className="mono-label mt-8 text-accent-bright">
             {t("footer.legalHeading")}
           </h2>
           <ul className="mt-3 space-y-2" aria-labelledby="footer-legal">
@@ -112,7 +112,7 @@ export function SiteFooter({
         </nav>
 
         <div>
-          <h2 className="mono-label text-teal-300">
+          <h2 className="mono-label text-accent-bright">
             {t("footer.contactHeading")}
           </h2>
           <ul className="mt-3 space-y-3 text-sm text-white/80">
@@ -150,7 +150,7 @@ export function SiteFooter({
         </div>
 
         <div>
-          <h2 className="mono-label text-teal-300">
+          <h2 className="mono-label text-accent-bright">
             {t("footer.officeHeading")}
           </h2>
           <address className="mt-3 flex gap-2 text-sm not-italic text-white/80">

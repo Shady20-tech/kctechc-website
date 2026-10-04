@@ -13,9 +13,9 @@ KC Technology Corporation corporate website plus three department experiences un
 | Department | Public localized path | Accent |
 | --- | --- | --- |
 | Corporate gateway (root, language-neutral) | `/` | Brand ink / teal |
-| Digital Marketing (store) | `/{locale}/digital-marketing` | `#1E6FD9` |
-| Electrical Services | `/{locale}/electrical-services` | `#B45309` |
-| Real Estate | `/{locale}/real-estate` | `#127A5B` |
+| Digital Marketing (store) | `/{locale}/digital-marketing` | `#0066CC` |
+| Electrical Services | `/{locale}/electrical-services` | `#C2410C` |
+| Real Estate | `/{locale}/real-estate` | `#1E5631` |
 
 Accent hex values are the text-safe variants used on light surfaces; each also has a `-bright`
 counterpart for dark ink bands (see section 5).
@@ -402,8 +402,50 @@ acceptance criteria pass. Then stop — do not start the next phase.
   destination. The portrait is a development placeholder at `public/brand/chairman-portrait.jpg`
   (1000x1250) and is asserted by `hero-images.test.ts` like the hero assets. i18n keys live under
   `about.chairman*` and `home.message*` / `home.index*`.
-- 781 Vitest tests pass (55 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+- 818 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (113/113 static pages).
+
+### Department micro-themes (whole-site palette per department)
+
+- Each department now repaints the **whole shared palette** — canvas, body/muted copy, the ink
+  ramp, borders and the accent — not just the accent. The values live in
+  `DEPARTMENT_THEME_TOKENS` (`src/lib/config/site.ts`); `globals.css` maps
+  `html[data-theme="<slug>"]` onto them and `theme-contrast.test.ts` asserts both the WCAG AA
+  ratios and that the stylesheet still carries the same values.
+- The active theme is resolved from the **path**, never from a prop or stored preference:
+  `themeSlugFromPathname` (`src/lib/theme/department-theme.ts`) is shared by the pre-paint
+  bootstrap script in the root `<head>`, by `ThemeController` (client navigations) and by the
+  department pages' `generateViewport` (`theme-color`). The attribute is set on `<html>` because
+  the shared header and footer sit outside the page subtree.
+- Accents were moved to accessible values: DM `#0066CC`, ES `#C2410C` (bright `#F0A94A`), RE
+  `#1E5631`; the requested DM `#0066CC` / RE `#1E5631` clear AA on their canvases, the requested
+  ES `#D35400` did not (3.72:1) so it is darkened to `#C2410C`.
+- Shared chrome that reads brand rather than department colour now follows the theme through
+  document-level `.text-accent` / `.text-accent-bright` utilities: the footer column headings and
+  the active language link.
+
+### Department micro-theme gotchas worth not rediscovering
+
+- **An unlayered rule beats every layered one, so a global theme transition must live in
+  `@layer base`.** A top-level `:where(html[data-theme]) * { transition: … }` (or any top-level
+  `html` selector) silently overrides Tailwind's layered `.transition-soft` and `[data-reveal]`,
+  stripping the hover lifts and scroll reveals of the transition they depend on. `globals.test.ts`
+  already forbids a top-level `html` selector for this reason, which is why both the token blocks
+  and the transition sit inside `@layer base`; the selector is `:where(…:where())` so its
+  specificity stays zero and utilities still win.
+- **`@theme` is for Tailwind's `theme` layer; a `[data-theme]` token block belongs in `base`.** The
+  generated `--color-*` names only resolve because Tailwind v4 emits the plain `:root,:host` block
+  without `@property { inherits: false }` (that is only emitted for `--tw-*`), so a subtree
+  override cascades. Do not add these tokens to `@theme`, which would sit *below* `base` and lose.
+- **`data-theme` is applied to `<html>`, not to `departmentScopeProps`.** That helper is shared
+  with individual department *cards*, so adding `data-theme` there puts a misleading attribute on a
+  card on a corporate page. The path is the single source of truth for the document theme.
+- **`generateViewport` and `generateMetadata` can coexist on one route, and both may be async.**
+  Adding `generateViewport` for the department `theme-color` did not change the prerender status
+  of any route.
+- **A light-on-dark accent needs its own bright variant, and the bright variant is what the footer
+  headings and active language link use.** `#0066CC` on the DM ink band is 3.01:1, so the dark-band
+  accent is `#6FA8F5`; the test asserts `accentBright` against `ink950`, not `accent`.
 
 ### Founder's message gotchas worth not rediscovering
 

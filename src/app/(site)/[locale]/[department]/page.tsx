@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ServiceCard } from "@/components/content/ServiceCard";
@@ -10,7 +10,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { HeroMedia } from "@/components/ui/HeroMedia";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { BRAND_COLORS, DEPARTMENTS } from "@/lib/config/site";
 import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import { departmentHasServices } from "@/lib/content/defaults";
 import { loadServices } from "@/lib/content/loaders";
@@ -18,6 +18,7 @@ import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd } from "@/lib/seo/structured-data";
+import { themeColorFor } from "@/lib/theme/department-theme";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
@@ -45,6 +46,28 @@ export function generateStaticParams() {
       department: department.slug,
     })),
   );
+}
+
+/**
+ * Department-aware mobile browser chrome.
+ *
+ * The root viewport pins the corporate ink. A department page overrides it with
+ * its own dark band so the browser chrome matches the page it is showing. The
+ * colour is the same token the theme paints the hero band with, so the two cannot
+ * drift.
+ */
+export async function generateViewport({
+  params,
+}: {
+  params: Promise<{ locale: string; department: string }>;
+}): Promise<Viewport> {
+  const { department } = await params;
+  const definition = DEPARTMENTS.find((entry) => entry.slug === department);
+  return {
+    themeColor: definition
+      ? themeColorFor(definition.slug)
+      : BRAND_COLORS.ink,
+  };
 }
 
 export async function generateMetadata({
