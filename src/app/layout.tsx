@@ -40,16 +40,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={fontClassNames}>
-      <head>
-        {/* Department theme bootstrap. Runs before the first paint so a deep link
-            into a department page paints its palette immediately instead of
-            flashing the corporate theme; `ThemeController` then keeps `<html>`
-            in step across client-side navigation. */}
+      <body>
+        {/* Department theme bootstrap. It runs synchronously as the first thing in
+            the body, before the rest of the document is parsed or painted, so a
+            deep link into a department page paints its palette immediately
+            instead of flashing the corporate theme; `ThemeController` then keeps
+            `<html>` in step across client-side navigation.
+
+            It lives in `<body>` rather than a hand-written `<head>` so Next keeps
+            sole ownership of the document head. (A stale `<title>` after
+            client-side navigation was seen on this Next 16 build, but it
+            reproduces without this script, so it is pre-existing framework
+            behaviour rather than something the theme work introduced.) */}
         <script
           dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }}
         />
-      </head>
-      <body>
         <ThemeController />
         {children}
       </body>

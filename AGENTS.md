@@ -402,7 +402,7 @@ acceptance criteria pass. Then stop — do not start the next phase.
   destination. The portrait is a development placeholder at `public/brand/chairman-portrait.jpg`
   (1000x1250) and is asserted by `hero-images.test.ts` like the hero assets. i18n keys live under
   `about.chairman*` and `home.message*` / `home.index*`.
-- 818 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+- 820 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (113/113 static pages).
 
 ### Department micro-themes (whole-site palette per department)
@@ -414,9 +414,11 @@ acceptance criteria pass. Then stop — do not start the next phase.
   ratios and that the stylesheet still carries the same values.
 - The active theme is resolved from the **path**, never from a prop or stored preference:
   `themeSlugFromPathname` (`src/lib/theme/department-theme.ts`) is shared by the pre-paint
-  bootstrap script in the root `<head>`, by `ThemeController` (client navigations) and by the
+  bootstrap script in the root layout, by `ThemeController` (client navigations) and by the
   department pages' `generateViewport` (`theme-color`). The attribute is set on `<html>` because
-  the shared header and footer sit outside the page subtree.
+  the shared header and footer sit outside the page subtree. The bootstrap renders as the first
+  element of `<body>` (not a hand-written `<head>`), which still executes before the rest of the
+  document is parsed, so a deep link paints the department palette without a corporate flash.
 - Accents were moved to accessible values: DM `#0066CC`, ES `#C2410C` (bright `#F0A94A`), RE
   `#1E5631`; the requested DM `#0066CC` / RE `#1E5631` clear AA on their canvases, the requested
   ES `#D35400` did not (3.72:1) so it is darkened to `#C2410C`.
@@ -446,6 +448,17 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **A light-on-dark accent needs its own bright variant, and the bright variant is what the footer
   headings and active language link use.** `#0066CC` on the DM ink band is 3.01:1, so the dark-band
   accent is `#6FA8F5`; the test asserts `accentBright` against `ink950`, not `accent`.
+- **The theme bootstrap belongs in `<body>`, not a hand-written `<head>`, so Next keeps sole
+  ownership of the document head.** A manual `<head>` in the root layout is a documented
+  anti-pattern; the script still runs before the body content is parsed, so the no-flash guarantee
+  holds. `department-theme.test.ts` now pins both the position and the absence of `<head>`.
+- **A stale `<title>` after client-side navigation is pre-existing on this Next 16 build, not a
+  theme regression.** Clicking Home → About via the App Router updates the URL and body but the tab
+  title stays `KC Technology Corporation`; a hard load of the same URL shows
+  `About the company | KC Technology Corporation`, and the prerendered HTML has the correct title.
+  It was reproduced on `939c672` (before any theme work) with the theme bootstrap and
+  `ThemeController` removed, so do not chase it in a theme PR — and do not trust a headless tool's
+  tab title alone for it; compare a hard load against a client navigation.
 
 ### Founder's message gotchas worth not rediscovering
 
