@@ -63,9 +63,7 @@ export function contrastRatio(a: string, b: string): number {
 
 /** Parse the `html[data-theme="<slug>"]` block out of the stylesheet. */
 function cssThemeBlock(slug: DepartmentSlug): Record<string, string> {
-  const pattern = new RegExp(
-    `html\\[data-theme="${slug}"\\]\\s*\\{([^}]*)\\}`,
-  );
+  const pattern = new RegExp(`html\\[data-theme="${slug}"\\]\\s*\\{([^}]*)\\}`);
   const match = css.match(pattern);
   if (!match?.[1]) throw new Error(`no data-theme block for "${slug}"`);
   const declarations: Record<string, string> = {};
@@ -87,36 +85,52 @@ describe("department theme palettes", () => {
     const theme = DEPARTMENT_THEME_TOKENS[slug];
 
     describe(slug, () => {
-      it("keeps body copy above AA on the canvas", () => {
+      it("keeps body copy above AA on the canvas and cards", () => {
         expect(contrastRatio(theme.body, theme.surface)).toBeGreaterThanOrEqual(
           AA_TEXT,
         );
-      });
-
-      it("keeps muted copy above AA on both canvases", () => {
-        expect(contrastRatio(theme.muted, theme.surface)).toBeGreaterThanOrEqual(
+        expect(contrastRatio(theme.body, theme.canvas)).toBeGreaterThanOrEqual(
           AA_TEXT,
         );
-        expect(
-          contrastRatio(theme.muted, theme.surfaceAlt),
-        ).toBeGreaterThanOrEqual(AA_TEXT);
       });
 
-      it("keeps headings above AA on the canvas", () => {
-        expect(
-          contrastRatio(theme.ink900, theme.surface),
-        ).toBeGreaterThanOrEqual(AA_TEXT);
-        expect(
-          contrastRatio(theme.ink700, theme.surface),
-        ).toBeGreaterThanOrEqual(AA_TEXT);
+      it("keeps muted copy above AA on every band", () => {
+        for (const band of [theme.surface, theme.canvas, theme.surfaceAlt]) {
+          expect(contrastRatio(theme.muted, band)).toBeGreaterThanOrEqual(
+            AA_TEXT,
+          );
+        }
+      });
+
+      it("keeps headings above AA on the canvas and cards", () => {
+        for (const band of [theme.surface, theme.canvas, theme.surfaceAlt]) {
+          expect(contrastRatio(theme.ink900, band)).toBeGreaterThanOrEqual(
+            AA_TEXT,
+          );
+          expect(contrastRatio(theme.ink700, band)).toBeGreaterThanOrEqual(
+            AA_TEXT,
+          );
+        }
       });
 
       it("keeps the accent legible as text and behind white", () => {
         expect(
           contrastRatio(theme.accent, theme.surface),
         ).toBeGreaterThanOrEqual(AA_TEXT);
+        expect(
+          contrastRatio(theme.accent, theme.canvas),
+        ).toBeGreaterThanOrEqual(AA_TEXT);
         expect(contrastRatio("#ffffff", theme.accent)).toBeGreaterThanOrEqual(
           AA_TEXT,
+        );
+      });
+
+      it("keeps the card surface lighter than the page canvas", () => {
+        // The canvas/card split is what stops a department page reading as a
+        // flat sheet: the canvas carries the tint and the cards sit above it.
+        // If the two ever converge the theme stops being visible.
+        expect(relativeLuminance(theme.surface)).toBeGreaterThan(
+          relativeLuminance(theme.canvas),
         );
       });
 
@@ -142,9 +156,11 @@ describe("department theme palettes", () => {
       it("keeps the canvas light so dark chrome text stays readable", () => {
         // A department canvas must stay lighter than its own dark band, which is
         // what lets `text-ink-900` and the white-on-ink bands coexist.
-        expect(contrastRatio(theme.surface, theme.ink950)).toBeGreaterThanOrEqual(
-          AA_TEXT,
-        );
+        for (const band of [theme.surface, theme.canvas]) {
+          expect(contrastRatio(band, theme.ink950)).toBeGreaterThanOrEqual(
+            AA_TEXT,
+          );
+        }
       });
 
       it("mirrors the brand accent colour", () => {
@@ -184,7 +200,9 @@ describe("globals.css theme blocks", () => {
   it("keeps the theme transition inside @layer base", () => {
     // An unlayered transition rule beats every layered one and would strip
     // `.transition-soft` and `[data-reveal]` of the transition they depend on.
-    expect(css).toMatch(/@layer\s+base\s*\{[\s\S]*data-theme[\s\S]*transition:/);
+    expect(css).toMatch(
+      /@layer\s+base\s*\{[\s\S]*data-theme[\s\S]*transition:/,
+    );
   });
 
   it("keeps the corporate accent at AA on the corporate ink", () => {

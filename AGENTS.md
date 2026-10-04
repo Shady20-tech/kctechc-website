@@ -402,16 +402,25 @@ acceptance criteria pass. Then stop — do not start the next phase.
   destination. The portrait is a development placeholder at `public/brand/chairman-portrait.jpg`
   (1000x1250) and is asserted by `hero-images.test.ts` like the hero assets. i18n keys live under
   `about.chairman*` and `home.message*` / `home.index*`.
-- 820 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+- 823 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (113/113 static pages).
 
 ### Department micro-themes (whole-site palette per department)
 
-- Each department now repaints the **whole shared palette** — canvas, body/muted copy, the ink
+- Each department repaints the **whole shared palette** — canvas, body/muted copy, the ink
   ramp, borders and the accent — not just the accent. The values live in
   `DEPARTMENT_THEME_TOKENS` (`src/lib/config/site.ts`); `globals.css` maps
   `html[data-theme="<slug>"]` onto them and `theme-contrast.test.ts` asserts both the WCAG AA
   ratios and that the stylesheet still carries the same values.
+- **There are two light tokens, and the split is what makes a theme visible: `--color-canvas`
+  is the page/section-band background and `--color-surface` is the card/panel that sits on it.**
+  `body` and `SectionBand`'s default tone read `canvas`; cards, panels and form controls keep
+  `surface`. A department canvas is a clear tint of the department hue (DM `#EEF1FB` indigo,
+  ES `#FFF3E7` cream, RE `#E5EFE8` sage) while its cards stay near-white, so the page reads as
+  tinted rather than as a flat white sheet. `surface-alt`/`surface-sunken` are a second and third
+  step of the same tint for alternating bands. The corporate theme sets `canvas` = `surface` =
+  white, so it is unchanged. `theme-contrast.test.ts` asserts the card is lighter than the canvas
+  for every department, which is what stops the two converging back into one value.
 - The active theme is resolved from the **path**, never from a prop or stored preference:
   `themeSlugFromPathname` (`src/lib/theme/department-theme.ts`) is shared by the pre-paint
   bootstrap script in the root layout, by `ThemeController` (client navigations) and by the
@@ -459,6 +468,20 @@ acceptance criteria pass. Then stop — do not start the next phase.
   It was reproduced on `939c672` (before any theme work) with the theme bootstrap and
   `ThemeController` removed, so do not chase it in a theme PR — and do not trust a headless tool's
   tab title alone for it; compare a hard load against a client navigation.
+- **The hero accent glow is deliberately on the far edge from the copy.** `.dept-glow` started as a
+  bloom at the copy corner and dropped the DM hero heading to 4.65:1 — measured from a screenshot,
+  because the composite of photo + scrim + glow is not something the token test can see. It now
+  sits at `88% 2%`, over the photograph rather than the text, which both restores the heading
+  margin and reads as a rim light. Any new decorative layer that lands under hero copy needs the
+  same screenshot-based re-measurement, not just a token check.
+- **Section spacing is a lever for "the site looks scanty", and it is safe to pull.** `.section`
+  was 4.5/7rem and is now 3.5/5rem (`.section-tight` 2/2.75rem). At the old values consecutive
+  bands sat far enough apart that a page read as a column of headings with empty page between
+  them; the band tints now carry the separation instead. No test asserts the numbers, so this is a
+  judgement call — measure the rendered page, do not assume tighter is worse.
+- **`SITE_REVISION_DATE` is the sitemap `lastmod` for statically-listed pages and must be bumped
+  when a visible change ships.** It is deliberately not `new Date()`; a `lastmod` that changes
+  every request is ignored by crawlers.
 
 ### Founder's message gotchas worth not rediscovering
 

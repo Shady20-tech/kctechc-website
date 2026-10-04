@@ -163,7 +163,7 @@ export default async function DepartmentPage({
       <section className="on-ink relative overflow-hidden bg-ink-950">
         <HeroMedia src={definition.heroImage} />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
-        <div aria-hidden="true" className="absolute inset-0 bg-glow" />
+        <div aria-hidden="true" className="absolute inset-0 dept-glow" />
         <div className="relative container-page py-16 sm:py-20">
           <Breadcrumbs
             items={breadcrumbs}
@@ -185,6 +185,7 @@ export default async function DepartmentPage({
               <h1 className="display-tight mt-4 font-display text-4xl font-bold text-electric-300 sm:text-5xl">
                 {hasContent ? t(`${copy}.heroHeading`) : label}
               </h1>
+              <span aria-hidden="true" className="heading-rule" />
               <p className="mt-5 text-base leading-relaxed text-ink-200 sm:text-lg">
                 {hasContent ? t(`${copy}.heroIntro`) : t(definition.descriptionKey)}
               </p>
@@ -228,6 +229,7 @@ export default async function DepartmentPage({
             >
               {t(`${copy}.servicesHeading`)}
             </h2>
+            <span aria-hidden="true" className="heading-rule" />
             <p className="mt-4 max-w-2xl text-base text-body">
               {t(`${copy}.servicesIntro`)}
             </p>
@@ -256,6 +258,7 @@ export default async function DepartmentPage({
             >
               {t(`${copy}.processHeading`)}
             </h2>
+            <span aria-hidden="true" className="heading-rule" />
             <p className="mt-4 max-w-2xl text-base text-body">
               {t(`${copy}.processIntro`)}
             </p>
@@ -295,6 +298,7 @@ export default async function DepartmentPage({
                 >
                   {t(`${copy}.whyHeading`)}
                 </h2>
+            <span aria-hidden="true" className="heading-rule" />
                 <p className="mt-4 max-w-2xl text-base text-body">
                   {t(`${copy}.whyIntro`)}
                 </p>
@@ -364,6 +368,7 @@ export default async function DepartmentPage({
             >
               {t(`${copy}.faqHeading`)}
             </h2>
+            <span aria-hidden="true" className="heading-rule" />
             <p className="mt-3 max-w-2xl text-sm text-muted">
               {t(`${copy}.faqIntro`)}
             </p>

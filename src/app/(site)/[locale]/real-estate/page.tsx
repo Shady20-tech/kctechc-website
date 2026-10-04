@@ -143,6 +143,7 @@ export default async function RealEstatePage({
         <HeroMedia src="/hero/real-estate-v2.jpg" />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
+        <div aria-hidden="true" className="absolute inset-0 dept-glow" />
         <div className="relative container-page py-16 sm:py-20">
           <Breadcrumbs
             items={breadcrumbs}
@@ -157,6 +158,7 @@ export default async function RealEstatePage({
             <h1 className="display-tight mt-4 font-display text-4xl font-bold text-electric-300 sm:text-5xl">
               {t("realEstate.heading")}
             </h1>
+            <span aria-hidden="true" className="heading-rule" />
             <p className="mt-5 text-base leading-relaxed text-ink-200 sm:text-lg">
               {t("realEstate.intro")}
             </p>
@@ -188,6 +190,7 @@ export default async function RealEstatePage({
             >
               {t("realEstate.search.emptyHeading")}
             </h2>
+            <span aria-hidden="true" className="heading-rule" />
             <p className="mt-3 text-base text-body">
               {t("realEstate.search.emptyBody")}
             </p>
@@ -214,6 +217,7 @@ export default async function RealEstatePage({
               >
                 {t("realEstate.regionsHeading")}
               </h2>
+            <span aria-hidden="true" className="heading-rule" />
               <p className="mt-4 max-w-2xl text-base text-body">
                 {t("realEstate.regionsIntro")}
               </p>
@@ -255,6 +259,7 @@ export default async function RealEstatePage({
                 ? t("realEstate.featuredHeading")
                 : t("realEstate.latestHeading")}
             </h2>
+            <span aria-hidden="true" className="heading-rule" />
             <div className="mt-8">
               <ListingGrid
                 listings={shown.map((entry) => entry.record)}
@@ -284,6 +289,7 @@ export default async function RealEstatePage({
               >
                 {t("realEstate.search.mapHeading")}
               </h2>
+            <span aria-hidden="true" className="heading-rule" />
               <div className="mt-8">
                 <PropertyMap
                   points={points}

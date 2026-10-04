@@ -51,6 +51,10 @@
   /* Neutral surfaces and text. */
   --color-body: #414d57;
   --color-muted: #66717b;
+  /* `canvas` is the page/band background; `surface` is the card and panel that
+     sits on it. On the corporate theme both are white, but the split exists so a
+     department theme can tint the page without tinting the cards on it. */
+  --color-canvas: #ffffff;
   --color-surface: #ffffff;
   --color-surface-alt: #f7f8f9;
   --color-surface-sunken: #eef1f3;
@@ -227,13 +231,37 @@
 }
 
 /* Soft accent wash, derived from the one accent so there is no second palette
-   to keep in sync. */
+   to keep in sync. A vertical tint plus a corner bloom gives a CTA band depth,
+   and a faint technical grid carries the engineering character onto the light
+   bands. Every stop is low enough that body copy on the band keeps its contrast
+   against the department canvas beneath. */
 .accent-wash {
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--dept-accent) 8%, transparent),
-    transparent
-  );
+  background-image:
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in srgb, var(--dept-accent) 14%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--dept-accent) 10%, transparent),
+      transparent
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--dept-accent) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--dept-accent) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    auto,
+    auto,
+    64px 64px,
+    64px 64px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -267,9 +295,10 @@
    Tailwind's `theme` layer, so these values override the `:root` defaults above. */
 @layer base {
   html[data-theme="digital-marketing"] {
+    --color-canvas: #eef1fb;
     --color-surface: #fdfbf7;
-    --color-surface-alt: #f6f1e7;
-    --color-surface-sunken: #efe8da;
+    --color-surface-alt: #e3e9f8;
+    --color-surface-sunken: #d7e0f5;
     --color-body: #3a3f63;
     --color-muted: #5b5f82;
     --color-ink-50: #f1efe9;
@@ -278,8 +307,8 @@
     --color-ink-500: #5b5f82;
     --color-ink-900: #101438;
     --color-ink-700: #1e2348;
-    --color-border: #e6decb;
-    --color-border-strong: #cbbfa3;
+    --color-border: #d5ddf0;
+    --color-border-strong: #b3c0e4;
     --color-ink-950: #0a0c22;
     --color-ink-800: #171b38;
     --color-ink-600: #2a2f55;
@@ -290,9 +319,10 @@
   }
 
   html[data-theme="electrical-services"] {
+    --color-canvas: #fff3e7;
     --color-surface: #ffffff;
-    --color-surface-alt: #f6f6f6;
-    --color-surface-sunken: #ededed;
+    --color-surface-alt: #ffe9d4;
+    --color-surface-sunken: #ffdcc0;
     --color-body: #3d3d3d;
     --color-muted: #5a5a5a;
     --color-ink-50: #f2f2f2;
@@ -301,8 +331,8 @@
     --color-ink-500: #5a5a5a;
     --color-ink-900: #222222;
     --color-ink-700: #3a3a3a;
-    --color-border: #e2e2e2;
-    --color-border-strong: #c6c6c6;
+    --color-border: #f3d9be;
+    --color-border-strong: #e3b486;
     --color-ink-950: #141414;
     --color-ink-800: #2b2b2b;
     --color-ink-600: #333333;
@@ -313,9 +343,10 @@
   }
 
   html[data-theme="real-estate"] {
+    --color-canvas: #e5efe8;
     --color-surface: #f4f7f5;
-    --color-surface-alt: #e9efeb;
-    --color-surface-sunken: #dee7e1;
+    --color-surface-alt: #d8e7dd;
+    --color-surface-sunken: #c8dccf;
     --color-body: #2e4a38;
     --color-muted: #4a6b55;
     --color-ink-50: #edf3ef;
@@ -324,8 +355,8 @@
     --color-ink-500: #4a6b55;
     --color-ink-900: #133322;
     --color-ink-700: #1e4a32;
-    --color-border: #d6e0d9;
-    --color-border-strong: #c6d3c9;
+    --color-border: #c3d6ca;
+    --color-border-strong: #9cbba7;
     --color-ink-950: #0a1f14;
     --color-ink-800: #10291a;
     --color-ink-600: #1a4029;
@@ -379,7 +410,7 @@
   }
 
   body {
-    background-color: var(--color-surface);
+    background-color: var(--color-canvas);
     color: var(--color-body);
     font-family: var(--font-sans);
     line-height: 1.6;
@@ -490,28 +521,29 @@
 }
 
 /* Vertical rhythm between major page sections.
-   Widened from 3.5/5.5rem so consecutive sections are separated by a clear band
-   of empty page rather than by their own padding alone. The previous values left
-   roughly 112px between the end of one section's content and the start of the
-   next, which read as a continuous column of blocks; the headings had nothing to
-   sit against. */
+   Tightened from 4.5/7rem. At the previous values consecutive sections sat far
+   enough apart that the page read as sparse — a column of headings with a lot of
+   empty page between them — and the band backgrounds were too far apart to read
+   as one composition. The reduced values keep a clear break between sections
+   while letting each band's own tint carry the separation, which is what a
+   department theme needs to show through. */
 .section {
-  padding-block: 4.5rem;
+  padding-block: 3.5rem;
 }
 
 @media (min-width: 768px) {
   .section {
-    padding-block: 7rem;
+    padding-block: 5rem;
   }
 }
 
 .section-tight {
-  padding-block: 2.5rem;
+  padding-block: 2rem;
 }
 
 @media (min-width: 768px) {
   .section-tight {
-    padding-block: 3.5rem;
+    padding-block: 2.75rem;
   }
 }
 
@@ -582,6 +614,33 @@
     rgb(0 217 210 / 0.14),
     transparent 70%
   );
+}
+
+/* Department accent glow for the dark hero bands. Reads `--dept-accent-bright`,
+   which is already the accessible on-ink value, so each department's hero gets
+   its own colour cast without any component knowing which department it is in.
+   Positioned on the far edge from the copy: the scrim is strongest where the
+   heading sits, so keeping the glow out of that corner both preserves the
+   heading's contrast and reads as a rim light on the photograph.
+   Decorative only: rendered on an `aria-hidden` layer behind the copy. */
+.dept-glow {
+  background-image: radial-gradient(
+    58% 76% at 88% 2%,
+    color-mix(in srgb, var(--dept-accent-bright) 22%, transparent),
+    transparent 68%
+  );
+}
+
+/* Short accent rule under a section heading. A recurring engineering mark that
+   ties every section to the active department colour and gives a heading
+   something to sit against, so a tight section does not read as unfinished. */
+.heading-rule {
+  display: block;
+  width: 3.5rem;
+  height: 4px;
+  margin-top: 1.25rem;
+  border-radius: 999px;
+  background-color: var(--dept-accent);
 }
 
 /* Legibility scrim for hero photography. Weighted to the inline-start edge,
@@ -754,7 +813,11 @@
   transform: translateY(0);
 }
 
-/* Department card: the accent edge grows on hover, and the arrow slides. */
+/* Department card: the accent edge grows on hover, and the arrow slides.
+   The rail is visible at rest (a partial-width, slightly softened accent) rather
+   than appearing from nothing, so a card already carries its department's colour
+   before it is touched — which is what makes the theme legible at a glance and
+   what keeps the resting page from reading as a white grid. */
 .card-edge {
   position: relative;
   overflow: hidden;
@@ -768,13 +831,17 @@
   width: 100%;
   height: 3px;
   background-color: var(--dept-accent);
-  transform: scaleX(0.22);
+  opacity: 0.55;
+  transform: scaleX(0.34);
   transform-origin: left;
-  transition: transform 420ms var(--ease-out-soft);
+  transition:
+    transform 420ms var(--ease-out-soft),
+    opacity 420ms var(--ease-out-soft);
 }
 
 .card-edge:hover::before,
 .card-edge:focus-within::before {
+  opacity: 1;
   transform: scaleX(1);
 }
 

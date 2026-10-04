@@ -25,6 +25,10 @@ export function PageShell({
 /**
  * Full-bleed band with an inner container, for alternating section backgrounds
  * (the gateway and department pages use these to separate blocks of content).
+ *
+ * The default tone is the page canvas rather than a card surface, so a department
+ * theme tints the page while the cards sitting on it stay light. `alt` is a second,
+ * deeper tint of the same department hue.
  */
 export function SectionBand({
   children,
@@ -42,7 +46,7 @@ export function SectionBand({
       ? "bg-surface-alt"
       : tone === "accent"
         ? "accent-wash"
-        : "bg-surface";
+        : "bg-canvas";
 
   return (
     <section

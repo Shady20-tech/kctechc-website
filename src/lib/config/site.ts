@@ -7,7 +7,8 @@
 export const SITE = {
   legalName: "KC Technology Corporation",
   shortName: "KC Technology",
-  motto: "Innovating Technology. Powering Infrastructure. Transforming Futures.",
+  motto:
+    "Innovating Technology. Powering Infrastructure. Transforming Futures.",
   email: "kctechc@gmail.com",
   phones: ["+237 679-202-265", "656-218-651"],
   address: {
@@ -28,7 +29,7 @@ export const SITE = {
  * so the honest value is the last revision of the content those routes render.
  * Bump this when a change to any statically-listed page ships.
  */
-export const SITE_REVISION_DATE = "2026-09-24";
+export const SITE_REVISION_DATE = "2026-10-04";
 
 /**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal
@@ -148,14 +149,21 @@ export const STORE_CURRENCY = {
  * with the `--color-dept-*` values in `globals.css`.
  */
 export type DepartmentThemeTokens = {
-  /** Page canvas. */
+  /**
+   * Page and section-band background. This is the colour a visitor reads as
+   * "the department", so it carries a visible tint of the department hue. It is
+   * deliberately deeper than `surface`: cards and panels sit on it, and the
+   * contrast between the two is what stops a page reading as a flat white sheet.
+   */
+  canvas: string;
+  /** Card, panel and control background — kept light so body copy stays crisp. */
   surface: string;
-  /** Alternate band, e.g. a `SectionBand tone="alt"`. */
+  /** Alternate band, e.g. a `SectionBand tone="alt"`; a second, deeper tint. */
   surfaceAlt: string;
   surfaceSunken: string;
-  /** Body copy on `surface`; must clear 4.5:1. */
+  /** Body copy on `surface` and `canvas`; must clear 4.5:1. */
   body: string;
-  /** Secondary copy; must clear 4.5:1 on `surface` and `surfaceAlt`. */
+  /** Secondary copy; must clear 4.5:1 on `surface`, `surfaceAlt` and `canvas`. */
   muted: string;
   /** Lightest ink step — hover washes, quiet fills. */
   ink50: string;
@@ -191,9 +199,10 @@ export const DEPARTMENT_THEME_TOKENS: Record<
   DepartmentThemeTokens
 > = {
   "digital-marketing": {
+    canvas: "#EEF1FB",
     surface: "#FDFBF7",
-    surfaceAlt: "#F6F1E7",
-    surfaceSunken: "#EFE8DA",
+    surfaceAlt: "#E3E9F8",
+    surfaceSunken: "#D7E0F5",
     body: "#3A3F63",
     muted: "#5B5F82",
     ink50: "#F1EFE9",
@@ -202,8 +211,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink500: "#5B5F82",
     ink900: "#101438",
     ink700: "#1E2348",
-    border: "#E6DECB",
-    borderStrong: "#CBBFA3",
+    border: "#D5DDF0",
+    borderStrong: "#B3C0E4",
     ink950: "#0A0C22",
     ink800: "#171B38",
     ink600: "#2A2F55",
@@ -211,9 +220,10 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     accentBright: "#6FA8F5",
   },
   "electrical-services": {
+    canvas: "#FFF3E7",
     surface: "#FFFFFF",
-    surfaceAlt: "#F6F6F6",
-    surfaceSunken: "#EDEDED",
+    surfaceAlt: "#FFE9D4",
+    surfaceSunken: "#FFDCC0",
     body: "#3D3D3D",
     muted: "#5A5A5A",
     ink50: "#F2F2F2",
@@ -222,8 +232,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink500: "#5A5A5A",
     ink900: "#222222",
     ink700: "#3A3A3A",
-    border: "#E2E2E2",
-    borderStrong: "#C6C6C6",
+    border: "#F3D9BE",
+    borderStrong: "#E3B486",
     ink950: "#141414",
     ink800: "#2B2B2B",
     ink600: "#333333",
@@ -231,9 +241,10 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     accentBright: "#F0A94A",
   },
   "real-estate": {
+    canvas: "#E5EFE8",
     surface: "#F4F7F5",
-    surfaceAlt: "#E9EFEB",
-    surfaceSunken: "#DEE7E1",
+    surfaceAlt: "#D8E7DD",
+    surfaceSunken: "#C8DCCF",
     body: "#2E4A38",
     muted: "#4A6B55",
     ink50: "#EDF3EF",
@@ -242,8 +253,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink500: "#4A6B55",
     ink900: "#133322",
     ink700: "#1E4A32",
-    border: "#D6E0D9",
-    borderStrong: "#C6D3C9",
+    border: "#C3D6CA",
+    borderStrong: "#9CBBA7",
     ink950: "#0A1F14",
     ink800: "#10291A",
     ink600: "#1A4029",
