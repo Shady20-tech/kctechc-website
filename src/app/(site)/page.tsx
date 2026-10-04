@@ -153,7 +153,7 @@ export default async function CorporateGatewayPage() {
         {/* Hero. Dark ink with a technical grid and brand glow, so the corporate
             entry point reads as engineered rather than as a plain header block. */}
         <section className="on-ink relative overflow-hidden bg-ink-950">
-          <HeroMedia src="/hero/corporate-v2.jpg" />
+          <HeroMedia src="/hero/corporate-v3.jpg" />
           <div aria-hidden="true" className="absolute inset-0 bg-grid" />
           <div aria-hidden="true" className="absolute inset-0 bg-glow" />
           <div aria-hidden="true" className="absolute inset-0 bg-glow-warm" />

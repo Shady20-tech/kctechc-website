@@ -63,7 +63,7 @@ describe("department hero images", () => {
     // from DEPARTMENTS, so it is checked explicitly instead of being missed.
     const paths = [
       ...DEPARTMENTS.map((department) => department.heroImage),
-      "/hero/corporate-v2.jpg",
+      "/hero/corporate-v3.jpg",
     ];
     for (const path of paths) {
       const file = join(PUBLIC_DIR, path);

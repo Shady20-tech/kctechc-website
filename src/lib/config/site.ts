@@ -84,7 +84,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.digitalMarketing.description",
     summaryKey: "departments.digitalMarketing.summary",
     icon: "digital-marketing",
-    heroImage: "/hero/digital-marketing-v2.jpg",
+    heroImage: "/hero/digital-marketing-v3.jpg",
   },
   {
     slug: "electrical-services",

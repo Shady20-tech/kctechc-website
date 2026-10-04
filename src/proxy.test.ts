@@ -69,7 +69,7 @@ describe("proxy locale-rewrite exclusions", () => {
 
   it.each([
     "/brand/kc-monogram.png",
-    "/hero/corporate-v2.jpg",
+    "/hero/corporate-v3.jpg",
     "/icon.png",
     "/apple-icon.png",
     "/fonts/inter.woff2",

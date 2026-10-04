@@ -404,6 +404,60 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `about.chairman*` and `home.message*` / `home.index*`.
 - 823 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (113/113 static pages).
+- The corporate and Digital Marketing hero backdrops were replaced with on-theme, licence-clean
+  photography (see "Hero image provenance" below): `/hero/corporate-v3.jpg` and
+  `/hero/digital-marketing-v3.jpg`. Both measurably raise heading and body contrast over their
+  predecessors.
+
+### Hero image provenance
+
+Both new backdrops are Wikimedia Commons files with licences that permit commercial use
+without royalty, chosen so the corporate hero reads as infrastructure/engineering and the
+Digital Marketing hero reads as the department's own commercial subject.
+
+- `/hero/corporate-v3.jpg` — "Fiber optic cable installation" (Rubin Observatory/NSF/AURA),
+  **CC BY 4.0**, requires attribution. Source:
+  `https://commons.wikimedia.org/wiki/File:Fiber_optic_cable_installation_(rubin-20170124-101126).jpg`.
+- `/hero/digital-marketing-v3.jpg` — "Mini shopping cart placed on a table next to a laptop"
+  (Shixart1985), **CC BY 2.0**, requires attribution. Source:
+  `https://commons.wikimedia.org/wiki/File:Mini_shopping_cart_placed_on_a_table_next_to_a_laptop_in_a_modern_office_setting.jpg`.
+
+Both files were cropped to 16:9 and resized (corporate 2048×1152, DM 2560×1440) before
+commit. The attribution obligation for the two CC BY files is **not yet rendered in the UI**;
+surface a credit (or swap to the CC0 alternatives below) before launch.
+
+CC0 fallbacks already vetted for contrast, should attribution be undesirable:
+
+- Corporate: "Data center infrastructure in the United States" (DOE/NREL, public domain).
+- Digital Marketing: "Analytics graphs on a MacBook screen" (Luis Llerena, CC0).
+
+### Hero image gotchas worth not rediscovering
+
+- **A bright photo destroys the hero's small-text contrast even when the heading still passes.**
+  The department heroes put an 11px eyebrow on the department accent (`--dept-accent-bright`,
+  DM `#6FA8F5`) and the body copy on a light ink tone. Over a bright image those measured
+  4.34:1 and 5.20:1; the current dark DM backdrop measures 7.97:1 and 8.05:1. The heading uses
+  the light `electric-300` and passes on almost anything, so a heading-only check is misleading.
+  Measure the eyebrow and the body paragraph, at the real accent colour, not just the `h1`.
+- **Measure the background, not the glyphs.** Sampling the pixels inside a text element's rect
+  catches anti-aliased glyph edges, which report a contrast near 1.0 for every image and hide
+  the real differences. Take a second screenshot with the copy elements set to
+  `visibility: hidden` (each text element, not the hero — `visibility` on the hero also hides
+  the photo) and sample the background pixels inside those same rects.
+- **`visibility: hidden` on a parent does not hide a child that sets `visibility: visible`.**
+  Hiding `section.on-ink` to reveal the photo underneath does not work when descendants set
+  their own visibility; hide the individual text elements instead.
+- **`cp -r public .next/standalone/public` nests a directory when the target already exists**,
+  leaving `public/public/...` while the server keeps serving the stale file. The symptom is a
+  measurement that does not move after an asset swap, which looks like image-optimizer caching.
+  Copy the specific changed files, or `rm -rf` the target first, and verify with `md5sum`
+  against the source.
+- **The dev-preview `next-server` process is named `next-server`, not `server.js`,** so
+  `pkill -f server.js` / `ps | grep server.js` misses it and the stale server keeps the port.
+  Match on `next-server` when restarting a preview build.
+- **A photo swap changes no SEO output.** `HeroMedia` renders `alt=""` inside `aria-hidden`, and
+  Open Graph/Twitter images come from the `imageUrl` argument to `buildMetadata`, never from
+  `heroImage`. Nothing in the SEO layer reads these files, so no metadata update is required.
 
 ### Department micro-themes (whole-site palette per department)
 
@@ -903,10 +957,10 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - **Hero assets are resolution-capped by the source, and that cap is invisible in the markup.**
   `next/image` never upscales, so a `w=2048` request returns the source width and no error. The
   original assets were 246×113 placeholders and the next round were 736px Pinterest thumbnails,
-  stretched full-bleed. `corporate` (992px) and `real-estate` (626px) are still capped and need
-  genuinely larger source images — confirm a source exceeds `1920px` before wiring it in. Replacing a
-  hero file in place also leaves the URL unchanged, and Next serves optimised images with
-  `max-age=14400`, so the old bytes linger for hours; ship a new filename instead.
+  stretched full-bleed. `corporate-v3` is now 2048px and `real-estate` (626px) is still capped and
+  needs a genuinely larger source image — confirm a source exceeds `1920px` before wiring it in.
+  Replacing a hero file in place also leaves the URL unchanged, and Next serves optimised images
+  with `max-age=14400`, so the old bytes linger for hours; ship a new filename instead.
 - **A local branch whose tip is already merged is not a safe base.** `phase-8-payments-orders-crm`
   sat on a commit that `main` had already absorbed via #16, so `git status` looked clean and the
   branch looked current, but a PR opened from it would have carried nothing. Check with
