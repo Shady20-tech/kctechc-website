@@ -1987,5 +1987,44 @@
     "contentsHeading": "Contents",
     "updatedLabel": "Last updated",
     "retentionNoteLabel": "Note:"
+  },
+  "electricalProducts": {
+    "eyebrow": "Equipment we supply",
+    "heading": "Power equipment, supplied and installed",
+    "intro": "The department supplies solar inverters, lithium storage and complete power systems alongside its installation work. Every unit below is matched to the site it serves rather than to what happens to be in stock.",
+    "note": "Availability, ratings and pricing are confirmed in a quote.",
+    "a11y": "Electrical Services product showcase",
+    "items": {
+      "sunpoloInverter": {
+        "name": "SUNPOLO hybrid solar inverter",
+        "spec": "8 kW and 11 kW",
+        "alt": "SUNPOLO hybrid solar inverter, showing its rated power, PV input range and dual MPPT trackers."
+      },
+      "lithiumBattery": {
+        "name": "LiFePO4 lithium battery",
+        "spec": "Li-Max and Li-Sun ranges",
+        "alt": "LiFePO4 lithium battery connected to a solar inverter, solar panels and the utility grid."
+      },
+      "solarSystem": {
+        "name": "Complete solar power system",
+        "spec": "Panels, inverter and storage",
+        "alt": "A complete solar power system with solar panels, a hybrid inverter and a lithium battery power bank."
+      },
+      "powerSolution": {
+        "name": "All-in-one power solution",
+        "spec": "MPPT, AC charger and DC output",
+        "alt": "An all-in-one power unit combining an MPPT controller, AC charger, DC output and USB charging."
+      },
+      "batteryStorage": {
+        "name": "Lithium battery storage",
+        "spec": "Floor stand or wall mounted",
+        "alt": "LiFePO4 lithium battery storage shown in both floor-stand and wall-mounted installations."
+      },
+      "energyStorage": {
+        "name": "Energy storage systems",
+        "spec": "3 kW / 5 kWh to 10 kW / 15 kWh",
+        "alt": "The Alpha ESS energy storage range, from 3 kW and 5 kWh up to 10 kW and 15 kWh."
+      }
+    }
   }
 }

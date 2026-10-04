@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SectionBand } from "@/components/layout/PageShell";
+import { ProductShowcase } from "@/components/content/ProductShowcase";
 import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
@@ -137,11 +138,24 @@ export default async function LocalizedHomePage({
         </ul>
       </SectionBand>
 
+      {/* Power equipment the Electrical Services department supplies. The strip
+          drifts continuously on the homepage; the department landing page uses a
+          different treatment for the same data. Both are server-rendered. */}
+      <ProductShowcase
+        t={t}
+        variant="marquee"
+        eyebrow={`02 — ${t("electricalProducts.eyebrow")}`}
+        heading={t("electricalProducts.heading")}
+        intro={t("electricalProducts.intro")}
+        note={t("electricalProducts.note")}
+        headingId="home-equipment-heading"
+      />
+
       <SectionBand tone="alt" labelledBy="home-about-heading">
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <p className="mono-label text-dept-accent">
-              02 — {t("home.aboutHeading")}
+              03 — {t("home.aboutHeading")}
             </p>
             <h2
               id="home-about-heading"

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ServiceCard } from "@/components/content/ServiceCard";
+import { ProductShowcase } from "@/components/content/ProductShowcase";
 import { RememberDepartment } from "@/components/layout/LastDepartment";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
@@ -217,11 +218,29 @@ export default async function DepartmentPage({
         </div>
       </section>
 
+      {/* Product showcase. Only the Electrical Services department supplies
+          power equipment, so this renders for that department alone rather than
+          for every department that has services. The landing page uses the
+          staggered grid; the homepage uses the drifting strip for the same six
+          products, so the two surfaces feel related without repeating one
+          animation. */}
+      {definition.slug === "electrical-services" ? (
+        <ProductShowcase
+          t={t}
+          variant="grid"
+          eyebrow={`01 — ${t("electricalProducts.eyebrow")}`}
+          heading={t("electricalProducts.heading")}
+          intro={t("electricalProducts.intro")}
+          note={t("electricalProducts.note")}
+          headingId="electrical-equipment-heading"
+        />
+      ) : null}
+
       {hasContent ? (
         <>
           <SectionBand labelledBy="department-services-heading">
             <p className="mono-label text-dept-accent">
-              01 — {t(`${copy}.servicesHeading`)}
+              02 — {t(`${copy}.servicesHeading`)}
             </p>
             <h2
               id="department-services-heading"
@@ -250,7 +269,7 @@ export default async function DepartmentPage({
 
           <SectionBand tone="alt" labelledBy="department-process-heading">
             <p className="mono-label text-dept-accent">
-              02 — {t(`${copy}.processHeading`)}
+              03 — {t(`${copy}.processHeading`)}
             </p>
             <h2
               id="department-process-heading"
@@ -290,7 +309,7 @@ export default async function DepartmentPage({
             <div className="grid gap-12 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <p className="mono-label text-dept-accent">
-                  03 — {t(`${copy}.whyHeading`)}
+                  04 — {t(`${copy}.whyHeading`)}
                 </p>
                 <h2
                   id="department-why-heading"

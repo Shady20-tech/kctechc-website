@@ -1987,5 +1987,44 @@
     "contentsHeading": "Sommaire",
     "updatedLabel": "Dernière mise à jour",
     "retentionNoteLabel": "Remarque :"
+  },
+  "electricalProducts": {
+    "eyebrow": "Équipement que nous fournissons",
+    "heading": "Équipement électrique, fourni et installé",
+    "intro": "Le département fournit des onduleurs solaires, du stockage au lithium et des systèmes d'alimentation complets en complément de ses travaux d'installation. Chaque appareil ci-dessous est adapté au site qu'il dessert, et non à ce qui se trouve en stock.",
+    "note": "Disponibilité, caractéristiques et prix sont confirmés dans un devis.",
+    "a11y": "Vitrine des produits des Services Électriques",
+    "items": {
+      "sunpoloInverter": {
+        "name": "Onduleur solaire hybride SUNPOLO",
+        "spec": "8 kW et 11 kW",
+        "alt": "Onduleur solaire hybride SUNPOLO, montrant sa puissance nominale, sa plage d'entrée PV et ses deux trackers MPPT."
+      },
+      "lithiumBattery": {
+        "name": "Batterie lithium LiFePO4",
+        "spec": "Gammes Li-Max et Li-Sun",
+        "alt": "Batterie lithium LiFePO4 reliée à un onduleur solaire, à des panneaux solaires et au réseau électrique."
+      },
+      "solarSystem": {
+        "name": "Système solaire complet",
+        "spec": "Panneaux, onduleur et stockage",
+        "alt": "Un système solaire complet avec panneaux solaires, onduleur hybride et batterie lithium."
+      },
+      "powerSolution": {
+        "name": "Solution d'alimentation tout-en-un",
+        "spec": "MPPT, chargeur AC et sortie DC",
+        "alt": "Un appareil tout-en-un combinant un régulateur MPPT, un chargeur AC, une sortie DC et la charge USB."
+      },
+      "batteryStorage": {
+        "name": "Stockage sur batterie lithium",
+        "spec": "Sur pied ou mural",
+        "alt": "Stockage sur batterie lithium LiFePO4 présenté en installation sur pied et en installation murale."
+      },
+      "energyStorage": {
+        "name": "Systèmes de stockage d'énergie",
+        "spec": "3 kW / 5 kWh à 10 kW / 15 kWh",
+        "alt": "La gamme de stockage d'énergie Alpha ESS, de 3 kW et 5 kWh jusqu'à 10 kW et 15 kWh."
+      }
+    }
   }
 }

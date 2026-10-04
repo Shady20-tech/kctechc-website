@@ -813,6 +813,30 @@
   transform: translateY(0);
 }
 
+/* Staggered grid reveal.
+   ---------------------------------------------------------------------------
+   A grid item's delay depends on its row and its column, and the column count
+   changes with the viewport (the showcase grid is `sm:grid-cols-2
+   lg:grid-cols-3`). Rather than measure that in JavaScript — which would mean
+   `matchMedia` state and a setState-in-effect — the component writes all three
+   delays and the active one is selected here. Only elements that opted into the
+   stagger carry the class, so a uniform `--reveal-delay` is untouched. */
+.reveal-stagger {
+  --reveal-delay: var(--reveal-delay-base);
+}
+
+@media (min-width: 640px) {
+  .reveal-stagger {
+    --reveal-delay: var(--reveal-delay-sm);
+  }
+}
+
+@media (min-width: 1024px) {
+  .reveal-stagger {
+    --reveal-delay: var(--reveal-delay-lg);
+  }
+}
+
 /* Department card: the accent edge grows on hover, and the arrow slides.
    The rail is visible at rest (a partial-width, slightly softened accent) rather
    than appearing from nothing, so a card already carries its department's colour
@@ -852,6 +876,136 @@
 .card-edge:hover .card-arrow,
 .card-edge:focus-within .card-arrow {
   transform: translateX(0.3rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Product showcase
+   ---------------------------------------------------------------------------
+   Two treatments share one card. Every product is server-rendered: the image,
+   its name and its rating are in the HTML before any script runs, and the motion
+   is a pure CSS enhancement, so a crawler, a no-JavaScript visitor and a
+   reduced-motion visitor all receive the complete content.
+
+   The tile is a fixed square so the images reserve their space and the section
+   cannot shift as they decode (CLS). `transform` and `opacity` are the only
+   animated properties, so both treatments stay on the compositor. */
+.product-tile {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 420ms var(--ease-out-soft),
+    box-shadow 420ms var(--ease-out-soft),
+    border-color 420ms var(--ease-out-soft);
+}
+
+.product-tile-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: var(--color-surface-sunken);
+}
+
+.product-tile-media img {
+  transition: transform 700ms var(--ease-out-soft);
+}
+
+.product-tile:hover .product-tile-media img,
+.product-tile:focus-within .product-tile-media img {
+  transform: scale(1.05);
+}
+
+.product-tile-caption {
+  display: block;
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.product-tile:hover {
+  transform: translateY(-6px);
+  border-color: var(--dept-accent);
+  box-shadow: var(--shadow-lifted);
+}
+
+/* Homepage marquee.
+   ---------------------------------------------------------------------------
+   The track holds the six products twice and drifts left by exactly one set
+   width (`-50%`), then repeats. The duplicate set is `aria-hidden` in the
+   markup, so the drift costs the accessible reading order nothing.
+
+   Hover and keyboard focus pause the drift, so a visitor can read a tile without
+   chasing it. The reduced-motion block below replaces the animation with a plain
+   horizontal scroll, which is the honest fallback: content that stays readable
+   rather than a strip frozen mid-travel. */
+.product-marquee {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.product-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  padding-inline: 1.5rem;
+  animation: product-drift 60s linear infinite;
+}
+
+.product-marquee:hover .product-marquee-track,
+.product-marquee:focus-within .product-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes product-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.product-set {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.product-set > li {
+  width: 20rem;
+  max-width: 80vw;
+  flex: none;
+}
+
+/* Department landing grid: a slow accent pulse on the image frame. The pulse is
+   a box-shadow ring rather than a colour change, so it never touches the
+   product's own colours or its contrast, and it is scoped to the grid variant so
+   the homepage marquee is not pulsing sixty tiles at once. */
+.product-grid .product-tile-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--dept-accent);
+  opacity: 0;
+  animation: product-pulse 4.5s var(--ease-out-soft) infinite;
+}
+
+@keyframes product-pulse {
+  0%,
+  72%,
+  100% {
+    opacity: 0;
+  }
+  82% {
+    opacity: 0.5;
+  }
 }
 
 /* Rotating gateway statement: the line is always present and readable in the
@@ -970,6 +1124,32 @@
   .card-edge::before,
   .card-arrow {
     transition: none;
+  }
+
+  /* Product showcase. The marquee becomes a plain horizontal scroll — the
+     content is unchanged and still reachable, it simply stops drifting. The
+     track is reset to its starting position so a reduced-motion visitor does not
+     arrive at the end of the travel, and the pulse ring is removed rather than
+     collapsed to a 0.01ms loop. */
+  .product-marquee-track {
+    animation: none;
+    transform: none;
+  }
+
+  .product-grid .product-tile-media::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .product-tile,
+  .product-tile-media img {
+    transition: none;
+  }
+
+  .product-tile:hover,
+  .product-tile:hover .product-tile-media img,
+  .product-tile:focus-within .product-tile-media img {
+    transform: none;
   }
 
   *,

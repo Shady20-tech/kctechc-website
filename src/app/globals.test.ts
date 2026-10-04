@@ -88,6 +88,71 @@ describe("globals.css cascade", () => {
   });
 });
 
+/**
+ * Product showcase animation.
+ *
+ * The showcase's whole safety argument is that the motion is a CSS enhancement
+ * over server-rendered markup, and that a reduced-motion visitor gets a readable
+ * fallback rather than a strip frozen at the end of its travel. Those are
+ * stylesheet facts, not component facts, so they are pinned here.
+ */
+describe("product showcase motion", () => {
+  // Everything from the reduced-motion block onward, so the two fallback rules
+  // can be asserted without repeating the search.
+  const reducedMotionBlock = css.slice(
+    css.search(/@media\s*\(prefers-reduced-motion:\s*reduce\)/),
+  );
+
+  it("drifts the marquee track by exactly one set width and repeats", () => {
+    expect(css).toMatch(
+      /@keyframes\s+product-drift\s*\{[\s\S]*?translateX\(-50%\)/,
+    );
+  });
+
+  it("pauses the drift on hover and keyboard focus", () => {
+    expect(css).toMatch(
+      /\.product-marquee:hover\s+\.product-marquee-track,[\s\S]*?\.product-marquee:focus-within\s+\.product-marquee-track\s*\{[\s\S]*?animation-play-state:\s*paused/,
+    );
+  });
+
+  it("replaces the marquee with a scroll rather than a frozen strip under reduced motion", () => {
+    expect(reducedMotionBlock).toMatch(
+      /\.product-marquee-track\s*\{[\s\S]*?animation:\s*none/,
+    );
+    expect(reducedMotionBlock).toMatch(
+      /\.product-marquee-track\s*\{[\s\S]*?transform:\s*none/,
+    );
+  });
+
+  it("removes the accent pulse under reduced motion", () => {
+    expect(reducedMotionBlock).toMatch(
+      /\.product-grid\s+\.product-tile-media::after\s*\{[\s\S]*?animation:\s*none/,
+    );
+  });
+
+  it("keeps the pulse scoped to the grid variant", () => {
+    // The homepage marquee renders twelve tiles; an unscoped pulse would run
+    // twelve infinite animations at once.
+    expect(css).toMatch(/\.product-grid\s+\.product-tile-media::after/);
+    expect(css).not.toMatch(/(^|\n)\.product-tile-media::after/);
+  });
+
+  it("selects the stagger delay per breakpoint and only for staggered items", () => {
+    // The grid is one, two or three columns, so the delay differs by viewport.
+    // The base value must apply to the class alone, and the two media queries
+    // must override it — a missing override would leave the lg delay wrong.
+    expect(css).toMatch(
+      /\.reveal-stagger\s*\{\s*--reveal-delay:\s*var\(--reveal-delay-base\)/,
+    );
+    expect(css).toMatch(
+      /@media\s*\(min-width:\s*640px\)\s*\{\s*\.reveal-stagger\s*\{\s*--reveal-delay:\s*var\(--reveal-delay-sm\)/,
+    );
+    expect(css).toMatch(
+      /@media\s*\(min-width:\s*1024px\)\s*\{\s*\.reveal-stagger\s*\{\s*--reveal-delay:\s*var\(--reveal-delay-lg\)/,
+    );
+  });
+});
+
 describe("topLevelSelectors", () => {
   // The parser is the whole test's basis, so its behaviour is pinned directly
   // rather than trusted. The first case is the exact shape of the bug: a bare

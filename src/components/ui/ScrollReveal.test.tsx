@@ -208,3 +208,62 @@ describe("ScrollReveal", () => {
     expect(observers[0]!.disconnect).toHaveBeenCalled();
   });
 });
+
+/**
+ * Grid stagger.
+ *
+ * The delay is derived from the item's row and column, and the column count
+ * changes with the viewport. Rather than measure that in the browser — which
+ * would need `matchMedia` state — the component writes all three values and the
+ * stylesheet selects one, so the tests assert the values it writes and the class
+ * that activates them.
+ */
+describe("ScrollReveal stagger", () => {
+  it("writes a delay per breakpoint and opts into the stylesheet override", () => {
+    render(
+      <ul>
+        <ScrollReveal as="li" stagger={{ index: 1, columns: [1, 2, 3] }}>
+          <span>second</span>
+        </ScrollReveal>
+      </ul>,
+    );
+
+    const item = screen.getByText("second").closest("li")!;
+    expect(item).toHaveClass("reveal-stagger");
+    // index 1: single column → row 1 (150ms); two columns → row 0, col 1 (80ms);
+    // three columns → row 0, col 1 (80ms).
+    expect(item).toHaveStyle({
+      "--reveal-delay-base": "150ms",
+      "--reveal-delay-sm": "80ms",
+      "--reveal-delay-lg": "80ms",
+    });
+    // No inline `--reveal-delay`, or it would beat the stylesheet's breakpoint
+    // override.
+    expect(item.getAttribute("style")).not.toContain("--reveal-delay:");
+  });
+
+  it("starts the second row after the first row has begun", () => {
+    render(
+      <ul>
+        <ScrollReveal as="li" stagger={{ index: 3, columns: [1, 2, 3] }}>
+          <span>fourth</span>
+        </ScrollReveal>
+      </ul>,
+    );
+    // index 3: three columns → row 1, col 0 → 150ms, after index 0's 0ms.
+    expect(screen.getByText("fourth").closest("li")).toHaveStyle({
+      "--reveal-delay-lg": "150ms",
+    });
+  });
+
+  it("does not opt into the stagger class for a uniform delay", () => {
+    render(
+      <ScrollReveal delayMs={120}>
+        <p>plain</p>
+      </ScrollReveal>,
+    );
+    const item = screen.getByText("plain").parentElement!;
+    expect(item).not.toHaveClass("reveal-stagger");
+    expect(item).toHaveStyle({ "--reveal-delay": "120ms" });
+  });
+});

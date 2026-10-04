@@ -1074,6 +1074,54 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   throws into the request that triggered the notification. `send.test.ts` pins both, plus HTML
   escaping of visitor input.
 
+### Electrical product showcase (homepage strip + department grid)
+
+- The six SAKO product families the Electrical Services department supplies are a plain data
+  module (`src/lib/content/electrical-products.ts`), rendered by `ProductShowcase`. Each entry
+  holds **message keys**, not strings, so the copy is localized through the same static dictionary
+  as the rest of the UI and en/fr stay in step. Names and ratings are the ones printed on the
+  manufacturer material; no spec, price, availability or warranty is claimed that the source did
+  not state.
+- **The same data gets two different animations, on purpose.** The homepage (`/` and `/{locale}`)
+  uses the `marquee` variant — a continuous leftward drift that pauses on hover and keyboard focus.
+  The Electrical Services landing page uses the `grid` variant — a staggered scroll-triggered rise
+  with a slow accent pulse on the image frame. Sharing the data but not the motion is what keeps the
+  two surfaces feeling related without repeating one effect.
+- **Everything is server-rendered and the motion is pure CSS.** The products, names, ratings and
+  image descriptions are in the HTML before any script runs, so a crawler and a no-JavaScript
+  visitor get the complete content. The marquee's second set is `aria-hidden` with empty `alt`s, so
+  the drift costs the accessible reading order nothing and crawlers see the six products once.
+  `ProductShowcase.test.tsx` pins the server markup and the decorative duplicate.
+- **The marquee is a genuine `<ul>` in normal flow, not a canvas or a JS carousel.** A
+  `product-drift` keyframe translates the track by exactly `-50%` (one full set) and repeats, so the
+  loop is seamless without measuring anything at runtime.
+- **The reduced-motion block replaces the drift with a plain horizontal scroll** (`.product-marquee`
+  is `overflow-x: auto`) rather than freezing the strip mid-travel, and removes the accent pulse
+  entirely instead of collapsing it to a 0.01ms loop. `globals.test.ts` pins both fallbacks.
+- **The accent pulse is scoped to `.product-grid .product-tile-media::after`.** The homepage
+  marquee renders twelve tiles; an unscoped pulse would run twelve infinite animations at once. It
+  is a `box-shadow` ring, never a colour change, so it cannot touch a product's own contrast.
+- **A grid item's stagger delay depends on the column count, which is breakpoint-dependent.**
+  Rather than read `matchMedia` in an effect (which `react-hooks/set-state-in-effect` correctly
+  rejects), `ScrollReveal` writes all three delays as custom properties and the `.reveal-stagger`
+  stylesheet rule picks one per breakpoint. The component never measures the DOM, so the server and
+  client renders agree and there is nothing to flicker.
+- **`staggerDelayVars` deliberately writes no inline `--reveal-delay`.** An inline custom property
+  beats a stylesheet rule, so writing one would defeat the breakpoint override; only the
+  non-stagger path sets `--reveal-delay` directly.
+- **The showcase is gated to the electrical department, not to "departments with services".**
+  `definition.slug === "electrical-services"` decides whether the grid renders. Digital Marketing
+  has services but supplies no power equipment, so it must not show the grid — verified against the
+  built HTML, where `/en/digital-marketing` carries none of the product images.
+- **Numbered eyebrows are an ordered sequence, so inserting a section renumbers the rest.** Adding
+  the showcase after the gateway departments pushed About from `02` to `03`, the founder's message
+  to `04`, the site index to `05` and Entry to `06`; on the localized home and the department page
+  the same shift applied. Leaving it would have printed two `02`s on one page.
+- **Product images are asserted like the hero assets.** `electrical-products.test.ts` resolves every
+  path on disk, checks the JPEG start/end markers, and requires a square, card-sized image (the tile
+  media box is 1:1, so a non-square source is cropped and the subject can fall outside the crop). A
+  mistyped path otherwise fails silently as an empty box.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->

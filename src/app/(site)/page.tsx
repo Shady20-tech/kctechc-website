@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SkipLink } from "@/components/layout/Navigation";
+import { ProductShowcase } from "@/components/content/ProductShowcase";
 import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
@@ -260,6 +261,25 @@ export default async function CorporateGatewayPage() {
           />
         </section>
 
+        {/* Power equipment the Electrical Services department supplies. Shown
+            once per language like the founder's message and the site index, so
+            the language-neutral gateway does not force either language on a
+            visitor who has not chosen one yet. The strip drifts on the homepage;
+            the department landing page uses a different treatment for the same
+            data. */}
+        {perLocale.map(({ locale, t }) => (
+          <ProductShowcase
+            key={`gateway-equipment-${locale}`}
+            t={t}
+            variant="marquee"
+            eyebrow={`02 — ${t("electricalProducts.eyebrow")}`}
+            heading={t("electricalProducts.heading")}
+            intro={t("electricalProducts.intro")}
+            note={t("electricalProducts.note")}
+            headingId={`gateway-equipment-heading-${locale}`}
+          />
+        ))}
+
         {/* About and verified company details. */}
         <section
           aria-labelledby="gateway-about-heading"
@@ -268,7 +288,7 @@ export default async function CorporateGatewayPage() {
           <div className="container-page section grid gap-12 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <p className="mono-label text-dept-accent">
-                02 — {EN.home.aboutHeading}
+                03 — {EN.home.aboutHeading}
               </p>
               <h2
                 id="gateway-about-heading"
@@ -366,7 +386,7 @@ export default async function CorporateGatewayPage() {
             variant="summary"
             tone={index === 0 ? "default" : "alt"}
             showPortrait={index === 0}
-            eyebrow={`03 — ${t("home.messageEyebrow")}`}
+            eyebrow={`04 — ${t("home.messageEyebrow")}`}
             heading={t("home.messageHeading")}
             intro={t("home.messageIntro")}
             ctaHref={`/${locale}/about`}
@@ -383,7 +403,7 @@ export default async function CorporateGatewayPage() {
             locale={locale}
             t={t}
             tone={index === 0 ? "alt" : "default"}
-            eyebrow={`04 — ${t("home.indexEyebrow")}`}
+            eyebrow={`05 — ${t("home.indexEyebrow")}`}
             heading={t("home.indexHeading")}
             intro={t("home.indexIntro")}
           />
@@ -394,7 +414,7 @@ export default async function CorporateGatewayPage() {
           aria-labelledby="gateway-language-heading"
           className="container-page section"
         >
-          <p className="mono-label text-dept-accent">05 — Entry</p>
+          <p className="mono-label text-dept-accent">06 — Entry</p>
           <h2
             id="gateway-language-heading"
             className="display-tight mt-3 font-display text-3xl font-bold text-ink-900 sm:text-4xl"
