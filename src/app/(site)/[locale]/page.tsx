@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SectionBand } from "@/components/layout/PageShell";
+import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
+import { SiteIndex } from "@/components/ui/SiteIndex";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DEPARTMENTS, SITE } from "@/lib/config/site";
@@ -223,6 +225,31 @@ export default async function LocalizedHomePage({
           </aside>
         </div>
       </SectionBand>
+
+      {/* Founder's message, condensed. The first paragraph and the sign-off carry
+          the vision; the full letter with the three pillars and the core values
+          lives on the about page. */}
+      <ChairmanMessage
+        locale={resolved}
+        variant="summary"
+        tone="default"
+        eyebrow={t("home.messageEyebrow")}
+        heading={t("home.messageHeading")}
+        intro={t("home.messageIntro")}
+        ctaHref={`/${resolved}/about`}
+        ctaLabel={t("home.messageCta")}
+      />
+
+      {/* Site index: every public destination, so the home page is a true entry
+          point rather than only the primary nav. */}
+      <SiteIndex
+        locale={resolved}
+        t={t}
+        tone="alt"
+        eyebrow={t("home.indexEyebrow")}
+        heading={t("home.indexHeading")}
+        intro={t("home.indexIntro")}
+      />
 
       <div className="container-page section">
         <CtaBand

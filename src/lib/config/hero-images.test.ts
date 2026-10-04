@@ -73,10 +73,38 @@ describe("department hero images", () => {
         width,
         `${path}: ${width}x${height} is too small for a full-bleed hero`,
       ).toBeGreaterThanOrEqual(600);
-      expect(width, `${path}: ${width}x${height} is not landscape`).toBeGreaterThan(
-        height,
-      );
+      expect(
+        width,
+        `${path}: ${width}x${height} is not landscape`,
+      ).toBeGreaterThan(height);
     }
+  });
+});
+
+/**
+ * The founder's portrait is referenced by path from `ChairmanMessage`, so a
+ * mistyped or missing file fails the same silent way a hero does. It is a
+ * portrait rather than a landscape, so it is asserted separately instead of
+ * being folded into the hero check above.
+ */
+describe("chairman portrait", () => {
+  const file = join(PUBLIC_DIR, "brand/chairman-portrait.jpg");
+
+  it("resolves to a complete, portrait-oriented JPEG", () => {
+    expect(existsSync(file), `${file} is missing`).toBe(true);
+    const bytes = readFileSync(file);
+    expect(bytes.readUInt16BE(0), "not a JPEG").toBe(JPEG_SOI);
+    expect(bytes.readUInt16BE(bytes.length - 2), "truncated JPEG").toBe(
+      JPEG_EOI,
+    );
+    const { width, height } = jpegDimensions(bytes);
+    expect(width, `${width}x${height} is too small`).toBeGreaterThanOrEqual(
+      600,
+    );
+    expect(
+      height,
+      `${width}x${height} should be portrait (height > width)`,
+    ).toBeGreaterThan(width);
   });
 });
 

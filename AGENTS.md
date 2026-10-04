@@ -395,6 +395,52 @@ acceptance criteria pass. Then stop — do not start the next phase.
 - 765 Vitest tests pass, `tsc --noEmit` is clean, ESLint is clean, and the production build
   succeeds. The `supabase/validate/*.sql` scripts pass on a fresh Postgres 17 database (43
   migrations).
+- The chairman's letter (attributed to Engr. Clinton Kum Ngum, Founder & Managing Director) is
+  published: the full letter on `/[locale]/about` and a condensed version on `/[locale]` and on the
+  language-neutral gateway `/`, where it is rendered once per language with locale-qualified ids
+  (`gateway-chairman-en`/`fr`, `gateway-index-en`/`fr`). A `SiteIndex` component lists every public
+  destination. The portrait is a development placeholder at `public/brand/chairman-portrait.jpg`
+  (1000x1250) and is asserted by `hero-images.test.ts` like the hero assets. i18n keys live under
+  `about.chairman*` and `home.message*` / `home.index*`.
+- 781 Vitest tests pass (55 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds (113/113 static pages).
+
+### Founder's message gotchas worth not rediscovering
+
+- **A department-scoped accent is a silent fallback, so a subtree that renders its own
+  `card-edge` must set `data-department`.** `SiteIndex`'s department cards read `--dept-accent` for
+  their rail and link hover. Without `departmentScopeProps(department.slug)` every card renders
+  corporate teal and nothing errors — the same trap the design system section warns about.
+  `SiteIndex.test.tsx` asserts the attribute per card.
+- **The gateway's numbered eyebrows are an ordered sequence; inserting a section renumbers the
+  rest.** The founder's message and the site index were inserted after `02 —` and the `Entry`
+  section had to move from `03` to `05`. Leaving it would have printed two `03`s on one page.
+- **The `projects` ("Work Done") surface shares `departmentHasServices`.** Real Estate has no
+  services, so it has no `/projects` route either; the index therefore links projects under the
+  same predicate rather than assuming every department has one.
+- **The portrait is a generated placeholder, not a photograph of the founder.** The brief forbids
+  fabricating staff; the letter and attribution are user-supplied, but the image at
+  `public/brand/chairman-portrait.jpg` is a gradient composition. Replace it with a real portrait
+  before launch (and keep a new filename so the CDN's `max-age` does not serve the old bytes).
+- **A department index label should use the destination's own heading key.** Linking the
+  department portfolio as `nav.gallery` ("Gallery") while the page heading is `portfolio.heading`
+  ("Our work") gives two names for one destination; use the page's heading key.
+
+### Known defect: `<html lang>` is always `en` (pre-existing, unfixed)
+
+- **`src/app/layout.tsx` hardcodes `lang="en"`, so every `/fr` route serves `<html lang="en">`.**
+  The locale segment (`[locale]`) is nested under the `(site)` group *below* the root layout, so the
+  root layout cannot see it and Next 16's `next/root-params` is unavailable (root params must be
+  segments before the root layout). Verified against the running build: `/fr` and `/fr/about` both
+  return `<html lang="en">`, and the FR `<title>` falls back to the untranslated default
+  (`KC Technology Corporation`) because the locale layout's `generateMetadata` has no `title`.
+  This violates the SEO rule "correct `html[lang]`" and is a screen-reader pronunciation problem.
+  It predates the founder's-message work (introduced in the Phase 1 layout). The fix is a route
+  restructure — move the locale segment to `src/app/[locale]/layout.tsx` so it *is* the root layout
+  (or add a `next/root-params` accessor) and set `lang` from the resolved locale — but that touches
+  every route group and the admin tree, so it belongs in its own change with its own verification,
+  not a feature PR. Do not paper over it with a client-side `document.documentElement.lang` patch:
+  that is invisible to crawlers and the pre-hydration paint.
 
 ### Phase 13 gotchas worth not rediscovering
 

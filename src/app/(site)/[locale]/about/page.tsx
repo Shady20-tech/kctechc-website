@@ -5,6 +5,7 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { SocialLinks } from "@/components/layout/SocialLinks";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { DEPARTMENTS } from "@/lib/config/site";
@@ -224,23 +225,14 @@ export default async function AboutPage({
         </ul>
       </SectionBand>
 
-      <SectionBand labelledBy="about-leadership-heading">
-        <h2
-          id="about-leadership-heading"
-          className="text-xl font-semibold text-ink-900"
-        >
-          {t("about.leadershipHeading")}
-        </h2>
-        <div className="mt-6 rounded-card border border-border bg-surface p-6 shadow-card lg:max-w-3xl">
-          <p className="text-base font-semibold text-ink-900">
-            {t("about.leaderName")}
-          </p>
-          <p className="mono-label mt-1 text-ink-500">
-            {t("about.leaderRole")}
-          </p>
-          <p className="mt-4 text-base text-body">{t("about.leaderBody")}</p>
-        </div>
-      </SectionBand>
+      {/* Founder's message. The portrait and the letter are the human attribution
+          for everything the page states above; the letter itself carries the
+          vision, the three pillars and the core values in the founder's words. */}
+      <ChairmanMessage
+        locale={resolved}
+        eyebrow={t("about.leadershipHeading")}
+        heading={t("about.chairmanHeading")}
+      />
 
       <SectionBand tone="alt" labelledBy="about-social-heading">
         <h2

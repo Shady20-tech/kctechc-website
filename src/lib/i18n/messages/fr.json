@@ -89,7 +89,14 @@
     "trustHeading": "Informations sur l'entreprise",
     "trustNote": "Coordonnées vérifiées, publiées pour que vous sachiez à qui vous avez affaire.",
     "lastDepartment": "Revenir à {department}",
-    "lastDepartmentNote": "Vous avez consulté ce département en dernier. Vous pouvez aussi en choisir un autre ci-dessus."
+    "lastDepartmentNote": "Vous avez consulté ce département en dernier. Vous pouvez aussi en choisir un autre ci-dessus.",
+    "messageEyebrow": "Message de la direction",
+    "messageHeading": "Le mot de notre Fondateur et Directeur Général",
+    "messageIntro": "Notre fondateur expose la vision de KC Technology Corporation : la technologie, l'infrastructure et l'investissement avançant ensemble à travers l'Afrique et au-delà.",
+    "messageCta": "Lire le message complet",
+    "indexEyebrow": "Explorer le site",
+    "indexHeading": "Tout le site",
+    "indexIntro": "Toutes les pages publiques au même endroit : départements, services, boutique, annonces immobilières, actualités et contact."
   },
   "about": {
     "metaTitle": "À propos de l'entreprise",
@@ -118,13 +125,24 @@
     "leadershipHeading": "Direction",
     "leaderName": "Ing. Clinton Kum Ngum",
     "leaderRole": "Fondateur et Directeur Général",
-    "leaderBody": "KC Technology Corporation est dirigée par un fondateur visionnaire engagé à stimuler l'innovation, la croissance des entreprises et le progrès technologique à travers l'Afrique. Grâce à un leadership stratégique et à des modèles d'affaires tournés vers l'avenir, l'entreprise se concentre sur la fourniture de services de haute qualité en marketing digital, en solutions d'ingénierie électrique et en développement immobilier. La direction s'engage à bâtir une entreprise qui contribue à la transformation numérique, au développement des infrastructures et à l'autonomisation économique à travers l'Afrique et le monde entier.",
+    "leaderBody": "Bienvenue chez KC Technology Corporation. Lorsque nous avons posé les fondations de cette entreprise à Limbe, au Cameroun, nous l'avons fait avec une vision unique et claire : combler les écarts critiques entre la technologie, les infrastructures physiques et l'investissement stratégique à travers l'Afrique et le marché mondial. Nous avons compris que le véritable progrès ne peut se faire en vase clos. La vraie transformation survient lorsque les solutions numériques modernes, l'ingénierie robuste et les investissements immobiliers sécurisés avancent ensemble, en parfaite harmonie.\n\nAujourd'hui, KC Technology Corporation est une puissance multisectorielle dynamique, bâtie sur trois piliers inébranlables : le marketing digital, les services électriques et l'immobilier.\n\nNotre intégration est notre superpouvoir. Notre expertise numérique amplifie notre portée immobilière ; nos équipes d'ingénierie d'élite construisent nos propriétés ; et nos projets immobiliers constituent des portefeuilles à long terme pour nos investisseurs. En tissant ces secteurs ensemble, nous ne résolvons pas des problèmes isolés : nous offrons un écosystème de croissance unifié.\n\nÀ mesure que nous avançons, notre engagement envers nos valeurs fondamentales demeure absolu : innovation, intégrité, professionnalisme, satisfaction du client et croissance durable. Que vous soyez un entrepreneur local, une institution ou un investisseur international à la recherche d'un partenaire fiable en Afrique, nous nous consacrons à votre efficacité, votre rentabilité et votre valeur à long terme.\n\nMerci de nous confier votre vision. Ensemble, nous continuerons d'innover la technologie, d'alimenter les infrastructures et de transformer les avenirs.",
     "socialHeading": "Suivez-nous",
     "socialBody": "Retrouvez KC Technology Corporation sur les canaux ci-dessous.",
     "factsHeading": "Informations sur l'entreprise",
     "departmentsHeading": "Nos départements",
     "ctaHeading": "Travailler avec nous",
-    "ctaBody": "Décrivez votre besoin et le département concerné vous répondra avec les prochaines étapes."
+    "ctaBody": "Décrivez votre besoin et le département concerné vous répondra avec les prochaines étapes.",
+    "chairmanHeading": "Message de notre Fondateur et Directeur Général",
+    "chairmanPortraitAlt": "Portrait de l'Ing. Clinton Kum Ngum, Fondateur et Directeur Général de KC Technology Corporation",
+    "chairmanPillarsHeading": "Trois piliers inébranlables",
+    "chairmanPillar1Title": "Marketing digital",
+    "chairmanPillar1Body": "Par le marketing digital, nous aidons les startups, les entrepreneurs et les entreprises établies à gagner en visibilité, à conquérir des parts de marché et à développer leurs ventes à l'échelle mondiale.",
+    "chairmanPillar2Title": "Services électriques",
+    "chairmanPillar2Body": "Par les services électriques, nous alimentons l'avenir avec la domotique, des systèmes de sécurité de haut niveau et des installations solaires durables qui maintiennent les infrastructures résidentielles et industrielles en pleine activité.",
+    "chairmanPillar3Title": "Immobilier",
+    "chairmanPillar3Body": "Par l'immobilier, nous offrons le fondement ultime de la richesse, en guidant nos clients à travers des acquisitions foncières sécurisées, le développement de biens et une gestion immobilière à haut rendement.",
+    "chairmanValuesHeading": "Nos valeurs fondamentales",
+    "chairmanValues": "Innovation, Intégrité, Professionnalisme, Satisfaction du client, Croissance durable"
   },
   "contact": {
     "metaTitle": "Nous contacter",

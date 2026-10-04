@@ -89,7 +89,14 @@
     "trustHeading": "Company information",
     "trustNote": "Verified company details, published so you can confirm who you are dealing with.",
     "lastDepartment": "Return to {department}",
-    "lastDepartmentNote": "You last visited this department. You can also choose another above."
+    "lastDepartmentNote": "You last visited this department. You can also choose another above.",
+    "messageEyebrow": "Leadership message",
+    "messageHeading": "A word from our Founder & Managing Director",
+    "messageIntro": "Our founder sets out the vision behind KC Technology Corporation: technology, infrastructure and investment moving together across Africa and beyond.",
+    "messageCta": "Read the full message",
+    "indexEyebrow": "Explore the site",
+    "indexHeading": "Everything on this site",
+    "indexIntro": "Every public page in one place: departments, services, the store, property listings, insights and contact."
   },
   "about": {
     "metaTitle": "About the company",
@@ -118,13 +125,24 @@
     "leadershipHeading": "Leadership",
     "leaderName": "Engr. Clinton Kum Ngum",
     "leaderRole": "Founder & Managing Director",
-    "leaderBody": "KC Technology Corporation is led by a visionary founder committed to driving innovation, business growth, and technological advancement across Africa. Through strategic leadership and forward-thinking business models, the company focuses on delivering high-quality services in digital marketing, electrical engineering solutions, and real estate development. The leadership is dedicated to building a company that contributes to digital transformation, infrastructure development, and economic empowerment across Africa and the world at large.",
+    "leaderBody": "Welcome to KC Technology Corporation. When we laid the foundation of this company in Limbe, Cameroon, we did so with a singular, clear vision: to bridge the critical gaps between technology, physical infrastructure, and strategic investment across Africa and the global market. We recognized that true progress cannot happen in a silo. True transformation happens when modern digital solutions, robust engineering, and secure real estate investments move together in perfect harmony.\n\nToday, KC Technology Corporation stands as a dynamic multi-sector powerhouse built on three unstoppable pillars: Digital Marketing, Electrical Services, and Real Estate.\n\nOur integration is our superpower. Our digital expertise elevates our real estate reach; our elite engineering teams build out our properties; and our real estate ventures secure long-term portfolios for our investors. By weaving these sectors together, we do not just solve isolated issues: we offer a unified ecosystem of growth.\n\nAs we move forward, our commitment to our core values remains absolute: Innovation, Integrity, Professionalism, Customer Satisfaction, and Sustainable Growth. Whether you are a local entrepreneur, a corporate institution, or an international investor looking for a reliable partner in Africa, we are dedicated to driving your efficiency, profitability, and long-term value.\n\nThank you for trusting us with your vision. Together, we will keep innovating technology, powering infrastructure, and transforming futures.",
     "socialHeading": "Follow us",
     "socialBody": "Find KC Technology Corporation on the channels below.",
     "factsHeading": "Company facts",
     "departmentsHeading": "Our departments",
     "ctaHeading": "Work with us",
-    "ctaBody": "Tell us what you need and the relevant department will respond with next steps."
+    "ctaBody": "Tell us what you need and the relevant department will respond with next steps.",
+    "chairmanHeading": "A message from our Founder & Managing Director",
+    "chairmanPortraitAlt": "Portrait of Engr. Clinton Kum Ngum, Founder and Managing Director of KC Technology Corporation",
+    "chairmanPillarsHeading": "Three unstoppable pillars",
+    "chairmanPillar1Title": "Digital Marketing",
+    "chairmanPillar1Body": "Through Digital Marketing, we are empowering startups, entrepreneurs, and established enterprises to achieve visibility, command market share, and scale their sales globally.",
+    "chairmanPillar2Title": "Electrical Services",
+    "chairmanPillar2Body": "Through Electrical Services, we are powering the future with smart home automation, high-tier security systems, and sustainable solar energy installations that keep residential and industrial infrastructures thriving.",
+    "chairmanPillar3Title": "Real Estate",
+    "chairmanPillar3Body": "Through Real Estate, we provide the ultimate foundation of wealth, guiding our clients through secure land acquisitions, property development, and high-yield property management.",
+    "chairmanValuesHeading": "Our core values",
+    "chairmanValues": "Innovation, Integrity, Professionalism, Customer Satisfaction, Sustainable Growth"
   },
   "contact": {
     "metaTitle": "Contact us",

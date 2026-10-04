@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SkipLink } from "@/components/layout/Navigation";
+import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { SiteIndex } from "@/components/ui/SiteIndex";
 import { LastDepartmentShortcut } from "@/components/layout/LastDepartment";
 import { RotatingStatement } from "@/components/ui/RotatingStatement";
 import { DEPARTMENTS, SITE } from "@/lib/config/site";
@@ -18,6 +20,7 @@ import {
   type Locale,
 } from "@/lib/i18n/locales";
 import { STATIC_MESSAGES } from "@/lib/i18n/messages";
+import { createTranslator } from "@/lib/i18n/translator";
 import { buildLocaleAlternates } from "@/lib/i18n/routing";
 import { organizationJsonLd } from "@/lib/seo/structured-data";
 
@@ -85,6 +88,16 @@ export default async function CorporateGatewayPage() {
       EN.departments[DEPARTMENT_LABEL_KEYS[department.slug]].label,
     ]),
   ) as Record<(typeof DEPARTMENTS)[number]["slug"], string>;
+
+  // The gateway is language-neutral, so the founder's message and the site index
+  // are shown once per language. The translator is built once per locale rather
+  // than per render call, and the ids are locale-qualified so the two instances
+  // never produce duplicate anchors in the document.
+  const perLocale = LOCALES.map((locale, index) => ({
+    locale,
+    index,
+    t: createTranslator(locale).t,
+  }));
 
   return (
     <>
@@ -342,12 +355,46 @@ export default async function CorporateGatewayPage() {
           </div>
         </section>
 
+        {/* Founder's message. The gateway is language-neutral, so the letter is
+            shown once per language with its own heading and a link into that
+            language's about page; the portrait is rendered once. */}
+        {perLocale.map(({ locale, index, t }) => (
+          <ChairmanMessage
+            key={locale}
+            id={`gateway-chairman-${locale}`}
+            locale={locale}
+            variant="summary"
+            tone={index === 0 ? "default" : "alt"}
+            showPortrait={index === 0}
+            eyebrow={`03 — ${t("home.messageEyebrow")}`}
+            heading={t("home.messageHeading")}
+            intro={t("home.messageIntro")}
+            ctaHref={`/${locale}/about`}
+            ctaLabel={t("home.messageCta")}
+          />
+        ))}
+
+        {/* Site index. On the gateway the index is the primary wayfinding aid, so
+            it is shown once per language with ids that cannot collide. */}
+        {perLocale.map(({ locale, index, t }) => (
+          <SiteIndex
+            key={locale}
+            id={`gateway-index-${locale}`}
+            locale={locale}
+            t={t}
+            tone={index === 0 ? "alt" : "default"}
+            eyebrow={`04 — ${t("home.indexEyebrow")}`}
+            heading={t("home.indexHeading")}
+            intro={t("home.indexIntro")}
+          />
+        ))}
+
         {/* Language and department entry. */}
         <section
           aria-labelledby="gateway-language-heading"
           className="container-page section"
         >
-          <p className="mono-label text-dept-accent">03 — Entry</p>
+          <p className="mono-label text-dept-accent">05 — Entry</p>
           <h2
             id="gateway-language-heading"
             className="display-tight mt-3 font-display text-3xl font-bold text-ink-900 sm:text-4xl"
