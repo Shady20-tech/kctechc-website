@@ -29,7 +29,8 @@ export type PaymentMethod =
   | "card"
   | "mobile_money_mtn"
   | "mobile_money_orange"
-  | "bank_transfer";
+  | "bank_transfer"
+  | "cash_on_confirmation";
 
 export type FulfillmentMethod = "delivery" | "pickup";
 
@@ -53,19 +54,20 @@ export const PAYMENT_STATUSES: readonly PaymentStatus[] = [
 ];
 
 /**
- * Payment methods a customer may choose today.
+ * Payment intents a customer may choose today.
  *
- * Fapshi settles mobile money (MTN, Orange) and the site's own bank-transfer
- * flow; it has no card channel (its `medium` enum is `mobile money`,
- * `orange money`, `fapshi`). `card` therefore stays in `PaymentMethod` — the
- * database enum still contains it, and removing a value from a live enum would
- * be a destructive migration for no gain — but it is not offered and cannot be
- * submitted: the checkout schema accepts only the three below.
+ * The site takes no payment itself: an order records the customer's intended
+ * method and the business contacts them to finalise it. All four are therefore
+ * *intent*, confirmed by a human afterwards.
  *
- * A legacy order whose stored method is `card` remains readable; it simply cannot
- * be paid again through this integrator.
+ * `card` is deliberately not offered — the business settles by mobile money,
+ * bank transfer or an agreed arrangement. It stays in `PaymentMethod` because the
+ * database enum still contains it and a legacy order must remain readable;
+ * removing a value from a live enum would be a destructive migration for no
+ * gain. The checkout schema accepts only the four below.
  */
 export const PAYMENT_METHODS = [
+  "cash_on_confirmation",
   "mobile_money_mtn",
   "mobile_money_orange",
   "bank_transfer",

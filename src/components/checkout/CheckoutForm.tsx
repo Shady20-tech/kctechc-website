@@ -60,7 +60,8 @@ export function CheckoutForm({
   const t = createTranslator(locale).t;
 
   const [fulfillment, setFulfillment] = useState<FulfillmentMethod>("delivery");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mobile_money_mtn");
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("cash_on_confirmation");
 
   // Stable for the lifetime of this form. Regenerating it on each render would
   // make every keystroke a new checkout. A lazy `useState` initializer is the
@@ -114,6 +115,10 @@ export function CheckoutForm({
     (typeof PAYMENT_METHODS)[number],
     { label: string; hint: string }
   > = {
+    cash_on_confirmation: {
+      label: t("checkout.paymentCash"),
+      hint: t("checkout.paymentCashHint"),
+    },
     mobile_money_mtn: { label: t("checkout.paymentMtn"), hint: t("checkout.paymentMtnHint") },
     mobile_money_orange: { label: t("checkout.paymentOrange"), hint: t("checkout.paymentOrangeHint") },
     bank_transfer: { label: t("checkout.paymentBank"), hint: t("checkout.paymentBankHint") },
@@ -306,8 +311,8 @@ export function CheckoutForm({
           })}
         </div>
 
-        {/* Reassurance about payment data. Stated because it is true: the
-            payment is completed on Fapshi's own page, not here. */}
+        {/* Reassurance about payment data. Stated because it is true: no
+            card or mobile-money details are collected here. */}
         <p className="text-sm text-muted">{t("checkout.secureNote")}</p>
       </fieldset>
 

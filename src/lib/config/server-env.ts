@@ -1,5 +1,7 @@
 import "server-only";
 
+import { SITE } from "@/lib/config/site";
+
 /**
  * Server-only secrets. `import "server-only"` makes any accidental import from a
  * Client Component a build error, which is the guard that keeps the Supabase
@@ -19,38 +21,34 @@ export const serverEnv = {
   resendApiKey: optional(process.env.RESEND_API_KEY),
   emailFrom: optional(process.env.EMAIL_FROM),
   emailContactTo: optional(process.env.EMAIL_CONTACT_TO),
-  paymentProvider: optional(process.env.PAYMENT_PROVIDER),
-  /** Fapshi API credentials. `apiuser` and `apikey` request headers. */
-  fapshiApiUser: optional(process.env.FAPSHI_API_USER),
-  fapshiApiKey: optional(process.env.FAPSHI_API_KEY),
   /**
-   * Fapshi base URL. Defaults to the live host in the adapter.
-   *
-   * Configuration rather than inference: the base URL and the credentials must
-   * move together, so a sandbox key cannot be pointed at the live host by
-   * accident. `sandbox` selects the sandbox host; anything else is treated as an
-   * explicit URL.
+   * Operational inboxes that receive order notifications (comma- or
+   * semicolon-separated). Kept server-only so an address is never hardcoded into
+   * a client bundle. When unset, notifications fall back to the public contact
+   * address in `SITE.email`.
    */
-  fapshiBaseUrl: (() => {
-    const raw = optional(process.env.FAPSHI_BASE_URL);
-    if (!raw) return null;
-    return raw === "sandbox" ? "https://sandbox.fapshi.com" : raw;
-  })(),
-  /** The `x-wh-secret` value configured on the Fapshi service dashboard. */
-  fapshiWebhookSecret: optional(process.env.FAPSHI_WEBHOOK_SECRET),
+  ordersNotifyTo: optional(process.env.ORDERS_NOTIFY_TO),
   /** Bot verification (Turnstile/hCaptcha). Absent means the check is skipped. */
   botVerificationSecretKey: optional(process.env.BOT_VERIFICATION_SECRET_KEY),
   botVerificationEndpoint: optional(process.env.BOT_VERIFICATION_ENDPOINT),
 } as const;
 
-/**
- * Payments stay disabled until real credentials exist. Code paths must branch on
- * this rather than simulating a successful charge.
- */
-export const isPaymentProviderConfigured = (): boolean =>
-  serverEnv.fapshiApiUser !== null && serverEnv.fapshiApiKey !== null;
-
 export const isTolgeeServerConfigured = (): boolean =>
   serverEnv.tolgeeApiKey !== null;
 
 export const isEmailConfigured = (): boolean => serverEnv.resendApiKey !== null;
+
+/**
+ * Recipients for a new-order notification.
+ *
+ * `ORDERS_NOTIFY_TO` wins when set (so an operator can route orders to a shared
+ * mailbox); otherwise every public contact address receives it, so an order is
+ * never left without an owner on a deployment that never set the variable.
+ */
+export function orderNotificationRecipients(): string[] {
+  const configured = serverEnv.ordersNotifyTo
+    ?.split(/[,;]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return configured && configured.length > 0 ? configured : [...SITE.emails];
+}

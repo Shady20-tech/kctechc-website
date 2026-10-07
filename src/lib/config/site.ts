@@ -9,7 +9,14 @@ export const SITE = {
   shortName: "KC Technology",
   motto:
     "Innovating Technology. Powering Infrastructure. Transforming Futures.",
+  /**
+   * Public contact addresses. `email` is the primary/general inbox (kept as a
+   * single value for internal notifications and legacy consumers); `emails` is
+   * the full set shown to visitors on the contact page and in the footer. The
+   * two are kept in step: the first entry of `emails` is `email`.
+   */
   email: "kctechc@gmail.com",
+  emails: ["kctechc@gmail.com", "info@kctectc.com", "support@kctechc.com"],
   phones: ["+237 679-202-265", "656-218-651"],
   address: {
     street: "Half-Mile",

@@ -19,8 +19,9 @@ import { LEGAL_FR } from "./legal.fr";
  *   - the inquiry, checkout and delivery fields are those `inquiry.ts` and
  *     `checkout.ts` accept;
  *   - the IP handling is the salted hash in `inquiries/actions.ts`;
- *   - the payment methods are the three `checkout.ts` permits through Fapshi,
- *     and no card details ever reach this site (see `payments/fapshi.ts`);
+ *   - the payment methods are the three `checkout.ts` permits, and no card or
+ *     mobile-money details are collected on this site: an order is sent to our
+ *     team, who confirm it and arrange payment directly with the customer;
  *   - the retention periods are the working assumption supplied with this phase,
  *     flagged in `retentionNote` as still to be confirmed by the business.
  *
@@ -101,11 +102,11 @@ You are responsible for keeping your password and access to your email account s
   {
     id: "orders-payments",
     heading: "Orders and payment",
-    body: `**Placing an order.** An order is placed when you submit the checkout form and pay. Prices are shown in Central African CFA francs (XAF), which is the only currency our payment provider settles in.
+    body: `**Placing an order.** An order is placed when you submit the checkout form and send it to us. Prices are shown in Central African CFA francs (XAF).
 
-**Payment methods.** Payment is handled by Fapshi, a Cameroonian payment provider. The methods available are MTN Mobile Money, Orange Money and bank transfer. We do not accept card payments. You complete payment on Fapshi's own hosted page; card and mobile-money details are entered there and are never transmitted to or stored by this site.
+**Payment methods.** We do not take payment on this website. When you send an order you choose how you would like to pay — MTN Mobile Money, Orange Money, bank transfer, or an arrangement our team agrees with you — and we contact you using the details you provided to confirm the order, agree the method and finalise payment. No card or mobile-money details are entered on this site and none are stored by it.
 
-**Confirmation.** An order is confirmed only after we verify, directly with Fapshi, that the payment succeeded and that the amount and currency match the order. A payment that is reported as successful but does not match the order is not treated as paid.
+**Confirmation.** We confirm an order ourselves once payment is arranged. An order sent through the website is a request to purchase, not a completed sale, until we confirm it and payment is finalised.
 
 **Delivery and collection.** Orders may be collected from our office in ${SITE.address.city} or delivered to the address you give us at checkout. A delivery order requires a street address and a city. Delivery fees, where they apply, are shown and agreed at checkout, and an order is described as either a delivery order or a collection order in both the checkout and the receipt.`,
   },
@@ -121,7 +122,7 @@ Where you provide measurements, photographs, drawings or documents for a quotati
     heading: "Cancellation, returns and refunds",
     body: `**Cancelling an order.** Contact us at ${CONTACT_EMAIL} as soon as possible. Where an order has not yet been dispatched or installed, we will cancel it and refund any amount already paid.
 
-**Returns and refunds.** Goods are returnable if they are faulty, not as described or not fit for the purpose we agreed. Electrical goods and materials that have been installed, altered or used are not returnable except where they are faulty. Approved refunds are made by the same payment channel used to pay, through our payment provider.
+**Returns and refunds.** Goods are returnable if they are faulty, not as described or not fit for the purpose we agreed. Electrical goods and materials that have been installed, altered or used are not returnable except where they are faulty. Approved refunds are made by the same payment channel used to pay, or as our team agrees with you.
 
 **Services in progress.** Where installation or campaign work has begun, the amount already performed is chargeable and is deducted from any refund.
 
@@ -203,7 +204,7 @@ We are the data controller for that processing. Our head office is at ${POSTAL_A
 
 **Automatically, for security and records.** When you submit an inquiry or quote request we record a salted, one-way hash of your IP address, your browser's user-agent string, and the time of submission. The hash is derived with a secret salt and cannot be reversed to your IP address. We record it to detect and limit abuse, not to identify you.
 
-We do not collect card numbers, mobile-money numbers or bank credentials. Payment is taken on our provider's hosted page, and those details never reach this site.`,
+We do not collect card numbers, mobile-money numbers or bank credentials. No payment is taken on this site; an order is sent to our team, who confirm it and arrange payment directly with you.`,
   },
   {
     id: "why",
@@ -212,7 +213,7 @@ We do not collect card numbers, mobile-money numbers or bank credentials. Paymen
 
 1. answer your inquiry and prepare a quotation;
 2. create and administer your account, including confirming your email and allowing a password reset;
-3. process, fulfil and deliver an order, and verify the payment with our provider;
+3. process, fulfil and deliver an order, and contact you to confirm it and arrange payment;
 4. arrange a property viewing or pass your enquiry to the relevant agent;
 5. keep the site secure, prevent abuse and limit automated submissions;
 6. measure how the site is used, but only where you have allowed it;
@@ -228,11 +229,10 @@ Cookies and measurement are described in the Cookies section below. Where measur
     body: `We use a small number of service providers, and share data only as needed for them to perform their service:
 
 1. **Supabase** — hosting of the database that stores accounts, orders, inquiries and listings.
-2. **Fapshi** (and its partner mobile-money and banking channels) — processing your payment and confirming whether it succeeded. Fapshi receives the amount, currency and a reference for the order, and you enter your payment details on Fapshi's own page.
+2. **Our email provider** — delivering account, enquiry and order-notification emails on our behalf, including the order you send us and the confirmation we send you.
 3. **Tolgee** — the translation management service that supplies the site's interface text.
-4. **Our email provider** — delivering account and enquiry emails on our behalf.
-5. **Google Analytics** — if and only if you allow measurement, receiving anonymous usage events with no direct identifiers.
-6. **Professional advisers, auditors and authorities** — where we are required to disclose information, or where it is necessary to establish, exercise or defend a legal claim.
+4. **Google Analytics** — if and only if you allow measurement, receiving anonymous usage events with no direct identifiers.
+5. **Professional advisers, auditors and authorities** — where we are required to disclose information, or where it is necessary to establish, exercise or defend a legal claim.
 
 We do not sell your personal data, and we do not share it for other parties' independent marketing. Some of these providers process data on servers outside Cameroon, including in the European Union and the United States.`,
   },

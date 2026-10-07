@@ -70,6 +70,8 @@ export function ContactForm({
   validationMessages,
   defaultDepartment,
   defaultService,
+  defaultSubject,
+  defaultMessage,
 }: {
   locale: Locale;
   labels: ContactFormLabels;
@@ -78,6 +80,9 @@ export function ContactForm({
   validationMessages: Record<string, string>;
   defaultDepartment?: DepartmentSlug;
   defaultService?: string;
+  /** Pre-filled subject/message, e.g. from a `?package=` request-info link. */
+  defaultSubject?: string;
+  defaultMessage?: string;
 }) {
   const [state, formAction, isPending] = useActionState(
     submitInquiry,
@@ -237,6 +242,7 @@ export function ContactForm({
           name="subject"
           label={labels.subjectLabel}
           placeholder={labels.subjectPlaceholder}
+          defaultValue={defaultSubject}
           required
           requiredLabel={validationMessages.required}
           error={message(fieldErrors.subject)}
@@ -247,6 +253,7 @@ export function ContactForm({
           name="message"
           label={labels.messageLabel}
           placeholder={labels.messagePlaceholder}
+          defaultValue={defaultMessage}
           required
           requiredLabel={validationMessages.required}
           error={message(fieldErrors.message)}

@@ -2,6 +2,7 @@ import { DEPARTMENTS } from "@/lib/config/site";
 import {
   INSIGHTS_PATH,
   PROPERTY_SEARCH_PATH,
+  SOLAR_PACKAGES_PATH,
   STORE_PATH,
 } from "@/lib/config/redirects";
 import type { Locale } from "@/lib/i18n/locales";
@@ -43,6 +44,10 @@ export const NAV_PATHS = [
   "/gallery",
   "/insights",
   "/contact",
+  // The solar-packages surface belongs to the Electrical Services department and
+  // is a primary commercial entry point, so it is listed here (and therefore in
+  // the sitemap) rather than only linked from the department page.
+  SOLAR_PACKAGES_PATH,
   // The store sits under the Digital Marketing department rather than at the
   // root, because it is that department's commercial surface. It is listed here
   // because it is a primary nav entry, and this list is what the sitemap and the
@@ -85,6 +90,7 @@ export {
   LEGACY_REDIRECTS,
   PROPERTY_SEARCH_PATH,
   REAL_ESTATE_PATH,
+  SOLAR_PACKAGES_PATH,
   STORE_PATH,
 } from "./redirects";
 
@@ -117,6 +123,11 @@ export function buildPrimaryNav(
     },
     { kind: "link", href: `/${locale}/services`, label: t("nav.services") },
     { kind: "link", href: `/${locale}/gallery`, label: t("nav.gallery") },
+    {
+      kind: "link",
+      href: `/${locale}${SOLAR_PACKAGES_PATH}`,
+      label: t("nav.packages"),
+    },
     { kind: "link", href: `/${locale}/contact`, label: t("nav.contact") },
     {
       kind: "link",

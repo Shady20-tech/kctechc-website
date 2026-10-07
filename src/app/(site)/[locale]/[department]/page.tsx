@@ -205,6 +205,14 @@ export default async function DepartmentPage({
                   >
                     {t("projects.heroCta")}
                   </Link>
+                  {definition.slug === "electrical-services" ? (
+                    <Link
+                      href={`/${resolved}/${definition.slug}/packages`}
+                      className="inline-flex items-center rounded-pill border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-soft hover:border-white/40"
+                    >
+                      {t("nav.packages")}
+                    </Link>
+                  ) : null}
                   <Link
                     href={`/${resolved}/contact?department=${definition.slug}`}
                     className="inline-flex items-center rounded-pill border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-soft hover:border-white/40"

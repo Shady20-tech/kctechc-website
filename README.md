@@ -58,7 +58,7 @@ Full details, version notes, and constraints are in `AGENTS.md` and `docs/PROJEC
 | 1 | Next.js foundations, design tokens, locale scaffold, SEO baseline | ✅ Complete |
 | 2 | Supabase foundation, migrations, RLS, auth, region seed | ✅ Complete |
 | 3 | Department surfaces & content, translation pipeline | ✅ Complete |
-| 4 | Store, cart, orders, Fapshi payments | ✅ Complete |
+| 4 | Store, cart, orders, checkout (email-to-confirm, no on-site payment) | ✅ Complete |
 | 5 | Electrical projects, private attachments, quote requests | ✅ Complete |
 | 6 | Real estate listings, geography, map adapter, admin console | ✅ Complete |
 | 7 | Customer favourites, saved searches, geographic landing pages | ✅ Complete |

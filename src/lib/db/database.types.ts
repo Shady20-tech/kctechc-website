@@ -3402,7 +3402,8 @@ export type Database = {
         | "card"
         | "mobile_money_mtn"
         | "mobile_money_orange"
-        | "bank_transfer";
+        | "bank_transfer"
+        | "cash_on_confirmation";
       payment_status:
         | "pending"
         | "requires_action"
@@ -3689,6 +3690,7 @@ export const Constants = {
         "mobile_money_mtn",
         "mobile_money_orange",
         "bank_transfer",
+        "cash_on_confirmation",
       ],
       payment_status: [
         "pending",

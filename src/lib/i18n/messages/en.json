@@ -51,7 +51,8 @@
     "services": "Services",
     "gallery": "Gallery",
     "blog": "Blog",
-    "store": "Store"
+    "store": "Store",
+    "packages": "Solar Packages"
   },
   "departments": {
     "heading": "Our departments",
@@ -1292,9 +1293,9 @@
   },
   "checkout": {
     "metaTitle": "Checkout",
-    "metaDescription": "Complete your order with KC Technology Corporation. Pay by MTN or Orange mobile money, or arrange a bank transfer.",
+    "metaDescription": "Send your order to KC Technology Corporation. Choose how you would like to pay, and our team contacts you to confirm the details and finalise payment.",
     "heading": "Checkout",
-    "intro": "Review your order, tell us where it goes, and choose how to pay. Prices and stock are confirmed on our side before the order is placed.",
+    "intro": "Review your order, tell us where it goes and choose how you would like to pay. When you send the order, our team contacts you to confirm the details and finalise payment.",
     "emptyHeading": "Your cart is empty",
     "emptyBody": "There is nothing to check out. Add an item to your cart first.",
     "emptyCta": "Back to the store",
@@ -1316,11 +1317,11 @@
     "fieldDeliveryNotes": "Delivery notes",
     "fieldDeliveryNotesHint": "Optional. Access instructions or a preferred time.",
     "paymentHeading": "Payment method",
-    "paymentIntro": "Choose how you would like to pay.",
+    "paymentIntro": "Choose how you would like to pay. We do not take payment on this website — our team contacts you to finalise it.",
     "paymentMtn": "MTN Mobile Money",
-    "paymentMtnHint": "You are taken to a secure page to approve the payment on your phone.",
+    "paymentMtnHint": "Tell us you intend to pay by MTN Mobile Money. Our team contacts you with the steps to complete it.",
     "paymentOrange": "Orange Money",
-    "paymentOrangeHint": "You are taken to a secure page to approve the payment on your phone.",
+    "paymentOrangeHint": "Tell us you intend to pay by Orange Money. Our team contacts you with the steps to complete it.",
     "paymentBank": "Bank transfer",
     "paymentBankHint": "We send you the account details. Your order is confirmed once the transfer is received and checked by our team.",
     "summaryHeading": "Order summary",
@@ -1335,9 +1336,9 @@
     "reviewHeading": "Review and place order",
     "reviewIntro": "Check the details above, then place your order.",
     "consentLabel": "I confirm the details above are correct and I agree to be contacted about this order.",
-    "submit": "Place order",
+    "submit": "Send order",
     "submitting": "Placing your order…",
-    "secureNote": "Payment is completed on our provider's secure page. You approve mobile money on your own phone.",
+    "secureNote": "No card or mobile-money details are collected on this website. Our team confirms every order and payment with you directly.",
     "errorHeading": "Your order was not placed",
     "errorSummaryHeading": "Please check the following",
     "errFullName": "Enter your full name.",
@@ -1359,7 +1360,9 @@
     "errorTitle": "Something went wrong",
     "errorBody": "Your order was not placed and you have not been charged. Please try again, or contact us if it keeps happening.",
     "paymentFailedTitle": "Payment did not complete",
-    "paymentFailedBody": "Your order is saved and no money was taken. You can try paying again from your order page."
+    "paymentFailedBody": "Your order is saved and no money was taken. You can try paying again from your order page.",
+    "paymentCash": "Pay on confirmation",
+    "paymentCashHint": "Our team contacts you to agree the method: mobile money, bank transfer or in person."
   },
   "order": {
     "metaTitle": "Order {reference}",
@@ -1380,17 +1383,8 @@
     "paymentMethodLabel": "Method",
     "paymentProviderRef": "Transaction reference",
     "thanking": "Thank you. We have your order and will be in touch about delivery.",
-    "awaitingPaymentHeading": "Payment not yet completed",
-    "awaitingPaymentBank": "Your order is reserved. Transfer the total to our account and send us the reference below. We will confirm the order once the transfer arrives — this is checked by our team, not automatically.",
-    "awaitingPaymentOnline": "Your order is saved but the payment has not completed. You can try again below.",
-    "bankReferenceLabel": "Use this reference on your transfer",
-    "retryPayment": "Try payment again",
-    "retrying": "Starting payment…",
-    "retryFailed": "We could not start the payment again. Please contact us and quote your order reference.",
     "paidHeading": "Payment received",
     "paidBody": "Your payment has been confirmed and your order is being prepared.",
-    "failedHeading": "Payment failed",
-    "failedBody": "No money was taken. You can try again below, or contact us if it keeps failing.",
     "cancelledHeading": "This order was cancelled",
     "cancelledBody": "This order is no longer active. Place a new order if you still need these items.",
     "refundedHeading": "This order was refunded",
@@ -1408,7 +1402,10 @@
     "guestNoticeHeading": "Orders placed without an account",
     "guestNoticeBody": "These orders were placed from this browser without signing in. Create an account to keep them together and track future orders.",
     "signInToSeeMore": "Sign in to see all your orders",
-    "metaDescription": "The status of your KC Technology Corporation order, including payment and delivery."
+    "metaDescription": "The status of your KC Technology Corporation order, including payment and delivery.",
+    "awaitingHeading": "Order sent — awaiting confirmation",
+    "contactNoticeHeading": "What happens next",
+    "contactNoticeBody": "Our team has received your order by email and will contact you using the details you provided to confirm stock, delivery and payment. Nothing is charged on this website."
   },
   "paymentStatus": {
     "pending": "Awaiting payment",
@@ -1431,7 +1428,8 @@
     "card": "Card",
     "mobile_money_mtn": "MTN Mobile Money",
     "mobile_money_orange": "Orange Money",
-    "bank_transfer": "Bank transfer"
+    "bank_transfer": "Bank transfer",
+    "cash_on_confirmation": "Pay on confirmation"
   },
   "fulfillmentMethod": {
     "delivery": "Delivery",
@@ -1973,10 +1971,28 @@
     "order": {
       "heading": "Order received",
       "subjectLine": "Order {reference} received",
-      "intro": "We have your order. It is reserved and awaiting payment; we will confirm it once payment is complete.",
+      "intro": "We have your order. Our team will contact you using the details you gave us to confirm the order, agree how you would like to pay and finalise it. Nothing is charged on this website.",
       "reference": "Order reference",
       "name": "Name",
       "total": "Total"
+    },
+    "orderAdmin": {
+      "heading": "New order received",
+      "subjectLine": "New order {reference} — {total}",
+      "intro": "A customer has sent an order through the website. Contact them using the details below to confirm stock, delivery and payment.",
+      "reference": "Order reference",
+      "name": "Customer name",
+      "email": "Email",
+      "phone": "Phone",
+      "method": "Payment intent",
+      "fulfillment": "Fulfilment",
+      "address": "Delivery address",
+      "region": "Region",
+      "note": "Delivery note",
+      "items": "Items",
+      "total": "Order total",
+      "locale": "Site language",
+      "placedAt": "Sent at"
     }
   },
   "legal": {
@@ -2024,6 +2040,174 @@
         "name": "Energy storage systems",
         "spec": "3 kW / 5 kWh to 10 kW / 15 kWh",
         "alt": "The Alpha ESS energy storage range, from 3 kW and 5 kWh up to 10 kW and 15 kWh."
+      }
+    }
+  },
+  "solarPackages": {
+    "metaTitle": "Solar power packages for homes and businesses in Cameroon",
+    "metaDescription": "Nine SAKO Power solar packages from KC Electrical, from affordable ESS starter kits to three-phase premium systems. Indicative prices in FCFA, with accessories and installation included.",
+    "eyebrow": "Solar power packages",
+    "heading": "Solar power solutions for every Cameroonian home and business",
+    "intro": "From affordable Energy Storage System starter kits to large-scale premium installations, find the package that matches your budget and your load. Every package is supplied with genuine SAKO Power components and installed by KC Electrical.",
+    "pricingNote": "Materials cost is based on genuine SAKO Power price lists. Accessories and installation are each 7–10% of total materials cost. Prices exclude local VAT and transportation; confirm current pricing with our team before payment.",
+    "compareHeading": "Choose your package",
+    "compareIntro": "A quick comparison across all budgets and load requirements.",
+    "tableCategory": "Category",
+    "tableSuitedFor": "Suited for",
+    "tablePriceRange": "Price range",
+    "tablePanels": "Panels",
+    "resultsHeading": "Packages",
+    "resultsCount": "{count} packages",
+    "resultsCountOne": "1 package",
+    "categories": {
+      "ess-starter": {
+        "name": "ESS Starter",
+        "suitedFor": "Small homes, kiosks and students",
+        "summary": "Budget-friendly all-in-one systems (ESS and solar panels only) for small homes, shops and kiosks."
+      },
+      "medium-home": {
+        "name": "Medium Home",
+        "suitedFor": "Average households",
+        "summary": "Inverter, battery and solar systems for average Cameroonian households."
+      },
+      "large-home-business": {
+        "name": "Large Home & Business",
+        "suitedFor": "Offices, schools and churches",
+        "summary": "For offices, restaurants, schools, churches and growing businesses."
+      },
+      "ultra-large-premium": {
+        "name": "Ultra-Large Premium",
+        "suitedFor": "Hotels, hospitals and factories",
+        "summary": "For luxury homes, hotels, hospitals, factories and full commercial backup."
+      }
+    },
+    "labels": {
+      "materials": "Materials",
+      "accessories": "Accessories",
+      "installation": "Installation",
+      "totalPrice": "Total package price",
+      "included": "What is included",
+      "accessoriesPercent": "Accessories ({percent}%)",
+      "installationPercent": "Installation ({percent}%)",
+      "panelsCount": "{count} × SK-600WD panels",
+      "panelsCountOne": "1 × SK-600WD panel",
+      "badgeBestValue": "Best value",
+      "badgeMostPopular": "Most popular",
+      "addToCart": "Add to cart",
+      "addingToCart": "Adding…",
+      "addedToCart": "Added to cart",
+      "requestInfo": "Request info",
+      "viewDetails": "View package",
+      "costBreakdownHeading": "Cost breakdown",
+      "detailsHeading": "Package details",
+      "summaryHeading": "Package summary",
+      "specCategory": "Category",
+      "specPanels": "Solar panels",
+      "specPrice": "Indicative price",
+      "backToPackages": "Back to solar packages",
+      "enterpriseHeading": "Enterprise and utility-scale solar",
+      "enterpriseBody": "Need a customised solution beyond these packages? KC Electrical provides engineering, procurement, installation, commissioning and maintenance (EPIC) services for medium and large-scale solar projects across Cameroon and beyond — commercial and industrial facilities, government infrastructure, education, healthcare, agriculture and irrigation, real estate, community electrification and hospitality. Every project begins with a free consultation, site survey, load analysis and technical proposal.",
+      "enterpriseCta": "Request a survey",
+      "a11y": "Solar power packages",
+      "a11yCategory": "Solar packages in this category",
+      "requestSubject": "Package enquiry: {name}",
+      "requestBody": "I would like more information about the {name} package ({price}). Please contact me to confirm the specification, availability and final price."
+    },
+    "items": {
+      "starter-500": {
+        "tag": "Entry level",
+        "name": "Starter 500",
+        "suitedFor": "Small homes and shops",
+        "summary": "ALPHA all-in-one ESS 500W/1kWh with one 600W solar panel — LED lighting, TV, phone and laptop charging, a Wi-Fi router and a small fan.",
+        "alt": "The SAKO Alpha ESS energy storage range, an all-in-one inverter and battery.",
+        "line0": "SAKO all-in-one ESS 500W/1kWh (built-in inverter and battery)",
+        "line1": "1× SK-600WD solar panel, 600W, 10-year warranty",
+        "line2": "Mounting, cabling, protection and installation"
+      },
+      "starter-1000": {
+        "tag": "Best value",
+        "name": "Starter 1000",
+        "suitedFor": "Small homes and shops",
+        "summary": "ALPHA-I-ESS 1000W/2kWh with two 600W solar panels — the same loads plus a small deep-freeze or extra devices.",
+        "alt": "The SAKO Alpha ESS energy storage range, an all-in-one inverter and battery.",
+        "line0": "SAKO ALPHA-I-ESS 1000W/2kWh (built-in inverter and battery)",
+        "line1": "2× SK-600WD solar panels, 600W, 10-year warranty",
+        "line2": "Mounting, cabling, protection and installation"
+      },
+      "home-3kva": {
+        "tag": "Starter home",
+        "name": "Home 3KVA",
+        "suitedFor": "Average households",
+        "summary": "E-SUN 3KVA/24V off-grid inverter with battery and panels — lighting, TV, fridge, fans, routers and laptops.",
+        "alt": "A complete SAKO solar power system with panels, an inverter and a lithium battery.",
+        "line0": "E-SUN 3KVA/24V off-grid inverter",
+        "line1": "2× LI MAX 12.8V/100AH lithium batteries (24V bank)",
+        "line2": "2× SK-600WD solar panels (600W each)",
+        "line3": "Mounting, cabling, protection and installation"
+      },
+      "home-6-2kva": {
+        "tag": "Most popular",
+        "name": "Home 6.2KVA",
+        "suitedFor": "Average households",
+        "summary": "E-SUN 6.2KVA BD/48V hybrid inverter with battery and panels — adds a water pump and more basic home or office equipment.",
+        "alt": "A LiFePO4 lithium battery connected to a solar inverter and solar panels.",
+        "line0": "E-SUN 6.2KVA BD/48V hybrid inverter, dual AC output",
+        "line1": "1× Li-SUN 51.2V/100AH 5kWh lithium battery",
+        "line2": "3× SK-600WD solar panels (600W each)",
+        "line3": "Mounting, cabling, protection and installation"
+      },
+      "home-3kva-standard": {
+        "tag": "Standard",
+        "name": "Home 3KVA Standard",
+        "suitedFor": "Average households",
+        "summary": "ALPHA-ESS 3KVA/5.12kWh with panels — adds a water pump, fridge, fans, TV, lighting, laptops and air conditioning.",
+        "alt": "LiFePO4 lithium battery storage in a floor-stand installation.",
+        "line0": "1× ALPHA-ESS 3KVA/5.12kWh",
+        "line1": "4× SK-600WD solar panels (600W each)",
+        "line2": "Mounting, cabling, protection and installation"
+      },
+      "business-10-2kva": {
+        "tag": "Office, home or school",
+        "name": "Business 10.2KVA",
+        "suitedFor": "Offices, schools and churches",
+        "summary": "E-SUN 10.2KVA BD/48V hybrid inverter with battery and panels — multiple TVs, fridges, a freezer, CCTV, computers and air conditioning.",
+        "alt": "A lithium battery installation with an inverter and solar panels.",
+        "line0": "E-SUN 10.2KVA BD/48V hybrid inverter, dual AC output",
+        "line1": "1× Li-SUN 51.2V/300AH 15kWh lithium battery",
+        "line2": "6× SK-600WD solar panels (600W each)",
+        "line3": "Mounting, cabling, protection and installation"
+      },
+      "business-11kva": {
+        "tag": "Church or hotel",
+        "name": "Business 11KVA",
+        "suitedFor": "Offices, schools and churches",
+        "summary": "SUNIN 11KVA/48V three-phase hybrid inverter with battery and panels — air conditioning, washing machines, water pumps and heavy office loads.",
+        "alt": "A lithium battery installation with an inverter and solar panels.",
+        "line0": "SUNPOLO-GN 11KVA/48V hybrid inverter, utility and generator inputs",
+        "line1": "1× Li-SUN 51.2V/600AH 30kWh lithium battery",
+        "line2": "10× SK-600WD solar panels (600W each)",
+        "line3": "Mounting, cabling, protection and installation"
+      },
+      "premium-6kw": {
+        "tag": "All-in-one hybrid",
+        "name": "Premium 6KW",
+        "suitedFor": "Hotels, hospitals and factories",
+        "summary": "ALPHA-ESS 6KW/10kWh integrated hybrid system with panels — complete home or small commercial backup.",
+        "alt": "A SUNPOLO hybrid solar inverter, showing its rated power and dual MPPT trackers.",
+        "line0": "SAKO ALPHA-ESS 6KW/10kWh hybrid inverter and battery (integrated)",
+        "line1": "10× SK-600WD solar panels (600W each)",
+        "line2": "Mounting, cabling, protection and installation"
+      },
+      "premium-12kw": {
+        "tag": "Factory or hospital",
+        "name": "Premium 12KW 3-Phase",
+        "suitedFor": "Hotels, hospitals and factories",
+        "summary": "SUNIN 12KW/48V three-phase hybrid inverter with battery and panels — heavy industrial and commercial loads.",
+        "alt": "A SUNPOLO hybrid solar inverter, showing its rated power and dual MPPT trackers.",
+        "line0": "SUNIN 12KW/48V three-phase hybrid inverter, IP67, Wi-Fi",
+        "line1": "2× Li-SUN 51.2V/600AH 30kWh lithium batteries",
+        "line2": "16× SK-600WD solar panels (600W each)",
+        "line3": "Mounting, cabling, protection and installation"
       }
     }
   }

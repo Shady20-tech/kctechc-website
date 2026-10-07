@@ -14,6 +14,7 @@ describe("buildPrimaryNav", () => {
       "Departments",
       "Services",
       "Gallery",
+      "Solar Packages",
       "Contact",
       "Insights",
       "Store",

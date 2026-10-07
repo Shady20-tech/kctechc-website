@@ -36,6 +36,15 @@ export const REAL_ESTATE_PATH = "/real-estate";
 export const PROPERTY_SEARCH_PATH = "/real-estate/listings";
 
 /**
+ * The Electrical Services solar-packages surface.
+ *
+ * Sits under the department (`/electrical-services/packages`) because it is that
+ * department's commercial catalogue. Kept here so `next.config.ts` and the nav
+ * model can import it without a dependency chain.
+ */
+export const SOLAR_PACKAGES_PATH = "/electrical-services/packages";
+
+/**
  * The browse surface's former path.
  *
  * Phase 6 shipped the browser at `/real-estate/properties` and the department

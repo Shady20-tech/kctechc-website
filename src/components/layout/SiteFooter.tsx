@@ -118,12 +118,17 @@ export function SiteFooter({
           <ul className="mt-3 space-y-3 text-sm text-white/80">
             <li className="flex gap-2">
               <Mail aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-              <a
-                href={`mailto:${contact.email}`}
-                className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
-              >
-                {contact.email}
-              </a>
+              <span className="flex flex-col">
+                {contact.emails.map((email) => (
+                  <a
+                    key={email}
+                    href={`mailto:${email}`}
+                    className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
+                  >
+                    {email}
+                  </a>
+                ))}
+              </span>
             </li>
             <li className="flex gap-2">
               <Phone aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />

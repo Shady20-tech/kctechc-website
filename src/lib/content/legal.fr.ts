@@ -70,11 +70,11 @@ Il vous incombe de préserver la confidentialité de votre mot de passe et l'acc
     {
       id: "orders-payments",
       heading: "Commandes et paiement",
-      body: `**Passer commande.** Une commande est passée lorsque vous soumettez le formulaire de paiement et que vous payez. Les prix sont affichés en francs CFA d'Afrique centrale (XAF), seule devise dans laquelle notre prestataire de paiement opère.
+      body: `**Passer commande.** Une commande est passée lorsque vous soumettez le formulaire de paiement et que vous nous l'envoyez. Les prix sont affichés en francs CFA d'Afrique centrale (XAF).
 
-**Moyens de paiement.** Le paiement est traité par Fapshi, prestataire de paiement camerounais. Les moyens disponibles sont MTN Mobile Money, Orange Money et le virement bancaire. Nous n'acceptons pas les paiements par carte. Vous effectuez le paiement sur la page hébergée de Fapshi ; les données de carte et de mobile money y sont saisies et ne sont jamais transmises à ce site ni conservées par lui.
+**Moyens de paiement.** Nous n'encaissons aucun paiement sur ce site. Lorsque vous envoyez une commande, vous choisissez comment vous souhaitez payer — MTN Mobile Money, Orange Money, virement bancaire, ou un arrangement convenu avec notre équipe — et nous vous contactons aux coordonnées que vous avez fournies pour confirmer la commande, convenir du moyen et finaliser le paiement. Aucune donnée de carte ni de mobile money n'est saisie sur ce site ni conservée par lui.
 
-**Confirmation.** Une commande n'est confirmée qu'après vérification, directement auprès de Fapshi, que le paiement a réussi et que le montant et la devise correspondent à la commande. Un paiement signalé comme réussi mais ne correspondant pas à la commande n'est pas considéré comme réglé.
+**Confirmation.** Nous confirmons nous-mêmes une commande une fois le paiement organisé. Une commande envoyée via le site est une demande d'achat, non une vente conclue, tant que nous ne l'avons pas confirmée et que le paiement n'est pas finalisé.
 
 **Livraison et retrait.** Les commandes peuvent être retirées à notre bureau de ${SITE.address.city} ou livrées à l'adresse que vous indiquez au paiement. Une commande en livraison exige une adresse et une ville. Les frais de livraison, lorsqu'ils s'appliquent, sont affichés et acceptés au moment du paiement, et une commande est désignée comme commande en livraison ou comme commande en retrait, tant au paiement que sur le reçu.`,
     },
@@ -90,7 +90,7 @@ Lorsque vous fournissez des mesures, photographies, plans ou documents en vue d'
       heading: "Annulation, retours et remboursements",
       body: `**Annuler une commande.** Contactez-nous à ${CONTACT_EMAIL} dès que possible. Lorsqu'une commande n'a pas encore été expédiée ni installée, nous l'annulons et remboursons les sommes déjà versées.
 
-**Retours et remboursements.** Les biens sont retournables s'ils sont défectueux, non conformes à la description ou inadaptés à l'usage convenu. Les biens et matériels électriques installés, modifiés ou utilisés ne sont pas retournables, sauf s'ils sont défectueux. Les remboursements approuvés sont effectués par le même canal de paiement que celui utilisé pour le règlement, via notre prestataire de paiement.
+**Retours et remboursements.** Les biens sont retournables s'ils sont défectueux, non conformes à la description ou inadaptés à l'usage convenu. Les biens et matériels électriques installés, modifiés ou utilisés ne sont pas retournables, sauf s'ils sont défectueux. Les remboursements approuvés sont effectués par le même canal de paiement que celui utilisé pour le règlement, ou selon ce que notre équipe convient avec vous.
 
 **Prestations en cours.** Lorsqu'une installation ou une campagne a commencé, la part déjà exécutée est due et est déduite de tout remboursement.
 
@@ -183,7 +183,7 @@ Nous sommes le responsable du traitement de ces données. Notre siège social es
 
 **Automatiquement, pour la sécurité et les archives.** Lorsque vous soumettez une demande de renseignements ou de devis, nous enregistrons une empreinte unidirectionnelle salée de votre adresse IP, la chaîne user-agent de votre navigateur et l'heure de la soumission. L'empreinte est calculée avec un sel secret et ne peut pas être inversée pour retrouver votre adresse IP. Nous l'enregistrons pour détecter et limiter les abus, non pour vous identifier.
 
-Nous ne collectons ni numéros de carte, ni numéros de mobile money, ni identifiants bancaires. Le paiement est effectué sur la page hébergée de notre prestataire, et ces données n'atteignent jamais ce site.`,
+Nous ne collectons ni numéros de carte, ni numéros de mobile money, ni identifiants bancaires. Aucun paiement n'est encaissé sur ce site ; une commande nous est envoyée, nous la confirmons et organisons le paiement directement avec vous.`,
     },
     {
       id: "why",
@@ -192,7 +192,7 @@ Nous ne collectons ni numéros de carte, ni numéros de mobile money, ni identif
 
 1. répondre à votre demande et préparer un devis ;
 2. créer et administrer votre compte, notamment confirmer votre adresse e-mail et permettre une réinitialisation de mot de passe ;
-3. traiter, honorer et livrer une commande, et vérifier le paiement auprès de notre prestataire ;
+3. traiter, honorer et livrer une commande, et vous contacter pour la confirmer et organiser le paiement ;
 4. organiser une visite d'un bien ou transmettre votre demande à l'agent concerné ;
 5. sécuriser le site, prévenir les abus et limiter les soumissions automatisées ;
 6. mesurer l'utilisation du site, mais uniquement lorsque vous l'avez autorisé ;
@@ -208,11 +208,10 @@ Les cookies et la mesure sont décrits dans la section Cookies ci-dessous. Lorsq
       body: `Nous faisons appel à un petit nombre de prestataires et ne partageons les données que dans la mesure nécessaire à leur prestation :
 
 1. **Supabase** — hébergement de la base de données qui contient les comptes, les commandes, les demandes et les annonces.
-2. **Fapshi** (et ses canaux partenaires de mobile money et bancaires) — traitement de votre paiement et confirmation de sa réussite. Fapshi reçoit le montant, la devise et une référence de la commande, et vous saisissez vos données de paiement sur sa propre page.
+2. **Notre prestataire d'e-mail** — l'envoi pour notre compte des e-mails de compte, de demande et de notification de commande, y compris la commande que vous nous envoyez et la confirmation que nous vous adressons.
 3. **Tolgee** — le service de gestion des traductions qui fournit les textes de l'interface du site.
-4. **Notre prestataire d'e-mail** — l'envoi pour notre compte des e-mails de compte et de demande.
-5. **Google Analytics** — uniquement si vous autorisez la mesure, et recevant des événements d'usage anonymes sans identifiant direct.
-6. **Conseils professionnels, auditeurs et autorités** — lorsque nous devons divulguer des informations, ou lorsque cela est nécessaire pour constater, exercer ou défendre un droit en justice.
+4. **Google Analytics** — uniquement si vous autorisez la mesure, et recevant des événements d'usage anonymes sans identifiant direct.
+5. **Conseils professionnels, auditeurs et autorités** — lorsque nous devons divulguer des informations, ou lorsque cela est nécessaire pour constater, exercer ou défendre un droit en justice.
 
 Nous ne vendons pas vos données personnelles et ne les partageons pas pour le marketing indépendant de tiers. Certains de ces prestataires traitent des données sur des serveurs situés hors du Cameroun, notamment dans l'Union européenne et aux États-Unis.`,
     },

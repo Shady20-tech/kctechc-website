@@ -178,10 +178,15 @@ export async function recordManualPayment(
 
   if (!order) return { status: "error" };
 
-  // An order meant to be paid by card must be settled by the provider. Letting it
-  // be confirmed by hand would release goods against a card payment that may
-  // still fail.
-  if (order.payment_method !== "bank_transfer") {
+  // Cash, bank transfer and "pay on confirmation" are settled by hand; a
+  // customer who chose a mobile-money *intent* is reconciled by the team too,
+  // since no payment is taken online. Only the unoffered `card` value is refused.
+  if (
+    order.payment_method !== "bank_transfer" &&
+    order.payment_method !== "cash_on_confirmation" &&
+    order.payment_method !== "mobile_money_mtn" &&
+    order.payment_method !== "mobile_money_orange"
+  ) {
     return { status: "invalid_transition" };
   }
   if (order.status !== "pending_payment") {
@@ -195,7 +200,7 @@ export async function recordManualPayment(
     .insert({
       order_id: order.id,
       status: "succeeded",
-      method: "bank_transfer",
+      method: order.payment_method,
       // `manual` (not the provider name) marks this as operator-confirmed.
       provider: "manual",
       amount_minor: order.total_minor,

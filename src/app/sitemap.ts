@@ -4,6 +4,7 @@ import {
   NAV_PATHS,
   LEGAL_PATHS,
   PROPERTY_SEARCH_PATH,
+  SOLAR_PACKAGES_PATH,
   STORE_PATH,
 } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
@@ -13,6 +14,7 @@ import {
   departmentHasServices,
   serviceRecordsFor,
 } from "@/lib/content/defaults";
+import { SOLAR_PACKAGES } from "@/lib/content/solar-packages";
 import { loadInsights } from "@/lib/content/loaders";
 import { LOCALES } from "@/lib/i18n/locales";
 import { loadPublishedListings } from "@/lib/real-estate/loaders";
@@ -48,6 +50,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Legal pages are footer-linked rather than in the primary bar, so they are
     // listed from their own constant.
     ...LEGAL_PATHS,
+    // The solar package detail pages are data-driven from the bundled brochure
+    // catalogue, so they are enumerated rather than a static path.
+    ...SOLAR_PACKAGES.map(
+      (pkg) => `${SOLAR_PACKAGES_PATH}/${pkg.id}`,
+    ),
     // Only departments with published content expose these surfaces, so listing
     // them unconditionally would advertise 404s for the departments whose phases
     // have not landed yet.
@@ -181,6 +188,7 @@ function pathPriority(pathWithoutLocale: string): number {
     return 0.6;
   }
   if (pathWithoutLocale.includes("/services/")) return 0.7;
+  if (pathWithoutLocale.startsWith(SOLAR_PACKAGES_PATH)) return 0.7;
   if (pathWithoutLocale.includes(INSIGHTS_PATH)) return 0.6;
   if (pathWithoutLocale.endsWith("/portfolio")) return 0.6;
   return 0.8;

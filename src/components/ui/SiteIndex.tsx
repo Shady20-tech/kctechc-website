@@ -5,6 +5,7 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
   INSIGHTS_PATH,
   PROPERTY_SEARCH_PATH,
+  SOLAR_PACKAGES_PATH,
   STORE_PATH,
 } from "@/lib/config/navigation";
 import { DEPARTMENTS } from "@/lib/config/site";
@@ -96,6 +97,14 @@ export function SiteIndex({
       links.push({
         href: `/${locale}${PROPERTY_SEARCH_PATH}`,
         label: t("realEstate.browseHeading"),
+      });
+    }
+    // The solar-packages catalogue belongs to the Electrical Services
+    // department, so it is listed only there — the same gating the routes use.
+    if (slug === "electrical-services") {
+      links.push({
+        href: `/${locale}${SOLAR_PACKAGES_PATH}`,
+        label: t("nav.packages"),
       });
     }
     return links;

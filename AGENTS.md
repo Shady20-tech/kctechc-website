@@ -102,14 +102,19 @@ legal claims, staff, testimonials, or case-study metrics.
   fields, keep the asset→entity→locale relationship, always render through `next/image`.
 
 ### Payments
-- Provider abstraction. **Fapshi** is the provider (Cameroon, XAF only, MTN/Orange Mobile Money;
-  it has no card channel). Server-side payment creation via `POST /initiate-pay`, webhook secret
-  verification through the `x-wh-secret` header, async state handling, server-side verification
-  through `GET /payment-status/{transId}` before order finalization, explicit pending/success/failed
-  states, no card data in our DB, audit trail, sandbox/live separation via `FAPSHI_BASE_URL`, and a
-  disabled feature flag when production credentials are absent.
-- **Never fake a successful payment when credentials are missing.**
-- Bank transfer may be offered as a manual/offline method until a verified provider flow exists.
+- **The site takes no payment itself, and no longer integrates a payment provider.** Fapshi was
+  removed. An order records the customer's chosen *method* as an intent only
+  (`mobile_money_mtn`, `mobile_money_orange`, `bank_transfer`, `cash_on_confirmation`); the order
+  is emailed to the business (`ORDERS_NOTIFY_TO`, else `SITE.emails`) and the team contacts the
+  customer to confirm stock, delivery and final payment (MTN/Orange Mobile Money, bank transfer, or
+  as agreed). `card` remains a valid *stored* enum value for legacy rows but is never offered.
+- **Never fake a successful payment.** There is no automated charge, so nothing may present an
+  order as paid. `pending_payment` is the state of every placed order until a staff member records
+  a received payment (`recordManualPayment`), which writes the `payments` row (`provider='manual'`)
+  and advances the order. The customer confirmation email says the order is *awaiting confirmation*,
+  never that it is paid.
+- Bank transfer and mobile money are settled manually/offline; the recorded method is intent, and
+  the admin notification labels it as such so it is not mistaken for money received.
 
 ### Maps & geography
 - Real estate supports list/map toggle, clustered markers, single-property map, safe coordinate
@@ -1073,6 +1078,45 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   and `{ ok: false, error: "send_failed" }` on a provider error or a thrown network error — it never
   throws into the request that triggered the notification. `send.test.ts` pins both, plus HTML
   escaping of visitor input.
+
+### Solar packages, multi-email contacts and the provider-less payment flow
+
+- **The site takes no payment and no longer integrates a provider.** Fapshi was removed
+  (`src/lib/payments/*`, `/api/payments/return`, `/api/payments/webhook`, `RetryPaymentButton`
+  deleted; `FAPSHI_*` env and the health `payments` flag gone). A checkout records the customer's
+  chosen **method as an intent** (`mobile_money_mtn`, `mobile_money_orange`, `bank_transfer`,
+  `cash_on_confirmation`) and then mails the order to the business; the team contacts the customer
+  to finalise payment. `card` stays in the stored enum for legacy rows but is never offered.
+- **The admin notification is the signal that replaced the webhook.** `sendOrderNotificationToAdmin`
+  goes to `orderNotificationRecipients()` — `ORDERS_NOTIFY_TO` when set, else every `SITE.emails`
+  address — with the customer as `replyTo`. A failed send is logged and does **not** undo the order.
+- **Nine SAKO solar packages are real store products**, not a separate catalogue:
+  `src/lib/content/solar-packages.ts` (bundled brochure data, message-key copy) +
+  migration `20260101000045_electrical_solar_packages.sql` (products, categories, media,
+  `content_translations`, slugs). Surfaces: `/[locale]/[department]/packages` (grid + comparison
+  table) and `/[locale]/[department]/packages/[package]`. `generateStaticParams` emits 9 × 2 = 18
+  pages, so the build summary shows `[+15 more paths]` after the first three — that is expected.
+- **`src/lib/store/product-path.ts` is the single cart/order link resolver.** A `KC-SOLAR-*` line
+  links to its package page; every other line links to the store. `CartLines.tsx` and the order
+  confirmation page both use it, so a package in a cart never links to `store/<package-slug>` (a
+  404 — packages are not store slugs).
+- **Add-to-cart resolves the package to a seeded product id server-side** in
+  `PackageCartControls`; with no product row (an unseeded deployment) only request-info is offered,
+  rather than a cart button that would fail.
+- **`?package=` on `/contact` is resolved from bundled data** and pre-fills subject + message via
+  `solarPackages.labels.requestSubject/requestBody`; an unknown id is ignored, never echoed.
+- **`SITE.emails` is `[kctechc@gmail.com, info@kctectc.com, support@kctechc.com]`, and `SITE.email`
+  is kept equal to the first entry** (the notification fallback and the "primary inbox" contract in
+  `site-content.ts`). The contact page and footer render all three.
+- **The FR header nav budget still holds with nine entries.** Measured on the running build: FR nav
+  is **713px** wide at 1280 (`xl` breakpoint) inside a 1248px row, one line, no overflow —
+  comfortably inside the 1168px content budget described in the Phase 2 gotchas. A CSS-500 from the
+  standalone bundle makes the nav stack and look like it "does not fit"; check the stylesheet loads
+  (`/_next/static/chunks/*.css` → 200) before concluding the budget is exceeded.
+- **The local Postgres harness is unavailable in this container** (no server on `:5432`, no Docker
+  socket), so the three new migrations are verified by inspection and by the `*.test.ts` suites, not
+  by replaying `supabase/validate/*.sql`. None of the three creates a function, so the Phase 12
+  EXECUTE allow-list is unaffected.
 
 ### Electrical product showcase (homepage strip + department grid)
 

@@ -51,7 +51,8 @@
     "services": "Services",
     "gallery": "Galerie",
     "blog": "Blog",
-    "store": "Boutique"
+    "store": "Boutique",
+    "packages": "Kits solaires"
   },
   "departments": {
     "heading": "Nos départements",
@@ -1292,9 +1293,9 @@
   },
   "checkout": {
     "metaTitle": "Paiement",
-    "metaDescription": "Finalisez votre commande auprès de KC Technology Corporation. Payez par Mobile Money MTN ou Orange, ou par virement bancaire.",
+    "metaDescription": "Envoyez votre commande à KC Technology Corporation. Choisissez comment vous souhaitez payer, et notre équipe vous contacte pour confirmer les détails et finaliser le paiement.",
     "heading": "Paiement",
-    "intro": "Vérifiez votre commande, indiquez où elle doit être livrée et choisissez le mode de paiement. Les prix et le stock sont confirmés de notre côté avant l'enregistrement de la commande.",
+    "intro": "Vérifiez votre commande, indiquez sa destination et choisissez comment vous souhaitez payer. Dès l'envoi, notre équipe vous contacte pour confirmer les détails et finaliser le paiement.",
     "emptyHeading": "Votre panier est vide",
     "emptyBody": "Il n'y a rien à payer. Ajoutez d'abord un article à votre panier.",
     "emptyCta": "Retour à la boutique",
@@ -1316,11 +1317,11 @@
     "fieldDeliveryNotes": "Instructions de livraison",
     "fieldDeliveryNotesHint": "Facultatif. Accès ou horaire souhaité.",
     "paymentHeading": "Mode de paiement",
-    "paymentIntro": "Choisissez comment vous souhaitez payer.",
+    "paymentIntro": "Choisissez comment vous souhaitez payer. Nous n'encaissons aucun paiement sur ce site — notre équipe vous contacte pour le finaliser.",
     "paymentMtn": "MTN Mobile Money",
-    "paymentMtnHint": "Vous êtes redirigé vers une page sécurisée pour approuver le paiement sur votre téléphone.",
+    "paymentMtnHint": "Indiquez que vous souhaitez payer par MTN Mobile Money. Notre équipe vous contacte avec les étapes à suivre.",
     "paymentOrange": "Orange Money",
-    "paymentOrangeHint": "Vous êtes redirigé vers une page sécurisée pour approuver le paiement sur votre téléphone.",
+    "paymentOrangeHint": "Indiquez que vous souhaitez payer par Orange Money. Notre équipe vous contacte avec les étapes à suivre.",
     "paymentBank": "Virement bancaire",
     "paymentBankHint": "Nous vous envoyons les coordonnées du compte. Votre commande est confirmée lorsque le virement est reçu et vérifié par notre équipe.",
     "summaryHeading": "Récapitulatif de la commande",
@@ -1335,9 +1336,9 @@
     "reviewHeading": "Vérifier et commander",
     "reviewIntro": "Vérifiez les informations ci-dessus, puis validez votre commande.",
     "consentLabel": "Je confirme que les informations ci-dessus sont exactes et j'accepte d'être contacté au sujet de cette commande.",
-    "submit": "Valider la commande",
+    "submit": "Envoyer la commande",
     "submitting": "Enregistrement de votre commande…",
-    "secureNote": "Le paiement est effectué sur la page sécurisée de notre prestataire. Vous approuvez le Mobile Money sur votre propre téléphone.",
+    "secureNote": "Aucune donnée de carte ni de mobile money n'est collectée sur ce site. Notre équipe confirme chaque commande et chaque paiement directement avec vous.",
     "errorHeading": "Votre commande n'a pas été enregistrée",
     "errorSummaryHeading": "Veuillez vérifier les points suivants",
     "errFullName": "Saisissez votre nom complet.",
@@ -1359,7 +1360,9 @@
     "errorTitle": "Une erreur est survenue",
     "errorBody": "Votre commande n'a pas été enregistrée et vous n'avez pas été débité. Veuillez réessayer, ou nous contacter si le problème persiste.",
     "paymentFailedTitle": "Le paiement n'a pas abouti",
-    "paymentFailedBody": "Votre commande est enregistrée et aucun montant n'a été prélevé. Vous pouvez réessayer le paiement depuis la page de votre commande."
+    "paymentFailedBody": "Votre commande est enregistrée et aucun montant n'a été prélevé. Vous pouvez réessayer le paiement depuis la page de votre commande.",
+    "paymentCash": "Payer à la confirmation",
+    "paymentCashHint": "Notre équipe vous contacte pour convenir du moyen : mobile money, virement bancaire ou en personne."
   },
   "order": {
     "metaTitle": "Commande {reference}",
@@ -1380,17 +1383,8 @@
     "paymentMethodLabel": "Mode",
     "paymentProviderRef": "Référence de transaction",
     "thanking": "Merci. Nous avons votre commande et vous contacterons au sujet de la livraison.",
-    "awaitingPaymentHeading": "Paiement non finalisé",
-    "awaitingPaymentBank": "Votre commande est réservée. Effectuez le virement du montant total sur notre compte et indiquez la référence ci-dessous. Nous confirmerons la commande dès réception du virement — cette vérification est faite par notre équipe, pas automatiquement.",
-    "awaitingPaymentOnline": "Votre commande est enregistrée mais le paiement n'a pas abouti. Vous pouvez réessayer ci-dessous.",
-    "bankReferenceLabel": "Utilisez cette référence pour votre virement",
-    "retryPayment": "Réessayer le paiement",
-    "retrying": "Démarrage du paiement…",
-    "retryFailed": "Nous n'avons pas pu relancer le paiement. Veuillez nous contacter en indiquant la référence de votre commande.",
     "paidHeading": "Paiement reçu",
     "paidBody": "Votre paiement a été confirmé et votre commande est en préparation.",
-    "failedHeading": "Échec du paiement",
-    "failedBody": "Aucun montant n'a été prélevé. Vous pouvez réessayer ci-dessous, ou nous contacter si l'échec persiste.",
     "cancelledHeading": "Cette commande a été annulée",
     "cancelledBody": "Cette commande n'est plus active. Passez une nouvelle commande si vous avez toujours besoin de ces articles.",
     "refundedHeading": "Cette commande a été remboursée",
@@ -1408,7 +1402,10 @@
     "guestNoticeHeading": "Commandes passées sans compte",
     "guestNoticeBody": "Ces commandes ont été passées depuis ce navigateur sans connexion. Créez un compte pour les regrouper et suivre vos commandes futures.",
     "signInToSeeMore": "Connectez-vous pour voir toutes vos commandes",
-    "metaDescription": "Le statut de votre commande KC Technology Corporation, y compris le paiement et la livraison."
+    "metaDescription": "Le statut de votre commande KC Technology Corporation, y compris le paiement et la livraison.",
+    "awaitingHeading": "Commande envoyée — en attente de confirmation",
+    "contactNoticeHeading": "Et maintenant ?",
+    "contactNoticeBody": "Notre équipe a reçu votre commande par e-mail et vous contactera avec les coordonnées que vous avez fournies pour confirmer le stock, la livraison et le paiement. Rien n'est débité sur ce site."
   },
   "paymentStatus": {
     "pending": "En attente de paiement",
@@ -1431,7 +1428,8 @@
     "card": "Carte bancaire",
     "mobile_money_mtn": "MTN Mobile Money",
     "mobile_money_orange": "Orange Money",
-    "bank_transfer": "Virement bancaire"
+    "bank_transfer": "Virement bancaire",
+    "cash_on_confirmation": "Payer à la confirmation"
   },
   "fulfillmentMethod": {
     "delivery": "Livraison",
@@ -1973,10 +1971,28 @@
     "order": {
       "heading": "Commande reçue",
       "subjectLine": "Commande {reference} reçue",
-      "intro": "Nous avons bien reçu votre commande. Elle est réservée et en attente de paiement ; nous la confirmerons dès que le paiement sera effectué.",
+      "intro": "Nous avons bien reçu votre commande. Notre équipe vous contactera aux coordonnées que vous nous avez fournies pour confirmer la commande, convenir du moyen de paiement et la finaliser. Rien n'est débité sur ce site.",
       "reference": "Référence de commande",
       "name": "Nom",
       "total": "Total"
+    },
+    "orderAdmin": {
+      "heading": "Nouvelle commande reçue",
+      "subjectLine": "Nouvelle commande {reference} — {total}",
+      "intro": "Un client a envoyé une commande via le site. Contactez-le avec les informations ci-dessous pour confirmer le stock, la livraison et le paiement.",
+      "reference": "Référence de la commande",
+      "name": "Nom du client",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "method": "Intention de paiement",
+      "fulfillment": "Mode d'obtention",
+      "address": "Adresse de livraison",
+      "region": "Région",
+      "note": "Note de livraison",
+      "items": "Articles",
+      "total": "Total de la commande",
+      "locale": "Langue du site",
+      "placedAt": "Envoyée le"
     }
   },
   "legal": {
@@ -2024,6 +2040,174 @@
         "name": "Systèmes de stockage d'énergie",
         "spec": "3 kW / 5 kWh à 10 kW / 15 kWh",
         "alt": "La gamme de stockage d'énergie Alpha ESS, de 3 kW et 5 kWh jusqu'à 10 kW et 15 kWh."
+      }
+    }
+  },
+  "solarPackages": {
+    "metaTitle": "Kits solaires pour les maisons et les entreprises au Cameroun",
+    "metaDescription": "Neuf kits solaires SAKO Power de KC Electrical, des kits ESS abordables aux systèmes triphasés haut de gamme. Prix indicatifs en FCFA, accessoires et installation compris.",
+    "eyebrow": "Kits solaires",
+    "heading": "Des solutions solaires pour chaque foyer et chaque entreprise au Cameroun",
+    "intro": "Des kits ESS abordables aux installations haut de gamme de grande taille, trouvez le kit adapté à votre budget et à votre consommation. Chaque kit est fourni avec de véritables composants SAKO Power et installé par KC Electrical.",
+    "pricingNote": "Le coût du matériel est basé sur les listes de prix officielles SAKO Power. Les accessoires et l'installation représentent chacun 7 à 10 % du coût total du matériel. Les prix excluent la TVA locale et le transport ; confirmez les tarifs actuels avec notre équipe avant tout paiement.",
+    "compareHeading": "Choisissez votre kit",
+    "compareIntro": "Une comparaison rapide de tous les budgets et de tous les besoins.",
+    "tableCategory": "Catégorie",
+    "tableSuitedFor": "Adapté à",
+    "tablePriceRange": "Fourchette de prix",
+    "tablePanels": "Panneaux",
+    "resultsHeading": "Kits",
+    "resultsCount": "{count} kits",
+    "resultsCountOne": "1 kit",
+    "categories": {
+      "ess-starter": {
+        "name": "ESS Starter",
+        "suitedFor": "Petits foyers, kiosques et étudiants",
+        "summary": "Systèmes tout-en-un abordables (ESS et panneaux solaires uniquement) pour petits foyers, boutiques et kiosques."
+      },
+      "medium-home": {
+        "name": "Maison moyenne",
+        "suitedFor": "Ménages moyens",
+        "summary": "Systèmes onduleur, batterie et solaire pour les ménages camerounais moyens."
+      },
+      "large-home-business": {
+        "name": "Grande maison et entreprise",
+        "suitedFor": "Bureaux, écoles et églises",
+        "summary": "Pour les bureaux, restaurants, écoles, églises et entreprises en croissance."
+      },
+      "ultra-large-premium": {
+        "name": "Très grand format premium",
+        "suitedFor": "Hôtels, hôpitaux et usines",
+        "summary": "Pour les résidences de luxe, hôtels, hôpitaux, usines et la sauvegarde commerciale complète."
+      }
+    },
+    "labels": {
+      "materials": "Matériel",
+      "accessories": "Accessoires",
+      "installation": "Installation",
+      "totalPrice": "Prix total du kit",
+      "included": "Ce qui est inclus",
+      "accessoriesPercent": "Accessoires ({percent} %)",
+      "installationPercent": "Installation ({percent} %)",
+      "panelsCount": "{count} × panneaux SK-600WD",
+      "panelsCountOne": "1 × panneau SK-600WD",
+      "badgeBestValue": "Meilleur rapport qualité-prix",
+      "badgeMostPopular": "Le plus demandé",
+      "addToCart": "Ajouter au panier",
+      "addingToCart": "Ajout…",
+      "addedToCart": "Ajouté au panier",
+      "requestInfo": "Demander des informations",
+      "viewDetails": "Voir le kit",
+      "costBreakdownHeading": "Détail du coût",
+      "detailsHeading": "Détails du kit",
+      "summaryHeading": "Résumé du kit",
+      "specCategory": "Catégorie",
+      "specPanels": "Panneaux solaires",
+      "specPrice": "Prix indicatif",
+      "backToPackages": "Retour aux kits solaires",
+      "enterpriseHeading": "Solaire pour entreprises et services publics",
+      "enterpriseBody": "Besoin d'une solution personnalisée au-delà de ces kits ? KC Electrical fournit des services d'ingénierie, d'approvisionnement, d'installation, de mise en service et de maintenance (EPIC) pour des projets solaires de moyenne et grande envergure au Cameroun et au-delà — installations commerciales et industrielles, infrastructures publiques, éducation, santé, agriculture et irrigation, immobilier, électrification communautaire et hôtellerie. Chaque projet commence par une consultation gratuite, une étude du site, une analyse de charge et une proposition technique.",
+      "enterpriseCta": "Demander une étude",
+      "a11y": "Kits solaires",
+      "a11yCategory": "Kits solaires dans cette catégorie",
+      "requestSubject": "Demande d'information : {name}",
+      "requestBody": "Je souhaite plus d'informations sur le kit {name} ({price}). Merci de me contacter pour confirmer la spécification, la disponibilité et le prix final."
+    },
+    "items": {
+      "starter-500": {
+        "tag": "Entrée de gamme",
+        "name": "Starter 500",
+        "suitedFor": "Petits foyers et boutiques",
+        "summary": "ESS tout-en-un ALPHA 500W/1kWh avec un panneau solaire de 600W — éclairage LED, télévision, charge de téléphone et d'ordinateur portable, routeur Wi-Fi et petit ventilateur.",
+        "alt": "La gamme de stockage d'énergie SAKO Alpha ESS, un onduleur et une batterie tout-en-un.",
+        "line0": "ESS tout-en-un SAKO 500W/1kWh (onduleur et batterie intégrés)",
+        "line1": "1 × panneau solaire SK-600WD, 600W, garantie 10 ans",
+        "line2": "Fixation, câblage, protection et installation"
+      },
+      "starter-1000": {
+        "tag": "Meilleur rapport qualité-prix",
+        "name": "Starter 1000",
+        "suitedFor": "Petits foyers et boutiques",
+        "summary": "ALPHA-I-ESS 1000W/2kWh avec deux panneaux solaires de 600W — les mêmes charges plus un petit congélateur ou des appareils supplémentaires.",
+        "alt": "La gamme de stockage d'énergie SAKO Alpha ESS, un onduleur et une batterie tout-en-un.",
+        "line0": "SAKO ALPHA-I-ESS 1000W/2kWh (onduleur et batterie intégrés)",
+        "line1": "2 × panneaux solaires SK-600WD, 600W, garantie 10 ans",
+        "line2": "Fixation, câblage, protection et installation"
+      },
+      "home-3kva": {
+        "tag": "Maison de départ",
+        "name": "Maison 3KVA",
+        "suitedFor": "Ménages moyens",
+        "summary": "Onduleur hors réseau E-SUN 3KVA/24V avec batterie et panneaux — éclairage, télévision, réfrigérateur, ventilateurs, routeurs et ordinateurs portables.",
+        "alt": "Un système solaire SAKO complet avec panneaux, onduleur et batterie au lithium.",
+        "line0": "Onduleur hors réseau E-SUN 3KVA/24V",
+        "line1": "2 × batteries au lithium LI MAX 12,8V/100AH (banc 24V)",
+        "line2": "2 × panneaux solaires SK-600WD (600W chacun)",
+        "line3": "Fixation, câblage, protection et installation"
+      },
+      "home-6-2kva": {
+        "tag": "Le plus demandé",
+        "name": "Maison 6.2KVA",
+        "suitedFor": "Ménages moyens",
+        "summary": "Onduleur hybride E-SUN 6.2KVA BD/48V avec batterie et panneaux — ajoute une pompe à eau et davantage d'équipements domestiques ou de bureau.",
+        "alt": "Une batterie au lithium LiFePO4 connectée à un onduleur solaire et à des panneaux solaires.",
+        "line0": "Onduleur hybride E-SUN 6.2KVA BD/48V, double sortie CA",
+        "line1": "1 × batterie au lithium Li-SUN 51,2V/100AH 5kWh",
+        "line2": "3 × panneaux solaires SK-600WD (600W chacun)",
+        "line3": "Fixation, câblage, protection et installation"
+      },
+      "home-3kva-standard": {
+        "tag": "Standard",
+        "name": "Maison 3KVA Standard",
+        "suitedFor": "Ménages moyens",
+        "summary": "ALPHA-ESS 3KVA/5.12kWh avec panneaux — ajoute une pompe à eau, réfrigérateur, ventilateurs, télévision, éclairage, ordinateurs portables et climatisation.",
+        "alt": "Stockage de batterie au lithium LiFePO4 en installation sur socle.",
+        "line0": "1 × ALPHA-ESS 3KVA/5.12kWh",
+        "line1": "4 × panneaux solaires SK-600WD (600W chacun)",
+        "line2": "Fixation, câblage, protection et installation"
+      },
+      "business-10-2kva": {
+        "tag": "Bureau, maison ou école",
+        "name": "Entreprise 10.2KVA",
+        "suitedFor": "Bureaux, écoles et églises",
+        "summary": "Onduleur hybride E-SUN 10.2KVA BD/48V avec batterie et panneaux — plusieurs téléviseurs, réfrigérateurs, un congélateur, la vidéosurveillance, des ordinateurs et la climatisation.",
+        "alt": "Une installation de batterie au lithium avec onduleur et panneaux solaires.",
+        "line0": "Onduleur hybride E-SUN 10.2KVA BD/48V, double sortie CA",
+        "line1": "1 × batterie au lithium Li-SUN 51,2V/300AH 15kWh",
+        "line2": "6 × panneaux solaires SK-600WD (600W chacun)",
+        "line3": "Fixation, câblage, protection et installation"
+      },
+      "business-11kva": {
+        "tag": "Église ou hôtel",
+        "name": "Entreprise 11KVA",
+        "suitedFor": "Bureaux, écoles et églises",
+        "summary": "Onduleur hybride triphasé SUNIN 11KVA/48V avec batterie et panneaux — climatisation, machines à laver, pompes à eau et charges de bureau lourdes.",
+        "alt": "Une installation de batterie au lithium avec onduleur et panneaux solaires.",
+        "line0": "Onduleur hybride SUNPOLO-GN 11KVA/48V, entrées réseau et groupe électrogène",
+        "line1": "1 × batterie au lithium Li-SUN 51,2V/600AH 30kWh",
+        "line2": "10 × panneaux solaires SK-600WD (600W chacun)",
+        "line3": "Fixation, câblage, protection et installation"
+      },
+      "premium-6kw": {
+        "tag": "Hybride tout-en-un",
+        "name": "Premium 6KW",
+        "suitedFor": "Hôtels, hôpitaux et usines",
+        "summary": "Système hybride intégré ALPHA-ESS 6KW/10kWh avec panneaux — sauvegarde complète pour une maison ou un petit commerce.",
+        "alt": "Un onduleur solaire hybride SUNPOLO, montrant sa puissance nominale et ses doubles trackers MPPT.",
+        "line0": "Onduleur hybride et batterie SAKO ALPHA-ESS 6KW/10kWh (intégrés)",
+        "line1": "10 × panneaux solaires SK-600WD (600W chacun)",
+        "line2": "Fixation, câblage, protection et installation"
+      },
+      "premium-12kw": {
+        "tag": "Usine ou hôpital",
+        "name": "Premium 12KW triphasé",
+        "suitedFor": "Hôtels, hôpitaux et usines",
+        "summary": "Onduleur hybride triphasé SUNIN 12KW/48V avec batterie et panneaux — charges industrielles et commerciales lourdes.",
+        "alt": "Un onduleur solaire hybride SUNPOLO, montrant sa puissance nominale et ses doubles trackers MPPT.",
+        "line0": "Onduleur hybride triphasé SUNIN 12KW/48V, IP67, Wi-Fi",
+        "line1": "2 × batteries au lithium Li-SUN 51,2V/600AH 30kWh",
+        "line2": "16 × panneaux solaires SK-600WD (600W chacun)",
+        "line3": "Fixation, câblage, protection et installation"
       }
     }
   }

@@ -18,7 +18,10 @@ import { createPublicClient } from "@/lib/supabase/public";
  */
 
 export type ContactDetails = {
+  /** Primary/general inbox — the first entry of `emails`, used for notifications. */
   email: string;
+  /** Every public contact address, in display order. */
+  emails: readonly string[];
   phones: readonly string[];
   address: {
     street: string;
@@ -41,6 +44,7 @@ export const FALLBACK_SITE_CONTENT: SiteContent = {
   motto: SITE.motto,
   contact: {
     email: SITE.email,
+    emails: SITE.emails,
     phones: SITE.phones,
     address: SITE.address,
   },
@@ -100,10 +104,19 @@ export async function getSiteContent(): Promise<SiteContent> {
       if (row.key === "site.contact") {
         if (typeof row.value !== "object" || row.value === null) continue;
         const record = row.value as Record<string, unknown>;
+        const email = asString(record.email) ?? content.contact.email;
+        const emails =
+          asStringArray(record.emails) ??
+          (email !== content.contact.email
+            ? [email, ...content.contact.emails.filter((e) => e !== email)]
+            : content.contact.emails);
         content = {
           ...content,
           contact: {
-            email: asString(record.email) ?? content.contact.email,
+            // Keep `email` as the first entry of `emails`, so the primary inbox
+            // is always one of the addresses a visitor is shown.
+            email: emails[0] ?? email,
+            emails,
             phones: asStringArray(record.phones) ?? content.contact.phones,
             address: asAddress(record.address) ?? content.contact.address,
           },

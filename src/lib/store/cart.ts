@@ -33,6 +33,7 @@ const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 export type CartLine = {
   id: string;
   productId: string;
+  sku: string;
   slug: string;
   title: string;
   quantity: number;
@@ -115,7 +116,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
   const { data: items } = await supabase
     .from("cart_items")
     .select(
-      "id, product_id, quantity, unit_price_minor, currency, products (slug, title, stock, price_minor, product_media (storage_path, is_primary, position))",
+      "id, product_id, quantity, unit_price_minor, currency, products (slug, sku, title, stock, price_minor, product_media (storage_path, is_primary, position))",
     )
     .eq("cart_id", cart.id)
     .order("created_at", { ascending: true });
@@ -135,6 +136,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
       {
         id: item.id,
         productId: item.product_id,
+        sku: product.sku,
         slug: product.slug,
         title: product.title,
         quantity: item.quantity,

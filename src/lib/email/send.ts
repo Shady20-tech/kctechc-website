@@ -3,7 +3,10 @@ import "server-only";
 import { Resend } from "resend";
 
 import { SITE } from "@/lib/config/site";
-import { serverEnv } from "@/lib/config/server-env";
+import {
+  orderNotificationRecipients,
+  serverEnv,
+} from "@/lib/config/server-env";
 import { createTranslator } from "@/lib/i18n/translator";
 import type { Locale } from "@/lib/i18n/locales";
 
@@ -65,7 +68,7 @@ function renderRows(rows: readonly Row[]): string {
 
 /** Build the shared envelope and hand it to Resend. */
 async function send(input: {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
@@ -139,9 +142,9 @@ export async function sendInquiryNotification(input: {
 /**
  * Confirm to the customer that their order was received.
  *
- * Deliberately says the order is awaiting payment, not that it is paid. Payment
- * is confirmed only by a verified provider callback, so an email that implied
- * otherwise would be a false statement about money.
+ * Deliberately says the order is awaiting confirmation, not that it is paid. No
+ * payment is taken on the site, so an email that implied money had changed hands
+ * would be false.
  */
 export async function sendOrderConfirmation(input: {
   reference: string;
@@ -162,6 +165,79 @@ export async function sendOrderConfirmation(input: {
     subject: t("email.order.subjectLine", { reference: input.reference }),
     html: `<h2>${escapeHtml(t("email.order.heading"))}</h2><p>${escapeHtml(
       t("email.order.intro"),
+    )}</p>${renderRows(rows)}`,
+  });
+}
+
+/**
+ * Notify the business that an order was sent.
+ *
+ * This replaces a payment-gateway webhook as the signal that an order needs a
+ * human: the site takes no payment, so an order is "done" when it reaches the
+ * team. Sent to `orderNotificationRecipients()` (the operational inboxes, else
+ * the public contact addresses) with the customer as `replyTo`, so a reply from
+ * the inbox reaches the customer without spoofing the `From` header.
+ *
+ * The `paymentMethod` is the customer's *intent*, presented under an "intent"
+ * label so an operator cannot mistake it for money already received. The line
+ * items and total are included so the team can confirm stock and price on the
+ * call.
+ */
+export async function sendOrderNotificationToAdmin(input: {
+  reference: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  paymentMethodLabel: string;
+  fulfillmentLabel: string;
+  addressLines: readonly string[];
+  deliveryNote: string | null;
+  items: readonly { title: string; quantity: number; lineTotalFormatted: string }[];
+  totalFormatted: string;
+  currency: string;
+  locale: Locale;
+  siteLocale: Locale;
+  placedAtFormatted: string;
+}): Promise<EmailResult> {
+  // The notification body is read by staff, so the labels follow the *site*
+  // locale of the order rather than the customer's UI language, which is carried
+  // as its own row.
+  const t = createTranslator(input.siteLocale).t;
+
+  const itemLines = input.items
+    .map(
+      (item) =>
+        `${item.title} × ${item.quantity} — ${item.lineTotalFormatted}`,
+    )
+    .join("\n");
+
+  const rows: Row[] = [
+    { label: t("email.orderAdmin.reference"), value: input.reference },
+    { label: t("email.orderAdmin.name"), value: input.fullName },
+    { label: t("email.orderAdmin.email"), value: input.email },
+    { label: t("email.orderAdmin.phone"), value: input.phone ?? "" },
+    { label: t("email.orderAdmin.method"), value: input.paymentMethodLabel },
+    { label: t("email.orderAdmin.fulfillment"), value: input.fulfillmentLabel },
+    {
+      label: t("email.orderAdmin.address"),
+      value: input.addressLines.join(", "),
+    },
+    { label: t("email.orderAdmin.note"), value: input.deliveryNote ?? "" },
+    { label: t("email.orderAdmin.items"), value: itemLines },
+    { label: t("email.orderAdmin.total"), value: input.totalFormatted },
+    { label: t("email.orderAdmin.locale"), value: input.locale },
+    { label: t("email.orderAdmin.placedAt"), value: input.placedAtFormatted },
+  ];
+
+  return send({
+    to: orderNotificationRecipients(),
+    replyTo: input.email,
+    subject: t("email.orderAdmin.subjectLine", {
+      reference: input.reference,
+      total: input.totalFormatted,
+    }),
+    html: `<h2>${escapeHtml(t("email.orderAdmin.heading"))}</h2><p>${escapeHtml(
+      t("email.orderAdmin.intro"),
     )}</p>${renderRows(rows)}`,
   });
 }

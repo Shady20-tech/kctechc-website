@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { STORE_PATH } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import type { Cart } from "@/lib/store/cart";
+import { productPath } from "@/lib/store/product-path";
 import {
   removeCartItemAction,
   updateCartItemAction,
@@ -83,7 +83,7 @@ export function CartLines({ cart, locale }: { cart: Cart; locale: Locale }) {
 
             <div>
               <Link
-                href={`/${locale}${STORE_PATH}/${line.slug}`}
+                href={productPath(locale, line)}
                 className="text-base font-semibold text-ink-900 transition-soft hover:text-dept-accent"
               >
                 {line.title}

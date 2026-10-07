@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { OrderPurchaseTracker } from "@/components/checkout/OrderPurchaseTracker";
-import { RetryPaymentButton } from "@/components/checkout/RetryPaymentButton";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -22,6 +21,7 @@ import {
   type OrderStatus,
 } from "@/lib/orders/types";
 import { formatPrice } from "@/lib/store/types";
+import { productPath } from "@/lib/store/product-path";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
@@ -87,8 +87,6 @@ export default async function OrderPage({
 
   const statusLabel = t(`orderStatus.${order.status}`);
   const paid = isPaidStatus(order.status);
-  const latestPayment = order.payments[0] ?? null;
-  const isManual = order.paymentMethod === "bank_transfer";
 
   return (
     <SectionBand
@@ -127,7 +125,7 @@ export default async function OrderPage({
             />
           ) : null}
 
-          {renderStatusNotice({ status: order.status, isManual, t })}
+          {renderStatusNotice({ status: order.status, t })}
 
           <section aria-labelledby="order-items-heading">
             <h3 id="order-items-heading" className="text-lg font-semibold text-ink-900">
@@ -151,7 +149,7 @@ export default async function OrderPage({
                   <tr key={line.id} className="border-t border-border-strong">
                     <td className="py-2 pr-2">
                       <ButtonLink
-                        href={`/${resolved}${STORE_PATH}/${line.slug}`}
+                        href={productPath(resolved, line)}
                         variant="ghost"
                         size="sm"
                       >
@@ -210,23 +208,11 @@ export default async function OrderPage({
                     : t("orderStatus.pending_payment")}
                 </dd>
               </div>
-              {latestPayment?.providerReference ? (
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted">{t("order.paymentProviderRef")}</dt>
-                  <dd className="break-all text-ink-900">
-                    {latestPayment.providerReference}
-                  </dd>
-                </div>
-              ) : null}
             </dl>
 
-            {/* A retry is offered only while the order is still payable. A paid,
-                cancelled or refunded order has nothing to retry. */}
-            {order.status === "pending_payment" && !accessTokenIsMissingGuard(accessToken, customerId) ? (
-              <div className="mt-4">
-                <RetryPaymentButton locale={resolved} orderReference={order.reference} />
-              </div>
-            ) : null}
+            {/* No payment is taken on the site, so there is nothing to retry
+                here. The order is confirmed by our team contacting the customer
+                using the details they provided. */}
           </section>
         </div>
 
@@ -281,21 +267,6 @@ export default async function OrderPage({
   );
 }
 
-/**
- * Whether the retry button is meaningless for this visitor.
- *
- * A guest whose cookie has been cleared can still *read* their order through a
- * remembered token, but a retry needs the token to authorize the attempt. The
- * button reads the token server-side, so if it is absent the action would fail
- * with `forbidden`; hiding it avoids offering an action that cannot succeed.
- */
-function accessTokenIsMissingGuard(
-  accessToken: string | null,
-  customerId: string | null,
-): boolean {
-  return customerId === null && accessToken === null;
-}
-
 function statusTone(status: OrderStatus): "success" | "info" | "warning" | "danger" {
   switch (status) {
     case "paid":
@@ -315,15 +286,14 @@ function statusTone(status: OrderStatus): "success" | "info" | "warning" | "dang
 /** The plain-language explanation for the order's current state. */
 function renderStatusNotice(input: {
   status: OrderStatus;
-  isManual: boolean;
   t: ReturnType<typeof createTranslator>["t"];
 }) {
-  const { status, isManual, t } = input;
+  const { status, t } = input;
 
   if (status === "pending_payment") {
     return (
-      <Alert tone="warning" title={t("order.awaitingPaymentHeading")}>
-        {isManual ? t("order.awaitingPaymentBank") : t("order.awaitingPaymentOnline")}
+      <Alert tone="info" title={t("order.contactNoticeHeading")}>
+        {t("order.contactNoticeBody")}
       </Alert>
     );
   }

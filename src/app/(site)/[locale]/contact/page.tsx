@@ -8,10 +8,12 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { DEPARTMENTS, isDepartmentSlug, type DepartmentSlug } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
+import { findSolarPackage } from "@/lib/content/solar-packages";
 import { loadServices } from "@/lib/content/loaders";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { formatPrice } from "@/lib/store/types";
 import {
   breadcrumbJsonLd,
   organizationJsonLd,
@@ -53,10 +55,10 @@ export default async function ContactPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ department?: string; service?: string }>;
+  searchParams: Promise<{ department?: string; service?: string; package?: string }>;
 }) {
   const { locale } = await params;
-  const { department, service } = await searchParams;
+  const { department, service, package: packageId } = await searchParams;
   if (!isLocale(locale)) notFound();
 
   const resolved: Locale = locale;
@@ -80,6 +82,24 @@ export default async function ContactPage({
     service && serviceOptions.some((option) => option.slug === service)
       ? service
       : undefined;
+
+  // A `?package=` link from a solar package card pre-fills the subject and
+  // message so the visitor only has to add their details. The package is
+  // resolved from bundled data and its name and price are rendered through the
+  // same keys the card uses, so the prefill cannot disagree with the offer. An
+  // unknown id is ignored rather than put in the form.
+  const requestedPackage = packageId ? findSolarPackage(packageId) : undefined;
+  const defaultSubject = requestedPackage
+    ? t("solarPackages.labels.requestSubject", {
+        name: t(`solarPackages.items.${requestedPackage.id}.name`),
+      })
+    : undefined;
+  const defaultMessage = requestedPackage
+    ? t("solarPackages.labels.requestBody", {
+        name: t(`solarPackages.items.${requestedPackage.id}.name`),
+        price: formatPrice(requestedPackage.priceMinor, "XAF", resolved),
+      })
+    : undefined;
 
   const departmentLabels = Object.fromEntries(
     DEPARTMENTS.map((entry) => [entry.slug, t(entry.labelKey)]),
@@ -132,6 +152,8 @@ export default async function ContactPage({
               locale={resolved}
               defaultDepartment={defaultDepartment}
               defaultService={defaultService}
+              defaultSubject={defaultSubject}
+              defaultMessage={defaultMessage}
               serviceOptions={serviceOptions}
               departmentLabels={departmentLabels}
               validationMessages={validationMessages}
@@ -208,13 +230,16 @@ export default async function ContactPage({
                     aria-hidden="true"
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted"
                   />
-                  <dd>
-                    <a
-                      href={`mailto:${site.contact.email}`}
-                      className="text-ink-700 underline underline-offset-4"
-                    >
-                      {site.contact.email}
-                    </a>
+                  <dd className="flex flex-col">
+                    {site.contact.emails.map((email) => (
+                      <a
+                        key={email}
+                        href={`mailto:${email}`}
+                        className="text-ink-700 underline underline-offset-4"
+                      >
+                        {email}
+                      </a>
+                    ))}
                   </dd>
                 </div>
                 <div className="flex gap-2">

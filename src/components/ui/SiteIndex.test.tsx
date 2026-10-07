@@ -5,6 +5,7 @@ import { DEPARTMENTS } from "@/lib/config/site";
 import {
   INSIGHTS_PATH,
   PROPERTY_SEARCH_PATH,
+  SOLAR_PACKAGES_PATH,
   STORE_PATH,
 } from "@/lib/config/redirects";
 import { departmentHasServices } from "@/lib/content/defaults";
@@ -143,6 +144,9 @@ describe("SiteIndex", () => {
       "/en/privacy",
       ...DEPARTMENTS.flatMap((department) => [
         `/en/${department.slug}`,
+        ...(department.slug === "electrical-services"
+          ? [`/en${SOLAR_PACKAGES_PATH}`]
+          : []),
         ...(departmentHasServices(department.slug)
           ? [
               `/en/${department.slug}/services`,
