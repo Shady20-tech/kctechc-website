@@ -393,6 +393,7 @@ $$;
 do $$
 declare
   visible integer;
+  hidden_visible integer;
 begin
   insert into public.products (
     category_id, slug, sku, title, short_description, description,
@@ -425,11 +426,21 @@ begin
   where slug = 'hidden-product';
 
   set local role anon;
-  select count(*) into visible from public.products;
+  select count(*) into visible from public.products
+   where slug = 'thinkpad-x1';
+  select count(*) into hidden_visible from public.products
+   where slug = 'hidden-product';
   reset role;
 
+  -- Scoped to this file's fixtures rather than a total row count: the migration
+  -- set also seeds published products (the nine solar packages), so a global
+  -- count is not this assertion's business. What it must prove is that the
+  -- published fixture is visible to anon and the draft-category one is not.
   if visible <> 1 then
-    raise exception 'VALIDATION FAIL: anon should see exactly 1 product, saw %', visible;
+    raise exception 'VALIDATION FAIL: the published fixture is not visible to anon (% row(s))', visible;
+  end if;
+  if hidden_visible <> 0 then
+    raise exception 'VALIDATION FAIL: a product in a draft category is visible to anon';
   end if;
   raise notice 'PASS  RLS hides drafts and products in draft categories';
 end

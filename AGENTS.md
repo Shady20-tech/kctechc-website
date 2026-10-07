@@ -1166,6 +1166,39 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   media box is 1:1, so a non-square source is cropped and the subject can fall outside the crop). A
   mistyped path otherwise fails silently as an empty box.
 
+### Migration-time seeding gotchas worth not rediscovering
+
+- **Supabase applies migrations before `seed.sql`, so a migration that selects from `departments`
+  silently inserts nothing.** `20260101000040_store_default_categories.sql` and
+  `20260101000045_electrical_solar_packages.sql` both insert by joining `public.departments`, but
+  the department rows only ever came from `supabase/seed.sql`. On a fresh database both matched zero
+  rows and did nothing: no store categories, no solar products, and the admin "Add a product" page
+  rendering its "store is not connected" notice. It stayed invisible because local work is checked
+  against a database that was seeded once and kept, and because this harness previously declared its
+  own fixtures. `20260101000048_seed_departments_and_rerun_catalogue.sql` moves the three departments
+  into the schema and re-runs both inserts. Anything a migration needs to reference must be created
+  by a migration, not by `seed.sql`.
+- **The validate harness was not actually runnable on its own.** Its files declare their own
+  department and category fixtures, so `10_store_behaviour.sql` passed even when the migrations had
+  seeded nothing. `60_catalogue_seed_behaviour.sql` now asserts the migration set alone produces the
+  departments, the 5 store categories, the 4 solar categories and the 9 published solar products, so
+  a future migration that depends on `seed.sql` fails the harness instead of shipping.
+- **Publishing a product needs its media first, and `products_publish_requires_media` is a BEFORE
+  INSERT trigger.** A seed cannot insert a product already-published and attach its media in the same
+  statement: the trigger fires on the insert and raises. The pattern that works — and that the
+  admin flow already follows — is insert as `draft`, insert `product_media`, then `update … set
+  publish_state = 'published'`. The original `20260101000045` inserted `published` directly and would
+  have failed on any fresh database for that reason too.
+- **A validation assertion written as a global row count breaks the moment the migration set seeds
+  real data.** `10_store_behaviour.sql` asserted `anon sees exactly 1 product`, which was true only
+  while the migrations seeded none. It is now scoped to its own fixtures (the published `thinkpad-x1`
+  is visible to `anon`, the draft-category `hidden-product` is not), which is what it was actually
+  trying to prove.
+- **A dev-only seed of demo users belongs in a script, not a migration.** The demo accounts are
+  created by direct `auth.users`/`auth.identities`/`profiles` inserts via a throwaway SQL script
+  (bcrypt password through `crypt(..., gen_salt('bf'))`); they must never reach a migration, because
+  a migration runs on production.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->
