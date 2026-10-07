@@ -1657,7 +1657,8 @@
     "manualNoteHint": "Par exemple la référence bancaire figurant sur le relevé.",
     "manualSubmit": "Confirmer que le virement est arrivé",
     "manualRecorded": "Le paiement a été enregistré et la commande est désormais payée.",
-    "manualNotApplicable": "Cette commande ne peut pas être confirmée manuellement — elle est déjà payée ou n'a pas été configurée comme virement bancaire."
+    "manualNotApplicable": "Cette commande ne peut pas être confirmée manuellement — elle est déjà payée ou n'a pas été configurée comme virement bancaire.",
+    "requestedPayment": "Moyen de paiement demandé"
   },
   "adminNav": {
     "consoleName": "Console KCTech",

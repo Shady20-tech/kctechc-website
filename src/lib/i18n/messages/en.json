@@ -1657,7 +1657,8 @@
     "manualNoteHint": "For example the bank reference on the statement.",
     "manualSubmit": "Confirm the transfer arrived",
     "manualRecorded": "The payment was recorded and the order is now paid.",
-    "manualNotApplicable": "This order cannot be confirmed by hand — it has already been paid or it was not set up as a bank transfer."
+    "manualNotApplicable": "This order cannot be confirmed by hand — it has already been paid or it was not set up as a bank transfer.",
+    "requestedPayment": "Requested payment method"
   },
   "adminNav": {
     "consoleName": "KCTech Console",

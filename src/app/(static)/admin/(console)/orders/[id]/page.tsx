@@ -79,6 +79,12 @@ export default async function AdminOrderDetailPage({
                 <dt className="text-muted">{t("order.referenceLabel")}</dt>
                 <dd className="font-mono text-ink-900">{order.reference}</dd>
               </div>
+              <div>
+                <dt className="text-muted">{t("adminOrder.requestedPayment")}</dt>
+                <dd className="text-ink-900">
+                  {order.paymentMethod ? t(`paymentMethod.${order.paymentMethod}`) : "—"}
+                </dd>
+              </div>
             </dl>
 
             {order.fulfillment === "delivery" ? (
