@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProductImageFrame } from "./ProductImageFrame";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 import { primaryImage } from "@/lib/store/types";
@@ -54,7 +54,11 @@ export function ProductCard({
   t: Translator["t"];
 }) {
   const image = primaryImage(product.images);
-  const href = `/${locale}${STORE_PATH}/${product.categorySlug}/${product.slug}`;
+  // The department store, not the Digital Marketing one: a product's detail route
+  // is `/{locale}/{department}/store/{category}/{slug}`, so a hardcoded store
+  // path sent an Electrical Services product to a Digital Marketing URL that
+  // 404s. The department travels with the record for exactly this reason.
+  const href = `/${locale}${storePathFor(product.departmentSlug)}/${product.categorySlug}/${product.slug}`;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">

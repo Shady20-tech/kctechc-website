@@ -75,6 +75,36 @@ export async function listAdminInsights(): Promise<AdminInsightRow[]> {
   return ((data ?? []) as unknown as InsightJoinRow[]).map(mapInsight);
 }
 
+export type AdminInsightMedia = {
+  id: string;
+  storagePath: string;
+  altText: string;
+  caption: string | null;
+  credit: string | null;
+  position: number;
+};
+
+/** The gallery images attached to an article, in display order. */
+export async function listInsightMedia(
+  insightId: string,
+): Promise<AdminInsightMedia[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("insight_media")
+    .select("id, storage_path, alt_text, caption, credit, position")
+    .eq("insight_id", insightId)
+    .order("position", { ascending: true });
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    altText: row.alt_text,
+    caption: row.caption,
+    credit: row.credit,
+    position: row.position,
+  }));
+}
+
 export type AdminInsightDetail = {
   id: string;
   slug: string;

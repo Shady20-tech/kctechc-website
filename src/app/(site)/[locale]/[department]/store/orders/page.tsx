@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
+import { DEPARTMENTS } from "@/lib/config/site";
 import { getAuthState } from "@/lib/auth/session";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -36,14 +37,15 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) return {};
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) return {};
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
-    pathWithoutLocale: `${STORE_PATH}/orders`,
+    pathWithoutLocale: `${storePathFor(department)}/orders`,
     title: t("order.historyHeading"),
     description: t("order.historyIntro"),
     noindex: true,
@@ -53,13 +55,15 @@ export async function generateMetadata({
 export default async function OrderHistoryPage({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }) {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) notFound();
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) notFound();
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const storePath = storePathFor(department);
 
   const authState = await getAuthState();
   const customerId = authState.status === "authenticated" ? authState.userId : null;
@@ -99,17 +103,19 @@ export default async function OrderHistoryPage({
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
-    { name: t("nav.store"), href: `/${resolved}${STORE_PATH}` },
+    { name: t("nav.store"), href: `/${resolved}${storePath}` },
     {
       name: t("order.historyHeading"),
-      href: `/${resolved}${STORE_PATH}/orders`,
+      href: `/${resolved}${storePath}/orders`,
     },
   ];
 
   return (
     <SectionBand
       labelledBy="orders-heading"
-      {...departmentScopeProps("digital-marketing")}
+      {...departmentScopeProps(
+        department as (typeof DEPARTMENTS)[number]["slug"],
+      )}
     >
       <Breadcrumbs items={breadcrumbs} ariaLabel={t("a11y.breadcrumb")} className="mb-8" />
       <PageIntro heading={t("order.historyHeading")} intro={t("order.historyIntro")} />
@@ -131,7 +137,7 @@ export default async function OrderHistoryPage({
             {t("order.historyEmpty")}
           </h3>
           <p className="mt-6">
-            <ButtonLink href={`/${resolved}${STORE_PATH}`} variant="secondary">
+            <ButtonLink href={`/${resolved}${storePath}`} variant="secondary">
               {t("order.historyEmptyCta")}
             </ButtonLink>
           </p>
@@ -177,7 +183,7 @@ export default async function OrderHistoryPage({
                 </div>
                 <p className="mt-3">
                   <Link
-                    href={`/${resolved}${STORE_PATH}/orders/${encodeURIComponent(order.reference)}`}
+                    href={`/${resolved}${storePath}/orders/${encodeURIComponent(order.reference)}`}
                     className="text-sm font-medium text-dept-accent underline"
                   >
                     {t("order.viewOrder")}

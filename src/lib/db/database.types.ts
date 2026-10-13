@@ -964,6 +964,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      insight_media: {
+        Row: {
+          alt_text: string;
+          caption: string | null;
+          created_at: string;
+          credit: string | null;
+          id: string;
+          insight_id: string;
+          position: number;
+          storage_path: string;
+          updated_at: string;
+        };
+        Insert: {
+          alt_text: string;
+          caption?: string | null;
+          created_at?: string;
+          credit?: string | null;
+          id?: string;
+          insight_id: string;
+          position?: number;
+          storage_path: string;
+          updated_at?: string;
+        };
+        Update: {
+          alt_text?: string;
+          caption?: string | null;
+          created_at?: string;
+          credit?: string | null;
+          id?: string;
+          insight_id?: string;
+          position?: number;
+          storage_path?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "insight_media_insight_id_fkey";
+            columns: ["insight_id"];
+            isOneToOne: false;
+            referencedRelation: "insights";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       insights: {
         Row: {
           author_id: string | null;
@@ -3105,6 +3149,10 @@ export type Database = {
         Returns: boolean;
       };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_department_editor: {
+        Args: { department_slug: string };
+        Returns: boolean;
+      };
       is_inquiry_manager: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -3447,7 +3495,8 @@ export type Database = {
         | "site_setting"
         | "product_media"
         | "project_media"
-        | "property_media";
+        | "property_media"
+        | "insight_media";
       translation_state:
         | "missing"
         | "pending"
@@ -3740,6 +3789,7 @@ export const Constants = {
         "product_media",
         "project_media",
         "property_media",
+        "insight_media",
       ],
       translation_state: [
         "missing",

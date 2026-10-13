@@ -1199,6 +1199,61 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   (bcrypt password through `crypt(..., gen_salt('bf'))`); they must never reach a migration, because
   a migration runs on production.
 
+### Department-scoped authoring and posting (Feature A + B)
+
+- **Feature A — admins and department staff can post with images.** Migration
+  `20260101000049_insight_media_and_department_authoring.sql` adds `insight_media` (mirroring
+  `project_media`: storage-relative path, required translatable `alt_text`, optional caption/credit)
+  and replaces the `insights_write_admin` policy with `insights_write_department`, so a department's
+  staff and admins author their own posts. `src/components/admin/InsightGalleryForm.tsx` +
+  `uploadInsightGalleryAction`/`removeInsightGalleryImageAction` attach images to the `content-media`
+  bucket. The body renderer gained image placement so a gallery image can be referenced inline.
+- **Feature B — a product's department is chosen when it is created.** Migration
+  `20260101000050_department_scoped_store.sql` replaces the `is_admin()` store write policies with
+  the `is_department_editor` predicate, reached by joining
+  `products -> product_categories -> departments`. The admin console gained a department picker
+  (`ProductForm`) that narrows the category list to the chosen department; a super admin sees every
+  department, a department editor sees only their own. `listProductsForAdmin` and
+  `loadProductForAdmin` are both scoped to `departmentSlugs`, so a guessed cross-department product
+  id 404s rather than opening a form the write policy would refuse.
+- **A product's department is its category's, read from the database — never from the form.** The
+  submitted `department` field is a UI convenience only; `createProductAction` re-reads
+  `product_categories.departments(slug)` and checks `canAccessDepartment`. The category picker
+  filter is not a control.
+- **A new `SECURITY DEFINER` trigger function must still be revoked by hand.** Supabase grants
+  `EXECUTE` to `anon`/`authenticated` on every new function, and the Phase 12 hardening migration
+  ran *before* `20260101000049` created `sync_insight_media_translation_index`, so the revoke is
+  repeated in the same migration that creates it. Add a function in a later migration and you must
+  classify it there too.
+
+### SEO / Lighthouse hardening (all locales and departments)
+
+- **Every public route was measured at SEO 100 / accessibility 100 / best-practices 100** across
+  `/`, `/en`, `/fr` and the three departments (EN+FR), plus about/contact/services/store/packages/
+  listings/insights/gallery. The two defects fixed to get there were both real:
+  - **The department hero's primary CTA was white-on-bright-accent.** On an ink band the accent
+    resolves to `--dept-accent-bright` (`#6FA8F5` / `#F0A94A`), where white is ~2:1. It now uses the
+    `accentOnInk` pairing (`text-ink-950` on `bg-dept-accent-bright`). `theme-contrast.test.ts`
+    asserts ink-on-bright passes AA and white-on-bright does not, per department.
+  - **The compact language switcher's accessible name did not contain its visible text.** The label
+    is now `"EN — English"`, so `label-content-name-mismatch` passes.
+- **`metadataBase` belongs in the root layout.** The gateway's own `metadata` export uses a relative
+  `canonical: "/"`; without a base that emits `<link rel="canonical" href="/">`, which Lighthouse
+  reports as "Document does not have a valid rel=canonical". It is now `getSiteUrl()` in
+  `src/app/layout.tsx`.
+- **`next/image` rejects a Supabase host pinned to `https` when the local stack is `http://`.** The
+  `remotePatterns` entry now derives protocol, hostname **and port** from `NEXT_PUBLIC_SUPABASE_URL`,
+  and `dangerouslyAllowLocalIP` is set only when that host is loopback — so production (a public
+  https host) is unchanged. A pattern without the `:54321` port does not match a URL that has one,
+  and `dangerouslyAllowLocalIP: false` answers 400 from the optimizer with no other clue.
+- **Local performance numbers under default Lantern throttling are not trustworthy on this app.**
+  Mobile `/en` measured 77 under Lantern with a simulated LCP of 4.9s (Load Time 4.2s on the hero
+  image); with `--throttling-method=devtools` the same page measured 95 with LCP 2.0s. Use applied
+  throttling before chasing a simulated-LCP regression — the repo has hit this before.
+- **`html[lang]` is still `en` on `/fr`.** This is the pre-existing documented defect (the locale
+  segment is below the root layout); it does not affect the Lighthouse SEO score, which reads the
+  served metadata. Fixing it is a route restructure, not a feature change.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->

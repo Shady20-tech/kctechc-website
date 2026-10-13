@@ -55,6 +55,11 @@ export type ProductSeo = {
 export type ProductRecord = {
   id: string;
   categorySlug: string;
+  /**
+   * Department that owns the product, via its category. The store that shows it
+   * is this department's store, which is why the field travels with the record.
+   */
+  departmentSlug: string;
   /** Canonical (source-locale) slug. */
   slug: string;
   sku: string;
@@ -87,6 +92,7 @@ export type ProductRecord = {
 export type LocalizedProduct = {
   id: string;
   categorySlug: string;
+  departmentSlug: string;
   slug: string;
   sku: string;
   brand?: string;
@@ -116,6 +122,8 @@ export type LocalizedCategory = {
 
 export type CategoryRecord = {
   slug: string;
+  /** Department that owns the category; the store path is built from it. */
+  departmentSlug: string;
   name: string;
   description?: string;
   localizedSlugs?: Partial<Record<Locale, string>>;

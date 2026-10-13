@@ -2,31 +2,50 @@ import { notFound } from "next/navigation";
 
 import { CoverUploadForm } from "@/components/admin/CoverUploadForm";
 import { InsightForm } from "@/components/admin/InsightForm";
+import {
+  InsightGalleryForm,
+  type InsightGalleryItem,
+} from "@/components/admin/InsightGalleryForm";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { ELEVATED_ROLES } from "@/lib/auth/roles";
+import { DEPARTMENT_EDITOR_ROLES } from "@/lib/auth/roles";
 import { updateInsightAction } from "@/lib/content/admin-actions";
-import { getAdminInsight, loadContentOptions } from "@/lib/content/admin-queries";
+import {
+  getAdminInsight,
+  listInsightMedia,
+  loadContentOptions,
+} from "@/lib/content/admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
 import { publicBucketUrl, CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
 
 export const dynamic = "force-dynamic";
 
-/** Admin: edit an article and manage its cover image. */
+/** Admin: edit an article, its cover image and its gallery. */
 export default async function AdminInsightEditorPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole([...ELEVATED_ROLES], "/admin/content");
+  await requireRole([...DEPARTMENT_EDITOR_ROLES], "/admin/content");
   const { id } = await params;
   const t = createTranslator("en").t;
 
   const insight = await getAdminInsight(id);
   if (!insight) notFound();
 
-  const options = await loadContentOptions();
+  const [options, media] = await Promise.all([
+    loadContentOptions(),
+    listInsightMedia(id),
+  ]);
+
+  const gallery: InsightGalleryItem[] = media.map((item) => ({
+    id: item.id,
+    url: publicBucketUrl(CONTENT_MEDIA_BUCKET, item.storagePath),
+    altText: item.altText,
+    caption: item.caption,
+    credit: item.credit,
+  }));
 
   const labels: Record<string, string> = {
     slugLabel: t("adminContent.slugLabel"),
@@ -52,10 +71,22 @@ export default async function AdminInsightEditorPage({
     coverUpload: t("adminContent.coverUpload"),
     coverUploading: t("adminContent.coverUploading"),
     coverUpdated: t("adminContent.coverUpdated"),
+    galleryHeading: t("adminContent.galleryHeading"),
+    galleryIntro: t("adminContent.galleryIntro"),
+    galleryEmpty: t("adminContent.galleryEmpty"),
+    galleryUpload: t("adminContent.galleryUpload"),
+    galleryUploading: t("adminContent.galleryUploading"),
+    galleryImageAdded: t("adminContent.galleryImageAdded"),
+    galleryRemove: t("adminContent.galleryRemove"),
+    altLabel: t("adminContent.altLabel"),
+    altHint: t("adminContent.altHint"),
+    captionLabel: t("adminContent.captionLabel"),
+    creditLabel: t("adminContent.creditLabel"),
   };
   for (const key of [
     "unauthenticated",
     "forbidden",
+    "forbidden_department",
     "unconfigured",
     "invalid",
     "duplicate",
@@ -63,6 +94,7 @@ export default async function AdminInsightEditorPage({
     "write_failed",
     "not_found",
     "no_file",
+    "alt_required",
     "empty",
     "too_large",
     "type_not_allowed",
@@ -102,13 +134,26 @@ export default async function AdminInsightEditorPage({
           />
         </Card>
 
-        <Card>
-          <CoverUploadForm
-            id={insight.id}
-            currentUrl={publicBucketUrl(CONTENT_MEDIA_BUCKET, insight.coverImagePath)}
-            labels={labels}
-          />
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CoverUploadForm
+              id={insight.id}
+              currentUrl={publicBucketUrl(
+                CONTENT_MEDIA_BUCKET,
+                insight.coverImagePath,
+              )}
+              labels={labels}
+            />
+          </Card>
+
+          <Card>
+            <InsightGalleryForm
+              id={insight.id}
+              media={gallery}
+              labels={labels}
+            />
+          </Card>
+        </div>
       </div>
     </>
   );

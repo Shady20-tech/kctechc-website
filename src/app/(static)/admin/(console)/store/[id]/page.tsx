@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { ELEVATED_ROLES } from "@/lib/auth/roles";
+import { DEPARTMENT_EDITOR_ROLES } from "@/lib/auth/roles";
+import { departmentsForRole } from "@/lib/content/project-admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
 import { loadProductForAdmin } from "@/lib/store/admin-queries";
 import { storagePublicUrl } from "@/lib/store/storage";
@@ -19,17 +20,28 @@ export const dynamic = "force-dynamic";
  * This is the page the create form promises ("add an image, then publish it from
  * the product list"). Without it a product could only ever be a draft: the schema
  * refuses to publish a product with no image, and there was nowhere to attach one.
+ *
+ * The read is scoped to the departments the caller may author, so a guessed id for
+ * another department's published product 404s rather than opening a form whose
+ * save the department write policy would then refuse — the same treatment
+ * `getAdminProject` gives a project.
  */
 export default async function AdminProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole([...ELEVATED_ROLES], "/admin/store");
+  const profile = await requireRole(
+    [...DEPARTMENT_EDITOR_ROLES],
+    "/admin/store",
+  );
   const { id } = await params;
   const t = createTranslator("en").t;
 
-  const product = await loadProductForAdmin(id);
+  const product = await loadProductForAdmin(
+    id,
+    departmentsForRole(profile.role),
+  );
   if (!product) notFound();
 
   const image = primaryImage(product.images);

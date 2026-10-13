@@ -125,6 +125,17 @@ describe("department theme palettes", () => {
         );
       });
 
+      it("keeps the accent legible on the alternate band tint", () => {
+        // `text-dept-accent` is used on eyebrows that sit on a `tone="alt"`
+        // band (the Electrical Services package comparison table and the "how we
+        // work" eyebrow), so the accent must clear AA against `surface-alt`, not
+        // only the canvas. `#C2410C` measured 4.4:1 there, which is a real audit
+        // failure Lighthouse reports on the packages page.
+        expect(
+          contrastRatio(theme.accent, theme.surfaceAlt),
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+
       it("keeps the card surface lighter than the page canvas", () => {
         // The canvas/card split is what stops a department page reading as a
         // flat sheet: the canvas carries the tint and the cards sit above it.
@@ -221,5 +232,23 @@ describe("globals.css theme blocks", () => {
     expect(contrastRatio("#4ed9d4", "#06090b")).toBeGreaterThanOrEqual(
       AA_LARGE,
     );
+  });
+
+  it("keeps a hero CTA label readable on the bright accent", () => {
+    // The department hero's primary CTA sits on an ink band, where the accent
+    // resolves to its bright value. White on that value measures ~2:1 for every
+    // department (Lighthouse caught it as `color-contrast`), so the label must
+    // be ink-950, the `accentOnInk` pairing — never white.
+    for (const slug of DEPARTMENT_SLUGS) {
+      const theme = DEPARTMENT_THEME_TOKENS[slug];
+      expect(
+        contrastRatio(theme.ink950, theme.accentBright),
+        `${slug} ink on bright accent`,
+      ).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(
+        contrastRatio("#ffffff", theme.accentBright),
+        `${slug} white on bright accent`,
+      ).toBeLessThan(AA_TEXT);
+    }
   });
 });

@@ -111,12 +111,18 @@ describe("SiteHeader alignment", () => {
     }));
 
     // The compact codes keep the bar inside its width budget on narrow desktop
-    // widths; the accessible name stays the full language so screen readers and
-    // voice control still get something meaningful.
+    // widths, and the accessible name carries the full language so screen readers
+    // and voice control still get something meaningful. The name must *contain*
+    // the visible text ("EN" is not a substring of "English"), otherwise
+    // Lighthouse's `label-content-name-mismatch` fails — so the code is prefixed
+    // rather than replaced.
     expect(labels).toEqual([
-      { text: "EN", name: "English" },
-      { text: "FR", name: "Français" },
+      { text: "EN", name: "EN — English" },
+      { text: "FR", name: "FR — Français" },
     ]);
+    for (const { text, name } of labels) {
+      expect(name).toContain(text);
+    }
   });
 
   it("keeps the lockup from wrapping on one line", () => {

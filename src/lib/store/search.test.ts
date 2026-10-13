@@ -13,6 +13,7 @@ function product(overrides: Partial<LocalizedProduct>): LocalizedProduct {
   return {
     id: "id",
     categorySlug: "laptops",
+    departmentSlug: "digital-marketing",
     slug: "slug",
     sku: "SKU",
     title: "Title",

@@ -90,6 +90,7 @@ export function localizeProduct(
   return {
     id: record.id,
     categorySlug: record.categorySlug,
+    departmentSlug: record.departmentSlug,
     // The URL slug is the locale's own: a French visitor is linked to and served
     // the French slug, not the English one.
     slug: slugForLocale(record, locale),

@@ -49,7 +49,7 @@ export const BRAND_COLORS = {
   teal: "#006E6A",
   tealBright: "#4ED9D4",
   digitalMarketing: "#0066CC",
-  electricalServices: "#C2410C",
+  electricalServices: "#B23E0D",
   realEstate: "#1E5631",
   bodyText: "#414D57",
   mutedText: "#66717B",
@@ -244,7 +244,7 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink950: "#141414",
     ink800: "#2B2B2B",
     ink600: "#333333",
-    accent: "#C2410C",
+    accent: "#B23E0D",
     accentBright: "#F0A94A",
   },
   "real-estate": {

@@ -192,9 +192,14 @@ export default async function DepartmentPage({
               </p>
               {hasContent ? (
                 <div className="mt-8 flex flex-wrap gap-3">
+                  {/* The hero sits on an ink band, so the accent resolves to its
+                      bright value (`#6fa8f5` / `#f0a94a`), where white text is
+                      only ~2:1. The label is therefore ink-950 on the bright
+                      accent — the `accentOnInk` pairing from the design system —
+                      not white on the accent. */}
                   <Link
                     href={`/${resolved}/${definition.slug}/services`}
-                    className="inline-flex items-center gap-2 rounded-pill bg-dept-accent px-5 py-3 text-sm font-semibold text-white transition-soft hover:opacity-90"
+                    className="inline-flex items-center gap-2 rounded-pill bg-dept-accent-bright px-5 py-3 text-sm font-semibold text-ink-950 transition-soft hover:opacity-90"
                   >
                     {t(`${copy}.heroPrimaryCta`)}
                     <ArrowRight aria-hidden="true" className="h-4 w-4" />

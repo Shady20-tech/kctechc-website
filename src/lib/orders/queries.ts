@@ -94,24 +94,32 @@ async function loadLines(orderId: string): Promise<OrderLine[]> {
   const { data } = await admin
     .from("order_items")
     .select(
-      "id, product_id, title, sku, slug, quantity, unit_price_minor, line_total_minor, currency",
+      "id, product_id, title, sku, slug, quantity, unit_price_minor, line_total_minor, currency, products (product_categories (slug, departments (slug)))",
     )
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    productId: row.product_id,
-    title: row.title,
-    sku: row.sku,
-    slug: row.slug,
-    quantity: row.quantity,
-    unitPriceMinor: row.unit_price_minor,
-    // `line_total_minor` is a generated column, so the type system sees it as
-    // nullable; the arithmetic mirrors the generated expression for the fallback.
-    lineTotalMinor: row.line_total_minor ?? row.unit_price_minor * row.quantity,
-    currency: row.currency,
-  }));
+  return (data ?? []).map((row) => {
+    // A product removed after the order was placed leaves the line intact — the
+    // order is a historical record — so the category and department are read
+    // through the still-present product when it exists, and left null otherwise.
+    const category = row.products?.product_categories ?? null;
+    return {
+      id: row.id,
+      productId: row.product_id,
+      title: row.title,
+      sku: row.sku,
+      slug: row.slug,
+      categorySlug: category?.slug ?? null,
+      departmentSlug: category?.departments?.slug ?? null,
+      quantity: row.quantity,
+      unitPriceMinor: row.unit_price_minor,
+      // `line_total_minor` is a generated column, so the type system sees it as
+      // nullable; the arithmetic mirrors the generated expression for the fallback.
+      lineTotalMinor: row.line_total_minor ?? row.unit_price_minor * row.quantity,
+      currency: row.currency,
+    };
+  });
 }
 
 async function loadPayments(orderId: string): Promise<OrderPayment[]> {

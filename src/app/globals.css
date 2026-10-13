@@ -71,7 +71,7 @@
      way. Values mirror `BRAND_COLORS` in `src/lib/config/site.ts`. */
   --color-dept-marketing: #0066cc;
   --color-dept-marketing-bright: #6fa8f5;
-  --color-dept-electrical: #c2410c;
+  --color-dept-electrical: #b23e0d;
   --color-dept-electrical-bright: #f0a94a;
   --color-dept-realestate: #1e5631;
   --color-dept-realestate-bright: #4fd1a5;
@@ -336,7 +336,7 @@
     --color-ink-950: #141414;
     --color-ink-800: #2b2b2b;
     --color-ink-600: #333333;
-    --color-accent: #c2410c;
+    --color-accent: #b23e0d;
     --color-accent-bright: #f0a94a;
     --dept-accent: var(--color-accent);
     --dept-accent-bright: var(--color-accent-bright);

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeController } from "@/components/layout/ThemeController";
 import { fontClassNames } from "@/lib/fonts";
+import { getSiteUrl } from "@/lib/config/env";
 import { BRAND_COLORS } from "@/lib/config/site";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
 import { themeBootstrapScript } from "@/lib/theme/department-theme";
@@ -17,6 +18,13 @@ import "./globals.css";
  * Fonts are loaded here via `next/font`, which self-hosts them at build time.
  */
 export const metadata: Metadata = {
+  // Declared here so *every* route resolves a relative canonical, OG image or
+  // Twitter image against the configured origin. The gateway's own `metadata`
+  // export uses `canonical: "/"` (a relative value) and relies on this base; a
+  // route that is not built through `buildMetadata` would otherwise emit
+  // `<link rel="canonical" href="/">`, which Lighthouse reports as "Document does
+  // not have a valid rel=canonical".
+  metadataBase: getSiteUrl(),
   title: {
     default: DEFAULT_TITLE_TEMPLATE.replace("%s | ", ""),
     template: DEFAULT_TITLE_TEMPLATE,

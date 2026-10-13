@@ -6,12 +6,13 @@ import { ButtonLink } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
 import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { isElevatedRole } from "@/lib/auth/roles";
+import { isDepartmentEditorRole } from "@/lib/auth/roles";
 import { getAuthState } from "@/lib/auth/session";
+import { departmentsForRole } from "@/lib/content/project-admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadProductRecords } from "@/lib/store/loaders";
-import { availabilityLabelKey, formatPrice } from "@/lib/store/types";
-import type { ProductRecord } from "@/lib/store/types";
+import { listProductsForAdmin } from "@/lib/store/admin-queries";
+import { formatPrice } from "@/lib/store/types";
+import type { AdminProduct } from "@/lib/store/admin-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,12 @@ export const dynamic = "force-dynamic";
  * that link 404'd. It is the index the editor needs to reach a product's detail
  * view, so it lists the canonical records rather than the localized ones — the
  * catalogue is edited in the source language and localized afterwards.
+ *
+ * The list is read through the service-role client, because the public loader
+ * filters to published rows and a freshly created draft would then be invisible —
+ * which would make the "add an image, then publish" flow impossible to complete.
+ * The department boundary is kept in the application by scoping the query to the
+ * departments the caller may author, so a department editor sees only their own.
  *
  * The "newest first" ordering is deliberate: a product just created through
  * `/admin/store/new` is a draft at the top of the list, which is where the editor
@@ -37,12 +44,12 @@ export default async function AdminStorePage() {
   if (state.status !== "authenticated") {
     redirect("/admin/login?next=%2Fadmin%2Fstore");
   }
-  if (!state.profile || !isElevatedRole(state.profile.role)) {
+  if (!state.profile || !isDepartmentEditorRole(state.profile.role)) {
     redirect("/admin/unauthorized");
   }
 
-  const products = [...(await loadProductRecords())].sort((a, b) =>
-    (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+  const products = await listProductsForAdmin(
+    departmentsForRole(state.profile.role),
   );
 
   return (
@@ -65,7 +72,7 @@ export default async function AdminStorePage() {
             <p>{t("admin.store.noProducts")}</p>
           </Notice>
         ) : (
-          <DataTable<ProductRecord>
+          <DataTable<AdminProduct>
             caption={t("admin.store.catalogueHeading")}
             columns={[
               {
@@ -84,6 +91,11 @@ export default async function AdminStorePage() {
                 key: "sku",
                 header: t("admin.store.columnSku"),
                 render: (row) => <span className="font-mono">{row.sku}</span>,
+              },
+              {
+                key: "department",
+                header: t("admin.store.columnDepartment"),
+                render: (row) => row.departmentSlug,
               },
               {
                 key: "category",
@@ -112,11 +124,6 @@ export default async function AdminStorePage() {
                       : t("admin.store.statusDraft")}
                   </Badge>
                 ),
-              },
-              {
-                key: "availability",
-                header: t("admin.store.columnAvailability"),
-                render: (row) => t(availabilityLabelKey(row.availability)),
               },
             ]}
             rows={products}

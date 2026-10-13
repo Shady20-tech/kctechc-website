@@ -92,6 +92,7 @@ export {
   REAL_ESTATE_PATH,
   SOLAR_PACKAGES_PATH,
   STORE_PATH,
+  storePathFor,
 } from "./redirects";
 
 /**
@@ -123,11 +124,6 @@ export function buildPrimaryNav(
     },
     { kind: "link", href: `/${locale}/services`, label: t("nav.services") },
     { kind: "link", href: `/${locale}/gallery`, label: t("nav.gallery") },
-    {
-      kind: "link",
-      href: `/${locale}${SOLAR_PACKAGES_PATH}`,
-      label: t("nav.packages"),
-    },
     { kind: "link", href: `/${locale}/contact`, label: t("nav.contact") },
     {
       kind: "link",

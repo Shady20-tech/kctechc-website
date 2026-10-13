@@ -156,29 +156,35 @@ function seoFromRow(row: {
  * Returns canonical records rather than localized ones because the caller usually
  * needs to resolve a slug first and localize afterwards, and localizing the whole
  * catalogue to answer one request would do six times the necessary work.
+ *
+ * `departmentSlug` scopes the catalogue to one department's store. Omitted, it
+ * loads every department's products, which is what the admin console (which
+ * manages them all) and the sitemap (which lists them all) need.
  */
-export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
+export async function loadProductRecords(
+  departmentSlug?: string,
+): Promise<readonly ProductRecord[]> {
   const fallback = allProductRecords();
 
   try {
     const supabase = createPublicClient();
     if (!supabase) return fallback;
 
-    // The department is looked up rather than assumed, so the store is scoped to
-    // the Digital Marketing department instead of showing a product from another
-    // department if one were ever created.
-    const { data: department } = await supabase
-      .from("departments")
-      .select("id")
-      .eq("slug", "digital-marketing")
-      .maybeSingle();
+    // The department is looked up rather than assumed, so a store is scoped to
+    // its own department instead of showing a product from another one. Omitting
+    // the slug selects every department, which the console and sitemap need.
+    const departmentQuery = supabase.from("departments").select("id");
+    const { data: departments } = departmentSlug
+      ? await departmentQuery.eq("slug", departmentSlug)
+      : await departmentQuery;
 
-    if (!department) return fallback;
+    if (!departments || departments.length === 0) return fallback;
+    const departmentIds = departments.map((row) => row.id);
 
     const { data: categories, error: categoryError } = await supabase
       .from("product_categories")
-      .select("id, slug")
-      .eq("department_id", department.id)
+      .select("id, slug, department_id, departments(slug)")
+      .in("department_id", departmentIds)
       .eq("publish_state", "published")
       .eq("is_active", true);
 
@@ -187,6 +193,12 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
 
     const categoryIdBySlug = new Map(
       categories.map((category) => [category.id, category.slug]),
+    );
+    const categoryDepartment = new Map(
+      categories.map((category) => [
+        category.id,
+        (category.departments as { slug: string } | null)?.slug ?? "",
+      ]),
     );
     const categoryIds = categories.map((category) => category.id);
 
@@ -268,6 +280,7 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
       const record: ProductRecord = {
         id: row.id,
         categorySlug: categoryIdBySlug.get(row.category_id) ?? "",
+        departmentSlug: categoryDepartment.get(row.category_id) ?? "",
         slug: row.slug,
         sku: row.sku,
         brand: asString(row.brand),
@@ -296,26 +309,29 @@ export async function loadProductRecords(): Promise<readonly ProductRecord[]> {
 }
 
 /** Load published categories, canonical form. */
-export async function loadCategoryRecords(): Promise<
-  readonly CategoryRecord[]
-> {
+export async function loadCategoryRecords(
+  departmentSlug?: string,
+): Promise<readonly CategoryRecord[]> {
   const fallback = allCategoryRecords();
 
   try {
     const supabase = createPublicClient();
     if (!supabase) return fallback;
 
-    const { data: department } = await supabase
-      .from("departments")
-      .select("id")
-      .eq("slug", "digital-marketing")
-      .maybeSingle();
-    if (!department) return fallback;
+    const departmentQuery = supabase.from("departments").select("id");
+    const { data: departments } = departmentSlug
+      ? await departmentQuery.eq("slug", departmentSlug)
+      : await departmentQuery;
+
+    if (!departments || departments.length === 0) return fallback;
 
     const { data: rows, error } = await supabase
       .from("product_categories")
-      .select("id, slug, name, description, updated_at")
-      .eq("department_id", department.id)
+      .select("id, slug, name, description, updated_at, departments(slug)")
+      .in(
+        "department_id",
+        departments.map((row) => row.id),
+      )
       .eq("publish_state", "published")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
@@ -365,6 +381,8 @@ export async function loadCategoryRecords(): Promise<
 
     return rows.map((row) => ({
       slug: row.slug,
+      departmentSlug:
+        (row.departments as { slug: string } | null)?.slug ?? "",
       name: row.name,
       description: asString(row.description),
       localizedSlugs: localizedSlugs.get(row.id),
@@ -379,8 +397,9 @@ export async function loadCategoryRecords(): Promise<
 /** Load every published product, localized for one locale. */
 export async function loadProducts(
   locale: Locale,
+  departmentSlug?: string,
 ): Promise<LocalizedProduct[]> {
-  const records = await loadProductRecords();
+  const records = await loadProductRecords(departmentSlug);
   return records.map((record) => localizeProduct(record, locale));
 }
 
@@ -388,15 +407,21 @@ export async function loadProducts(
 export async function loadProductsInCategory(
   categorySlug: string,
   locale: Locale,
+  departmentSlug?: string,
 ): Promise<LocalizedProduct[]> {
-  const records = await loadProductRecords();
+  const records = await loadProductRecords(departmentSlug);
   return records
     .filter((record) => record.categorySlug === categorySlug)
     .map((record) => localizeProduct(record, locale));
 }
 
 /**
- * Load published categories with their database ids.
+ * Load categories with their database ids for the admin product form.
+ *
+ * Scoped to a department because a product belongs to its category's department;
+ * the form only offers categories from the department the editor is placing the
+ * product in. Omitting the slug offers every department's categories, which is
+ * what a super admin choosing a department first needs.
  *
  * The storefront loaders deliberately drop the id: nothing on a public page needs
  * it, and not carrying it means a template cannot accidentally render it. The
@@ -407,29 +432,35 @@ export async function loadProductsInCategory(
  * A form that silently offers a fabricated category id would let an editor submit
  * a product pointing at a row that does not exist.
  */
-export async function loadCategoryOptions(): Promise<
-  readonly { id: string; name: string }[]
+export async function loadCategoryOptions(departmentSlug?: string): Promise<
+  readonly { id: string; name: string; departmentSlug: string }[]
 > {
   try {
     const supabase = await createClient();
     if (!supabase) return [];
 
-    const { data: department } = await supabase
-      .from("departments")
-      .select("id")
-      .eq("slug", "digital-marketing")
-      .maybeSingle();
-    if (!department) return [];
+    const { data: departments } = departmentSlug
+      ? await supabase.from("departments").select("id").eq("slug", departmentSlug)
+      : await supabase.from("departments").select("id");
+    if (!departments || departments.length === 0) return [];
 
     const { data: rows, error } = await supabase
       .from("product_categories")
-      .select("id, name")
-      .eq("department_id", department.id)
+      .select("id, name, department_id, departments(slug)")
+      .in(
+        "department_id",
+        departments.map((row) => row.id),
+      )
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
     if (error || !rows) return [];
-    return rows.map((row) => ({ id: row.id, name: row.name }));
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      departmentSlug:
+        (row.departments as { slug: string } | null)?.slug ?? "",
+    }));
   } catch {
     return [];
   }
@@ -438,8 +469,9 @@ export async function loadCategoryOptions(): Promise<
 /** Load published categories, localized. */
 export async function loadCategories(
   locale: Locale,
+  departmentSlug?: string,
 ): Promise<LocalizedCategory[]> {
-  const records = await loadCategoryRecords();
+  const records = await loadCategoryRecords(departmentSlug);
   return records.map((record) => localizeCategory(record, locale));
 }
 
@@ -453,8 +485,9 @@ export async function loadCategories(
 export async function loadProductBySlug(
   slug: string,
   locale: Locale,
+  departmentSlug?: string,
 ): Promise<LocalizedProduct | null> {
-  const records = await loadProductRecords();
+  const records = await loadProductRecords(departmentSlug);
   const record = resolveBySlug(records, slug, locale);
   return record ? localizeProduct(record, locale) : null;
 }
@@ -463,8 +496,9 @@ export async function loadProductBySlug(
 export async function loadCategoryBySlug(
   segment: string,
   locale: Locale,
+  departmentSlug?: string,
 ): Promise<LocalizedCategory | null> {
-  const records = await loadCategoryRecords();
+  const records = await loadCategoryRecords(departmentSlug);
   const record = resolveBySlug(records, segment, locale);
   return record ? localizeCategory(record, locale) : null;
 }

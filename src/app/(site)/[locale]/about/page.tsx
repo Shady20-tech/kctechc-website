@@ -172,7 +172,7 @@ export default async function AboutPage({
                     <a
                       key={phone}
                       href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                      className="text-ink-700 underline underline-offset-4"
+                      className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
                     >
                       {phone}
                     </a>
@@ -186,7 +186,7 @@ export default async function AboutPage({
                 <dd>
                   <a
                     href={`mailto:${site.contact.email}`}
-                    className="text-ink-700 underline underline-offset-4"
+                    className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
                   >
                     {site.contact.email}
                   </a>

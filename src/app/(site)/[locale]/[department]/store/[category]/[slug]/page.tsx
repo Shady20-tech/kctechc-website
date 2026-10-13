@@ -8,8 +8,9 @@ import { AvailabilityBadge } from "@/components/store/ProductCard";
 import { ProductGallery } from "@/components/store/ProductImageFrame";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
-import { STORE_PATH } from "@/lib/config/navigation";
-import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
+import { storePathFor } from "@/lib/config/navigation";
+import { DEPARTMENTS } from "@/lib/config/site";
+import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo/structured-data";
@@ -32,7 +33,7 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
 /**
  * Product detail page.
  *
- * The URL is `/[locale]/digital-marketing/store/[category]/[slug]` where BOTH
+ * The URL is `/[locale]/[department]/store/[category]/[slug]` where BOTH
  * segments are locale-specific. The category segment is a localized category slug
  * and the slug is the product's localized slug, so the French page lives at
  * `/fr/.../store/ordinateurs/ordinateur-thinkpad-x1` while the English one lives
@@ -52,31 +53,42 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
  * Structured data is built from the same resolved record the page renders, so the
  * price and availability in the markup are exactly the ones on screen.
  */
-export async function generateStaticParams() {
+export function generateStaticParams() {
   // Products and categories are read from the database at request time, so no
-  // pairs are enumerated here; the route renders on demand and is cached.
-  return LOCALES.map((locale) => ({ locale }));
+  // pairs are enumerated here; only the department segment is, from the static
+  // list. The route renders on demand and is cached.
+  return DEPARTMENTS.map((department) => ({ department: department.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; category: string; slug: string }>;
+  params: Promise<{
+    locale: string;
+    department: string;
+    category: string;
+    slug: string;
+  }>;
 }): Promise<Metadata> {
-  const { locale, category: categorySegment, slug } = await params;
+  const { locale, department, category: categorySegment, slug } = await params;
   if (!isLocale(locale)) return {};
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) return {};
 
-  const product = await loadProductBySlug(slug, locale);
+  const product = await loadProductBySlug(slug, locale, department);
   if (!product) return {};
 
-  const category = await loadCategoryBySlug(categorySegment, locale);
+  const category = await loadCategoryBySlug(
+    categorySegment,
+    locale,
+    department,
+  );
   if (!category || category.slug !== product.categorySlug) return {};
 
   return buildMetadata({
     locale,
     // The canonical path uses the product's own locale slug, so the metadata
     // canonical matches the URL actually served.
-    pathWithoutLocale: `${STORE_PATH}/${category.slug}/${product.slug}`,
+    pathWithoutLocale: `${storePathFor(department)}/${category.slug}/${product.slug}`,
     title: product.seo.title ?? product.title,
     description:
       product.seo.description ??
@@ -89,18 +101,29 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; category: string; slug: string }>;
+  params: Promise<{
+    locale: string;
+    department: string;
+    category: string;
+    slug: string;
+  }>;
 }) {
-  const { locale, category: categorySegment, slug } = await params;
+  const { locale, department, category: categorySegment, slug } = await params;
   if (!isLocale(locale)) notFound();
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) notFound();
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const storePath = storePathFor(department);
 
-  const product = await loadProductBySlug(slug, resolved);
+  const product = await loadProductBySlug(slug, resolved, department);
   if (!product) notFound();
 
-  const category = await loadCategoryBySlug(categorySegment, resolved);
+  const category = await loadCategoryBySlug(
+    categorySegment,
+    resolved,
+    department,
+  );
   if (!category) notFound();
 
   // The product must belong to the category in the URL. A mismatch is a 404: the
@@ -113,19 +136,21 @@ export default async function ProductDetailPage({
   // canonical slug is redirected to the locale's own slug, which is why
   // `slugsForLocale` still lists both as prerenderable: one is the page, the other
   // is the redirect.
-  const record = (await loadProductRecords()).find(
+  const record = (await loadProductRecords(department)).find(
     (entry) => entry.id === product.id,
   );
   if (record && !isCanonicalUrlSlug(record, slug, resolved)) {
     const categorySlugForLocale = category.slug;
     permanentRedirect(
-      `/${resolved}${STORE_PATH}/${categorySlugForLocale}/${product.slug}`,
+      `/${resolved}${storePath}/${categorySlugForLocale}/${product.slug}`,
     );
   }
 
-  const productPath = `/${resolved}${STORE_PATH}/${category.slug}/${product.slug}`;
+  const productPath = `/${resolved}${storePath}/${category.slug}/${product.slug}`;
 
-  const related = (await loadProductsInCategory(product.categorySlug, resolved))
+  const related = (
+    await loadProductsInCategory(product.categorySlug, resolved, department)
+  )
     .filter((entry) => entry.id !== product.id)
     .slice(0, 3);
 
@@ -134,8 +159,8 @@ export default async function ProductDetailPage({
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
-    { name: t("nav.store"), href: `/${resolved}${STORE_PATH}` },
-    { name: category.name, href: `/${resolved}${STORE_PATH}/${category.slug}` },
+    { name: t("nav.store"), href: `/${resolved}${storePath}` },
+    { name: category.name, href: `/${resolved}${storePath}/${category.slug}` },
     { name: product.title, href: productPath },
   ];
 
@@ -146,10 +171,10 @@ export default async function ProductDetailPage({
       <JsonLdScript
         data={breadcrumbJsonLd([
           { name: t("nav.home"), path: `/${resolved}` },
-          { name: t("nav.store"), path: `/${resolved}${STORE_PATH}` },
+          { name: t("nav.store"), path: `/${resolved}${storePath}` },
           {
             name: category.name,
-            path: `/${resolved}${STORE_PATH}/${category.slug}`,
+            path: `/${resolved}${storePath}/${category.slug}`,
           },
           { name: product.title, path: productPath },
         ])}
@@ -173,7 +198,9 @@ export default async function ProductDetailPage({
 
       <SectionBand
         labelledBy="product-heading"
-        {...departmentScopeProps("digital-marketing")}
+        {...departmentScopeProps(
+          department as (typeof DEPARTMENTS)[number]["slug"],
+        )}
       >
         <Breadcrumbs
           items={breadcrumbs}
@@ -352,7 +379,7 @@ export default async function ProductDetailPage({
             {related.map((entry) => (
               <li key={entry.id}>
                 <Link
-                  href={`/${resolved}${STORE_PATH}/${category.slug}/${entry.slug}`}
+                  href={`/${resolved}${storePath}/${category.slug}/${entry.slug}`}
                   className="text-sm font-medium text-ink-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
                 >
                   {entry.title}
@@ -369,7 +396,7 @@ export default async function ProductDetailPage({
       <div className="container-page section">
         <p>
           <Link
-            href={`/${resolved}${STORE_PATH}/${category.slug}`}
+            href={`/${resolved}${storePath}/${category.slug}`}
             className="text-sm font-semibold text-ink-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
           >
             {t("store.backToCategory")}

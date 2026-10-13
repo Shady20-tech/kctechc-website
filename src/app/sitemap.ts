@@ -5,7 +5,7 @@ import {
   LEGAL_PATHS,
   PROPERTY_SEARCH_PATH,
   SOLAR_PACKAGES_PATH,
-  STORE_PATH,
+  storePathFor,
 } from "@/lib/config/navigation";
 import { getSiteUrl } from "@/lib/config/env";
 import { DEPARTMENTS, SITE_REVISION_DATE } from "@/lib/config/site";
@@ -14,7 +14,7 @@ import {
   departmentHasServices,
   serviceRecordsFor,
 } from "@/lib/content/defaults";
-import { SOLAR_PACKAGES } from "@/lib/content/solar-packages";
+import { SOLAR_PACKAGES, packageBySku } from "@/lib/content/solar-packages";
 import { loadInsights } from "@/lib/content/loaders";
 import { LOCALES } from "@/lib/i18n/locales";
 import { loadPublishedListings } from "@/lib/real-estate/loaders";
@@ -116,7 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const locale of LOCALES) {
     for (const category of storeCategories) {
       const categorySlug = slugForLocale(category, locale);
-      const path = `${STORE_PATH}/${categorySlug}`;
+      const path = `${storePathFor(category.departmentSlug)}/${categorySlug}`;
       entries.push({
         url: canonicalFor(locale, path),
         lastModified: category.updatedAt
@@ -129,7 +129,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       for (const product of storeRecords) {
         if (product.categorySlug !== category.slug) continue;
-        const productPath = `${STORE_PATH}/${categorySlug}/${slugForLocale(product, locale)}`;
+        // A solar package is seeded as a real product but has its own canonical
+        // surface under `/electrical-services/packages`, which is listed below.
+        // Listing the store URL as well would advertise two addresses for one
+        // product.
+        if (product.sku && packageBySku(product.sku)) continue;
+        const productPath = `${storePathFor(product.departmentSlug)}/${categorySlug}/${slugForLocale(product, locale)}`;
         entries.push({
           url: canonicalFor(locale, productPath),
           lastModified: product.updatedAt

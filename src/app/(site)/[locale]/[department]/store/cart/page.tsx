@@ -5,7 +5,8 @@ import { CartLines } from "@/components/store/CartLines";
 import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
+import { DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -31,14 +32,15 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) return {};
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) return {};
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
-    pathWithoutLocale: `${STORE_PATH}/cart`,
+    pathWithoutLocale: `${storePathFor(department)}/cart`,
     title: t("store.cart.heading"),
     description: t("store.cart.intro"),
     // A cart is per-visitor and must never be indexed.
@@ -49,25 +51,29 @@ export async function generateMetadata({
 export default async function CartPage({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }) {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) notFound();
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) notFound();
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const storePath = storePathFor(department);
   const cart = await getCurrentCart();
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
-    { name: t("nav.store"), href: `/${resolved}${STORE_PATH}` },
-    { name: t("store.cart.heading"), href: `/${resolved}${STORE_PATH}/cart` },
+    { name: t("nav.store"), href: `/${resolved}${storePath}` },
+    { name: t("store.cart.heading"), href: `/${resolved}${storePath}/cart` },
   ];
 
   return (
     <SectionBand
       labelledBy="cart-heading"
-      {...departmentScopeProps("digital-marketing")}
+      {...departmentScopeProps(
+        department as (typeof DEPARTMENTS)[number]["slug"],
+      )}
     >
       <Breadcrumbs
         items={breadcrumbs}
@@ -91,7 +97,7 @@ export default async function CartPage({
             {t("store.cart.emptyBody")}
           </p>
           <p className="mt-6">
-            <ButtonLink href={`/${resolved}${STORE_PATH}`} variant="secondary">
+            <ButtonLink href={`/${resolved}${storePath}`} variant="secondary">
               {t("store.cart.continueShopping")}
             </ButtonLink>
           </p>
@@ -118,7 +124,7 @@ export default async function CartPage({
               </p>
               <p className="mt-5">
                 <ButtonLink
-                  href={`/${resolved}${STORE_PATH}/checkout`}
+                  href={`/${resolved}${storePath}/checkout`}
                   variant="primary"
                   className="w-full"
                 >

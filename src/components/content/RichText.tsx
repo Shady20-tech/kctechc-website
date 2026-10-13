@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 /**
@@ -17,17 +18,21 @@ import type { ReactNode } from "react";
  *   - `> ` block quotes
  *   - `**bold**` and `*italic*` inline
  *   - `[text](url)` links, restricted to http(s) and site-relative targets
+ *   - `![alt](url)` images on their own line, restricted the same way
  *
  * Anything else is rendered as plain text. A link whose target is not http(s) or
  * a relative path is rendered as text rather than as a link, which is what stops
- * a `javascript:` URL written into an article from becoming clickable.
+ * a `javascript:` URL written into an article from becoming clickable. An image
+ * whose target fails the same check is rendered as its alt text, so a
+ * `javascript:` URL can never reach an `<img src>`.
  */
 
 type Block =
   | { kind: "paragraph"; text: string }
   | { kind: "heading"; level: 2 | 3; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
-  | { kind: "quote"; text: string };
+  | { kind: "quote"; text: string }
+  | { kind: "image"; alt: string; src: string };
 
 function parseBlocks(body: string): Block[] {
   const lines = body.replace(/\r\n/g, "\n").split("\n");
@@ -76,6 +81,20 @@ function parseBlocks(body: string): Block[] {
         kind: "heading",
         level: heading[1]!.length === 2 ? 2 : 3,
         text: heading[2]!.trim(),
+      });
+      continue;
+    }
+
+    // An image stands alone on its own line. Inline images inside a paragraph
+    // are deliberately not supported: it keeps the block model small, and a
+    // photograph in an article body is a block, not a glyph in a sentence.
+    const image = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(line.trim());
+    if (image) {
+      flushAll();
+      blocks.push({
+        kind: "image",
+        alt: image[1]!.trim(),
+        src: image[2]!.trim(),
       });
       continue;
     }
@@ -129,7 +148,12 @@ function safeHref(target: string): string | null {
   return null;
 }
 
-const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+/**
+ * Inline markup. The negative lookbehind keeps an image `![alt](url)` from being
+ * split into a stray `!` and a link when it appears inside a paragraph rather
+ * than on its own line; such a run is left as literal text.
+ */
+const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|(?<!!)\[[^\]]+\]\([^)]+\))/g;
 
 /** Split a line into text and inline elements, escaping by construction. */
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
@@ -217,6 +241,38 @@ export function RichText({ body }: { body: string }) {
             >
               {renderInline(block.text, key)}
             </blockquote>
+          );
+        }
+
+        if (block.kind === "image") {
+          const src = safeHref(block.src);
+          // An unsafe target is not rendered as an image; its alt text is shown
+          // instead, which keeps the author's words visible without emitting an
+          // `<img>` pointed at an arbitrary scheme.
+          if (!src) {
+            return (
+              <p key={key} className="text-sm text-muted">
+                {block.alt}
+              </p>
+            );
+          }
+          return (
+            <figure key={key} className="my-6">
+              <Image
+                src={src}
+                alt={block.alt}
+                width={1280}
+                height={720}
+                sizes="(min-width: 1024px) 48rem, 100vw"
+                className="h-auto w-full rounded-card border border-border object-cover"
+                unoptimized
+              />
+              {block.alt ? (
+                <figcaption className="mt-2 text-sm text-muted">
+                  {block.alt}
+                </figcaption>
+              ) : null}
+            </figure>
           );
         }
 

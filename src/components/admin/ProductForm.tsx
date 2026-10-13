@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
@@ -14,23 +14,32 @@ import {
 /**
  * Product creation form.
  *
- * A Client Component only so the action's result can be rendered inline. The
- * action runs on the server, and `useActionState` keeps the submitted values in
- * the form when validation fails — a user who typed a 200-word description does
- * not lose it to a mistyped slug.
+ * A Client Component only so the action's result can be rendered inline and the
+ * category list can follow the department picker. The action runs on the server,
+ * and `useActionState` keeps the submitted values in the form when validation
+ * fails — a user who typed a 200-word description does not lose it to a mistyped
+ * slug.
  *
  * There is no client-side duplicate check and no client-side price arithmetic:
  * both are decided by the database and the action, so the form never claims
  * something is valid that the server would refuse.
+ *
+ * The department picker is the feature. A product's department is its category's,
+ * so choosing a department narrows the category list to that department's; the
+ * product is then created in that department and its staff can manage it. A
+ * single-department editor sees one department and a pre-filtered list, while a
+ * super admin can place a product anywhere.
  */
 
 const EMPTY: CreateProductResult = { ok: false, error: "" };
 
 export function ProductForm({
   categories,
+  departments,
   locale,
 }: {
-  categories: readonly { id: string; name: string }[];
+  categories: readonly { id: string; name: string; departmentSlug: string }[];
+  departments: readonly { slug: string; name: string }[];
   locale: Locale;
 }) {
   // Derived from the locale rather than received: a function cannot cross the
@@ -41,6 +50,16 @@ export function ProductForm({
       createProductAction(formData),
     EMPTY,
   );
+
+  // A single department has nothing to choose, so it is preselected and the
+  // category list is already narrow. With more than one, the category options
+  // are filtered to the chosen department as a UI convenience; the action
+  // re-reads the category's department regardless, so the filter is not a control.
+  const onlyDepartment = departments.length === 1 ? departments[0]!.slug : "";
+  const [department, setDepartment] = useState(onlyDepartment);
+  const visibleCategories = department
+    ? categories.filter((category) => category.departmentSlug === department)
+    : categories;
 
   const fields = state.ok ? undefined : state.fields;
   const errorCode = state.ok ? undefined : state.error;
@@ -111,6 +130,32 @@ export function ProductForm({
         error={fields?.sku}
       />
 
+      {/* A single department has nothing to choose, so the control is rendered
+          only when there is a genuine choice to make. */}
+      {departments.length > 1 ? (
+        <SelectField
+          id="department"
+          name="department"
+          label={t("admin.store.fieldDepartment")}
+          hint={t("admin.store.fieldDepartmentHint")}
+          required
+          requiredLabel={t("common.required")}
+          value={department}
+          onChange={(event) => setDepartment(event.target.value)}
+        >
+          <option value="" disabled>
+            {t("admin.store.fieldDepartmentPlaceholder")}
+          </option>
+          {departments.map((entry) => (
+            <option key={entry.slug} value={entry.slug}>
+              {entry.name}
+            </option>
+          ))}
+        </SelectField>
+      ) : (
+        <input type="hidden" name="department" value={department} />
+      )}
+
       <SelectField
         id="categoryId"
         name="categoryId"
@@ -123,7 +168,7 @@ export function ProductForm({
         <option value="" disabled>
           {t("admin.store.fieldCategoryPlaceholder")}
         </option>
-        {categories.map((category) => (
+        {visibleCategories.map((category) => (
           <option key={category.id} value={category.id}>
             {category.name}
           </option>

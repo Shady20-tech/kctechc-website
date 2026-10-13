@@ -5,6 +5,7 @@ import type { CategoryRecord, ProductRecord } from "@/lib/store/types";
 const BASE_PRODUCT: ProductRecord = {
   id: "p1",
   categorySlug: "laptops",
+  departmentSlug: "digital-marketing",
   slug: "thinkpad-x1",
   sku: "KC-LAP-01",
   title: "ThinkPad X1 Carbon",
@@ -168,6 +169,7 @@ describe("localizeProduct", () => {
 describe("localizeCategory", () => {
   const CATEGORY: CategoryRecord = {
     slug: "laptops",
+    departmentSlug: "digital-marketing",
     name: "Laptops",
     description: "Portable computers.",
   };

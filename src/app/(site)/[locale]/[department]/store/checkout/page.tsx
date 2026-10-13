@@ -5,7 +5,8 @@ import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
+import { DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -28,14 +29,15 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) return {};
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) return {};
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
-    pathWithoutLocale: `${STORE_PATH}/checkout`,
+    pathWithoutLocale: `${storePathFor(department)}/checkout`,
     title: t("checkout.metaTitle"),
     description: t("checkout.metaDescription"),
     // A checkout is per-visitor and must never be indexed.
@@ -46,32 +48,36 @@ export async function generateMetadata({
 export default async function CheckoutPage({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; department: string }>;
 }) {
-  const { locale } = await params;
+  const { locale, department } = await params;
   if (!isLocale(locale)) notFound();
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) notFound();
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const storePath = storePathFor(department);
   const cart = await getCurrentCart();
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
-    { name: t("nav.store"), href: `/${resolved}${STORE_PATH}` },
+    { name: t("nav.store"), href: `/${resolved}${storePath}` },
     {
       name: t("store.cart.heading"),
-      href: `/${resolved}${STORE_PATH}/cart`,
+      href: `/${resolved}${storePath}/cart`,
     },
     {
       name: t("checkout.heading"),
-      href: `/${resolved}${STORE_PATH}/checkout`,
+      href: `/${resolved}${storePath}/checkout`,
     },
   ];
 
   return (
     <SectionBand
       labelledBy="checkout-heading"
-      {...departmentScopeProps("digital-marketing")}
+      {...departmentScopeProps(
+        department as (typeof DEPARTMENTS)[number]["slug"],
+      )}
     >
       <Breadcrumbs
         items={breadcrumbs}
@@ -90,7 +96,7 @@ export default async function CheckoutPage({
           </h3>
           <p className="mt-3 text-base text-body">{t("checkout.emptyBody")}</p>
           <p className="mt-6">
-            <ButtonLink href={`/${resolved}${STORE_PATH}`} variant="secondary">
+            <ButtonLink href={`/${resolved}${storePath}`} variant="secondary">
               {t("checkout.emptyCta")}
             </ButtonLink>
           </p>

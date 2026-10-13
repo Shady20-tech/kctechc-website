@@ -35,6 +35,9 @@ export type CartLine = {
   productId: string;
   sku: string;
   slug: string;
+  /** Category and department the product belongs to, so a line can link back. */
+  categorySlug: string;
+  departmentSlug: string;
   title: string;
   quantity: number;
   unitPriceMinor: number;
@@ -116,7 +119,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
   const { data: items } = await supabase
     .from("cart_items")
     .select(
-      "id, product_id, quantity, unit_price_minor, currency, products (slug, sku, title, stock, price_minor, product_media (storage_path, is_primary, position))",
+      "id, product_id, quantity, unit_price_minor, currency, products (slug, sku, title, stock, price_minor, product_categories (slug, departments (slug)), product_media (storage_path, is_primary, position))",
     )
     .eq("cart_id", cart.id)
     .order("created_at", { ascending: true });
@@ -131,6 +134,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
       (a, b) => a.position - b.position,
     );
     const primary = media.find((image) => image.is_primary) ?? media[0];
+    const category = product.product_categories;
 
     return [
       {
@@ -138,6 +142,8 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
         productId: item.product_id,
         sku: product.sku,
         slug: product.slug,
+        categorySlug: category?.slug ?? "",
+        departmentSlug: category?.departments?.slug ?? "",
         title: product.title,
         quantity: item.quantity,
         unitPriceMinor: item.unit_price_minor,

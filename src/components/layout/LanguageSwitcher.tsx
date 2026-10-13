@@ -64,9 +64,17 @@ export function LanguageSwitcher({
                 href={buildLocaleSwitchHref(pathname, "", locale)}
                 hrefLang={locale}
                 aria-current={isCurrent ? "true" : undefined}
-                // The visible text is an abbreviation in compact mode, so the
-                // full language name is supplied here rather than left as "EN".
-                aria-label={compact ? LOCALE_LABELS[locale] : undefined}
+                // In compact mode the visible text is a two-letter code ("EN"),
+                // so the full language name is added to the accessible name via
+                // `aria-label` — but it must *contain* the visible text, or
+                // `label-content-name-mismatch` fails ("English" alone does not
+                // contain "EN"). Prefixing the code keeps the visible label in
+                // the name: "EN — English".
+                aria-label={
+                  compact
+                    ? `${LOCALE_SHORT_LABELS[locale]} — ${LOCALE_LABELS[locale]}`
+                    : undefined
+                }
                 className={isCurrent ? activeClass : idleClass}
               >
                 {compact ? LOCALE_SHORT_LABELS[locale] : LOCALE_LABELS[locale]}

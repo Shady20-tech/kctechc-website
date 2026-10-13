@@ -15,7 +15,6 @@ import {
 import {
   isAdminRole,
   isDepartmentEditorRole,
-  isElevatedRole,
   isRealEstateAdminRole,
   type AppRole,
 } from "@/lib/auth/roles";
@@ -102,7 +101,6 @@ export type AdminNavSectionClient = {
 };
 
 const anyAdmin = (role: AppRole) => isAdminRole(role);
-const elevated = (role: AppRole) => isElevatedRole(role);
 const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
 const departmentEditor = (role: AppRole) => isDepartmentEditorRole(role);
@@ -149,7 +147,7 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         labelKey: "store",
         iconKey: "store",
         icon: Package,
-        canSee: elevated,
+        canSee: departmentEditor,
       },
       {
         href: "/admin/work",
@@ -194,7 +192,7 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         labelKey: "content",
         iconKey: "content",
         icon: FileText,
-        canSee: elevated,
+        canSee: departmentEditor,
       },
       { href: "/admin/users", labelKey: "users", iconKey: "users", icon: Users, canSee: superOnly },
     ],

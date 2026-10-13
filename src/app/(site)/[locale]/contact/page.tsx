@@ -217,7 +217,7 @@ export default async function ContactPage({
                       <a
                         key={phone}
                         href={`tel:${phone.replace(/[^+\d]/g, "")}`}
-                        className="text-ink-700 underline underline-offset-4"
+                        className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
                       >
                         {phone}
                       </a>
@@ -235,7 +235,7 @@ export default async function ContactPage({
                       <a
                         key={email}
                         href={`mailto:${email}`}
-                        className="text-ink-700 underline underline-offset-4"
+                        className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
                       >
                         {email}
                       </a>

@@ -148,6 +148,8 @@ export type OrderLine = {
   title: string;
   sku: string;
   slug: string;
+  categorySlug: string | null;
+  departmentSlug: string | null;
   quantity: number;
   unitPriceMinor: number;
   lineTotalMinor: number;

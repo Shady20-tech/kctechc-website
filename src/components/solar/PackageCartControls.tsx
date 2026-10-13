@@ -6,7 +6,7 @@ import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
 import { addToCartAction } from "@/lib/store/cart-actions";
 
 /**
@@ -41,7 +41,7 @@ export function PackageCartControls({
   const [added, setAdded] = useState(false);
   const [error, setError] = useState(false);
 
-  const cartHref = `/${locale}${STORE_PATH}/cart`;
+  const cartHref = `/${locale}${storePathFor("electrical-services")}/cart`;
 
   return (
     <div className="flex flex-wrap items-center gap-3">

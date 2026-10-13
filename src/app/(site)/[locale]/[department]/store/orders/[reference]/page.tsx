@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { storePathFor } from "@/lib/config/navigation";
+import { DEPARTMENTS } from "@/lib/config/site";
 import { getAuthState } from "@/lib/auth/session";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -43,14 +44,15 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; reference: string }>;
+  params: Promise<{ locale: string; department: string; reference: string }>;
 }): Promise<Metadata> {
-  const { locale, reference } = await params;
+  const { locale, department, reference } = await params;
   if (!isLocale(locale)) return {};
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) return {};
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
-    pathWithoutLocale: `${STORE_PATH}/orders/${reference}`,
+    pathWithoutLocale: `${storePathFor(department)}/orders/${reference}`,
     title: t("order.metaTitle", { reference }),
     description: t("order.metaDescription"),
     noindex: true,
@@ -60,13 +62,15 @@ export async function generateMetadata({
 export default async function OrderPage({
   params,
 }: {
-  params: Promise<{ locale: string; reference: string }>;
+  params: Promise<{ locale: string; department: string; reference: string }>;
 }) {
-  const { locale, reference } = await params;
+  const { locale, department, reference } = await params;
   if (!isLocale(locale)) notFound();
+  if (!DEPARTMENTS.some((entry) => entry.slug === department)) notFound();
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const storePath = storePathFor(department);
 
   const authState = await getAuthState();
   const customerId = authState.status === "authenticated" ? authState.userId : null;
@@ -77,11 +81,11 @@ export default async function OrderPage({
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
-    { name: t("nav.store"), href: `/${resolved}${STORE_PATH}` },
-    { name: t("order.historyHeading"), href: `/${resolved}${STORE_PATH}/orders` },
+    { name: t("nav.store"), href: `/${resolved}${storePath}` },
+    { name: t("order.historyHeading"), href: `/${resolved}${storePath}/orders` },
     {
       name: order.reference,
-      href: `/${resolved}${STORE_PATH}/orders/${encodeURIComponent(order.reference)}`,
+      href: `/${resolved}${storePath}/orders/${encodeURIComponent(order.reference)}`,
     },
   ];
 
@@ -91,7 +95,9 @@ export default async function OrderPage({
   return (
     <SectionBand
       labelledBy="order-heading"
-      {...departmentScopeProps("digital-marketing")}
+      {...departmentScopeProps(
+        department as (typeof DEPARTMENTS)[number]["slug"],
+      )}
     >
       <Breadcrumbs items={breadcrumbs} ariaLabel={t("a11y.breadcrumb")} className="mb-8" />
       <PageIntro
@@ -254,7 +260,7 @@ export default async function OrderPage({
             </div>
 
             <ButtonLink
-              href={`/${resolved}${STORE_PATH}`}
+              href={`/${resolved}${storePath}`}
               variant="secondary"
               className="w-full"
             >

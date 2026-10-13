@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
-import { STORE_PATH } from "@/lib/config/navigation";
+import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
+import { storePathFor } from "@/lib/config/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_PRODUCT_CURRENCY,
@@ -55,7 +55,7 @@ export async function createProductAction(
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!auth.profile || !isElevatedRole(auth.profile.role)) {
+  if (!auth.profile || !isDepartmentEditorRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
 
@@ -79,8 +79,36 @@ export async function createProductAction(
   }
 
   const input = parsed.data;
-  const supabase = createAdminClient();
-  if (!supabase) return { ok: false, error: "unconfigured" };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  // The department is the category's, so the category the editor picked decides
+  // which department the product lands in. Reading it from the database rather
+  // than from the submitted form is what makes the choice authoritative: the RLS
+  // policy already refuses a cross-department write, but a department editor must
+  // also get a message rather than a raw policy violation — and the console must
+  // never offer another department's categories in the first place.
+  const { data: category } = await admin
+    .from("product_categories")
+    .select("id, departments(slug)")
+    .eq("id", input.categoryId)
+    .maybeSingle();
+
+  const departmentSlug =
+    (category?.departments as { slug: string } | null)?.slug ?? null;
+  if (!category || !departmentSlug) {
+    // A category id that does not resolve means a crafted POST; the generic
+    // invalid message is the right response.
+    return { ok: false, error: "invalid" };
+  }
+  if (!canAccessDepartment(auth.profile.role, departmentSlug)) {
+    // Reported as its own code so the form shows a message rather than a raw
+    // policy violation, and no field-level text is invented: the notice is the
+    // whole story.
+    return { ok: false, error: "forbidden_department" };
+  }
+
+  const supabase = admin;
 
   // The product is inserted as a draft. Publishing requires an image, and the
   // image cannot be attached until the product row exists to attach it to, so a
@@ -186,8 +214,8 @@ export async function createProductAction(
     syncWarning = "tolgee_unconfigured";
   }
 
-  revalidatePath(`/en${STORE_PATH}`);
-  revalidatePath(`/fr${STORE_PATH}`);
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
 
   return {
     ok: true,
@@ -213,7 +241,7 @@ export async function retryTranslationSyncAction(
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false };
   }
-  if (!isElevatedRole(auth.profile.role)) return { ok: false };
+  if (!isDepartmentEditorRole(auth.profile.role)) return { ok: false };
 
   const supabase = createAdminClient();
   if (!supabase) return { ok: false };

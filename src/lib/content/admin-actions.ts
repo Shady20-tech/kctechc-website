@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
+import {
+  canAccessDepartment,
+  isDepartmentEditorRole,
+  type AppRole,
+} from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordAudit } from "@/lib/security/audit";
 import { CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
@@ -63,19 +67,63 @@ function fieldErrors(error: z.ZodError): Record<string, string> {
   return out;
 }
 
-async function requireElevated(): Promise<
-  { ok: true; userId: string } | { ok: false; error: string }
+/**
+ * The authoring gate.
+ *
+ * Posting is open to the department editor roles — a department's staff and
+ * admins, plus the cross-department roles — rather than only `ELEVATED_ROLES`.
+ * The person who did the work is often the best placed to write about it, which
+ * is the same reasoning behind the completed-work surface.
+ *
+ * The department boundary is the control, and it is enforced twice: here, so the
+ * editor gets a message rather than a raw policy violation, and by the RLS policy
+ * from `20260101000049_insight_media_and_department_authoring.sql`, which is what
+ * actually refuses a cross-department write.
+ */
+async function requireAuthor(): Promise<
+  { ok: true; userId: string; role: AppRole } | { ok: false; error: string }
 > {
   const auth = await getAuthState();
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!isElevatedRole(auth.profile.role)) return { ok: false, error: "forbidden" };
-  return { ok: true, userId: auth.profile.id };
+  if (!isDepartmentEditorRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+  return { ok: true, userId: auth.profile.id, role: auth.profile.role };
+}
+
+/**
+ * True when `role` may author an article for `departmentId`.
+ *
+ * A department editor is confined to their own department. A cross-department
+ * role may also leave the department unset, because a corporate announcement
+ * belongs to no single department — and a department editor may not, because an
+ * unset department is not one they can be shown to own.
+ */
+async function canAuthorForDepartment(
+  role: AppRole,
+  departmentId: string | null,
+): Promise<boolean> {
+  if (!departmentId) {
+    return role === "super_admin" || role === "department_staff";
+  }
+
+  const admin = createAdminClient();
+  if (!admin) return false;
+
+  const { data } = await admin
+    .from("departments")
+    .select("slug")
+    .eq("id", departmentId)
+    .maybeSingle();
+
+  if (!data) return false;
+  return canAccessDepartment(role, data.slug);
 }
 
 export async function createInsightAction(formData: FormData): Promise<ContentState> {
-  const gate = await requireElevated();
+  const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
   const parsed = insightSchema.safeParse({
@@ -97,6 +145,14 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
 
   if (input.publishState === "published" && !input.authorId) {
     return { ok: false, error: "need_author", fields: { authorId: "Required to publish." } };
+  }
+
+  if (!(await canAuthorForDepartment(gate.role, input.departmentId))) {
+    return {
+      ok: false,
+      error: "forbidden_department",
+      fields: { departmentId: "You cannot post for that department." },
+    };
   }
 
   const supabase = await createClientOrAdmin();
@@ -141,7 +197,7 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
 }
 
 export async function updateInsightAction(formData: FormData): Promise<ContentState> {
-  const gate = await requireElevated();
+  const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
   const id = String(formData.get("id") ?? "");
@@ -166,18 +222,37 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
     return { ok: false, error: "need_author", fields: { authorId: "Required to publish." } };
   }
 
+  // The target department and the new department are both checked: an editor
+  // must be allowed to touch the article as it stands *and* to move it to where
+  // the form says. Checking only the new value would let an editor reassign
+  // another department's article to their own.
+  if (!(await canAuthorForDepartment(gate.role, input.departmentId))) {
+    return {
+      ok: false,
+      error: "forbidden_department",
+      fields: { departmentId: "You cannot post for that department." },
+    };
+  }
+
   const supabase = await createClientOrAdmin();
   if (!supabase) return { ok: false, error: "unconfigured" };
 
   // Read the current publish state so `published_at` is set once, on the
   // draft→published transition, and kept on later edits. Rewriting it on every
   // save would move an article's date every time a typo was fixed.
+  //
+  // The current department is read in the same query so the pre-existing
+  // ownership can be checked before the row is moved.
   const { data: current } = await supabase
     .from("insights")
-    .select("publish_state, published_at")
+    .select("publish_state, published_at, department_id")
     .eq("id", id)
     .maybeSingle();
   if (!current) return { ok: false, error: "not_found" };
+
+  if (!(await canAuthorForDepartment(gate.role, current.department_id))) {
+    return { ok: false, error: "forbidden_department" };
+  }
 
   const publishedAt =
     input.publishState === "published"
@@ -224,7 +299,7 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
 }
 
 export async function uploadInsightCoverAction(formData: FormData): Promise<ContentState> {
-  const gate = await requireElevated();
+  const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
   const id = String(formData.get("id") ?? "");
@@ -240,17 +315,24 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
+  // The article's department decides whether the caller may touch it. Read with
+  // the service-role client so the check is explicit rather than relying on a
+  // read that RLS might already have narrowed.
+  const { data: owned } = await admin
+    .from("insights")
+    .select("department_id, cover_image_path")
+    .eq("id", id)
+    .maybeSingle();
+  if (!owned) return { ok: false, error: "not_found" };
+  if (!(await canAuthorForDepartment(gate.role, owned.department_id))) {
+    return { ok: false, error: "forbidden" };
+  }
+
   const objectPath = buildObjectPath(id, verdict.extension);
   const { error: uploadError } = await admin.storage
     .from(CONTENT_MEDIA_BUCKET)
     .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
   if (uploadError) return { ok: false, error: "upload_failed" };
-
-  const { data: current } = await admin
-    .from("insights")
-    .select("cover_image_path")
-    .eq("id", id)
-    .maybeSingle();
 
   const supabase = await createClientOrAdmin();
   const { error: updateError } = await (supabase ?? admin)
@@ -263,7 +345,7 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
     return { ok: false, error: "update_failed" };
   }
 
-  const previous = current?.cover_image_path;
+  const previous = owned.cover_image_path;
   if (previous && previous !== objectPath) {
     await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([previous]);
   }
@@ -279,6 +361,146 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
   revalidatePath("/admin/content");
   revalidatePath(`/admin/content/${id}`);
   return { ok: true, id, message: "cover_updated" };
+}
+
+/**
+ * Attach a photograph to an article's gallery.
+ *
+ * The image is validated by its leading bytes rather than its declared type — the
+ * same rule every other upload path follows — and the object path is built from
+ * the article id and a content-derived extension, so nothing depends on the
+ * filename the browser supplied.
+ *
+ * The row is written through the cookie-bound client so the `insight_media`
+ * policy is the control; the object itself goes through the service-role client
+ * because the media buckets deliberately have no browser-insert policy.
+ */
+export async function uploadInsightImageAction(
+  formData: FormData,
+): Promise<ContentState> {
+  const gate = await requireAuthor();
+  if (!gate.ok) return { ok: false, error: gate.error };
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return { ok: false, error: "not_found" };
+
+  const altText = String(formData.get("altText") ?? "").trim();
+  if (altText.length === 0) return { ok: false, error: "alt_required" };
+
+  const file = formData.get("image");
+  if (!(file instanceof File)) return { ok: false, error: "no_file" };
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const verdict = validateUpload(bytes, file.type, { kind: "content-image" });
+  if (!verdict.ok) return { ok: false, error: verdict.reason };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  const { data: article } = await admin
+    .from("insights")
+    .select("department_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!article) return { ok: false, error: "not_found" };
+  if (!(await canAuthorForDepartment(gate.role, article.department_id))) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const objectPath = buildObjectPath(id, verdict.extension);
+  const { error: uploadError } = await admin.storage
+    .from(CONTENT_MEDIA_BUCKET)
+    .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
+  if (uploadError) return { ok: false, error: "upload_failed" };
+
+  // Position continues from the current maximum so a later image does not take
+  // the first slot from an earlier one.
+  const { data: last } = await admin
+    .from("insight_media")
+    .select("position")
+    .eq("insight_id", id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const supabase = await createClientOrAdmin();
+  const { error: rowError } = await (supabase ?? admin)
+    .from("insight_media")
+    .insert({
+      insight_id: id,
+      storage_path: objectPath,
+      alt_text: altText.slice(0, 300),
+      caption: optionalText(formData.get("caption")),
+      credit: optionalText(formData.get("credit")),
+      position: (last?.position ?? -1) + 1,
+    });
+
+  if (rowError) {
+    // A row that could not be written must not leave an orphan object behind.
+    await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([objectPath]);
+    return { ok: false, error: "write_failed" };
+  }
+
+  await recordAudit({
+    actorId: gate.userId,
+    action: "content_updated",
+    entityType: "insight",
+    entityId: id,
+    metadata: { field: "gallery_image", bytes: bytes.byteLength },
+  });
+
+  revalidatePath(`/admin/content/${id}`);
+  return { ok: true, id, message: "image_added" };
+}
+
+/** Detach a gallery image, removing the stored object and its row. */
+export async function removeInsightImageAction(
+  formData: FormData,
+): Promise<ContentState> {
+  const gate = await requireAuthor();
+  if (!gate.ok) return { ok: false, error: gate.error };
+
+  const mediaId = String(formData.get("mediaId") ?? "").trim();
+  if (!mediaId) return { ok: false, error: "not_found" };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  const { data: media } = await admin
+    .from("insight_media")
+    .select("id, storage_path, insight_id, insights(department_id)")
+    .eq("id", mediaId)
+    .maybeSingle();
+  if (!media) return { ok: false, error: "not_found" };
+
+  const departmentId =
+    (media.insights as { department_id: string | null } | null)
+      ?.department_id ?? null;
+  if (!(await canAuthorForDepartment(gate.role, departmentId))) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const { error } = await admin.from("insight_media").delete().eq("id", mediaId);
+  if (error) return { ok: false, error: "write_failed" };
+
+  await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([media.storage_path]);
+
+  await recordAudit({
+    actorId: gate.userId,
+    action: "content_updated",
+    entityType: "insight",
+    entityId: media.insight_id,
+    metadata: { field: "gallery_image", removed: true },
+  });
+
+  revalidatePath(`/admin/content/${media.insight_id}`);
+  return { ok: true, id: media.insight_id, message: "image_removed" };
+}
+
+/** Trimmed optional text, or null when empty. */
+function optionalText(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? "").trim();
+  return text.length > 0 ? text.slice(0, 400) : null;
 }
 
 /**

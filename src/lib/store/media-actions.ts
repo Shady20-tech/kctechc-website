@@ -4,7 +4,12 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { getAuthState } from "@/lib/auth/session";
-import { isElevatedRole } from "@/lib/auth/roles";
+import {
+  canAccessDepartment,
+  isDepartmentEditorRole,
+  type AppRole,
+} from "@/lib/auth/roles";
+import { storePathFor } from "@/lib/config/navigation";
 import { recordAudit } from "@/lib/security/audit";
 import { PRODUCT_MEDIA_BUCKET, productMediaPath } from "@/lib/store/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -30,8 +35,8 @@ export type ProductMediaState =
   | { ok: true; message: string }
   | { ok: false; error: string };
 
-async function requireElevated(): Promise<
-  | { ok: true; userId: string }
+async function requireEditor(): Promise<
+  | { ok: true; userId: string; role: AppRole }
   | { ok: false; error: "unauthenticated" | "forbidden" | "unconfigured" }
 > {
   const auth = await getAuthState();
@@ -40,10 +45,33 @@ async function requireElevated(): Promise<
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!auth.profile || !isElevatedRole(auth.profile.role)) {
+  if (!auth.profile || !isDepartmentEditorRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
-  return { ok: true, userId: auth.userId };
+  return { ok: true, userId: auth.userId, role: auth.profile.role };
+}
+
+/**
+ * The department a product belongs to, read from the database.
+ *
+ * A product's department is its category's, so this walks the join rather than
+ * trusting anything the form submitted. `null` means the product does not exist or
+ * has no resolvable department, which callers treat as not-found.
+ */
+async function departmentSlugForProduct(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  productId: string,
+): Promise<string | null> {
+  const { data } = await admin
+    .from("products")
+    .select("product_categories(departments(slug))")
+    .eq("id", productId)
+    .maybeSingle();
+  const category = data?.product_categories as
+    | { departments: { slug: string } | null }
+    | null
+    | undefined;
+  return category?.departments?.slug ?? null;
 }
 
 /**
@@ -58,7 +86,7 @@ async function requireElevated(): Promise<
 export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<ProductMediaState> {
-  const gate = await requireElevated();
+  const gate = await requireEditor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
   const productId = String(formData.get("productId") ?? "").trim();
@@ -77,12 +105,13 @@ export async function uploadProductImageAction(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  const { data: product } = await admin
-    .from("products")
-    .select("id")
-    .eq("id", productId)
-    .maybeSingle();
-  if (!product) return { ok: false, error: "not_found" };
+  // The department comes from the product, never from the request. A product in
+  // a department the caller may not edit is treated as not-found, so the action
+  // and the RLS write policy agree on the boundary.
+  const departmentSlug = await departmentSlugForProduct(admin, productId);
+  if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
+    return { ok: false, error: "not_found" };
+  }
 
   const { data: existing } = await admin
     .from("product_media")
@@ -157,8 +186,8 @@ export async function uploadProductImageAction(
   revalidatePath("/admin/store");
   revalidatePath(`/admin/store/${productId}`);
   revalidatePath("/sitemap.xml");
-  revalidatePath("/en/digital-marketing/store");
-  revalidatePath("/fr/digital-marketing/store");
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
   return { ok: true, message: "image_added" };
 }
 
@@ -174,7 +203,7 @@ export async function uploadProductImageAction(
 export async function setProductPublishedAction(
   formData: FormData,
 ): Promise<ProductMediaState> {
-  const gate = await requireElevated();
+  const gate = await requireEditor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
   const productId = String(formData.get("productId") ?? "").trim();
@@ -183,6 +212,11 @@ export async function setProductPublishedAction(
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
+
+  const departmentSlug = await departmentSlugForProduct(admin, productId);
+  if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
+    return { ok: false, error: "not_found" };
+  }
 
   if (publish) {
     const { count } = await admin
@@ -215,7 +249,7 @@ export async function setProductPublishedAction(
   // The site reads the catalogue at request time, but the sitemap carries the
   // product's `lastmod`. Revalidating it is what tells a crawler the entry moved.
   revalidatePath("/sitemap.xml");
-  revalidatePath("/en/digital-marketing/store");
-  revalidatePath("/fr/digital-marketing/store");
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
   return { ok: true, message: publish ? "published" : "unpublished" };
 }

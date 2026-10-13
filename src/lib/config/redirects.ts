@@ -21,8 +21,25 @@ export const INSIGHTS_PATH = "/insights";
  *
  * Kept here rather than in the store module so `next.config.ts` can import it
  * without pulling in a dependency chain, exactly as `INSIGHTS_PATH` is.
+ *
+ * This is now the *default* store path rather than the only one: every
+ * department has a store surface at `/{locale}/{department}/store`, and Digital
+ * Marketing's happens to be the canonical one the primary nav points at. See
+ * `storePathFor`.
  */
 export const STORE_PATH = "/digital-marketing/store";
+
+/**
+ * The store path for a department.
+ *
+ * A product belongs to the department of its category, so the store that shows
+ * it is that department's store. `STORE_PATH` is `storePathFor("digital-marketing")`,
+ * kept as a constant so existing call sites and the nav model do not all have to
+ * thread a slug through.
+ */
+export function storePathFor(departmentSlug: string): string {
+  return `/${departmentSlug}/store`;
+}
 
 /**
  * Canonical path for the Nationwide Real Estate department.
