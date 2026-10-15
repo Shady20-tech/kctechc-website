@@ -13,7 +13,6 @@ import {
   removeCartItemAction,
   updateCartItemAction,
 } from "@/lib/store/cart-actions";
-import { storagePublicUrl } from "@/lib/store/storage";
 import { formatPrice } from "@/lib/store/types";
 
 /**
@@ -56,7 +55,7 @@ export function CartLines({ cart, locale }: { cart: Cart; locale: Locale }) {
       className="divide-y divide-border border-y border-border"
     >
       {cart.lines.map((line) => {
-        const src = line.imagePath ? storagePublicUrl(line.imagePath) : null;
+        const src = line.imagePath;
         const priceChanged =
           line.currentPriceMinor !== null &&
           line.currentPriceMinor !== line.unitPriceMinor;

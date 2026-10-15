@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import type { Locale } from "@/lib/i18n/locales";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { STORE_CURRENCY } from "@/lib/config/site";
+import { productImageSrc } from "@/lib/store/storage";
 
 /**
  * Cart persistence.
@@ -45,6 +46,7 @@ export type CartLine = {
   /** Price on hand at the moment the cart was read, to surface a change. */
   currentPriceMinor: number | null;
   stock: number;
+  /** A resolved `next/image` source: a Storage URL or a bundled public path. */
   imagePath: string | null;
 };
 
@@ -150,7 +152,9 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
         currency: item.currency,
         currentPriceMinor: product.price_minor,
         stock: product.stock,
-        imagePath: primary?.storage_path ?? null,
+        imagePath: primary
+          ? productImageSrc({ storagePath: primary.storage_path }, product.sku)
+          : null,
       },
     ];
   });

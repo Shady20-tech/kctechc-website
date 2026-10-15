@@ -4,9 +4,9 @@ import { ChevronRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ButtonLink } from "@/components/ui/Button";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { Modal } from "@/components/ui/Modal";
+import { AccountAction } from "./AccountAction";
 import type { NavEntry } from "@/lib/config/navigation";
 import type { DepartmentSlug } from "@/lib/config/site";
 import { isDepartmentSlug } from "@/lib/config/site";
@@ -43,12 +43,10 @@ import { buildLocaleSwitchHref } from "@/lib/i18n/routing";
 export function MobileMenu({
   locale,
   entries,
-  signInHref,
   labels,
 }: {
   locale: Locale;
   entries: readonly NavEntry[];
-  signInHref: string;
   labels: {
     /** Trigger text. Short by design: it sits beside the logo in a 64px bar. */
     menuLabel: string;
@@ -56,6 +54,7 @@ export function MobileMenu({
     title: string;
     language: string;
     signIn: string;
+    account: string;
     brand: string;
     brandSubtitle: string;
   };
@@ -185,15 +184,14 @@ export function MobileMenu({
             </ul>
 
             <div className="mt-4">
-              <ButtonLink
-                href={signInHref}
-                variant="accentOnInk"
+              <AccountAction
+                locale={locale}
+                signInLabel={labels.signIn}
+                accountLabel={labels.account}
                 size="lg"
                 className="w-full"
-                onClick={close}
-              >
-                {labels.signIn}
-              </ButtonLink>
+                onNavigate={close}
+              />
             </div>
           </div>
         </nav>

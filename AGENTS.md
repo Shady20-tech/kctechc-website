@@ -1254,6 +1254,44 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   segment is below the root layout); it does not affect the Lighthouse SEO score, which reads the
   served metadata. Fixing it is a route restructure, not a feature change.
 
+### Customer demo login and account hub
+
+- **The public header's account action is session-aware, and it points a customer at `/account`, not
+  `/admin`.** `AccountAction` is a client island that renders the static "Sign in" link (so the
+  shared header stays a Server Component and every public page keeps its prerendered HTML) and swaps
+  to "Your account" once `useHasSession` sees the browser cookie. `postSignInPathFor(role, locale)`
+  in `src/lib/auth/redirects.ts` decides the landing: admin/staff roles → `/{locale}/admin`,
+  everyone else → `/{locale}/account`. Previously the header always linked to `/admin/login` and the
+  post-sign-in redirect always went to `/admin`, so a customer was sent to the console only to be
+  refused there — for signing in correctly.
+- **Sign-in is a Server Action, so it sets the auth cookie without emitting a browser auth event.**
+  `useHasSession` therefore re-reads on `usePathname()` change as well as on `onAuthStateChange` and
+  window focus; without the pathname dependency the header kept showing "Sign in" on the account page
+  until a manual reload, even though the session was live.
+- **`/[locale]/account` is the customer hub, and each tile links to the owning surface rather than
+  reimplementing it.** Orders link to the store's order history, favourites and saved searches link
+  into Real Estate. It is `force-dynamic` because it reads the session cookie; counts come from
+  loaders that already return empty on failure, so an outage degrades to "0", not an error page.
+  `resolveOrderDepartments` (in `src/lib/orders/queries.ts`) maps an order to its storefront
+  department so an order placed in Electrical Services links to the Electrical Services order page
+  instead of the default Digital Marketing store.
+- **A seeded solar package has a `storage_path` placeholder with no Storage object behind it.** Its
+  real imagery ships in `public/products/electrical/`. `productImageSrc(image, sku)` (in
+  `src/lib/store/storage.ts`) resolves a bundled public path first, then a seeded package matched by
+  SKU, then the Storage URL; every storefront surface (card, gallery, detail, cart) calls it. Reading
+  the raw `storage_path` produced a `next/image` request the optimizer answered with 400 and a
+  broken-image box on every package in the store. The admin product page deliberately shows only the
+  uploaded asset (`image?.storagePath`), because rendering the bundled brochure image there would
+  imply an upload the editor could replace.
+- **`ProductImage.storagePath` is now `string | null`, with an optional `publicPath`.** `next/image`
+  takes either a Storage URL or a public path, never both, so they are modelled as distinct fields
+  rather than one overloaded string.
+- **Demo accounts are provisioned by `scripts/seed-demo-users.sql`, not by a migration.** A migration
+  runs on production and these rows carry a known password. Nine accounts, one per role, all with
+  password `DemoPass!2026`; the customer demo is `customer@demo.kctechc.test`. The script is
+  idempotent. Run it against the local stack with
+  `docker exec -i supabase_db_kctechc-website psql -U postgres -d postgres < scripts/seed-demo-users.sql`.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->

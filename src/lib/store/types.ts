@@ -25,7 +25,15 @@ export type ProductSpecification = {
 };
 
 export type ProductImage = {
-  storagePath: string;
+  /**
+   * Storage object path, or `null` when the image is served from the bundled
+   * `public/` catalogue rather than from Storage (the seeded solar packages —
+   * see `seededImage`). `next/image` takes either a bucket path or a public path;
+   * it does not take both, so the two are modelled as distinct fields.
+   */
+  storagePath: string | null;
+  /** Public `public/` path for a bundled image, or `null` for a Storage image. */
+  publicPath?: string | null;
   alt: string;
   isPrimary: boolean;
   position: number;

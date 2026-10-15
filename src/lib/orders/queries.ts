@@ -291,6 +291,42 @@ export async function listOrdersForAdmin(options: {
   });
 }
 
+/**
+ * Map each order to the storefront department its items belong to.
+ *
+ * An order is a single document, but its lines can come from more than one
+ * department, and the order detail page lives under `/[locale]/[department]/store`.
+ * The confirmation page resolves the department from the lines it already loaded;
+ * a list has no lines, so it resolves them here, in one extra query, rather than
+ * sending every order to the Digital Marketing store by default.
+ *
+ * An order with no resolvable department (a product since removed) is absent from
+ * the map, and the caller falls back to the default store path.
+ */
+export async function resolveOrderDepartments(
+  orderIds: readonly string[],
+): Promise<Map<string, string>> {
+  const resolved = new Map<string, string>();
+  if (orderIds.length === 0) return resolved;
+
+  const admin = createAdminClient();
+  if (!admin) return resolved;
+
+  const { data } = await admin
+    .from("order_items")
+    .select("order_id, products (product_categories (departments (slug)))")
+    .in("order_id", [...orderIds]);
+
+  for (const row of data ?? []) {
+    const slug = row.products?.product_categories?.departments?.slug ?? null;
+    if (row.order_id && slug && !resolved.has(row.order_id)) {
+      resolved.set(row.order_id, slug);
+    }
+  }
+
+  return resolved;
+}
+
 /** Counts by status, for the admin dashboard summary. No PII involved. */
 export async function getOrderStatusCounts(): Promise<
   { status: OrderStatus; count: number }[]

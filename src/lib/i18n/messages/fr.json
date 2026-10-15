@@ -52,7 +52,8 @@
     "gallery": "Galerie",
     "blog": "Blog",
     "store": "Boutique",
-    "packages": "Kits solaires"
+    "packages": "Kits solaires",
+    "account": "Votre compte"
   },
   "departments": {
     "heading": "Nos départements",
@@ -2229,5 +2230,23 @@
         "line3": "Fixation, câblage, protection et installation"
       }
     }
+  },
+  "account": {
+    "metaTitle": "Votre compte",
+    "metaDescription": "Vos commandes, biens enregistrés et recherches enregistrées auprès de KC Technology Corporation.",
+    "eyebrow": "Votre compte",
+    "heading": "Votre compte",
+    "intro": "Tout ce que vous avez enregistré ou commandé au même endroit. Choisissez une section pour continuer.",
+    "ordersTitle": "Vos commandes",
+    "ordersBody": "Les commandes que vous avez passées auprès de n'importe quel département, et leur statut actuel.",
+    "ordersCta": "Voir vos commandes",
+    "favoritesTitle": "Biens enregistrés",
+    "favoritesBody": "Les annonces que vous avez enregistrées depuis le département Immobilier.",
+    "favoritesCta": "Voir les biens enregistrés",
+    "savedSearchesTitle": "Recherches enregistrées",
+    "savedSearchesBody": "Les recherches que vous avez enregistrées pour rouvrir la même vue d'annonces.",
+    "savedSearchesCta": "Voir les recherches enregistrées",
+    "recentOrdersHeading": "Commandes récentes",
+    "navLabel": "Votre compte"
   }
 }

@@ -52,7 +52,8 @@
     "gallery": "Gallery",
     "blog": "Blog",
     "store": "Store",
-    "packages": "Solar Packages"
+    "packages": "Solar Packages",
+    "account": "Your account"
   },
   "departments": {
     "heading": "Our departments",
@@ -2229,5 +2230,23 @@
         "line3": "Mounting, cabling, protection and installation"
       }
     }
+  },
+  "account": {
+    "metaTitle": "Your account",
+    "metaDescription": "Your orders, saved properties and saved searches with KC Technology Corporation.",
+    "eyebrow": "Your account",
+    "heading": "Your account",
+    "intro": "Everything you have saved or ordered in one place. Choose a section to continue.",
+    "ordersTitle": "Your orders",
+    "ordersBody": "Orders you have placed with any department, and their current status.",
+    "ordersCta": "View your orders",
+    "favoritesTitle": "Saved properties",
+    "favoritesBody": "Listings you have saved from the Real Estate department.",
+    "favoritesCta": "View saved properties",
+    "savedSearchesTitle": "Saved searches",
+    "savedSearchesBody": "Searches you saved so you can reopen the same listings view.",
+    "savedSearchesCta": "View saved searches",
+    "recentOrdersHeading": "Recent orders",
+    "navLabel": "Your account"
   }
 }

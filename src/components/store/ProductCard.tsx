@@ -69,6 +69,7 @@ export function ProductCard({
         <div className="overflow-hidden border-b border-border bg-surface-sunken">
           <ProductImageFrame
             image={image}
+            sku={product.sku}
             locale={locale}
             sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
             className="aspect-square w-full object-cover transition-soft group-hover:scale-[1.02]"

@@ -17,13 +17,13 @@ function setup(locale: "en" | "fr" = "en") {
     <MobileMenu
       locale={locale}
       entries={buildPrimaryNav(locale, t)}
-      signInHref="/admin/login"
       labels={{
         menuLabel: t("common.menu"),
         close: t("actions.closeMenu"),
         title: t("common.menu"),
         language: t("common.language"),
         signIn: t("actions.signIn"),
+        account: t("account.navLabel"),
         brand: t("common.brandShort"),
         brandSubtitle: `${t("common.brandShort")} · ${locale.toUpperCase()}`,
       }}
@@ -112,13 +112,13 @@ describe("MobileMenu", () => {
         <MobileMenu
           locale="en"
           entries={buildPrimaryNav("en", t)}
-          signInHref="/admin/login"
           labels={{
             menuLabel: t("common.menu"),
             close: t("actions.closeMenu"),
             title: t("common.menu"),
             language: t("common.language"),
             signIn: t("actions.signIn"),
+            account: t("account.navLabel"),
             brand: t("common.brandShort"),
             brandSubtitle: `${t("common.brandShort")} · EN`,
           }}

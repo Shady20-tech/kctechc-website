@@ -5,6 +5,8 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
+import { postSignInPathFor } from "@/lib/auth/redirects";
+import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
 import { isSupabaseConfigured } from "@/lib/config/env";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -62,7 +64,12 @@ export default async function SignInPage({
   const state = await getAuthState();
   if (state.status === "authenticated") {
     const parsed = safeRedirectPathSchema.safeParse(next);
-    redirect(parsed.success ? parsed.data : "/admin");
+    if (parsed.success) redirect(parsed.data);
+    const role =
+      state.profile && isAppRole(state.profile.role)
+        ? state.profile.role
+        : DEFAULT_ROLE;
+    redirect(postSignInPathFor(role, resolved));
   }
 
   const configured = isSupabaseConfigured();

@@ -45,7 +45,11 @@ export default async function AdminProductPage({
   if (!product) notFound();
 
   const image = primaryImage(product.images);
-  const currentImageUrl = image ? storagePublicUrl(image.storagePath) : null;
+  // Admin shows the *uploaded* asset only. A seeded package's `storage_path` is a
+  // placeholder with no object behind it, and showing its bundled brochure image
+  // here would imply an upload the editor could replace.
+  const currentImageUrl =
+    image?.storagePath ? storagePublicUrl(image.storagePath) : null;
   const published = product.publishState === "published";
 
   const labels: Record<string, string> = {

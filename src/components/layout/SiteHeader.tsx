@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui/Button";
 import type { NavEntry } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
+import { AccountAction } from "./AccountAction";
 import { DepartmentsMenu } from "./DepartmentsMenu";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
@@ -25,11 +25,12 @@ import { MobileMenu } from "./MobileMenu";
  * switcher and the account action do not fit at `lg` without crowding, and a
  * cramped bar reads worse than the drawer.
  *
- * The account action is a static link to the sign-in route rather than a
- * session-aware control. Reading the session here would call `cookies()` in the
- * shared layout and force every public page to render dynamically, costing the
- * prerendered HTML that the SEO requirements depend on. The sign-in route
- * already redirects an authenticated visitor onward, so the link stays correct.
+ * The account action is a client island (`AccountAction`) that renders the static
+ * "Sign in" link and swaps to "Your account" once the browser sees a session.
+ * Reading the session in this Server Component would call `cookies()` in the shared
+ * layout and force every public page to render dynamically, costing the prerendered
+ * HTML the SEO requirements depend on; the island keeps the static markup and the
+ * enhancement separate.
  */
 export function SiteHeader({
   locale,
@@ -40,8 +41,6 @@ export function SiteHeader({
   t: Translator["t"];
   navEntries: readonly NavEntry[];
 }) {
-  const signInHref = "/admin/login";
-
   return (
     <header className="on-ink surface-glass-ink sticky top-0 z-40 border-b border-white/10 bg-ink-950 shadow-raised">
       {/* A three-column grid, not `justify-between`. With `justify-between` the
@@ -103,9 +102,11 @@ export function SiteHeader({
             compact
           />
           <span aria-hidden="true" className="h-6 w-px bg-white/15" />
-          <ButtonLink href={signInHref} variant="accentOnInk" size="sm">
-            {t("actions.signIn")}
-          </ButtonLink>
+          <AccountAction
+            locale={locale}
+            signInLabel={t("actions.signIn")}
+            accountLabel={t("account.navLabel")}
+          />
         </div>
 
         <div className="col-start-3 flex shrink-0 items-center gap-2 justify-self-end xl:hidden">
@@ -118,13 +119,13 @@ export function SiteHeader({
           <MobileMenu
             locale={locale}
             entries={navEntries}
-            signInHref={signInHref}
             labels={{
               menuLabel: t("common.menu"),
               close: t("actions.closeMenu"),
               title: t("common.menu"),
               language: t("common.language"),
               signIn: t("actions.signIn"),
+              account: t("account.navLabel"),
               brand: t("common.brandShort"),
               brandSubtitle: `${t("common.brandShort")} · ${locale.toUpperCase()}`,
             }}

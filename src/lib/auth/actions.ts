@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
-import { recoveryRedirectUrlFor } from "@/lib/auth/redirects";
+import { postSignInPathFor, recoveryRedirectUrlFor } from "@/lib/auth/redirects";
+import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import {
@@ -125,7 +127,24 @@ export async function signInAction(
     entityId: data.user.id,
   });
 
-  redirect(parsed.data.next ?? "/admin");
+  // The requested page wins; otherwise the landing depends on the role, so a
+  // customer is not sent to the console only to be refused there. The profile is
+  // read here because the redirect happens before any page renders.
+  if (parsed.data.next) {
+    redirect(parsed.data.next);
+  }
+
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  const role =
+    profileRow && isAppRole(profileRow.role) ? profileRow.role : DEFAULT_ROLE;
+
+  const localeCookie = (await cookies()).get("kc_locale")?.value;
+  redirect(postSignInPathFor(role, localeCookie ?? DEFAULT_LOCALE));
 }
 
 /**

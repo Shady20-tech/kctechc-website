@@ -21,7 +21,7 @@ import {
   loadProductsInCategory,
 } from "@/lib/store/loaders";
 import { isCanonicalUrlSlug } from "@/lib/store/slug-resolution";
-import { storagePublicUrl } from "@/lib/store/storage";
+import { productImageSrc } from "@/lib/store/storage";
 import {
   conditionLabelKey,
   formatPrice,
@@ -155,7 +155,7 @@ export default async function ProductDetailPage({
     .slice(0, 3);
 
   const image = primaryImage(product.images);
-  const imageUrl = image ? storagePublicUrl(image.storagePath) : null;
+  const imageUrl = image ? productImageSrc(image, product.sku) : null;
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
@@ -211,6 +211,7 @@ export default async function ProductDetailPage({
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
           <ProductGallery
             images={product.images}
+            sku={product.sku}
             locale={resolved}
             ariaLabel={t("a11y.productImages")}
           />
