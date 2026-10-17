@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { LEGACY_REDIRECTS } from "./src/lib/config/redirects";
+import { SERVER_ACTION_BODY_SIZE_LIMIT } from "./src/lib/uploads/limits";
 import { buildContentSecurityPolicy } from "./src/lib/security/headers";
 
 /**
@@ -63,6 +64,16 @@ const nextConfig: NextConfig = {
   // Self-hosted VPS target: emit a standalone server bundle alongside the
   // regular build so the same codebase deploys to Vercel and to Node.
   output: "standalone",
+  experimental: {
+    serverActions: {
+      // Every media form (product, article, property) posts a device file to a
+      // Server Action as multipart form data, and Next refuses a body over this
+      // limit before the action runs. The 1 MB default silently rejected any real
+      // photograph, so the upload appeared to do nothing. The value tracks the
+      // largest accepted image plus multipart overhead — see `src/lib/uploads/limits.ts`.
+      bodySizeLimit: SERVER_ACTION_BODY_SIZE_LIMIT,
+    },
+  },
   images: {
     // Only enabled for a loopback Supabase host (local development); a hosted
     // project keeps the default `false`.

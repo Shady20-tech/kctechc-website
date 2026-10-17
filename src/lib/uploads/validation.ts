@@ -1,5 +1,25 @@
 import { randomUUID } from "node:crypto";
 
+import {
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENT_COUNT,
+  MAX_AVATAR_BYTES,
+  MAX_CONTENT_IMAGE_BYTES,
+  MAX_PRODUCT_IMAGE_BYTES,
+  MAX_PROJECT_IMAGE_BYTES,
+  MAX_PROPERTY_IMAGE_BYTES,
+} from "./limits";
+
+export {
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENT_COUNT,
+  MAX_AVATAR_BYTES,
+  MAX_CONTENT_IMAGE_BYTES,
+  MAX_PRODUCT_IMAGE_BYTES,
+  MAX_PROJECT_IMAGE_BYTES,
+  MAX_PROPERTY_IMAGE_BYTES,
+};
+
 /**
  * Upload validation.
  *
@@ -13,28 +33,10 @@ import { randomUUID } from "node:crypto";
  * This is deliberately independent of the storage provider: it produces a verdict
  * and a safe object path, and the caller decides where to put the bytes. That
  * keeps the security decision testable without a bucket.
+ *
+ * The byte limits themselves live in `./limits`, a leaf module the admin forms
+ * and `next.config.ts` can also import without pulling in `node:crypto`.
  */
-
-/** The largest attachment accepted, matching the private bucket's limit. */
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-
-/** The largest project image accepted, matching the public bucket's limit. */
-export const MAX_PROJECT_IMAGE_BYTES = 5 * 1024 * 1024;
-
-/** The largest editorial image (article cover) accepted. */
-export const MAX_CONTENT_IMAGE_BYTES = 5 * 1024 * 1024;
-
-/** The largest profile picture accepted, matching the `avatars` bucket. */
-export const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-
-/** The largest product image accepted, matching the `product-media` bucket. */
-export const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-
-/** The largest property image accepted, matching the `property-media` bucket. */
-export const MAX_PROPERTY_IMAGE_BYTES = 10 * 1024 * 1024;
-
-/** How many files one quote request may attach. */
-export const MAX_ATTACHMENT_COUNT = 5;
 
 export type UploadKind =
   | "attachment"

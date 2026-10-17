@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
 import type { Locale } from "@/lib/i18n/locales";
@@ -85,6 +85,15 @@ export function ProductForm({
           {state.seoWarning ? (
             <p className="mt-2">{t("admin.store.seoWarning")}</p>
           ) : null}
+          <p className="mt-4">
+            <ButtonLink
+              href={`/admin/store/${state.productId}`}
+              variant="accent"
+              size="sm"
+            >
+              {t("admin.store.goToImage")}
+            </ButtonLink>
+          </p>
         </Notice>
       ) : null}
 

@@ -1,11 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
+import {
+  MAX_CONTENT_IMAGE_BYTES,
+  exceedsSizeLimit,
+  megabytes,
+} from "@/lib/uploads/limits";
 import {
   removeInsightImageAction,
   uploadInsightImageAction,
@@ -46,6 +51,7 @@ export function InsightGalleryForm({
       uploadInsightImageAction(formData),
     null as ContentState | null,
   );
+  const [fileTooLarge, setFileTooLarge] = useState(false);
 
   return (
     <section aria-labelledby="gallery-heading" className="space-y-6">
@@ -65,6 +71,11 @@ export function InsightGalleryForm({
       ) : null}
       {uploadState?.ok ? (
         <Notice tone="success">{labels.galleryImageAdded}</Notice>
+      ) : null}
+      {fileTooLarge ? (
+        <Notice tone="error">
+          {labels["errors.too_large"] ?? labels["errors.upload_failed"] ?? ""}
+        </Notice>
       ) : null}
 
       {media.length === 0 ? (
@@ -156,8 +167,22 @@ export function InsightGalleryForm({
           name="image"
           accept="image/jpeg,image/png,image/webp,image/avif"
           required
+          onChange={(event) =>
+            setFileTooLarge(
+              exceedsSizeLimit(
+                event.target.files?.[0],
+                MAX_CONTENT_IMAGE_BYTES,
+              ),
+            )
+          }
           className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
         />
+        <p className="text-xs text-muted">
+          {labels.galleryLimitHint?.replace(
+            "{size}",
+            String(megabytes(MAX_CONTENT_IMAGE_BYTES)),
+          )}
+        </p>
 
         <SubmitButton
           label={labels.galleryUpload}

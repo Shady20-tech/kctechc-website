@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Avatar } from "@/components/admin/Avatar";
@@ -11,7 +11,7 @@ import {
   uploadAvatarAction,
   type ProfileUpdateState,
 } from "@/lib/admin/profile-actions";
-import { MAX_AVATAR_BYTES } from "@/lib/uploads/validation";
+import { MAX_AVATAR_BYTES, exceedsSizeLimit } from "@/lib/uploads/limits";
 
 /**
  * Profile picture controls.
@@ -36,6 +36,7 @@ export function AvatarForm({
     null as ProfileUpdateState | null,
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const [fileTooLarge, setFileTooLarge] = useState(false);
 
   return (
     <section aria-labelledby="avatar-heading" className="space-y-4">
@@ -56,6 +57,11 @@ export function AvatarForm({
       {state?.ok ? (
         <Notice tone="success">{labels.avatarUpdated ?? ""}</Notice>
       ) : null}
+      {fileTooLarge ? (
+        <Notice tone="error">
+          {labels["errors.too_large"] ?? labels["errors.upload_failed"] ?? ""}
+        </Notice>
+      ) : null}
 
       <div className="flex items-center gap-4">
         <Avatar src={currentUrl} name={name} size="lg" />
@@ -68,6 +74,11 @@ export function AvatarForm({
               name="avatar"
               accept="image/jpeg,image/png,image/webp"
               required
+              onChange={(event) =>
+                setFileTooLarge(
+                  exceedsSizeLimit(event.target.files?.[0], MAX_AVATAR_BYTES),
+                )
+              }
               className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
               aria-describedby="avatar-limits"
             />

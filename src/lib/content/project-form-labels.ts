@@ -44,6 +44,7 @@ export function projectFormLabels(): Record<string, string> {
     mediaAdded: t("adminWork.mediaAdded"),
     mediaUpload: t("adminWork.mediaUpload"),
     mediaUploading: t("adminWork.mediaUploading"),
+    mediaLimitHint: t("adminWork.mediaLimitHint"),
     mediaRemove: t("adminWork.mediaRemove"),
     altLabel: t("adminWork.altLabel"),
     altHint: t("adminWork.altHint"),

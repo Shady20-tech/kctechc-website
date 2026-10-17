@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,11 @@ import {
   uploadProjectMediaAction,
   type ProjectMediaState,
 } from "@/lib/content/project-admin-actions";
+import {
+  MAX_PROJECT_IMAGE_BYTES,
+  exceedsSizeLimit,
+  megabytes,
+} from "@/lib/uploads/limits";
 
 export type ProjectMediaItem = {
   id: string;
@@ -46,6 +51,7 @@ export function ProjectMediaForm({
       uploadProjectMediaAction(formData),
     null as ProjectMediaState | null,
   );
+  const [fileTooLarge, setFileTooLarge] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -64,6 +70,11 @@ export function ProjectMediaForm({
       ) : null}
       {uploadState?.ok ? (
         <Notice tone="success">{labels.mediaAdded}</Notice>
+      ) : null}
+      {fileTooLarge ? (
+        <Notice tone="error">
+          {labels["errors.too_large"] ?? labels["errors.upload_failed"]}
+        </Notice>
       ) : null}
 
       {media.length === 0 ? (
@@ -161,8 +172,22 @@ export function ProjectMediaForm({
           name="image"
           accept="image/jpeg,image/png,image/webp,image/avif"
           required
+          onChange={(event) =>
+            setFileTooLarge(
+              exceedsSizeLimit(
+                event.target.files?.[0],
+                MAX_PROJECT_IMAGE_BYTES,
+              ),
+            )
+          }
           className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
         />
+        <p className="text-xs text-muted">
+          {labels.mediaLimitHint?.replace(
+            "{size}",
+            String(megabytes(MAX_PROJECT_IMAGE_BYTES)),
+          )}
+        </p>
 
         <SubmitButton
           label={labels.mediaUpload}

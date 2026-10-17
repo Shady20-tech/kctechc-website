@@ -370,7 +370,10 @@
         "no_file": "Choose an image to upload.",
         "alt_required": "Describe the image before saving it.",
         "upload_failed": "The image could not be uploaded. Please try again.",
-        "no_image": "A product cannot be published without an image."
+        "no_image": "A product cannot be published without an image.",
+        "too_large": "That image is larger than the 5 MB limit.",
+        "type_not_allowed": "Only JPEG, PNG, WebP or AVIF images are accepted.",
+        "unknown_type": "That file is not a recognised image."
       },
       "seoWarning": "The product was created, but its SEO overrides could not be saved. Add them again from the product page.",
       "catalogueHeading": "Store products",
@@ -404,7 +407,9 @@
       "publish": "Publish product",
       "unpublish": "Unpublish",
       "publishedNotice": "The product is live on the website.",
-      "unpublishedNotice": "The product was returned to draft and is no longer public."
+      "unpublishedNotice": "The product was returned to draft and is no longer public.",
+      "imageLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
+      "goToImage": "Add an image"
     },
     "projectsHeading": "Electrical projects",
     "projectsIntro": "Create and publish project records. A project only becomes public when it is published, and publishing requires a published date.",
@@ -782,7 +787,10 @@
         "parse_failed": "The file could not be read as CSV. Check that it is a comma-separated file with a header row.",
         "no_file": "Choose an image to upload.",
         "alt_required": "Describe the image before saving it.",
-        "upload_failed": "The image could not be uploaded. Please try again."
+        "upload_failed": "The image could not be uploaded. Please try again.",
+        "too_large": "That image is larger than the 10 MB limit.",
+        "type_not_allowed": "Only JPEG, PNG, WebP or AVIF images are accepted.",
+        "unknown_type": "That file is not a recognised image."
       },
       "imagesHeading": "Listing gallery",
       "imagesIntro": "A property is sold on its photographs. The first image becomes the card image; every image appears in the gallery on the listing page. Each one needs a description before it can be saved.",
@@ -795,7 +803,9 @@
       "positionLabel": "Position",
       "altLabel": "Image description",
       "altPlaceholder": "Three-bedroom house with a red roof, front view",
-      "altHint": "Describe the image for screen readers and search engines. Required."
+      "altHint": "Describe the image for screen readers and search engines. Required.",
+      "imagesLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
+      "goToImages": "Add property images"
     },
     "favorites": {
       "add": "Save {title}",
@@ -1861,7 +1871,8 @@
       "draft": "Draft",
       "published": "Published",
       "archived": "Archived"
-    }
+    },
+    "galleryLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF."
   },
   "adminWork": {
     "heading": "Work Done",
@@ -1944,7 +1955,8 @@
       "unknown_type": "That file is not a recognised image.",
       "upload_failed": "The image could not be uploaded. Try again.",
       "update_failed": "The change could not be saved. Try again."
-    }
+    },
+    "mediaLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF."
   },
   "adminSettings": {
     "heading": "Settings",

@@ -78,6 +78,7 @@ export default async function AdminInsightEditorPage({
     galleryUploading: t("adminContent.galleryUploading"),
     galleryImageAdded: t("adminContent.galleryImageAdded"),
     galleryRemove: t("adminContent.galleryRemove"),
+    galleryLimitHint: t("adminContent.galleryLimitHint"),
     altLabel: t("adminContent.altLabel"),
     altHint: t("adminContent.altHint"),
     captionLabel: t("adminContent.captionLabel"),

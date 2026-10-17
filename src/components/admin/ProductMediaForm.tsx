@@ -1,11 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
+import {
+  MAX_PRODUCT_IMAGE_BYTES,
+  exceedsSizeLimit,
+  megabytes,
+} from "@/lib/uploads/limits";
 import {
   setProductPublishedAction,
   uploadProductImageAction,
@@ -52,6 +57,11 @@ export function ProductMediaForm({
   void imagePending;
   void publishPending;
 
+  // A phone photograph is often larger than the accepted limit, and the Server
+  // Action refuses it after the bytes have crossed the network. Catching it here
+  // reports the problem while the editor is still choosing a file.
+  const [fileTooLarge, setFileTooLarge] = useState(false);
+
   return (
     <div className="space-y-8">
       <section aria-labelledby="product-image-heading" className="space-y-4">
@@ -73,6 +83,11 @@ export function ProductMediaForm({
         ) : null}
         {imageState?.ok ? (
           <Notice tone="success">{labels.imageAdded}</Notice>
+        ) : null}
+        {fileTooLarge ? (
+          <Notice tone="error">
+            {labels["errors.too_large"] ?? labels["errors.upload_failed"]}
+          </Notice>
         ) : null}
 
         {currentImageUrl ? (
@@ -110,8 +125,22 @@ export function ProductMediaForm({
             name="image"
             accept="image/jpeg,image/png,image/webp,image/avif"
             required
+            onChange={(event) =>
+              setFileTooLarge(
+                exceedsSizeLimit(
+                  event.target.files?.[0],
+                  MAX_PRODUCT_IMAGE_BYTES,
+                ),
+              )
+            }
             className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
           />
+          <p className="text-xs text-muted">
+            {labels.imageLimitHint?.replace(
+              "{size}",
+              String(megabytes(MAX_PRODUCT_IMAGE_BYTES)),
+            )}
+          </p>
           <SubmitButton
             label={labels.imageUpload}
             pendingLabel={labels.imageUploading}

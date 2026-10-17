@@ -63,6 +63,7 @@ export default async function AdminEditListingPage({
     altLabel: t("realEstate.admin.altLabel"),
     altPlaceholder: t("realEstate.admin.altPlaceholder"),
     altHint: t("realEstate.admin.altHint"),
+    imagesLimitHint: t("realEstate.admin.imagesLimitHint"),
     saving: t("adminContent.saving"),
   };
   for (const key of [
@@ -74,6 +75,9 @@ export default async function AdminEditListingPage({
     "alt_required",
     "upload_failed",
     "write_failed",
+    "too_large",
+    "type_not_allowed",
+    "unknown_type",
   ]) {
     labels[`errors.${key}`] = t(`realEstate.admin.errors.${key}`);
   }

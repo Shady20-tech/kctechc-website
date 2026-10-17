@@ -69,6 +69,7 @@ export default async function AdminProductPage({
     unpublish: t("admin.store.unpublish"),
     publishedNotice: t("admin.store.publishedNotice"),
     unpublishedNotice: t("admin.store.unpublishedNotice"),
+    imageLimitHint: t("admin.store.imageLimitHint"),
     saving: t("adminContent.saving"),
   };
   for (const key of [
@@ -81,6 +82,9 @@ export default async function AdminProductPage({
     "upload_failed",
     "write_failed",
     "no_image",
+    "too_large",
+    "type_not_allowed",
+    "unknown_type",
   ]) {
     labels[`errors.${key}`] = t(`admin.store.errors.${key}`);
   }

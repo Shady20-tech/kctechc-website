@@ -87,6 +87,17 @@ export function ListingForm({
           {state.warning ? (
             <p className="mt-2">{t("realEstate.admin.detailWarning")}</p>
           ) : null}
+          {!editing ? (
+            <p className="mt-4">
+              <ButtonLink
+                href={`/admin/real-estate/listings/${state.listingId}`}
+                variant="accent"
+                size="sm"
+              >
+                {t("realEstate.admin.goToImages")}
+              </ButtonLink>
+            </p>
+          ) : null}
         </Notice>
       ) : null}
 

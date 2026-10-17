@@ -1,12 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { propertyMediaPublicUrl } from "@/lib/real-estate/storage";
+import {
+  MAX_PROPERTY_IMAGE_BYTES,
+  exceedsSizeLimit,
+  megabytes,
+} from "@/lib/uploads/limits";
 import {
   removeListingImageAction,
   uploadListingImageAction,
@@ -41,6 +46,10 @@ export function ListingMediaForm({
       uploadListingImageAction(formData),
     null as ListingMediaState | null,
   );
+  // Property photographs are the largest accepted upload, so an oversized file is
+  // most likely here. Catching it on change avoids sending bytes the action would
+  // refuse once the request body had already crossed the network.
+  const [fileTooLarge, setFileTooLarge] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -63,6 +72,11 @@ export function ListingMediaForm({
         ) : null}
         {uploadState?.ok ? (
           <Notice tone="success">{labels.imageAdded}</Notice>
+        ) : null}
+        {fileTooLarge ? (
+          <Notice tone="error">
+            {labels["errors.too_large"] ?? labels["errors.upload_failed"]}
+          </Notice>
         ) : null}
 
         {images.length === 0 ? (
@@ -136,8 +150,22 @@ export function ListingMediaForm({
             name="image"
             accept="image/jpeg,image/png,image/webp,image/avif"
             required
+            onChange={(event) =>
+              setFileTooLarge(
+                exceedsSizeLimit(
+                  event.target.files?.[0],
+                  MAX_PROPERTY_IMAGE_BYTES,
+                ),
+              )
+            }
             className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
           />
+          <p className="text-xs text-muted">
+            {labels.imagesLimitHint?.replace(
+              "{size}",
+              String(megabytes(MAX_PROPERTY_IMAGE_BYTES)),
+            )}
+          </p>
           <SubmitButton
             label={labels.imageUpload}
             pendingLabel={labels.imageUploading}

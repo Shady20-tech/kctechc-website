@@ -1336,6 +1336,38 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   01-05 while Digital Marketing keeps its original 02-04. Hard-coding the shared numbers instead of
   deriving the offset prints a gap (or a duplicate) on one of the two departments.
 
+### Authoring images from the editor's device (products, articles, property, projects)
+
+- **Every media form posts the device file to a Server Action, and Next refuses a request body over
+  `experimental.serverActions.bodySizeLimit` — 1 MB by default — before the action's code runs.**
+  So the whole "upload an image from your device" feature was dead on arrival for any real
+  photograph: a 2-8 MB phone photo was rejected with nothing the editor could act on. `next.config.ts`
+  now sets `bodySizeLimit` from `SERVER_ACTION_BODY_SIZE_LIMIT` (`src/lib/uploads/limits.ts`), the
+  largest accepted image plus multipart overhead. The build carries the value —
+  `bodySizeLimit: 12582912` in `.next/required-server-files.json` — and the runtime reads it from
+  `serverConfig.experimental.serverActions.bodySizeLimit`. If a future bucket limit rises above the
+  derived ceiling, this must rise with it, or the failure returns silently.
+- **The byte limits live in `src/lib/uploads/limits.ts`, a module with no imports of its own.** They
+  used to live in `validation.ts`, which imports `node:crypto` — fine for the server, wrong for a
+  Client Component that only wants a number. `next.config.ts` also has to reach them: it is
+  transpiled standalone before the `@/` alias exists, so it can only import a leaf module by
+  relative path, the same constraint that keeps `src/lib/config/redirects.ts` a leaf. `validation.ts`
+  re-exports the constants so existing importers are unchanged.
+- **Create and image are still two steps, but the gap is now bridged.** `ProductForm`, `InsightForm`
+  and `ListingForm` deliberately carry no image field — the record must exist before an object can
+  be namespaced under its id, and a single multipart body that both creates a row and uploads to a
+  bucket has no clean rollback if the upload fails. What was missing was the *signpost*: the create
+  forms now render a link to the detail page ("Add an image" / "Add property images") in their
+  success notice, so "create then add image" is discoverable rather than something the editor has to
+  infer.
+- **A too-large file is now caught in the browser, before the bytes cross the network.** Each media
+  form checks the chosen file against its own kind's limit in `onChange` and shows the `too_large`
+  message, with the accepted size and formats stated under the input. This is a courtesy only — the
+  server still validates the real bytes in `validation.ts`.
+- **`insight` cover and gallery uploads are the same shape as the other media forms** but resolve
+  their kind from the article's bucket (`content-image`, 5 MB), and property photography is the
+  largest at 10 MB — which is why it sets the editor ceiling the Server Action limit derives from.
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 <!-- BEGIN:nextjs-agent-rules -->

@@ -370,7 +370,10 @@
         "no_file": "Choisissez une image à téléverser.",
         "alt_required": "Décrivez l'image avant de l'enregistrer.",
         "upload_failed": "L'image n'a pas pu être téléversée. Veuillez réessayer.",
-        "no_image": "Un produit ne peut pas être publié sans image."
+        "no_image": "Un produit ne peut pas être publié sans image.",
+        "too_large": "Cette image dépasse la limite de 5 Mo.",
+        "type_not_allowed": "Seules les images JPEG, PNG, WebP ou AVIF sont acceptées.",
+        "unknown_type": "Ce fichier n’est pas une image reconnue."
       },
       "seoWarning": "Le produit a été créé, mais ses réglages SEO n'ont pas pu être enregistrés. Ajoutez-les à nouveau depuis la page du produit.",
       "catalogueHeading": "Produits de la boutique",
@@ -404,7 +407,9 @@
       "publish": "Publier le produit",
       "unpublish": "Dépublier",
       "publishedNotice": "Le produit est en ligne sur le site.",
-      "unpublishedNotice": "Le produit est repassé en brouillon et n'est plus public."
+      "unpublishedNotice": "Le produit est repassé en brouillon et n'est plus public.",
+      "imageLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
+      "goToImage": "Ajouter une image"
     },
     "projectsHeading": "Projets électriques",
     "projectsIntro": "Créez et publiez des fiches de projet. Un projet ne devient public que lorsqu'il est publié, et la publication exige une date de publication.",
@@ -782,7 +787,10 @@
         "parse_failed": "Le fichier n'a pas pu être lu comme CSV. Vérifiez qu'il sépare les valeurs par des virgules et comporte une ligne d'en-tête.",
         "no_file": "Choisissez une image à téléverser.",
         "alt_required": "Décrivez l'image avant de l'enregistrer.",
-        "upload_failed": "L'image n'a pas pu être téléversée. Veuillez réessayer."
+        "upload_failed": "L'image n'a pas pu être téléversée. Veuillez réessayer.",
+        "too_large": "Cette image dépasse la limite de 10 Mo.",
+        "type_not_allowed": "Seules les images JPEG, PNG, WebP ou AVIF sont acceptées.",
+        "unknown_type": "Ce fichier n’est pas une image reconnue."
       },
       "imagesHeading": "Galerie de l'annonce",
       "imagesIntro": "Un bien se vend par ses photos. La première image devient l'image de la carte ; toutes les images apparaissent dans la galerie de la page de l'annonce. Chacune doit avoir une description avant d'être enregistrée.",
@@ -795,7 +803,9 @@
       "positionLabel": "Position",
       "altLabel": "Description de l'image",
       "altPlaceholder": "Maison de trois chambres au toit rouge, vue de face",
-      "altHint": "Décrivez l'image pour les lecteurs d'écran et les moteurs de recherche. Obligatoire."
+      "altHint": "Décrivez l'image pour les lecteurs d'écran et les moteurs de recherche. Obligatoire.",
+      "imagesLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
+      "goToImages": "Ajouter des photos du bien"
     },
     "favorites": {
       "add": "Enregistrer {title}",
@@ -1861,7 +1871,8 @@
       "draft": "Brouillon",
       "published": "Publié",
       "archived": "Archivé"
-    }
+    },
+    "galleryLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF."
   },
   "adminWork": {
     "heading": "Réalisations",
@@ -1944,7 +1955,8 @@
       "unknown_type": "Ce fichier n'est pas une image reconnue.",
       "upload_failed": "L'image n'a pas pu être téléversée. Réessayez.",
       "update_failed": "La modification n'a pas pu être enregistrée. Réessayez."
-    }
+    },
+    "mediaLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF."
   },
   "adminSettings": {
     "heading": "Paramètres",
