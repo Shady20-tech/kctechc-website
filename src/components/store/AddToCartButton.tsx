@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { setCartSummary } from "@/lib/hooks/use-cart-summary";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { addToCartAction } from "@/lib/store/cart-actions";
@@ -60,6 +61,9 @@ export function AddToCartButton({
             });
             if (result.ok) {
               setAdded(true);
+              // Update the header badge immediately; the header was rendered
+              // before this item was added and no navigation follows.
+              setCartSummary({ itemCount: result.itemCount });
             } else {
               setError(
                 result.error === "out_of_stock"

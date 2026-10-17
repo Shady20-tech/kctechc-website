@@ -3,6 +3,7 @@ import type { NavEntry } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 import { AccountAction } from "./AccountAction";
+import { CartAction } from "./CartAction";
 import { DepartmentsMenu } from "./DepartmentsMenu";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
@@ -102,6 +103,7 @@ export function SiteHeader({
             compact
           />
           <span aria-hidden="true" className="h-6 w-px bg-white/15" />
+          <CartAction locale={locale} />
           <AccountAction
             locale={locale}
             signInLabel={t("actions.signIn")}
@@ -116,6 +118,7 @@ export function SiteHeader({
             tone="light"
             compact
           />
+          <CartAction locale={locale} />
           <MobileMenu
             locale={locale}
             entries={navEntries}

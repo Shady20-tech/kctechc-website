@@ -407,8 +407,17 @@ acceptance criteria pass. Then stop — do not start the next phase.
   destination. The portrait is a development placeholder at `public/brand/chairman-portrait.jpg`
   (1000x1250) and is asserted by `hero-images.test.ts` like the hero assets. i18n keys live under
   `about.chairman*` and `home.message*` / `home.index*`.
-- 823 Vitest tests pass (57 files), `tsc --noEmit` is clean, ESLint is clean, and the production
-  build succeeds (113/113 static pages).
+- 861 Vitest tests pass (63 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds (133/133 static pages).
+- Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
+  `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
+  `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
+  known-password logins. No demo credential is committed anywhere.
+- The shared header now carries a session-aware cart action (`CartAction` + `useCartSummary` +
+  `GET /api/cart/summary`), so a customer can reach the cart after adding an item without leaving
+  the page they are on.
+- Electrical Services gained an "Our brands" strip naming SAKO POWER (solar components) and
+  HIKVISION (CCTV components).
 - The corporate and Digital Marketing hero backdrops were replaced with on-theme, licence-clean
   photography (see "Hero image provenance" below): `/hero/corporate-v3.jpg` and
   `/hero/digital-marketing-v3.jpg`. Both measurably raise heading and body contrast over their
@@ -1194,10 +1203,13 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   while the migrations seeded none. It is now scoped to its own fixtures (the published `thinkpad-x1`
   is visible to `anon`, the draft-category `hidden-product` is not), which is what it was actually
   trying to prove.
-- **A dev-only seed of demo users belongs in a script, not a migration.** The demo accounts are
-  created by direct `auth.users`/`auth.identities`/`profiles` inserts via a throwaway SQL script
-  (bcrypt password through `crypt(..., gen_salt('bf'))`); they must never reach a migration, because
-  a migration runs on production.
+- **A dev-only seed of demo users belongs in a script, not a migration.** Demo accounts, when they
+  are needed for local work, are created by direct `auth.users`/`auth.identities`/`profiles` inserts
+  via a throwaway SQL script (bcrypt password through `crypt(..., gen_salt('bf'))`); they must never
+  reach a migration, because a migration runs on production. No such script is committed to this
+  repository: a committed script carrying a known password is a credential in version control, and
+  `scripts/seed-demo-users.sql` was removed for that reason. Provision local accounts ad hoc and do
+  not commit them.
 
 ### Department-scoped authoring and posting (Feature A + B)
 
@@ -1254,16 +1266,17 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   segment is below the root layout); it does not affect the Lighthouse SEO score, which reads the
   served metadata. Fixing it is a route restructure, not a feature change.
 
-### Customer demo login and account hub
+### Customer account hub
 
 - **The public header's account action is session-aware, and it points a customer at `/account`, not
   `/admin`.** `AccountAction` is a client island that renders the static "Sign in" link (so the
   shared header stays a Server Component and every public page keeps its prerendered HTML) and swaps
   to "Your account" once `useHasSession` sees the browser cookie. `postSignInPathFor(role, locale)`
-  in `src/lib/auth/redirects.ts` decides the landing: admin/staff roles → `/{locale}/admin`,
-  everyone else → `/{locale}/account`. Previously the header always linked to `/admin/login` and the
-  post-sign-in redirect always went to `/admin`, so a customer was sent to the console only to be
-  refused there — for signing in correctly.
+  in `src/lib/auth/redirects.ts` decides the landing: admin/staff roles → the **non-localized**
+  `/admin` console, everyone else → the localized `/{locale}/account`. The two destinations do not
+  share a URL shape, and assuming they did sent staff to `/{locale}/admin`, which 404s. Previously
+  the header always linked to `/admin/login` and the post-sign-in redirect always went to `/admin`,
+  so a customer was sent to the console only to be refused there — for signing in correctly.
 - **Sign-in is a Server Action, so it sets the auth cookie without emitting a browser auth event.**
   `useHasSession` therefore re-reads on `usePathname()` change as well as on `onAuthStateChange` and
   window focus; without the pathname dependency the header kept showing "Sign in" on the account page
@@ -1286,11 +1299,42 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **`ProductImage.storagePath` is now `string | null`, with an optional `publicPath`.** `next/image`
   takes either a Storage URL or a public path, never both, so they are modelled as distinct fields
   rather than one overloaded string.
-- **Demo accounts are provisioned by `scripts/seed-demo-users.sql`, not by a migration.** A migration
-  runs on production and these rows carry a known password. Nine accounts, one per role, all with
-  password `DemoPass!2026`; the customer demo is `customer@demo.kctechc.test`. The script is
-  idempotent. Run it against the local stack with
-  `docker exec -i supabase_db_kctechc-website psql -U postgres -d postgres < scripts/seed-demo-users.sql`.
+- **No demo accounts are committed to this repository.** Nine demo accounts (one per role, password
+  `DemoPass!2026`) existed briefly so the customer experience could be demonstrated, provisioned by
+  `scripts/seed-demo-users.sql`. Both the accounts and the script were removed: a committed seed with
+  a known password is a credential in version control, and the accounts themselves are a live
+  known-credential on any environment they are applied to. Never reintroduce either. Provision a
+  local account ad hoc when a role needs exercising, and delete it afterwards.
+
+### Header cart access and the Electrical Services brand strip
+
+- **The header cart icon is a client island fed by a JSON endpoint, because reading the cart cookie
+  in the shared header would make every public page dynamic.** The header must stay statically
+  renderable so the prerendered HTML the SEO layer depends on survives, so `CartAction`
+  (`src/components/layout/CartAction.tsx`) renders a cart link with no server count and
+  `GET /api/cart/summary` (`src/app/api/cart/summary/route.ts`, `force-dynamic`) supplies the badge
+  afterwards. The endpoint returns only `{ itemCount, href }` — never lines, prices or the cart
+  token — and is scoped to the caller's own httpOnly cart cookie, so it cannot read another
+  visitor's basket.
+- **`useCartSummary` is an external store (`useSyncExternalStore`), not `setState` in an effect.**
+  `AddToCartButton` and `PackageCartControls` call `requestCartSummary(locale, pathname)` after a
+  successful add, which nudges every mounted header to re-fetch. The fetch is guarded off when
+  `window`/`fetch` is absent so the component renders in tests and during SSR without a request.
+- **The cart path is department-scoped, resolved from the cart's first line.**
+  `cartPathFor(locale, departmentSlug)` (in `src/lib/store/product-path.ts`) builds
+  `/{locale}/{department}/store/cart`; `getCartSummary` reads the department from `cart.lines[0]`
+  (mirroring `resolveOrderDepartments` for orders) and falls back to Digital Marketing when the cart
+  is empty. A link built from the default department alone would drop a customer into the wrong
+  store's cart.
+- **"OUR BRANDS" is a plain data module, not CMS content.** `src/lib/content/electrical-brands.ts`
+  holds the two entries the brief names — SAKO POWER for solar components and HIKVISION for CCTV
+  components — as **message keys**, so the copy localizes through the same dictionary as the rest of
+  the UI. `BrandStrip` renders them in a `SectionBand` on the Electrical Services department page.
+- **The brand strip is gated to Electrical Services, like the product showcase.** The page renders
+  `ProductShowcase` (01) and `BrandStrip` (02) only for `electrical-services`; the shared
+  services/process/why sections then number from the same offset (`sectionNumber`), so ES reads
+  01-05 while Digital Marketing keeps its original 02-04. Hard-coding the shared numbers instead of
+  deriving the offset prints a gap (or a duplicate) on one of the two departments.
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 

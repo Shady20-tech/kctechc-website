@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { productPath } from "./product-path";
+import { cartPathFor, productPath } from "./product-path";
 import { SOLAR_PACKAGES } from "@/lib/content/solar-packages";
 
 /**
@@ -64,5 +64,26 @@ describe("productPath", () => {
     expect(productPath("en", { slug: "something", sku: null })).toBe(
       "/en/digital-marketing/store",
     );
+  });
+});
+
+/**
+ * The cart path names a department, because the cart route is
+ * `/{locale}/{department}/store/cart`. The header resolves the department from
+ * the cart's first line and falls back to the default store before that is known.
+ */
+describe("cartPathFor", () => {
+  it("uses the department the cart belongs to", () => {
+    expect(cartPathFor("en", "electrical-services")).toBe(
+      "/en/electrical-services/store/cart",
+    );
+    expect(cartPathFor("fr", "real-estate")).toBe(
+      "/fr/real-estate/store/cart",
+    );
+  });
+
+  it("falls back to the Digital Marketing store when no department is known", () => {
+    expect(cartPathFor("en")).toBe("/en/digital-marketing/store/cart");
+    expect(cartPathFor("en", null)).toBe("/en/digital-marketing/store/cart");
   });
 });

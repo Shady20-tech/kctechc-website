@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ServiceCard } from "@/components/content/ServiceCard";
+import { BrandStrip } from "@/components/content/BrandStrip";
 import { ProductShowcase } from "@/components/content/ProductShowcase";
 import { RememberDepartment } from "@/components/layout/LastDepartment";
 import { SectionBand } from "@/components/layout/PageShell";
@@ -129,6 +130,15 @@ export default async function DepartmentPage({
     ? await loadServices(definition.slug, resolved)
     : [];
 
+  // Only Electrical Services carries the equipment showcase and the brand strip
+  // above the shared sections. The shared eyebrows are numbered from the top of
+  // the page, so that extra section advances them by one; deriving the offset
+  // from the same predicate that renders it keeps the sequence contiguous per
+  // department (ES 01-05, DM 02-04) instead of hard-coding a number per block.
+  const sharedSectionOffset = definition.slug === "electrical-services" ? 1 : 0;
+  const sectionNumber = (n: number) =>
+    String(n + sharedSectionOffset).padStart(2, "0");
+
   const processSteps = [
     { title: t(`${copy}.processStep1Title`), body: t(`${copy}.processStep1Body`) },
     { title: t(`${copy}.processStep2Title`), body: t(`${copy}.processStep2Body`) },
@@ -249,11 +259,27 @@ export default async function DepartmentPage({
         />
       ) : null}
 
+      {/* Brands the department supplies. Only Electrical Services names
+          manufacturers, so this renders for that department alone. Kept
+          immediately after the equipment showcase: the brands are what the
+          equipment above is sourced from. */}
+      {definition.slug === "electrical-services" ? (
+        <SectionBand tone="alt" labelledBy="electrical-brands-heading">
+          <BrandStrip
+            t={t}
+            eyebrow={`02 — ${t("electricalProducts.brands.eyebrow")}`}
+            heading={t("electricalProducts.brands.heading")}
+            intro={t("electricalProducts.brands.intro")}
+            headingId="electrical-brands-heading"
+          />
+        </SectionBand>
+      ) : null}
+
       {hasContent ? (
         <>
           <SectionBand labelledBy="department-services-heading">
             <p className="mono-label text-dept-accent">
-              02 — {t(`${copy}.servicesHeading`)}
+              {sectionNumber(2)} — {t(`${copy}.servicesHeading`)}
             </p>
             <h2
               id="department-services-heading"
@@ -282,7 +308,7 @@ export default async function DepartmentPage({
 
           <SectionBand tone="alt" labelledBy="department-process-heading">
             <p className="mono-label text-dept-accent">
-              03 — {t(`${copy}.processHeading`)}
+              {sectionNumber(3)} — {t(`${copy}.processHeading`)}
             </p>
             <h2
               id="department-process-heading"
@@ -322,7 +348,7 @@ export default async function DepartmentPage({
             <div className="grid gap-12 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <p className="mono-label text-dept-accent">
-                  04 — {t(`${copy}.whyHeading`)}
+                  {sectionNumber(4)} — {t(`${copy}.whyHeading`)}
                 </p>
                 <h2
                   id="department-why-heading"

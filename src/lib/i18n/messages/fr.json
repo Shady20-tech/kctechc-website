@@ -2030,6 +2030,17 @@
     "intro": "Le département fournit des onduleurs solaires, du stockage au lithium et des systèmes d'alimentation complets en complément de ses travaux d'installation. Chaque appareil ci-dessous est adapté au site qu'il dessert, et non à ce qui se trouve en stock.",
     "note": "Disponibilité, caractéristiques et prix sont confirmés dans un devis.",
     "a11y": "Vitrine des produits des Services Électriques",
+    "brands": {
+      "eyebrow": "Nos marques",
+      "heading": "Marques que nous fournissons",
+      "intro": "Le département fournit des composants solaires de SAKO POWER et des composants de vidéosurveillance de HIKVISION.",
+      "sakoPower": {
+        "category": "Composants solaires"
+      },
+      "hikvision": {
+        "category": "Composants de vidéosurveillance"
+      }
+    },
     "items": {
       "sunpoloInverter": {
         "name": "Onduleur solaire hybride SUNPOLO",

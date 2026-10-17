@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { setCartSummary } from "@/lib/hooks/use-cart-summary";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { storePathFor } from "@/lib/config/navigation";
@@ -59,8 +60,10 @@ export function PackageCartControls({
                 quantity: 1,
                 locale,
               });
-              if (result.ok) setAdded(true);
-              else setError(true);
+              if (result.ok) {
+                setAdded(true);
+                setCartSummary({ itemCount: result.itemCount });
+              } else setError(true);
             });
           }}
         >

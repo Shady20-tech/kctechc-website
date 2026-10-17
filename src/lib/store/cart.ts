@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { STORE_CURRENCY } from "@/lib/config/site";
 import { productImageSrc } from "@/lib/store/storage";
+import { cartPathFor } from "@/lib/store/product-path";
 
 /**
  * Cart persistence.
@@ -180,6 +181,49 @@ export async function getCurrentCart(): Promise<Cart | null> {
   const token = await readCartToken();
   if (!token) return null;
   return getCartByToken(token);
+}
+
+/**
+ * The cart's public path for the department its items belong to.
+ *
+ * The cart lives at `/{locale}/{department}/store/cart`, so the header needs to
+ * know which department to link to. The cart itself records only a locale, and a
+ * cart can hold products from more than one department — but a cart is almost
+ * always one department's, and a customer who has just added an item expects the
+ * header icon to open *that* cart. The department is therefore taken from the
+ * first line (the order in which items were added), falling back to the Digital
+ * Marketing store when the cart is empty or a product's department is unknown.
+ *
+ * This mirrors `resolveOrderDepartments` for orders: the department is read from
+ * the data, never assumed to be the default store.
+ */
+export function cartHrefForCart(
+  locale: string,
+  cart: Cart | null,
+): string {
+  return cartPathFor(locale, cart?.lines[0]?.departmentSlug ?? null);
+}
+
+/**
+ * A lightweight cart summary for the header.
+ *
+ * Returns only the item count and a resolved cart path — never the lines or
+ * prices — so the shared header can render a cart badge without pulling the whole
+ * basket (and its product joins) into every public page.
+ *
+ * `null` means "no cart": there is no cookie, or the token does not resolve. The
+ * header treats that as zero items rather than an error.
+ */
+export async function getCartSummary(
+  locale: string,
+): Promise<{ itemCount: number; href: string } | null> {
+  const cart = await getCurrentCart();
+  if (!cart) return null;
+
+  return {
+    itemCount: cart.itemCount,
+    href: cartHrefForCart(locale, cart),
+  };
 }
 
 /**

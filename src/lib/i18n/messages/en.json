@@ -2030,6 +2030,17 @@
     "intro": "The department supplies solar inverters, lithium storage and complete power systems alongside its installation work. Every unit below is matched to the site it serves rather than to what happens to be in stock.",
     "note": "Availability, ratings and pricing are confirmed in a quote.",
     "a11y": "Electrical Services product showcase",
+    "brands": {
+      "eyebrow": "Our brands",
+      "heading": "Brands we supply",
+      "intro": "The department supplies solar components from SAKO POWER and CCTV components from HIKVISION.",
+      "sakoPower": {
+        "category": "Solar components"
+      },
+      "hikvision": {
+        "category": "CCTV components"
+      }
+    },
     "items": {
       "sunpoloInverter": {
         "name": "SUNPOLO hybrid solar inverter",
