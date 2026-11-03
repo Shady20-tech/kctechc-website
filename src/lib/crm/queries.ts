@@ -108,6 +108,7 @@ export async function getCrmInquiry(id: string): Promise<{
   serviceId: string | null;
   locality: string | null;
   regionId: string | null;
+  acquisitionPurpose: string | null;
   events: CrmEvent[];
 } | null> {
   const supabase = await createClient();
@@ -116,7 +117,7 @@ export async function getCrmInquiry(id: string): Promise<{
   const { data, error } = await supabase
     .from("inquiries")
     .select(
-      "id, reference, status, source, inquiry_type, priority, department_id, assigned_to, locale, full_name, email, phone, subject, message, consent_given, consent_at, created_at, updated_at, last_activity_at, responded_at, closed_at, assigned_at, service_id, locality, region_id",
+      "id, reference, status, source, inquiry_type, priority, department_id, assigned_to, locale, full_name, email, phone, subject, message, consent_given, consent_at, created_at, updated_at, last_activity_at, responded_at, closed_at, assigned_at, service_id, locality, region_id, acquisition_purpose",
     )
     .eq("id", id)
     .maybeSingle();
@@ -177,6 +178,8 @@ export async function getCrmInquiry(id: string): Promise<{
     serviceId: data.service_id,
     locality: data.locality,
     regionId: data.region_id,
+    /** Stated on a property enquiry; null for every other source. */
+    acquisitionPurpose: data.acquisition_purpose,
     events: (events.data ?? []).map((event) => ({
       id: event.id,
       eventType: event.event_type,

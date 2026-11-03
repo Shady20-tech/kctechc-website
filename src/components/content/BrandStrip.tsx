@@ -38,7 +38,7 @@ export function BrandStrip({
       {intro ? (
         <p className="mt-4 max-w-2xl text-base text-body">{intro}</p>
       ) : null}
-      <ul className="mt-8 grid gap-6 sm:grid-cols-2">
+      <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {ELECTRICAL_BRANDS.map((brand) => (
           <li
             key={brand.id}

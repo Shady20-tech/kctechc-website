@@ -1370,6 +1370,29 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
+### DEYE brand and the acquisition-purpose field
+
+- **DEYE is the third Electrical Services brand partner**, alongside SAKO POWER (solar
+  components) and HIKVISION (CCTV components). It sits in `ELECTRICAL_BRANDS`
+  (`src/lib/content/electrical-brands.ts`) as `deye` / "Inverters and energy storage", with the
+  copy under `electricalProducts.brands.deye.category` in `en.json`/`fr.json`. The `BrandStrip`
+  grid is `sm:grid-cols-2 lg:grid-cols-3` so three tiles sit on one row at `lg`.
+- **A property enquiry can now state a "purpose of acquisition".** Migration
+  `20260101000052_acquisition_purpose.sql` adds the `acquisition_purpose` enum
+  (`residence`/`investment`/`business`/`other`) and a nullable `inquiries.acquisition_purpose`
+  column with a partial index. It is optional end to end: the form's empty "prefer not to say"
+  option normalises to `undefined` in `listingInquirySchema` and is stored as null, so an enquiry
+  is never blocked on it. The CRM detail page shows it only when present.
+- **The purpose values are a mirror of the database enum, and the mirror is asserted.** The Zod
+  enum in `src/lib/validation/listing-inquiry.ts` is a second source of truth, so
+  `listing-inquiry.test.ts` reads the migration and asserts the member set — the same guard
+  `real-estate/enums.test.ts` applies to its mirrors. Add a value to one and not the other and the
+  test fails, rather than the insert failing on a constraint after passing validation.
+- **This is a property-enquiry field, not a general one.** It is only collected on
+  `ListingInquiryForm` and only ever set for a `property_inquiry`/`viewing_request` source; every
+  other inquiry leaves it null. Do not add it to the corporate contact form or the quote form —
+  neither has an acquisition to speak of.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

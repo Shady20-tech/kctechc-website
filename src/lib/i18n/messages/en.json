@@ -619,6 +619,9 @@
       "nameLabel": "Your name",
       "emailLabel": "Email address",
       "phoneLabel": "Phone number",
+      "purposeLabel": "Purpose of acquisition",
+      "purposeHint": "Optional. It helps the responsible agent respond usefully.",
+      "purposeNotStated": "Prefer not to say",
       "messageLabel": "Your enquiry",
       "messageHint": "Say what you would like to know, or when you would like to view the property.",
       "submit": "Send enquiry",
@@ -854,6 +857,12 @@
       "deleted": "Search deleted.",
       "deleteFailed": "That search could not be deleted. Please try again.",
       "backToListings": "Back to listings"
+    },
+    "acquisitionPurpose": {
+      "residence": "A home to live in",
+      "investment": "An investment",
+      "business": "Business premises",
+      "other": "Something else"
     }
   },
   "seo": {
@@ -1534,6 +1543,7 @@
     "detailHeading": "Enquiry {reference}",
     "messageHeading": "Message",
     "detailsHeading": "Submitter details",
+    "acquisitionPurposeLabel": "Purpose of acquisition",
     "consentLabel": "Consent recorded",
     "consentAt": "Consent recorded on {date}",
     "timelineHeading": "Timeline",
@@ -2045,9 +2055,12 @@
     "brands": {
       "eyebrow": "Our brands",
       "heading": "Brands we supply",
-      "intro": "The department supplies solar components from SAKO POWER and CCTV components from HIKVISION.",
+      "intro": "The department supplies solar components from SAKO POWER, inverters and energy storage from DEYE, and CCTV components from HIKVISION.",
       "sakoPower": {
         "category": "Solar components"
+      },
+      "deye": {
+        "category": "Inverters and energy storage"
       },
       "hikvision": {
         "category": "CCTV components"

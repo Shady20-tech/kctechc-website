@@ -114,6 +114,14 @@ export default async function AdminCrmDetailPage({
               <Detail label={t("adminCrm.columnContact")} value={row.fullName ?? "—"} />
               <Detail label="Email" value={row.email ?? "—"} />
               <Detail label="Phone" value={inquiry.phone ?? "—"} />
+              {inquiry.acquisitionPurpose ? (
+                <Detail
+                  label={t("adminCrm.acquisitionPurposeLabel")}
+                  value={t(
+                    `realEstate.acquisitionPurpose.${inquiry.acquisitionPurpose}`,
+                  )}
+                />
+              ) : null}
               <Detail
                 label={t("adminCrm.columnReceived")}
                 value={formatDateTime(row.createdAt)}

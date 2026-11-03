@@ -36,10 +36,12 @@ describe("BrandStrip", () => {
     }
   });
 
-  it("names SAKO POWER for solar and HIKVISION for CCTV", () => {
+  it("names SAKO POWER for solar, DEYE for inverters and HIKVISION for CCTV", () => {
     setup();
     expect(screen.getByText("SAKO POWER")).toBeInTheDocument();
     expect(screen.getByText("Solar components")).toBeInTheDocument();
+    expect(screen.getByText("DEYE")).toBeInTheDocument();
+    expect(screen.getByText("Inverters and energy storage")).toBeInTheDocument();
     expect(screen.getByText("HIKVISION")).toBeInTheDocument();
     expect(screen.getByText("CCTV components")).toBeInTheDocument();
   });
@@ -56,6 +58,7 @@ describe("BrandStrip", () => {
     const t = createTranslator("fr").t;
     setup("fr");
     expect(screen.getByText(t("electricalProducts.brands.sakoPower.category"))).toBeInTheDocument();
+    expect(screen.getByText(t("electricalProducts.brands.deye.category"))).toBeInTheDocument();
     expect(screen.getByText(t("electricalProducts.brands.hikvision.category"))).toBeInTheDocument();
   });
 });

@@ -716,6 +716,9 @@ export type Database = {
       };
       inquiries: {
         Row: {
+          acquisition_purpose:
+            | Database["public"]["Enums"]["acquisition_purpose"]
+            | null;
           assigned_at: string | null;
           assigned_to: string | null;
           closed_at: string | null;
@@ -748,6 +751,9 @@ export type Database = {
           user_agent: string | null;
         };
         Insert: {
+          acquisition_purpose?:
+            | Database["public"]["Enums"]["acquisition_purpose"]
+            | null;
           assigned_at?: string | null;
           assigned_to?: string | null;
           closed_at?: string | null;
@@ -780,6 +786,9 @@ export type Database = {
           user_agent?: string | null;
         };
         Update: {
+          acquisition_purpose?:
+            | Database["public"]["Enums"]["acquisition_purpose"]
+            | null;
           assigned_at?: string | null;
           assigned_to?: string | null;
           closed_at?: string | null;
@@ -3365,6 +3374,7 @@ export type Database = {
       };
     };
     Enums: {
+      acquisition_purpose: "residence" | "investment" | "business" | "other";
       appointment_status: "requested" | "confirmed" | "completed" | "cancelled";
       appointment_window: "morning" | "afternoon" | "anytime";
       cart_status: "active" | "converted" | "abandoned" | "expired";
@@ -3645,6 +3655,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      acquisition_purpose: ["residence", "investment", "business", "other"],
       appointment_status: ["requested", "confirmed", "completed", "cancelled"],
       appointment_window: ["morning", "afternoon", "anytime"],
       cart_status: ["active", "converted", "abandoned", "expired"],

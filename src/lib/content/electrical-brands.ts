@@ -1,11 +1,11 @@
 /**
  * Electrical Services brand partners.
  *
- * The two manufacturers the department supplies, taken from the brief: SAKO
- * POWER for solar components and HIKVISION for CCTV components. Each entry
- * carries message keys rather than inline strings, so the copy is localized
- * through the same static dictionary as the rest of the UI and English and
- * French stay in step (the parity test enforces the key set).
+ * The manufacturers the department supplies: SAKO POWER for solar components,
+ * DEYE for inverters and energy storage, and HIKVISION for CCTV components.
+ * Each entry carries message keys rather than inline strings, so the copy is
+ * localized through the same static dictionary as the rest of the UI and
+ * English and French stay in step (the parity test enforces the key set).
  *
  * Nothing beyond the brand and its category is claimed here — no model, price,
  * stock or warranty — because the brief supplied only the pairing.
@@ -26,6 +26,11 @@ export const ELECTRICAL_BRANDS: readonly ElectricalBrand[] = [
     id: "sakoPower",
     name: "SAKO POWER",
     categoryKey: `${PREFIX}.sakoPower.category`,
+  },
+  {
+    id: "deye",
+    name: "DEYE",
+    categoryKey: `${PREFIX}.deye.category`,
   },
   {
     id: "hikvision",

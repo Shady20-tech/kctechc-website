@@ -76,6 +76,7 @@ export async function submitListingInquiry(
     email: formData.get("email"),
     phone: formData.get("phone") ?? "",
     message: formData.get("message"),
+    acquisitionPurpose: formData.get("acquisitionPurpose") ?? "",
     viewingRequest: formData.get("viewingRequest") === "on",
     locale: formData.get("locale") ?? "en",
     consent: formData.get("consent") === "on",
@@ -146,6 +147,9 @@ export async function submitListingInquiry(
       // message something misleading.
       subject: `${listing.reference} — ${listing.title}`,
       message: parsed.data.message,
+      // Why the visitor wants the property, when they said. Null otherwise, so
+      // an unanswered question is recorded as unanswered rather than guessed.
+      acquisition_purpose: parsed.data.acquisitionPurpose ?? null,
       consent_given: true,
       consent_at: new Date().toISOString(),
       ip_hash: hashIp(clientIp ?? "unknown"),

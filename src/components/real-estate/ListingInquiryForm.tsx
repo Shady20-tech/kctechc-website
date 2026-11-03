@@ -6,6 +6,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import {
   HoneypotField,
+  SelectField,
   TextAreaField,
   TextField,
 } from "@/components/ui/Form";
@@ -24,6 +25,14 @@ export type ListingInquiryLabels = {
   phoneLabel: string;
   phonePlaceholder: string;
   phoneHint: string;
+  /** Why the visitor wants the property. */
+  purposeLabel: string;
+  purposeHint: string;
+  purposeNotStated: string;
+  purposeResidence: string;
+  purposeInvestment: string;
+  purposeBusiness: string;
+  purposeOther: string;
   messageLabel: string;
   messagePlaceholder: string;
   messageHint: string;
@@ -183,6 +192,20 @@ export function ListingInquiryForm({
           autoComplete="tel"
           error={message(fieldErrors.phone)}
         />
+
+        <SelectField
+          id="listing-inquiry-purpose"
+          name="acquisitionPurpose"
+          label={labels.purposeLabel}
+          hint={labels.purposeHint}
+          error={message(fieldErrors.acquisitionPurpose)}
+        >
+          <option value="">{labels.purposeNotStated}</option>
+          <option value="residence">{labels.purposeResidence}</option>
+          <option value="investment">{labels.purposeInvestment}</option>
+          <option value="business">{labels.purposeBusiness}</option>
+          <option value="other">{labels.purposeOther}</option>
+        </SelectField>
 
         <TextAreaField
           id="listing-inquiry-message"

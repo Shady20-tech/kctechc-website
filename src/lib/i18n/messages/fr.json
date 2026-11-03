@@ -619,6 +619,9 @@
       "nameLabel": "Votre nom",
       "emailLabel": "Adresse e-mail",
       "phoneLabel": "Numéro de téléphone",
+      "purposeLabel": "Objet de l'acquisition",
+      "purposeHint": "Facultatif. Cela aide l'agent responsable à répondre utilement.",
+      "purposeNotStated": "Je préfère ne pas le dire",
       "messageLabel": "Votre demande",
       "messageHint": "Dites ce que vous souhaitez savoir, ou quand vous souhaitez visiter le bien.",
       "submit": "Envoyer la demande",
@@ -854,6 +857,12 @@
       "deleted": "Recherche supprimée.",
       "deleteFailed": "Cette recherche n'a pas pu être supprimée. Veuillez réessayer.",
       "backToListings": "Retour aux annonces"
+    },
+    "acquisitionPurpose": {
+      "residence": "Une résidence pour y vivre",
+      "investment": "Un investissement",
+      "business": "Des locaux professionnels",
+      "other": "Autre chose"
     }
   },
   "seo": {
@@ -1534,6 +1543,7 @@
     "detailHeading": "Demande {reference}",
     "messageHeading": "Message",
     "detailsHeading": "Coordonnées du demandeur",
+    "acquisitionPurposeLabel": "Objet de l'acquisition",
     "consentLabel": "Consentement enregistré",
     "consentAt": "Consentement enregistré le {date}",
     "timelineHeading": "Chronologie",
@@ -2045,9 +2055,12 @@
     "brands": {
       "eyebrow": "Nos marques",
       "heading": "Marques que nous fournissons",
-      "intro": "Le département fournit des composants solaires de SAKO POWER et des composants de vidéosurveillance de HIKVISION.",
+      "intro": "Le département fournit des composants solaires de SAKO POWER, des onduleurs et du stockage d'énergie de DEYE, et des composants de vidéosurveillance de HIKVISION.",
       "sakoPower": {
         "category": "Composants solaires"
+      },
+      "deye": {
+        "category": "Onduleurs et stockage d'énergie"
       },
       "hikvision": {
         "category": "Composants de vidéosurveillance"

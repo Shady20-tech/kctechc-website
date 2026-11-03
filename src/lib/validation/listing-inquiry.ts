@@ -25,12 +25,37 @@ const optionalPhone = z
   )
   .optional();
 
+/**
+ * Why the visitor wants the property.
+ *
+ * Optional, because an enquiry must never be blocked on a question the visitor
+ * may not want to answer — and the four values are a closed set so the answer is
+ * reportable rather than free text. An empty string from a "not stated" option
+ * is normalised to `undefined` so the column stores null rather than a blank
+ * enum member.
+ */
+export const acquisitionPurposeSchema = z.enum([
+  "residence",
+  "investment",
+  "business",
+  "other",
+]);
+
+const optionalAcquisitionPurpose = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value === "" ? undefined : value))
+  .pipe(acquisitionPurposeSchema.optional());
+
 export const listingInquirySchema = z.object({
   listingId: z.uuid(),
   fullName: z.string().trim().min(1, "required").max(200, "tooLong"),
   email: emailSchema,
   phone: optionalPhone,
   message: z.string().trim().min(10, "tooShort").max(5000, "tooLong"),
+  /** Why the visitor wants the property, if they chose to say. */
+  acquisitionPurpose: optionalAcquisitionPurpose,
   /** Some enquiries are a request to view, not only a question. */
   viewingRequest: z.boolean().default(false),
   locale: localeSchema,
@@ -43,7 +68,15 @@ export const listingInquirySchema = z.object({
 export type ListingInquiryInput = z.infer<typeof listingInquirySchema>;
 
 export type ListingInquiryFieldErrors = Partial<
-  Record<"fullName" | "email" | "phone" | "message" | "consent", string>
+  Record<
+    | "fullName"
+    | "email"
+    | "phone"
+    | "message"
+    | "acquisitionPurpose"
+    | "consent",
+    string
+  >
 >;
 
 export type ListingInquiryState =
