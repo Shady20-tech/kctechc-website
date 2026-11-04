@@ -409,6 +409,14 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `about.chairman*` and `home.message*` / `home.index*`.
 - 861 Vitest tests pass (63 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (133/133 static pages).
+- Staff-written insight articles are now indexed for translation. Migration
+  `20260101000053_insight_translation_index.sql` adds the missing
+  `sync_insight_translation_index` trigger (title/summary/body), writes the source and target
+  `content_translations` rows, queues the Tolgee jobs, and backfills existing articles. Before it,
+  `'insight'` was a valid entity type and the read path merged French, but nothing ever wrote it, so
+  `/fr` silently served English. See "Insight article translation" below for what this does *not* do.
+- 883 Vitest tests pass (66 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds.
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -1392,6 +1400,54 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   `ListingInquiryForm` and only ever set for a `property_inquiry`/`viewing_request` source; every
   other inquiry leaves it null. Do not add it to the corporate contact form or the quote form —
   neither has an acquisition to speak of.
+
+### Insight article translation (the missing write path)
+
+- **`'insight'` was a valid `translatable_entity_type` and the read path already served French, but
+  nothing ever wrote the French rows.** `loadInsightRecords` selects from `content_translations`
+  where `entity_type = 'insight'` and `localizeInsight` merges title/summary/body — but there was no
+  `sync_insight_translation_index` trigger. Products (migration 12), electrical projects (14),
+  property listings (22) and insight *media* (49) each had one; the article's own text did not. So an
+  article published by staff stored English once, `/fr` found no overlay, `resolveLocalized` fell
+  back to canonical, and the French page silently served English — with no `translation_entries`
+  row, no `content_translations` row and no queued job, so nothing downstream could fix it either.
+  Migration `20260101000053_insight_translation_index.sql` adds the trigger, the source/target rows,
+  the queued jobs and a backfill for existing articles.
+- **A trigger is the right place, for the same reason it was for products.** The index becomes a
+  property of the data, so an article written by the admin form, a migration or a psql session is
+  indexed alike. Doing it in `createInsightAction`/`updateInsightAction` would leave any other write
+  path unindexed — and the `content_translations` insert the action would need is a `SECURITY
+  DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
+- **The field list is title/summary/body and nothing else.** It is exactly what `localizeInsight`
+  merges and `groupTranslations` understands. `slug` is deliberately excluded: the article route
+  resolves the canonical slug in both locales and there is no `insight_slugs` table, so indexing it
+  would create Tolgee keys nothing reads. The two `entity_seo` fields the product/listing triggers
+  index are excluded too — `loadInsightRecords` does not read `entity_seo` for insights.
+- **A new function created after migration 41 keeps Supabase's default browser grant.** The Phase 12
+  hardening ran *before* this migration existed, so `insight_translatable_fields()` (not a trigger
+  function) would otherwise stay executable by `anon`/`authenticated` and fail the *subset*
+  assertion in `30_function_execute_hardening.sql`. The revoke is repeated in the same migration that
+  creates it. Any later migration that adds a function must classify it the same way.
+- **A backfill is required, not optional.** Articles written before the trigger have no index rows;
+  without the backfill in the migration they would stay English forever. It creates only what is
+  missing (`on conflict do nothing` for the French rows, so an existing translation is never
+  destroyed) and enqueues jobs only for the entries it actually created, so re-running is safe.
+- **`now()` is transaction-constant, which breaks a naive "source moved on" test.** In
+  `supabase/validate/70_insight_translation_behaviour.sql` the French row's `source_updated_at` is
+  backdated an hour before the English edit; writing both inside one transaction would give identical
+  timestamps and the `outdated` branch would never be reached. `pg_sleep` does not help — `now()` is
+  the transaction start time, not the statement time.
+- **`insights_summary_length` requires `char_length >= 1`, so `''` cannot be inserted.** The
+  blank-field guard is exercised with `'   '` (whitespace), which passes the length check but is
+  empty after `btrim` — the case the trigger's guard actually exists for.
+- **This makes the index rows and queued jobs correct; it does not by itself produce French.** The
+  translation system is push-only: `pushTranslation` sends the source and any existing French to
+  Tolgee, but `fetchTranslation` has no callers, there is no cron, no Tolgee webhook route and no
+  machine-translation provider wired in. So a French value reaches the site only when it is written
+  to `content_translations` — by a seed migration (as 45/48 do for the solar packages), by a
+  translator via an admin surface, or by an MT/Tolgee pull-back workflow that does not exist yet.
+  Do not describe the site as machine-translating EN→FR: it is not, and no provider/credentials for
+  one have been chosen.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

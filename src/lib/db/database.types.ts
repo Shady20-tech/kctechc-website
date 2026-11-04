@@ -3157,6 +3157,10 @@ export type Database = {
         Args: { p_inquiry_id: string };
         Returns: boolean;
       };
+      insight_translatable_fields: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_department_editor: {
         Args: { department_slug: string };

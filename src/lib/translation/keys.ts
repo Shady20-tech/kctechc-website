@@ -20,7 +20,8 @@ export type TranslatableEntityType =
   | "product_media"
   | "product_category"
   | "property_listing"
-  | "property_media";
+  | "property_media"
+  | "insight";
 
 /**
  * The product fields that are indexed for translation.
@@ -117,6 +118,38 @@ export function buildPropertyMediaTranslationKey(
   locale: Locale,
 ): string {
   return buildTranslationKey("property_media", mediaId, "alt_text", locale);
+}
+
+/**
+ * The article fields that are indexed for translation.
+ *
+ * Mirrors `insight_translatable_fields()` in migration 53. Kept in step by a
+ * test, so the TypeScript mirror and the SQL function cannot drift apart.
+ */
+export const INSIGHT_TRANSLATABLE_FIELDS = [
+  "title",
+  "summary",
+  "body",
+] as const;
+
+export type InsightTranslatableField =
+  (typeof INSIGHT_TRANSLATABLE_FIELDS)[number];
+
+/**
+ * Build the full set of keys for an article's translatable fields.
+ *
+ * `fields` defaults to every article field; a caller narrows it to the fields
+ * that actually have a value, so a cleared summary does not produce a key for an
+ * empty string.
+ */
+export function buildInsightTranslationKeys(
+  insightId: string,
+  locale: Locale,
+  fields: readonly string[] = INSIGHT_TRANSLATABLE_FIELDS,
+): string[] {
+  return fields.map((field) =>
+    buildTranslationKey("insight", insightId, field, locale),
+  );
 }
 
 const KEY_PATTERN = /^[a-z_]+\.[0-9a-f-]{36}\.[a-z0-9_]+\.[a-z]{2}$/;
