@@ -127,7 +127,7 @@ export default async function PropertyListingsPage({
       page: filters.page,
       locale: resolved,
     }),
-    loadListingGeographyTree(),
+    loadListingGeographyTree(resolved),
     loadFavoriteListingIds(),
   ]);
 

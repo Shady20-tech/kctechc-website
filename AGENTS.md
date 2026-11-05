@@ -430,6 +430,33 @@ acceptance criteria pass. Then stop — do not start the next phase.
   photography (see "Hero image provenance" below): `/hero/corporate-v3.jpg` and
   `/hero/digital-marketing-v3.jpg`. Both measurably raise heading and body contrast over their
   predecessors.
+- The Cameroon administrative hierarchy below Region is now seeded from a vetted dataset.
+  `20260101000004_geography.sql` seeds only the ten Regions (the brief supplies only those) and
+  leaves divisions/subdivisions to the `import_administrative_divisions` path, so on every
+  deployment the real-estate filter's two lower selectors were permanently disabled — there was
+  nothing to choose. Migration `20260101000055_cameroon_divisions_and_subdivisions.sql` applies the
+  Open Admin Data dataset (CC BY 4.0) as schema data: **58 divisions and 360 subdivisions**, plus a
+  restatement of the ten Regions because migrations run before `seed.sql` (a fresh database would
+  otherwise join against nothing). The filter now shows every region, division and subdivision with
+  its published-listing count (0 shown as no count) instead of only the branches that happen to
+  have inventory today. `src/lib/real-estate/geography.ts` holds the pure
+  `buildGeographyTree`/`GeographyCounts` arrangement (moved out of `loaders.ts`), and the French
+  selector labels come from `name_fr` with an English fallback. `supabase/validate/90_*.sql` proves
+  the seeded counts, the internal consistency and the anon visibility on a fresh database;
+  `geography.test.ts` and `geography-migration.test.ts` cover the arrangement and the migration
+  content without a database.
+- Migration `20260101000054_correct_head_office_locality.sql` repairs the stored head-office
+  locality. The footer renders `site_settings.site.contact`, falling back to the brief only when the
+  row is absent or malformed, so a misspelt locality in the row (`Limbo`) was rendered verbatim and
+  never corrected — the row is the fact, not the repository string. The migration rewrites only the
+  `address` key via `jsonb_set` (preserving the editable `email`/`phones`), is guarded so it is a
+  no-op on an already-correct database, and restates the table comment.
+- The footer's second contact address was `info@kctectc.com` — a transposed domain that resolved
+  nowhere, while the other two addresses use `kctechc.com`. Corrected to `info@kctechc.com`, and
+  `src/lib/config/site.test.ts` now pins the whole contact block (name, phones, address, one shared
+  domain, `email` first in `emails`) against the brief.
+- `SITE_REVISION_DATE` was bumped to `2026-11-05` for the Digital Marketing hero-heading change
+  (which is a visible change on a statically-listed page).
 
 ### Hero image provenance
 
@@ -1122,9 +1149,12 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   rather than a cart button that would fail.
 - **`?package=` on `/contact` is resolved from bundled data** and pre-fills subject + message via
   `solarPackages.labels.requestSubject/requestBody`; an unknown id is ignored, never echoed.
-- **`SITE.emails` is `[kctechc@gmail.com, info@kctectc.com, support@kctechc.com]`, and `SITE.email`
+- **`SITE.emails` is `[kctechc@gmail.com, info@kctechc.com, support@kctechc.com]`, and `SITE.email`
   is kept equal to the first entry** (the notification fallback and the "primary inbox" contract in
-  `site-content.ts`). The contact page and footer render all three.
+  `site-content.ts`). The contact page and footer render all three. Every address shares the
+  `kctechc.com` domain; `info@kctectc.com` shipped in the original multi-email commit as a
+  transposed domain and rendered verbatim in the footer, which is why `site.test.ts` now pins the
+  whole contact block against the brief.
 - **The FR header nav budget still holds with nine entries.** Measured on the running build: FR nav
   is **713px** wide at 1280 (`xl` breakpoint) inside a 1248px row, one line, no overflow —
   comfortably inside the 1168px content budget described in the Phase 2 gotchas. A CSS-500 from the

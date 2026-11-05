@@ -6,7 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { SelectField, TextField } from "@/components/ui/Form";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
-import type { GeographyOption } from "@/lib/real-estate/loaders";
+import type { GeographyOption } from "@/lib/real-estate/geography";
 import {
   LISTING_PROPERTY_KINDS,
   LISTING_TYPES,
@@ -46,8 +46,10 @@ type Translate = ReturnType<typeof createTranslator>["t"];
  * search function filters each level independently, so a division can be chosen
  * without a region. The cascade exists because the reader's mental model is a
  * hierarchy — the divisions offered are the ones under the chosen region — and
- * offering all divisions of the country would be a list they have to search
- * themselves.
+ * offering all 58 divisions of the country in one list would be a list they have
+ * to search themselves. Every level is offered, including branches with no
+ * listings; the count beside an option is what tells the visitor where property
+ * actually is.
  */
 export function ListingFilterPanel({
   locale,
@@ -70,6 +72,20 @@ export function ListingFilterPanel({
   const selectedDivision = selectedRegion?.divisions.find(
     (division) => division.slug === filters.divisionSlug,
   );
+
+  /**
+   * The option label.
+   *
+   * The count is shown only when there is something to count. Every region,
+   * division and subdivision is offered now, so most options have no listings and
+   * would otherwise render as a column of "(0)" that makes the handful of real
+   * results harder to scan.
+   */
+  function optionLabel(name: string, count: number): string {
+    return count > 0
+      ? t("realEstate.search.optionWithCount", { name, count })
+      : name;
+  }
 
   /** Navigate to a URL built from the current form plus one change. */
   function navigate(patch: Partial<ListingFilters>) {
@@ -113,10 +129,7 @@ export function ListingFilterPanel({
           <option value="">{t("realEstate.search.regionAll")}</option>
           {geography.map((region) => (
             <option key={region.slug} value={region.slug}>
-              {t("realEstate.search.optionWithCount", {
-                name: region.name,
-                count: region.count,
-              })}
+              {optionLabel(region.name, region.count)}
             </option>
           ))}
         </SelectField>
@@ -137,10 +150,7 @@ export function ListingFilterPanel({
           <option value="">{t("realEstate.search.divisionAll")}</option>
           {(selectedRegion?.divisions ?? []).map((division) => (
             <option key={division.slug} value={division.slug}>
-              {t("realEstate.search.optionWithCount", {
-                name: division.name,
-                count: division.count,
-              })}
+              {optionLabel(division.name, division.count)}
             </option>
           ))}
         </SelectField>
@@ -158,10 +168,7 @@ export function ListingFilterPanel({
           <option value="">{t("realEstate.search.subdivisionAll")}</option>
           {(selectedDivision?.subdivisions ?? []).map((subdivision) => (
             <option key={subdivision.slug} value={subdivision.slug}>
-              {t("realEstate.search.optionWithCount", {
-                name: subdivision.name,
-                count: subdivision.count,
-              })}
+              {optionLabel(subdivision.name, subdivision.count)}
             </option>
           ))}
         </SelectField>

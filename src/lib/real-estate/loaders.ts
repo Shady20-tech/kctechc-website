@@ -11,6 +11,12 @@ import type {
   PropertyType,
 } from "./enums";
 import {
+  buildGeographyTree,
+  emptyGeographyCounts,
+  type GeographyCounts,
+  type GeographyOption,
+} from "./geography";
+import {
   groupListingTranslations,
   regionFromRow,
   toListingImage,
@@ -574,18 +580,8 @@ async function resolveGeographyIds(slugs: {
  * would click it and find nothing, and the count beside a region would not match
  * the number of results they get.
  */
-export type GeographyCounts = {
-  regions: Map<string, number>;
-  divisions: Map<string, number>;
-  subdivisions: Map<string, number>;
-};
-
 export async function loadListingGeographyCounts(): Promise<GeographyCounts> {
-  const empty: GeographyCounts = {
-    regions: new Map(),
-    divisions: new Map(),
-    subdivisions: new Map(),
-  };
+  const empty = emptyGeographyCounts();
 
   try {
     const supabase = createPublicClient();
@@ -594,11 +590,7 @@ export async function loadListingGeographyCounts(): Promise<GeographyCounts> {
     const { data } = await supabase.rpc("listing_geography_counts");
     if (!data) return empty;
 
-    const result: GeographyCounts = {
-      regions: new Map(),
-      divisions: new Map(),
-      subdivisions: new Map(),
-    };
+    const result = emptyGeographyCounts();
 
     for (const row of data) {
       if (!row.geo_id) continue;
@@ -617,39 +609,13 @@ export async function loadListingGeographyCounts(): Promise<GeographyCounts> {
 }
 
 /**
- * The geography tree, with listing counts, for the cascading filter.
- *
- * Only levels that have listings are returned. A selector offering all ten regions
- * when two have property is offering eight dead ends, and the count beside each
- * option is what tells the visitor which is which. The counts come from the same
- * function the browser counts with, so the two agree.
+ * The geography tree, with listing counts, for the cascading filter. The
+ * arrangement is done by `buildGeographyTree` in `./geography`, which is pure and
+ * unit-tested; this function is only the database read.
  */
-export type GeographyOption = {
-  id: string;
-  slug: string;
-  name: string;
-  count: number;
-  divisions: readonly GeographyDivisionOption[];
-};
-
-export type GeographyDivisionOption = {
-  id: string;
-  slug: string;
-  name: string;
-  count: number;
-  subdivisions: readonly GeographySubdivisionOption[];
-};
-
-export type GeographySubdivisionOption = {
-  id: string;
-  slug: string;
-  name: string;
-  count: number;
-};
-
-export async function loadListingGeographyTree(): Promise<
-  readonly GeographyOption[]
-> {
+export async function loadListingGeographyTree(
+  locale: Locale,
+): Promise<readonly GeographyOption[]> {
   try {
     const supabase = createPublicClient();
     if (!supabase) return [];
@@ -658,65 +624,22 @@ export async function loadListingGeographyTree(): Promise<
       loadListingGeographyCounts(),
       supabase
         .from("regions")
-        .select("id, slug, name")
+        .select("id, slug, name, name_fr")
         .order("sort_order", { ascending: true }),
-      supabase
-        .from("divisions")
-        .select("id, region_id, slug, name")
-        .order("name", { ascending: true }),
+      supabase.from("divisions").select("id, region_id, slug, name, name_fr"),
       supabase
         .from("subdivisions")
-        .select("id, division_id, slug, name")
-        .order("name", { ascending: true }),
+        .select("id, division_id, slug, name, name_fr"),
     ]);
 
     if (!regions.data) return [];
 
-    // The tree is built from the counts down, not the geography down, so a level
-    // with no published listing never appears. That is what keeps the cascading
-    // selector from offering an option that leads to an empty result set.
-    const divisionsByRegion = new Map<string, GeographyDivisionOption[]>();
-    for (const division of divisions.data ?? []) {
-      const count = counts.divisions.get(division.id);
-      if (!count) continue;
-      const children = (subdivisions.data ?? [])
-        .filter((subdivision) => subdivision.division_id === division.id)
-        .flatMap((subdivision) => {
-          const subCount = counts.subdivisions.get(subdivision.id);
-          if (!subCount) return [];
-          return [
-            {
-              id: subdivision.id,
-              slug: subdivision.slug,
-              name: subdivision.name,
-              count: subCount,
-            },
-          ];
-        });
-
-      const list = divisionsByRegion.get(division.region_id) ?? [];
-      list.push({
-        id: division.id,
-        slug: division.slug,
-        name: division.name,
-        count,
-        subdivisions: children,
-      });
-      divisionsByRegion.set(division.region_id, list);
-    }
-
-    return regions.data.flatMap((region) => {
-      const count = counts.regions.get(region.id);
-      if (!count) return [];
-      return [
-        {
-          id: region.id,
-          slug: region.slug,
-          name: region.name,
-          count,
-          divisions: divisionsByRegion.get(region.id) ?? [],
-        },
-      ];
+    return buildGeographyTree({
+      locale,
+      counts,
+      regions: regions.data,
+      divisions: divisions.data ?? [],
+      subdivisions: subdivisions.data ?? [],
     });
   } catch {
     return [];

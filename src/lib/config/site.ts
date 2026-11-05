@@ -16,7 +16,7 @@ export const SITE = {
    * two are kept in step: the first entry of `emails` is `email`.
    */
   email: "kctechc@gmail.com",
-  emails: ["kctechc@gmail.com", "info@kctectc.com", "support@kctechc.com"],
+  emails: ["kctechc@gmail.com", "info@kctechc.com", "support@kctechc.com"],
   phones: ["+237 679-202-265", "656-218-651"],
   address: {
     street: "Half-Mile",
@@ -36,7 +36,7 @@ export const SITE = {
  * so the honest value is the last revision of the content those routes render.
  * Bump this when a change to any statically-listed page ships.
  */
-export const SITE_REVISION_DATE = "2026-10-04";
+export const SITE_REVISION_DATE = "2026-11-05";
 
 /**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal

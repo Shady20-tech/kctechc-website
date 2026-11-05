@@ -36,8 +36,8 @@ on conflict (code) do nothing;
 insert into public.divisions (region_id, code, name, slug)
 select r.id, d.code, d.name, d.slug
 from (values
-  ('SW', 'SW-FAKO', 'Fako', 'fako'),
-  ('SW', 'SW-MANYU', 'Manyu', 'manyu')
+  ('SW', 'SW-FAKO', 'Fako', 'fako-test'),
+  ('SW', 'SW-MANYU', 'Manyu', 'manyu-test')
 ) as d(region_code, code, name, slug)
 join public.regions r on r.code = d.region_code
 on conflict (code) do nothing;
@@ -45,9 +45,9 @@ on conflict (code) do nothing;
 insert into public.subdivisions (region_id, division_id, code, name, slug)
 select r.id, dv.id, s.code, s.name, s.slug
 from (values
-  ('SW', 'SW-FAKO', 'SW-FAKO-LIMBE', 'Limbe', 'limbe'),
-  ('SW', 'SW-FAKO', 'SW-FAKO-BUEA', 'Buea', 'buea'),
-  ('SW', 'SW-MANYU', 'SW-MANYU-MAMFE', 'Mamfe', 'mamfe')
+  ('SW', 'SW-FAKO', 'SW-FAKO-LIMBE', 'Limbe', 'limbe-test'),
+  ('SW', 'SW-FAKO', 'SW-FAKO-BUEA', 'Buea', 'buea-test'),
+  ('SW', 'SW-MANYU', 'SW-MANYU-MAMFE', 'Mamfe', 'mamfe-test')
 ) as s(region_code, division_code, code, name, slug)
 join public.regions r on r.code = s.region_code
 join public.divisions dv on dv.code = s.division_code
