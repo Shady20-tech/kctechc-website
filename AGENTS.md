@@ -1376,6 +1376,50 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   their kind from the article's bucket (`content-image`, 5 MB), and property photography is the
   largest at 10 MB — which is why it sets the editor ceiling the Server Action limit derives from.
 
+### Role assignment and the installable app (PWA)
+
+- **A super admin changes roles from `/admin/users`; the boundary is RLS, not the page guard.**
+  `changeUserRoleAction` (`src/lib/admin/role-actions.ts`) re-authorizes, validates with
+  `roleChangeSchema`, and writes with the **cookie-bound** client, so `profiles_update_super_admin`
+  (`using`/`with check` both `is_super_admin()`) is what actually refuses a lesser role. Using the
+  service-role client here would bypass the very policy that makes the boundary real.
+  `supabase/validate/80_role_change_behaviour.sql` proves it: a super admin's change lands, a
+  department admin's and a self-change are refused.
+- **`ASSIGNABLE_ROLES` is the one list, shared by the picker and the action.** It lives in
+  `src/lib/auth/role-assignment.ts` with no `"use server"` directive and no server-only import, so
+  the Client Component can read it; the action validates against the same tuple. It excludes
+  `visitor` on purpose (that models an anonymous request, not an account), and
+  `role-assignment.test.ts` asserts it is exactly `APP_ROLES` minus `visitor` and that every entry
+  has a `roleName.*` key, so the duplication cannot drift.
+- **A super admin cannot change their own role, and the database would allow it.** The check is in
+  the action because it is a lockout guard, not a privilege one: if the only super admin demotes
+  themselves no remaining account can grant the role back through the console, and recovery becomes
+  a manual SQL edit. `forbid_self_role_change` is a second line of defence for the direct-write path.
+- **The install banner must not be mounted in the root layout, and the service worker must be.**
+  A worker's scope is a directory of the origin, so `/sw.js` controls `/` and below whether or not
+  the console registers it — registration therefore belongs in the **root layout** (one place, all
+  routes) and the worker's own `NEVER_CACHE` list is what excludes `/admin`, `/api` and `/auth`.
+  The banner is the opposite: it must cover the language-neutral gateway `/` and must not float over
+  the console, which is exactly the `(site)` group layout. `pwa.test.ts` pins both placements, since
+  neither mistake errors — it just yields a console with a banner or a gateway with no install.
+- **The banner derives its locale from the pathname, not a prop.** `/` has no locale segment and
+  reading `headers()` there would turn the statically prerendered gateway dynamic (the build shows
+  `○ /`; keep it that way). `stripLocaleFromPath(usePathname())` gives the same answer on `/en`, on
+  `/fr` and on `/`, and stays correct across a client-side language switch.
+- **`window.matchMedia` does not exist in jsdom, and a component that reads it during render throws
+  rather than degrading.** `src/test/setup.ts` installs a global stub reporting "no match" — the
+  state a fresh browser is in — so `useSyncExternalStore`-based media queries work in tests. This
+  was the only change needed; the alternative of stubbing per test still failed, because the async
+  re-render flushes effects after `afterEach` tore the local stub down.
+- **The offline fallback is precached per locale (`/en/offline`, `/fr/offline`), not as `/offline`.**
+  `/offline` is rewritten to a locale by `src/proxy.ts`, so precaching it would depend on
+  redirect-following in `cache.addAll` and would pin every visitor to whichever language the proxy
+  guessed for the worker's own request. The worker picks the fallback from the failed URL's prefix.
+- **Icon dimensions in the manifest are a claim about a file, so the test reads the bytes.**
+  `pwa.test.ts` parses the PNG IHDR chunk for every declared icon and asserts the real width/height
+  equals `sizes`, because a wrong-sized icon does not error — the install prompt just never appears,
+  which is indistinguishable from "the visitor is not eligible yet".
+
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 ### DEYE brand and the acquisition-purpose field

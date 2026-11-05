@@ -1723,7 +1723,8 @@
     "electrical_admin": "Electrical administrator",
     "electrical_staff": "Electrical staff",
     "department_staff": "Department staff",
-    "customer": "Customer"
+    "customer": "Customer",
+    "visitor": "Visitor"
   },
   "adminProfile": {
     "heading": "My profile",
@@ -1989,12 +1990,32 @@
     "colEmail": "Email",
     "colRole": "Role",
     "colStatus": "Status",
-    "colPhone": "Phone",
     "statusActive": "Active",
     "statusInactive": "Inactive",
     "unassigned": "—",
     "noteHeading": "Role changes",
-    "noteBody": "Changing a role is a privileged operation that must be audited; it is performed with the role-change action that writes a system log entry, not by editing this table."
+    "noteBody": "Changing a role is a privileged operation that must be audited; it is performed with the role-change action that writes a system log entry, not by editing this table.",
+    "colChangeRole": "Change role",
+    "changeRoleLabel": "Role",
+    "saveRole": "Save role",
+    "savingRole": "Saving…",
+    "roleUpdated": "Role updated",
+    "roleErrorHeading": "Could not change role",
+    "selfNote": "You cannot change your own role.",
+    "searchLabel": "Find an account",
+    "searchPlaceholder": "Name or email address",
+    "searchSubmit": "Search",
+    "searchResults": "Results for",
+    "searchEmpty": "No account matches that name or email address.",
+    "roleErrors": {
+      "unauthenticated": "Your session has expired. Sign in again.",
+      "forbidden": "Only a super administrator may change roles.",
+      "invalid_request": "That role is not one that can be assigned.",
+      "self_role_change": "You cannot change your own role. Ask another super administrator.",
+      "not_found": "That account no longer exists.",
+      "update_failed": "The change could not be saved. Try again.",
+      "unconfigured": "The database is not connected."
+    }
   },
   "email": {
     "inquiry": {
@@ -2284,5 +2305,15 @@
     "savedSearchesCta": "View saved searches",
     "recentOrdersHeading": "Recent orders",
     "navLabel": "Your account"
+  },
+  "offline": {
+    "title": "You are offline",
+    "description": "This page could not be loaded because there is no internet connection. Reconnect and try again."
+  },
+  "pwa": {
+    "installTitle": "Install the KC Technology app",
+    "installBody": "Add this site to your home screen for one-tap access and a full-screen experience.",
+    "installAction": "Add to home screen",
+    "installDismiss": "Not now"
   }
 }

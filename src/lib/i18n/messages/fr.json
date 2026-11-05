@@ -1723,7 +1723,8 @@
     "electrical_admin": "Administrateur électricité",
     "electrical_staff": "Personnel électricité",
     "department_staff": "Personnel du département",
-    "customer": "Client"
+    "customer": "Client",
+    "visitor": "Visiteur"
   },
   "adminProfile": {
     "heading": "Mon profil",
@@ -1989,12 +1990,32 @@
     "colEmail": "E-mail",
     "colRole": "Rôle",
     "colStatus": "Statut",
-    "colPhone": "Téléphone",
     "statusActive": "Actif",
     "statusInactive": "Inactif",
     "unassigned": "—",
     "noteHeading": "Changements de rôle",
-    "noteBody": "Changer un rôle est une opération privilégiée qui doit être auditée ; elle s'effectue via l'action de changement de rôle qui écrit une entrée de journal, et non en modifiant ce tableau."
+    "noteBody": "Changer un rôle est une opération privilégiée qui doit être auditée ; elle s'effectue via l'action de changement de rôle qui écrit une entrée de journal, et non en modifiant ce tableau.",
+    "colChangeRole": "Changer le rôle",
+    "changeRoleLabel": "Rôle",
+    "saveRole": "Enregistrer le rôle",
+    "savingRole": "Enregistrement…",
+    "roleUpdated": "Rôle mis à jour",
+    "roleErrorHeading": "Impossible de changer le rôle",
+    "selfNote": "Vous ne pouvez pas modifier votre propre rôle.",
+    "searchLabel": "Rechercher un compte",
+    "searchPlaceholder": "Nom ou adresse e-mail",
+    "searchSubmit": "Rechercher",
+    "searchResults": "Résultats pour",
+    "searchEmpty": "Aucun compte ne correspond à ce nom ou à cette adresse e-mail.",
+    "roleErrors": {
+      "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+      "forbidden": "Seul un super administrateur peut modifier les rôles.",
+      "invalid_request": "Ce rôle ne peut pas être attribué.",
+      "self_role_change": "Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre super administrateur.",
+      "not_found": "Ce compte n'existe plus.",
+      "update_failed": "La modification n'a pas pu être enregistrée. Réessayez.",
+      "unconfigured": "La base de données n'est pas connectée."
+    }
   },
   "email": {
     "inquiry": {
@@ -2284,5 +2305,15 @@
     "savedSearchesCta": "Voir les recherches enregistrées",
     "recentOrdersHeading": "Commandes récentes",
     "navLabel": "Votre compte"
+  },
+  "offline": {
+    "title": "Vous êtes hors ligne",
+    "description": "Cette page n'a pas pu être chargée car il n'y a pas de connexion Internet. Reconnectez-vous et réessayez."
+  },
+  "pwa": {
+    "installTitle": "Installer l'application KC Technology",
+    "installBody": "Ajoutez ce site à votre écran d'accueil pour y accéder en un geste et profiter d'un affichage plein écran.",
+    "installAction": "Ajouter à l'écran d'accueil",
+    "installDismiss": "Plus tard"
   }
 }

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ServiceWorkerRegistration } from "@/components/layout/InstallPrompt";
 import { ThemeController } from "@/components/layout/ThemeController";
 import { fontClassNames } from "@/lib/fonts";
 import { getSiteUrl } from "@/lib/config/env";
@@ -64,6 +65,15 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }}
         />
         <ThemeController />
+        {/* Registers `public/sw.js` once, for the whole site. It belongs in the
+            root layout because a service worker's scope is a directory of the
+            origin, not a route: `/sw.js` can only control `/` and below, so it
+            covers the console whether or not the console renders a component.
+            The worker itself excludes `/admin`, `/api` and `/auth` on every
+            fetch, which is where that boundary has to live.
+
+            Nothing is rendered, so this costs the public pages no markup. */}
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

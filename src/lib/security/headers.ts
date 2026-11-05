@@ -47,7 +47,14 @@ export function buildContentSecurityPolicy(options: {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
+    // The service worker at `/sw.js` is fetched under `worker-src`, which falls
+    // back to `child-src` and then `script-src` when absent. Stated explicitly so
+    // a future narrowing of `script-src` cannot silently make the site
+    // uninstallable — the failure would be a console CSP error and no install
+    // prompt, with nothing else to go on.
+    "worker-src 'self'",
     `connect-src ${connectSources.join(" ")}`,
+    "manifest-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
