@@ -5,19 +5,24 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Settings, UserRound } from "lucide-react";
 
 import { Avatar } from "@/components/admin/Avatar";
+import { ADMIN_ACCOUNT_LINKS } from "@/lib/admin/navigation";
 import { signOutAction } from "@/lib/auth/sign-out";
 
 /**
- * Account menu for the admin top bar.
+ * Account menu for the console.
  *
- * Holds the profile link, the settings link and the sign-out control. Sign-out is
- * a form submitting a Server Action rather than a fetch, so the session cookies
- * are revoked on the server and the browser is redirected by the action — a
- * client-side `router.push` after clearing a cookie would leave the cookie in
- * place until the next request.
+ * Holds the profile link, the password link, the settings link and the sign-out
+ * control. Sign-out is a form submitting a Server Action rather than a fetch, so the
+ * session cookies are revoked on the server and the browser is redirected by the
+ * action — a client-side `router.push` after clearing a cookie would leave the
+ * cookie in place until the next request.
  *
  * The menu closes on outside click and on Escape. Both matter for keyboard users:
  * a menu that only closes by clicking its own button traps focus behind it.
+ *
+ * It is rendered from the console top bar at every width — the bar itself is
+ * `lg:hidden` on phones and `hidden lg:flex` on desktop — so a phone user gets the
+ * same one-tap sign-out a desktop user has, rather than a console they cannot leave.
  */
 export function AdminUserMenu({
   name,
@@ -58,6 +63,49 @@ export function AdminUserMenu({
     };
   }, [open]);
 
+  const itemClass =
+    "flex items-center gap-3 px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-alt";
+
+  const items = (
+    <>
+      <Link
+        role="menuitem"
+        href={ADMIN_ACCOUNT_LINKS.profile}
+        className={itemClass}
+      >
+        <UserRound aria-hidden="true" className="h-4 w-4" />
+        {labels.profile}
+      </Link>
+      <Link
+        role="menuitem"
+        href={ADMIN_ACCOUNT_LINKS.password}
+        className={itemClass}
+      >
+        <Settings aria-hidden="true" className="h-4 w-4" />
+        {labels.password}
+      </Link>
+      <Link
+        role="menuitem"
+        href={ADMIN_ACCOUNT_LINKS.settings}
+        className={itemClass}
+      >
+        <Settings aria-hidden="true" className="h-4 w-4" />
+        {labels.settings}
+      </Link>
+
+      <form action={signOutAction} className="border-t border-border">
+        <button
+          type="submit"
+          role="menuitem"
+          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50"
+        >
+          <LogOut aria-hidden="true" className="h-4 w-4" />
+          {labels.signOut}
+        </button>
+      </form>
+    </>
+  );
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -78,7 +126,7 @@ export function AdminUserMenu({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-card border border-border bg-surface shadow-lifted"
+          className="absolute right-0 z-30 mt-2 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-card border border-border bg-surface shadow-lifted"
         >
           <div className="border-b border-border px-4 py-3">
             <p className="truncate text-sm font-semibold text-ink-900">
@@ -90,41 +138,7 @@ export function AdminUserMenu({
             </p>
           </div>
 
-          <Link
-            role="menuitem"
-            href="/admin/profile"
-            className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-alt"
-          >
-            <UserRound aria-hidden="true" className="h-4 w-4" />
-            {labels.profile}
-          </Link>
-          <Link
-            role="menuitem"
-            href="/admin/account/password"
-            className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-alt"
-          >
-            <Settings aria-hidden="true" className="h-4 w-4" />
-            {labels.password}
-          </Link>
-          <Link
-            role="menuitem"
-            href="/admin/settings"
-            className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-alt"
-          >
-            <Settings aria-hidden="true" className="h-4 w-4" />
-            {labels.settings}
-          </Link>
-
-          <form action={signOutAction} className="border-t border-border">
-            <button
-              type="submit"
-              role="menuitem"
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50"
-            >
-              <LogOut aria-hidden="true" className="h-4 w-4" />
-              {labels.signOut}
-            </button>
-          </form>
+          {items}
         </div>
       ) : null}
     </div>

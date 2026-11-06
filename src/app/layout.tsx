@@ -4,6 +4,7 @@ import { ThemeController } from "@/components/layout/ThemeController";
 import { fontClassNames } from "@/lib/fonts";
 import { getSiteUrl } from "@/lib/config/env";
 import { BRAND_COLORS } from "@/lib/config/site";
+import { installPromptBootstrapScript } from "@/lib/pwa/install-prompt-script";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
 import { themeBootstrapScript } from "@/lib/theme/department-theme";
 import "./globals.css";
@@ -63,6 +64,14 @@ export default function RootLayout({
             behaviour rather than something the theme work introduced.) */}
         <script
           dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }}
+        />
+        {/* Captures `beforeinstallprompt` at parse time. Chromium can fire it
+            before hydration finishes, and the event fires once per page load, so
+            a listener registered by the install banner would miss it and the
+            banner would never appear on a slow (mobile) connection. The banner
+            adopts the captured event when it mounts. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: installPromptBootstrapScript() }}
         />
         <ThemeController />
         {/* Registers `public/sw.js` once, for the whole site. It belongs in the

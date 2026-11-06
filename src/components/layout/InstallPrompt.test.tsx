@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { createTranslator } from "@/lib/i18n/translator";
 import { INSTALL_DISMISSED_KEY } from "@/lib/hooks/use-install-prompt";
+import { INSTALL_PROMPT_GLOBAL } from "@/lib/pwa/install-prompt-script";
 
 /**
  * Install banner.
@@ -40,6 +41,9 @@ function renderBanner() {
 beforeEach(() => {
   localStorage.clear();
   pathname.mockReturnValue("/en");
+  // The bootstrap script normally owns this property; clear it so a captured
+  // event cannot leak between cases.
+  delete (window as unknown as Record<string, unknown>)[INSTALL_PROMPT_GLOBAL];
 });
 
 afterEach(() => {
@@ -124,5 +128,25 @@ describe("InstallPrompt", () => {
     expect(
       await screen.findByText(createTranslator("en").t("pwa.installTitle")),
     ).toBeTruthy();
+  });
+
+  it("adopts an install event the bootstrap captured before hydration", async () => {
+    // The regression this covers: on a slow (mobile) connection Chromium fires
+    // `beforeinstallprompt` before React hydrates, and the event fires only once
+    // per page load. The banner must pick up the event the inline bootstrap
+    // stashed, or it never appears on the platform it matters most on.
+    const event = makeInstallEvent();
+    window[INSTALL_PROMPT_GLOBAL] = event as never;
+    renderBanner();
+
+    expect(
+      await screen.findByText(createTranslator("en").t("pwa.installTitle")),
+    ).toBeTruthy();
+  });
+
+  it("does not show the banner when the bootstrap captured nothing", () => {
+    window[INSTALL_PROMPT_GLOBAL] = null;
+    renderBanner();
+    expect(screen.queryByText("Install the KC Technology app")).toBeNull();
   });
 });

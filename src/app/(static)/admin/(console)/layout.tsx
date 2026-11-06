@@ -71,7 +71,26 @@ export default async function ConsoleLayout({
 
   return (
     <div className="min-h-screen bg-surface-alt lg:flex">
-      <AdminSidebar sections={sections} labels={labels} user={user} />
+      <AdminSidebar
+        sections={sections}
+        labels={labels}
+        user={user}
+        accountMenu={
+          <AdminUserMenu
+            name={user.name}
+            email={user.email}
+            avatarUrl={user.avatarUrl}
+            labels={{
+              openMenu: t("adminNav.accountMenu"),
+              profile: t("adminNav.profile"),
+              settings: t("adminNav.settings"),
+              password: t("adminNav.password"),
+              signOut: t("adminNav.signOut"),
+              menuLabel: t(`roleName.${profile.role}`),
+            }}
+          />
+        }
+      />
 
       <div className="min-w-0 flex-1">
         <header className="hidden items-center justify-end border-b border-border bg-surface px-8 py-3 lg:flex">

@@ -36,7 +36,7 @@ export const SITE = {
  * so the honest value is the last revision of the content those routes render.
  * Bump this when a change to any statically-listed page ships.
  */
-export const SITE_REVISION_DATE = "2026-11-05";
+export const SITE_REVISION_DATE = "2026-11-06";
 
 /**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal

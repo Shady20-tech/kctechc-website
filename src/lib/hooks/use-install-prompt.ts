@@ -1,20 +1,12 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 import { useStoredValue } from "@/lib/hooks/use-client-environment";
-
-/**
- * The `beforeinstallprompt` event.
- *
- * Chromium-only and non-standard, so it is typed here rather than relied on from
- * the DOM lib. The event is single-use: it must be prompted once and then
- * discarded, which is why the hook clears it after prompting.
- */
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
+import {
+  INSTALL_PROMPT_GLOBAL,
+  type BeforeInstallPromptEvent,
+} from "@/lib/pwa/install-prompt-script";
 
 export const INSTALL_DISMISSED_KEY = "kc_pwa_install_dismissed";
 
@@ -48,6 +40,64 @@ export function useIsStandalone(): boolean {
   );
 }
 
+/**
+ * The deferred install event, as an external store.
+ *
+ * The event is held on `window` rather than in component state because the inline
+ * bootstrap script in the root layout captures it at parse time, before this
+ * module's component exists — so the window property *is* the source of truth and
+ * the store only has to read it. That also keeps the value out of an effect: a
+ * `setState` in an effect to adopt the captured event trips
+ * `react-hooks/set-state-in-effect`, and `useSyncExternalStore` gives the same
+ * result with a defined server snapshot.
+ *
+ * The snapshot returns the event object itself, so its identity is stable across
+ * calls and React's `Object.is` comparison behaves correctly.
+ */
+const installPromptListeners = new Set<() => void>();
+
+function emitInstallPromptChange() {
+  for (const listener of installPromptListeners) listener();
+}
+
+function subscribeInstallPrompt(onChange: () => void): () => void {
+  installPromptListeners.add(onChange);
+
+  const onBeforeInstall = (event: Event) => {
+    // Prevent the browser's own mini-infobar so the in-page banner is the only
+    // prompt; without this the visitor sees two.
+    event.preventDefault();
+    window[INSTALL_PROMPT_GLOBAL] = event as BeforeInstallPromptEvent;
+    emitInstallPromptChange();
+  };
+  const onInstalled = () => {
+    window[INSTALL_PROMPT_GLOBAL] = null;
+    emitInstallPromptChange();
+  };
+
+  window.addEventListener("beforeinstallprompt", onBeforeInstall);
+  window.addEventListener("appinstalled", onInstalled);
+  return () => {
+    installPromptListeners.delete(onChange);
+    window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+    window.removeEventListener("appinstalled", onInstalled);
+  };
+}
+
+function getInstallPromptSnapshot(): BeforeInstallPromptEvent | null {
+  return window[INSTALL_PROMPT_GLOBAL] ?? null;
+}
+
+/** No event exists on the server, and the first client render must agree. */
+function getInstallPromptServerSnapshot(): BeforeInstallPromptEvent | null {
+  return null;
+}
+
+function clearInstallPrompt() {
+  window[INSTALL_PROMPT_GLOBAL] = null;
+  emitInstallPromptChange();
+}
+
 export type InstallPromptState = {
   /** True when the browser has offered an install prompt we have not used yet. */
   canInstall: boolean;
@@ -75,29 +125,13 @@ export type InstallPromptState = {
  * or who is already running the installed app, sees nothing.
  */
 export function useInstallPrompt(): InstallPromptState {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
-    null,
+  const deferred = useSyncExternalStore(
+    subscribeInstallPrompt,
+    getInstallPromptSnapshot,
+    getInstallPromptServerSnapshot,
   );
   const dismissed = useStoredValue(INSTALL_DISMISSED_KEY) === "1";
   const standalone = useIsStandalone();
-
-  useEffect(() => {
-    const onBeforeInstall = (event: Event) => {
-      // Prevent the browser's own mini-infobar so the in-page banner is the only
-      // prompt; without this the visitor sees two.
-      event.preventDefault();
-      setDeferred(event as BeforeInstallPromptEvent);
-    };
-
-    const onInstalled = () => setDeferred(null);
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, []);
 
   return {
     canInstall: Boolean(deferred) && !dismissed && !standalone,
@@ -107,7 +141,7 @@ export function useInstallPrompt(): InstallPromptState {
       // The event is single-use: Chromium will not fire it again for this page
       // load, so holding it would leave a button that silently does nothing.
       await deferred.userChoice;
-      setDeferred(null);
+      clearInstallPrompt();
     },
     dismiss: () => {
       try {

@@ -1452,6 +1452,51 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 
 See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
+### Console drawer navigation, and the install-prompt hydration race
+
+- **A `fixed` backdrop that is a later sibling of the panel it is meant to sit behind wins the
+  `z-index` tie and swallows every tap.** `AdminSidebar`'s mobile backdrop was `fixed inset-0 z-10`
+  while the `<aside>` was `position: static, z-index: auto`; a static element is painted in the
+  same layer as the backdrop, and the backdrop (later in DOM order) won. `document.elementFromPoint`
+  at the centre of the "CRM" link returned the backdrop button, so every tap ran `setOpen(false)`
+  and nothing navigated — on both admin and staff dashboards, since they share this shell. The fix
+  is a real stacking order: the mobile bar and the panel are `relative z-10`, the backdrop is
+  `fixed inset-0 z-0`. **When a backdrop is a sibling rather than an ancestor, check the panel's
+  computed `position` and `z-index`, not just the backdrop's** — the backdrop looked correct in
+  isolation. `AdminSidebar.test.tsx` asserts the panel's `z-*` is greater than the backdrop's, which
+  is the property that actually failed.
+- **The mobile console had no sign-out at all.** The account menu lives in the top bar, which was
+  `hidden lg:flex`, so below `lg` a signed-in phone user had no profile link and no way to sign out.
+  The fix renders the *same* `AdminUserMenu` dropdown in a second top bar that is `lg:hidden`, so a
+  phone gets the identical one-tap menu a desktop user has — rather than an inline list buried at
+  the bottom of the drawer, which is what a first attempt did. Two bars, one component: do not give
+  the menu a second renderer (`variant="inline"`) that can drift from the dropdown. The menu is the
+  **last** child of the mobile bar so its `absolute right-0` panel aligns to the bar's right edge;
+  with the toggle after it, a 16rem panel overflowed the viewport by 4px at 320px. It also carries
+  `max-w-[calc(100vw-1rem)]` so no future width can push it off screen.
+- **An account-menu href is a link like any other, and nothing was checking it.** "Change password"
+  pointed at `/admin/account/password`, a route that has never existed (the form renders on
+  `/admin/profile` under `#password-heading`), so it 404'd. `navigation.test.ts` already resolves
+  every `ADMIN_NAV` href against the file tree, but the account-menu hrefs were hardcoded inside the
+  `"use client"` component where no test could see them. They now live in `ADMIN_ACCOUNT_LINKS` in
+  the nav model, and a second assertion resolves them the same way (stripping any `#fragment`). The
+  regression was proven by pointing the constant back at the dead route and watching the test fail.
+- **`beforeinstallprompt` can fire before React hydrates, and it fires once per page load.** On a
+  throttled mobile profile Chromium dispatched it at ~421ms while the hook's listener was only
+  registered at ~442ms, so the event was lost and the banner never appeared on mobile (desktop
+  hydrated first, which is why it looked desktop-only). A tiny inline script in the root layout now
+  subscribes at parse time and stashes the event on `window.__kcInstallPrompt`; the hook adopts it
+  via `useSyncExternalStore`. `installPromptBootstrapScript` lives in `src/lib/pwa/install-prompt-script.ts`
+  (a leaf module), **not** in the `"use client"` hook module: Next rejects calling a `"use client"`
+  export from a Server Component with "Attempted to call … from the server but … is on the client".
+  `InstallPrompt.test.tsx` covers adopting a pre-hydration event.
+- **`react-hooks/set-state-in-effect` rejects adopting the captured event with a mount `setState`.**
+  The window property is genuinely external state, so the event is read through
+  `useSyncExternalStore` (with the subscribe function attaching the `beforeinstallprompt` /
+  `appinstalled` listeners) — the same pattern the repo already uses for `localStorage` and
+  `matchMedia`. It also gives a defined server snapshot (`null`), so the server and first client
+  render agree.
+
 ### DEYE brand and the acquisition-purpose field
 
 - **DEYE is the third Electrical Services brand partner**, alongside SAKO POWER (solar

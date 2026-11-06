@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ADMIN_ACCOUNT_LINKS,
   ADMIN_NAV,
   ADMIN_NAV_ICON_KEYS,
   isNavItemActive,
@@ -189,6 +190,21 @@ describe("every nav destination resolves to a real route", () => {
         const page = path.join(CONSOLE_ROOT, relative, "page.tsx");
         if (!existsSync(page)) missing.push(`${item.href} -> ${page}`);
       }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("has a page file for every account-menu destination", () => {
+    // The account menu's hrefs are hardcoded links like the nav's, so they need
+    // the same guard — `/admin/account/password` was a dead link until it was
+    // moved into this model and covered here. A `#fragment` addresses an element
+    // on the route, so only the path part is resolved against the file tree.
+    const missing: string[] = [];
+    for (const href of Object.values(ADMIN_ACCOUNT_LINKS)) {
+      const route = href.split("#")[0]!;
+      const relative = route.replace(/^\/admin/, "") || "/";
+      const page = path.join(CONSOLE_ROOT, relative, "page.tsx");
+      if (!existsSync(page)) missing.push(`${href} -> ${page}`);
     }
     expect(missing).toEqual([]);
   });

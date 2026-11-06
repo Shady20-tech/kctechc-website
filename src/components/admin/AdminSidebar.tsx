@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Activity,
   BarChart3,
@@ -67,11 +67,19 @@ export function AdminSidebar({
   sections,
   labels,
   user,
+  accountMenu,
 }: {
   sections: readonly AdminNavSectionClient[];
   /** Fully resolved labels, keyed by the nav entry's `labelKey`. */
   labels: Record<string, string>;
   user: { name: string; email: string; role: string; avatarUrl: string | null };
+  /**
+   * The account menu, rendered by the layout so it is one component rather than
+   * two. It sits in the mobile top bar beside the drawer toggle, mirroring the
+   * desktop header, so a signed-in phone user can open their profile or sign out
+   * in one tap instead of hunting inside the drawer.
+   */
+  accountMenu: ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -113,33 +121,46 @@ export function AdminSidebar({
 
   return (
     <>
-      {/* Mobile bar. */}
-      <div className="flex items-center justify-between border-b border-ink-700 bg-ink-950 px-4 py-3 lg:hidden">
+      {/* Mobile bar. `relative z-20` keeps it, and the account dropdown it
+          contains, above the drawer panel (`z-10`) and the backdrop (`z-0`), so
+          the toggle, the avatar and every nav link stay tappable while the
+          drawer is open. */}
+      <div className="relative z-20 flex items-center justify-between border-b border-ink-700 bg-ink-950 px-4 py-3 lg:hidden">
         <p className="font-display text-base font-bold text-white">
           {labels.consoleName}
         </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/10"
-          aria-expanded={open}
-          aria-controls="admin-sidebar"
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? (
-            <X aria-hidden="true" className="h-5 w-5" />
-          ) : (
-            <Menu aria-hidden="true" className="h-5 w-5" />
-          )}
-          <span className="visually-hidden">
-            {open ? labels.closeMenu : labels.openMenu}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/10"
+            aria-expanded={open}
+            aria-controls="admin-sidebar"
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? (
+              <X aria-hidden="true" className="h-5 w-5" />
+            ) : (
+              <Menu aria-hidden="true" className="h-5 w-5" />
+            )}
+            <span className="visually-hidden">
+              {open ? labels.closeMenu : labels.openMenu}
+            </span>
+          </Button>
+          {/* Last, so the dropdown anchored to it opens flush with the bar's
+              right edge rather than leaving the toggle's width as dead space —
+              at 320px that difference is what keeps a 16rem panel on screen. */}
+          {accountMenu}
+        </div>
       </div>
 
       <aside
         id="admin-sidebar"
-        className={`${open ? "block" : "hidden"} bg-ink-950 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-y-auto`}
+        className={`${
+          open
+            ? "relative z-10 block max-h-[calc(100dvh-4rem)] overflow-y-auto"
+            : "hidden"
+        } bg-ink-950 lg:sticky lg:top-0 lg:z-auto lg:block lg:h-screen lg:max-h-none lg:w-64 lg:shrink-0 lg:overflow-y-auto`}
       >
         <div className="flex h-full flex-col p-4">
           <Link
@@ -171,12 +192,17 @@ export function AdminSidebar({
         </div>
       </aside>
 
-      {/* Backdrop for the mobile drawer. */}
+      {/* Backdrop for the mobile drawer.
+          `z-0` is deliberate: it is a positive layer that covers the page
+          content behind the open drawer, while the bar and the panel carry
+          `z-10` so they paint above it. As a sibling at `z-10` it would tie with
+          the panel, win on DOM order (it is later), and swallow every tap — the
+          drawer closed and nothing navigated. */}
       {open ? (
         <button
           type="button"
           aria-label={labels.closeMenu}
-          className="fixed inset-0 z-10 bg-ink-950/40 lg:hidden"
+          className="fixed inset-0 z-0 bg-ink-950/40 lg:hidden"
           onClick={() => setOpen(false)}
         />
       ) : null}

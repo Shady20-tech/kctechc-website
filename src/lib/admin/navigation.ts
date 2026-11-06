@@ -219,6 +219,21 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
 ];
 
 /**
+ * The account menu's destinations, beside the nav model for the same reason.
+ *
+ * These live here rather than inline in `AdminUserMenu` so the route-existence
+ * test can reach them: `/admin/account/password` shipped as a dead link precisely
+ * because these hrefs were hardcoded inside a Client Component where no test could
+ * see them. The password entry is an in-page anchor into the profile page, which
+ * is where the form actually renders.
+ */
+export const ADMIN_ACCOUNT_LINKS = {
+  profile: "/admin/profile",
+  password: "/admin/profile#password-heading",
+  settings: "/admin/settings",
+} as const;
+
+/**
  * The nav sections a given role may see, with empty sections removed.
  *
  * Removing an empty section (rather than rendering a heading with no items) is
