@@ -940,7 +940,22 @@
     "notFoundDescription": "The page you requested may have moved or no longer exists.",
     "serverErrorTitle": "Something went wrong on our side",
     "serverErrorDescription": "The page could not be loaded. Please try again.",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "tooLong": "This value is too long.",
+    "tooShort": "This value is too short.",
+    "required": "This field is required.",
+    "invalidPhone": "Enter a valid phone number.",
+    "invalidCountryCode": "Enter a two-letter country code.",
+    "invalid": "This value is not valid.",
+    "write_failed": "We could not save your changes. Please try again.",
+    "unauthenticated": "Please sign in to continue.",
+    "unconfigured": "This feature is not available right now.",
+    "rate_limited": "Too many attempts. Please wait a moment and try again.",
+    "already_member": "You already hold this capability.",
+    "forbidden": "You do not have permission to do that.",
+    "invalid_decision": "That decision is not recognised.",
+    "notes_required": "A reason is required for this decision.",
+    "invalid_type": "That capability is not recognised."
   },
   "services": {
     "metaTitle": "Services",
@@ -1712,7 +1727,8 @@
     "profile": "My profile",
     "password": "Change password",
     "signOut": "Sign out",
-    "work": "Work Done"
+    "work": "Work Done",
+    "memberships": "Memberships"
   },
   "roleName": {
     "super_admin": "Super administrator",
@@ -2304,7 +2320,55 @@
     "savedSearchesBody": "Searches you saved so you can reopen the same listings view.",
     "savedSearchesCta": "View saved searches",
     "recentOrdersHeading": "Recent orders",
-    "navLabel": "Your account"
+    "navLabel": "Your account",
+    "membership": {
+      "heading": "Your capabilities",
+      "intro": "Capabilities let you act on the Real Estate marketplace. They are separate from your account: holding one does not change your role, and you can hold both.",
+      "typeLabel": {
+        "landlord": "Landlord",
+        "agent": "Agent"
+      },
+      "typeBody": {
+        "landlord": "List and manage property you own on the marketplace.",
+        "agent": "Act for property owners and manage listings on their behalf."
+      },
+      "status": {
+        "pending_kyc": "Awaiting identity check",
+        "pending_review": "Under review",
+        "approved": "Approved",
+        "rejected": "Not approved",
+        "changes_requested": "More information needed",
+        "suspended": "Suspended"
+      },
+      "activeBadge": "Active",
+      "activeHint": "This capability is active on your account.",
+      "pendingHint": "Your application is with our team. We will update this page when it is reviewed.",
+      "suspendedHint": "A staff member suspended this capability. Contact us if you believe this is a mistake.",
+      "reviewerNote": "Reviewer note",
+      "suspendedReason": "Reason",
+      "kycLabel": "Identity reference (optional)",
+      "kycHint": "If you completed an identity check, its reference helps us match your application.",
+      "notesLabel": "Anything we should know (optional)",
+      "apply": "Apply",
+      "applying": "Submitting…",
+      "applicationReceived": "Your application was received and is now under review."
+    },
+    "residencyHeading": "Residency and contact",
+    "residencyIntro": "Where you are based, and how we reach you. A Cameroon region is only asked for residents of Cameroon.",
+    "nameLabel": "Full name",
+    "phoneLabel": "Phone number",
+    "phoneHint": "Include the country code, for example +237 679-202-265.",
+    "countryLabel": "Country of residence",
+    "countryCodeLabel": "Country code",
+    "countryCodeHint": "Two letters, for example CM for Cameroon.",
+    "cityLabel": "City or locality",
+    "regionLabel": "Region",
+    "regionHint": "The region you live in.",
+    "regionPlaceholder": "Select a region",
+    "permanentResidencyLabel": "I am a permanent resident of my country of residence",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "updated": "Your details were saved."
   },
   "offline": {
     "title": "You are offline",
@@ -2315,5 +2379,26 @@
     "installBody": "Add this site to your home screen for one-tap access and a full-screen experience.",
     "installAction": "Add to home screen",
     "installDismiss": "Not now"
+  },
+  "adminMemberships": {
+    "navLabel": "Memberships",
+    "heading": "Membership applications",
+    "intro": "Applications from customers who want to list property as a landlord or act as an agent. Approving one grants the capability; it does not change the applicant's role.",
+    "empty": "There are no applications awaiting review.",
+    "unnamedApplicant": "Unnamed applicant",
+    "kycReference": "Identity reference",
+    "previousNotes": "Previous note",
+    "decisionLabel": "Decision",
+    "decisionApprove": "Approve",
+    "decisionReject": "Reject",
+    "decisionRequestChanges": "Request more information",
+    "decisionSuspend": "Suspend",
+    "decisionReinstate": "Reinstate",
+    "notesLabel": "Reason or note",
+    "notesHint": "Optional for an approval.",
+    "notesRequiredHint": "Required: the applicant will see this.",
+    "save": "Record decision",
+    "saving": "Recording…",
+    "decisionSaved": "The decision was recorded."
   }
 }

@@ -60,7 +60,10 @@ export type SubdivisionRow = GeographyRow & { division_id: string };
  * keeps a level visible if a translation is ever missing, rather than rendering
  * an option with no label.
  */
-function localize(row: GeographyRow, locale: Locale): string {
+export function localizeGeographyName(
+  row: Pick<GeographyRow, "name" | "name_fr">,
+  locale: Locale,
+): string {
   return locale === "fr" ? (row.name_fr ?? row.name) : row.name;
 }
 
@@ -101,7 +104,7 @@ export function buildGeographyTree(input: {
     list.push({
       id: subdivision.id,
       slug: subdivision.slug,
-      name: localize(subdivision, locale),
+      name: localizeGeographyName(subdivision, locale),
       count: counts.subdivisions.get(subdivision.id) ?? 0,
     });
     subdivisionsByDivision.set(subdivision.division_id, list);
@@ -113,7 +116,7 @@ export function buildGeographyTree(input: {
     list.push({
       id: division.id,
       slug: division.slug,
-      name: localize(division, locale),
+      name: localizeGeographyName(division, locale),
       count: counts.divisions.get(division.id) ?? 0,
       subdivisions: (subdivisionsByDivision.get(division.id) ?? []).sort(
         byName,
@@ -125,7 +128,7 @@ export function buildGeographyTree(input: {
   return regions.map((region) => ({
     id: region.id,
     slug: region.slug,
-    name: localize(region, locale),
+    name: localizeGeographyName(region, locale),
     count: counts.regions.get(region.id) ?? 0,
     divisions: (divisionsByRegion.get(region.id) ?? []).sort(byName),
   }));

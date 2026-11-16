@@ -940,7 +940,22 @@
     "notFoundDescription": "La page demandée a peut-être été déplacée ou n'existe plus.",
     "serverErrorTitle": "Une erreur est survenue de notre côté",
     "serverErrorDescription": "La page n'a pas pu être chargée. Veuillez réessayer.",
-    "generic": "Une erreur est survenue. Veuillez réessayer."
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "tooLong": "Cette valeur est trop longue.",
+    "tooShort": "Cette valeur est trop courte.",
+    "required": "Ce champ est obligatoire.",
+    "invalidPhone": "Saisissez un numéro de téléphone valide.",
+    "invalidCountryCode": "Saisissez un code de pays à deux lettres.",
+    "invalid": "Cette valeur n'est pas valide.",
+    "write_failed": "Nous n'avons pas pu enregistrer vos modifications. Veuillez réessayer.",
+    "unauthenticated": "Veuillez vous connecter pour continuer.",
+    "unconfigured": "Cette fonctionnalité n'est pas disponible pour le moment.",
+    "rate_limited": "Trop de tentatives. Veuillez patienter puis réessayer.",
+    "already_member": "Vous détenez déjà cette habilitation.",
+    "forbidden": "Vous n'êtes pas autorisé à effectuer cette action.",
+    "invalid_decision": "Cette décision n'est pas reconnue.",
+    "notes_required": "Un motif est requis pour cette décision.",
+    "invalid_type": "Cette habilitation n'est pas reconnue."
   },
   "services": {
     "metaTitle": "Services",
@@ -1712,7 +1727,8 @@
     "profile": "Mon profil",
     "password": "Changer le mot de passe",
     "signOut": "Se déconnecter",
-    "work": "Réalisations"
+    "work": "Réalisations",
+    "memberships": "Habilitations"
   },
   "roleName": {
     "super_admin": "Super administrateur",
@@ -2304,7 +2320,55 @@
     "savedSearchesBody": "Les recherches que vous avez enregistrées pour rouvrir la même vue d'annonces.",
     "savedSearchesCta": "Voir les recherches enregistrées",
     "recentOrdersHeading": "Commandes récentes",
-    "navLabel": "Votre compte"
+    "navLabel": "Votre compte",
+    "membership": {
+      "heading": "Vos habilitations",
+      "intro": "Les habilitations vous permettent d'agir sur la place de marché Immobilier. Elles sont distinctes de votre compte : en détenir une ne change pas votre rôle, et vous pouvez détenir les deux.",
+      "typeLabel": {
+        "landlord": "Propriétaire",
+        "agent": "Agent"
+      },
+      "typeBody": {
+        "landlord": "Publier et gérer les biens que vous possédez sur la place de marché.",
+        "agent": "Agir pour le compte de propriétaires et gérer des annonces en leur nom."
+      },
+      "status": {
+        "pending_kyc": "Vérification d'identité en attente",
+        "pending_review": "En cours d'examen",
+        "approved": "Approuvée",
+        "rejected": "Non approuvée",
+        "changes_requested": "Informations complémentaires requises",
+        "suspended": "Suspendue"
+      },
+      "activeBadge": "Active",
+      "activeHint": "Cette habilitation est active sur votre compte.",
+      "pendingHint": "Votre demande est en cours de traitement. Cette page sera mise à jour après examen.",
+      "suspendedHint": "Un membre de l'équipe a suspendu cette habilitation. Contactez-nous si vous pensez qu'il s'agit d'une erreur.",
+      "reviewerNote": "Note du réviseur",
+      "suspendedReason": "Motif",
+      "kycLabel": "Référence d'identité (facultatif)",
+      "kycHint": "Si vous avez effectué une vérification d'identité, sa référence nous aide à associer votre demande.",
+      "notesLabel": "Informations utiles (facultatif)",
+      "apply": "Faire une demande",
+      "applying": "Envoi…",
+      "applicationReceived": "Votre demande a été reçue et est en cours d'examen."
+    },
+    "residencyHeading": "Résidence et contact",
+    "residencyIntro": "Votre lieu de résidence et la façon de vous joindre. La région du Cameroun n'est demandée qu'aux résidents du Cameroun.",
+    "nameLabel": "Nom complet",
+    "phoneLabel": "Numéro de téléphone",
+    "phoneHint": "Indiquez l'indicatif du pays, par exemple +237 679-202-265.",
+    "countryLabel": "Pays de résidence",
+    "countryCodeLabel": "Code du pays",
+    "countryCodeHint": "Deux lettres, par exemple CM pour le Cameroun.",
+    "cityLabel": "Ville ou localité",
+    "regionLabel": "Région",
+    "regionHint": "La région où vous résidez.",
+    "regionPlaceholder": "Choisir une région",
+    "permanentResidencyLabel": "Je suis résident permanent de mon pays de résidence",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "updated": "Vos informations ont été enregistrées."
   },
   "offline": {
     "title": "Vous êtes hors ligne",
@@ -2315,5 +2379,26 @@
     "installBody": "Ajoutez ce site à votre écran d'accueil pour y accéder en un geste et profiter d'un affichage plein écran.",
     "installAction": "Ajouter à l'écran d'accueil",
     "installDismiss": "Plus tard"
+  },
+  "adminMemberships": {
+    "navLabel": "Habilitations",
+    "heading": "Demandes d'habilitation",
+    "intro": "Demandes de clients souhaitant publier des biens en tant que propriétaire ou agir comme agent. Approuver une demande accorde l'habilitation ; cela ne change pas le rôle du demandeur.",
+    "empty": "Aucune demande en attente d'examen.",
+    "unnamedApplicant": "Demandeur sans nom",
+    "kycReference": "Référence d'identité",
+    "previousNotes": "Note précédente",
+    "decisionLabel": "Décision",
+    "decisionApprove": "Approuver",
+    "decisionReject": "Rejeter",
+    "decisionRequestChanges": "Demander des informations",
+    "decisionSuspend": "Suspendre",
+    "decisionReinstate": "Réintégrer",
+    "notesLabel": "Motif ou note",
+    "notesHint": "Facultatif pour une approbation.",
+    "notesRequiredHint": "Obligatoire : le demandeur verra ce texte.",
+    "save": "Enregistrer la décision",
+    "saving": "Enregistrement…",
+    "decisionSaved": "La décision a été enregistrée."
   }
 }

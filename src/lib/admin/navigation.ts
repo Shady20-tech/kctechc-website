@@ -65,6 +65,7 @@ export const ADMIN_NAV_ICON_KEYS = [
   "work",
   "listings",
   "submissions",
+  "memberships",
   "import",
   "content",
   "users",
@@ -173,6 +174,13 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         labelKey: "submissions",
         iconKey: "submissions",
         icon: FileText,
+        canSee: realEstateAdmin,
+      },
+      {
+        href: "/admin/real-estate/memberships",
+        labelKey: "memberships",
+        iconKey: "memberships",
+        icon: Users,
         canSee: realEstateAdmin,
       },
       {

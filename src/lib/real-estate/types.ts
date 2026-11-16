@@ -71,6 +71,16 @@ export type PropertyListingRecord = {
 
   regionSlug: string;
   regionName: string;
+  /**
+   * The region's French name, when the geography row carries one.
+   *
+   * Optional rather than required because a record can be assembled in a test or
+   * by a caller that did not join the column; `localizeListing` falls back to
+   * `regionName`. `toListingRecord` is the production mapper and always populates
+   * it, so a French page localizes the region the same way the region selector
+   * does.
+   */
+  regionNameFr?: string | null;
 
   locality?: string;
 

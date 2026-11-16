@@ -84,7 +84,7 @@ export default async function RealEstatePage({
 
   const [listings, regions] = await Promise.all([
     loadPublishedListings({ limit: 48 }),
-    loadListingRegionOptions(),
+    loadListingRegionOptions(resolved),
   ]);
 
   const qualified = qualifyListings(listings, resolved);

@@ -75,11 +75,20 @@ export const asPricePeriod = (value: unknown): PricePeriod =>
 /** A raw row from `property_listings`, as PostgREST returns it. */
 export type ListingRow = Record<string, unknown>;
 
-export function regionFromRow(row: ListingRow): { slug: string; name: string } {
-  const region = row.regions as { slug?: unknown; name?: unknown } | null;
+export function regionFromRow(row: ListingRow): {
+  slug: string;
+  name: string;
+  name_fr: string | null;
+} {
+  const region = row.regions as {
+    slug?: unknown;
+    name?: unknown;
+    name_fr?: unknown;
+  } | null;
   return {
     slug: asString(region?.slug) ?? "",
     name: asString(region?.name) ?? "",
+    name_fr: asString(region?.name_fr) ?? null,
   };
 }
 
@@ -112,6 +121,7 @@ export function toListingRecord(
 
     regionSlug: region.slug,
     regionName: region.name,
+    regionNameFr: region.name_fr,
     locality: asString(row.locality),
 
     title: asString(row.title) ?? "",
@@ -255,16 +265,26 @@ export function localizeListing(
   record: PropertyListingRecord,
   locale: Locale,
 ): PropertyListingRecord & { hasFallback: boolean } {
-  if (locale === "en") return { ...record, hasFallback: false };
+  // The region is a geography row, not a translatable listing field, so it is not
+  // in the overlay and is localized on every path — including the two early
+  // returns below. Doing it once here keeps the listing card and the detail page
+  // in the visitor's language without each one re-deriving it, and without it
+  // counting toward `hasFallback`: a French region name is translated content.
+  const localized: PropertyListingRecord =
+    locale === "fr" && record.regionNameFr
+      ? { ...record, regionName: record.regionNameFr }
+      : record;
 
-  const overlay = record.translations?.[locale];
+  if (locale === "en") return { ...localized, hasFallback: false };
+
+  const overlay = localized.translations?.[locale];
   if (!overlay) {
     // No translation at all: everything the listing says is in English.
     const hasAnyContent =
-      record.title.length > 0 ||
-      record.description.length > 0 ||
-      record.highlights.length > 0;
-    return { ...record, hasFallback: hasAnyContent };
+      localized.title.length > 0 ||
+      localized.description.length > 0 ||
+      localized.highlights.length > 0;
+    return { ...localized, hasFallback: hasAnyContent };
   }
 
   let hasFallback = false;
@@ -280,14 +300,14 @@ export function localizeListing(
     overlay.highlights && overlay.highlights.length > 0
       ? [...overlay.highlights]
       : (() => {
-          if (record.highlights.length > 0) hasFallback = true;
-          return record.highlights;
+          if (localized.highlights.length > 0) hasFallback = true;
+          return localized.highlights;
         })();
 
   return {
-    ...record,
-    title: text(record.title, overlay.title),
-    description: text(record.description, overlay.description),
+    ...localized,
+    title: text(localized.title, overlay.title),
+    description: text(localized.description, overlay.description),
     highlights,
     hasFallback,
   };

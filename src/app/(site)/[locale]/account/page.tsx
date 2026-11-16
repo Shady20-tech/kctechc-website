@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
+import { MembershipCard } from "@/components/account/MembershipCard";
+import { ProfileResidencyForm } from "@/components/account/ProfileResidencyForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -18,6 +20,10 @@ import {
   resolveOrderDepartments,
 } from "@/lib/orders/queries";
 import { loadSavedSearches } from "@/lib/real-estate/loaders";
+import {
+  loadCameroonRegions,
+  loadMyMembershipSummary,
+} from "@/lib/real-estate/membership-loaders";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/store/types";
 
@@ -79,13 +85,98 @@ export default async function AccountPage({
   }
 
   const orders = await listOrdersForCustomer(state.userId);
-  const orderDepartments = await resolveOrderDepartments(orders.map((o) => o.id));
+  const orderDepartments = await resolveOrderDepartments(
+    orders.map((o) => o.id),
+  );
   const savedSearches = await loadSavedSearches();
+  const memberships = await loadMyMembershipSummary();
+  const regions = await loadCameroonRegions(resolved);
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
     { name: t("account.heading"), href: `/${resolved}/account` },
   ];
+
+  // Labels are collected into a plain object because the two forms below are
+  // Client Components: a translator function cannot cross that boundary (the RSC
+  // serializer refuses it), so each client island receives strings.
+  const membershipLabels: Record<string, string> = {
+    "account.membership.typeLabel.landlord": t(
+      "account.membership.typeLabel.landlord",
+    ),
+    "account.membership.typeLabel.agent": t(
+      "account.membership.typeLabel.agent",
+    ),
+    "account.membership.typeBody.landlord": t(
+      "account.membership.typeBody.landlord",
+    ),
+    "account.membership.typeBody.agent": t("account.membership.typeBody.agent"),
+    "account.membership.status.pending_kyc": t(
+      "account.membership.status.pending_kyc",
+    ),
+    "account.membership.status.pending_review": t(
+      "account.membership.status.pending_review",
+    ),
+    "account.membership.status.approved": t(
+      "account.membership.status.approved",
+    ),
+    "account.membership.status.rejected": t(
+      "account.membership.status.rejected",
+    ),
+    "account.membership.status.changes_requested": t(
+      "account.membership.status.changes_requested",
+    ),
+    "account.membership.status.suspended": t(
+      "account.membership.status.suspended",
+    ),
+    activeBadge: t("account.membership.activeBadge"),
+    activeHint: t("account.membership.activeHint"),
+    pendingHint: t("account.membership.pendingHint"),
+    suspendedHint: t("account.membership.suspendedHint"),
+    reviewerNote: t("account.membership.reviewerNote"),
+    suspendedReason: t("account.membership.suspendedReason"),
+    kycLabel: t("account.membership.kycLabel"),
+    kycHint: t("account.membership.kycHint"),
+    notesLabel: t("account.membership.notesLabel"),
+    apply: t("account.membership.apply"),
+    applying: t("account.membership.applying"),
+    applicationReceived: t("account.membership.applicationReceived"),
+    "errors.write_failed": t("errors.write_failed"),
+    "errors.unauthenticated": t("errors.unauthenticated"),
+    "errors.unconfigured": t("errors.unconfigured"),
+    "errors.rate_limited": t("errors.rate_limited"),
+    "errors.already_member": t("errors.already_member"),
+    "errors.invalid_type": t("errors.invalid_type"),
+    "errors.invalid": t("errors.invalid"),
+  };
+
+  const residencyLabels: Record<string, string> = {
+    residencyHeading: t("account.residencyHeading"),
+    residencyIntro: t("account.residencyIntro"),
+    nameLabel: t("account.nameLabel"),
+    phoneLabel: t("account.phoneLabel"),
+    phoneHint: t("account.phoneHint"),
+    countryLabel: t("account.countryLabel"),
+    countryCodeLabel: t("account.countryCodeLabel"),
+    countryCodeHint: t("account.countryCodeHint"),
+    cityLabel: t("account.cityLabel"),
+    regionLabel: t("account.regionLabel"),
+    regionHint: t("account.regionHint"),
+    regionPlaceholder: t("account.regionPlaceholder"),
+    permanentResidencyLabel: t("account.permanentResidencyLabel"),
+    save: t("account.save"),
+    saving: t("account.saving"),
+    updated: t("account.updated"),
+    "errors.required": t("errors.required"),
+    "errors.tooLong": t("errors.tooLong"),
+    "errors.tooShort": t("errors.tooShort"),
+    "errors.invalidPhone": t("errors.invalidPhone"),
+    "errors.invalidCountryCode": t("errors.invalidCountryCode"),
+    "errors.invalid": t("errors.invalid"),
+    "errors.write_failed": t("errors.write_failed"),
+    "errors.unauthenticated": t("errors.unauthenticated"),
+    "errors.unconfigured": t("errors.unconfigured"),
+  };
 
   const tiles = [
     {
@@ -152,6 +243,45 @@ export default async function AccountPage({
           </Card>
         ))}
       </div>
+
+      <section className="mt-12" aria-labelledby="account-capabilities-heading">
+        <h2
+          id="account-capabilities-heading"
+          className="text-xl font-semibold text-ink-900"
+        >
+          {t("account.membership.heading")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-base text-body">
+          {t("account.membership.intro")}
+        </p>
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          {memberships.map((summary) => (
+            <MembershipCard
+              key={summary.type}
+              summary={summary}
+              labels={membershipLabels}
+            />
+          ))}
+        </div>
+      </section>
+
+      {state.profile ? (
+        <div className="mt-12">
+          <ProfileResidencyForm
+            profile={{
+              fullName: state.profile.fullName,
+              phone: state.profile.phone,
+              countryOfResidence: state.profile.countryOfResidence,
+              countryIsoCode: state.profile.countryIsoCode,
+              city: state.profile.city,
+              regionId: state.profile.regionId,
+              permanentResidency: state.profile.permanentResidency,
+            }}
+            regions={regions}
+            labels={residencyLabels}
+          />
+        </div>
+      ) : null}
 
       <section className="mt-12" aria-labelledby="account-orders-heading">
         <h2

@@ -1269,6 +1269,63 @@ export type Database = {
           },
         ];
       };
+      listing_owner_authorizations: {
+        Row: {
+          agent_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          evidence_note: string | null;
+          evidence_path: string | null;
+          granted_at: string;
+          id: string;
+          listing_id: string;
+          owner_user_id: string;
+          revoked_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          agent_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          evidence_note?: string | null;
+          evidence_path?: string | null;
+          granted_at?: string;
+          id?: string;
+          listing_id: string;
+          owner_user_id: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          agent_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          evidence_note?: string | null;
+          evidence_path?: string | null;
+          granted_at?: string;
+          id?: string;
+          listing_id?: string;
+          owner_user_id?: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "listing_owner_authorizations_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "listing_owner_authorizations_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "property_listings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       listing_private_details: {
         Row: {
           created_at: string;
@@ -2044,41 +2101,67 @@ export type Database = {
       profiles: {
         Row: {
           avatar_path: string | null;
+          city: string | null;
+          country_iso_code: string | null;
+          country_of_residence: string;
           created_at: string;
           email: string | null;
           full_name: string | null;
           id: string;
           is_active: boolean;
           locale: Database["public"]["Enums"]["locale_code"];
+          permanent_residency: boolean;
           phone: string | null;
+          profile_completed_at: string | null;
+          region_id: string | null;
           role: Database["public"]["Enums"]["user_role"];
           updated_at: string;
         };
         Insert: {
           avatar_path?: string | null;
+          city?: string | null;
+          country_iso_code?: string | null;
+          country_of_residence?: string;
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id: string;
           is_active?: boolean;
           locale?: Database["public"]["Enums"]["locale_code"];
+          permanent_residency?: boolean;
           phone?: string | null;
+          profile_completed_at?: string | null;
+          region_id?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
         };
         Update: {
           avatar_path?: string | null;
+          city?: string | null;
+          country_iso_code?: string | null;
+          country_of_residence?: string;
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id?: string;
           is_active?: boolean;
           locale?: Database["public"]["Enums"]["locale_code"];
+          permanent_residency?: boolean;
           phone?: string | null;
+          profile_completed_at?: string | null;
+          region_id?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       project_media: {
         Row: {
@@ -2154,6 +2237,8 @@ export type Database = {
           listed_on: string | null;
           listing_type: Database["public"]["Enums"]["listing_type"];
           locality: string | null;
+          managed_by: string | null;
+          owner_id: string | null;
           price_minor: number | null;
           price_on_request: boolean;
           price_period: Database["public"]["Enums"]["price_period"];
@@ -2194,6 +2279,8 @@ export type Database = {
           listed_on?: string | null;
           listing_type: Database["public"]["Enums"]["listing_type"];
           locality?: string | null;
+          managed_by?: string | null;
+          owner_id?: string | null;
           price_minor?: number | null;
           price_on_request?: boolean;
           price_period?: Database["public"]["Enums"]["price_period"];
@@ -2234,6 +2321,8 @@ export type Database = {
           listed_on?: string | null;
           listing_type?: Database["public"]["Enums"]["listing_type"];
           locality?: string | null;
+          managed_by?: string | null;
+          owner_id?: string | null;
           price_minor?: number | null;
           price_on_request?: boolean;
           price_period?: Database["public"]["Enums"]["price_period"];
@@ -2313,6 +2402,51 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      real_estate_memberships: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string;
+          id: string;
+          kyc_reference: string | null;
+          membership_type: Database["public"]["Enums"]["membership_type"];
+          review_notes: string | null;
+          status: Database["public"]["Enums"]["membership_status"];
+          suspended_at: string | null;
+          suspension_reason: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          id?: string;
+          kyc_reference?: string | null;
+          membership_type: Database["public"]["Enums"]["membership_type"];
+          review_notes?: string | null;
+          status?: Database["public"]["Enums"]["membership_status"];
+          suspended_at?: string | null;
+          suspension_reason?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          id?: string;
+          kyc_reference?: string | null;
+          membership_type?: Database["public"]["Enums"]["membership_type"];
+          review_notes?: string | null;
+          status?: Database["public"]["Enums"]["membership_status"];
+          suspended_at?: string | null;
+          suspension_reason?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       redirects: {
         Row: {
@@ -3124,6 +3258,10 @@ export type Database = {
         Returns: undefined;
       };
       current_agent_id: { Args: Record<PropertyKey, never>; Returns: string };
+      current_user_has_membership: {
+        Args: { p_type: Database["public"]["Enums"]["membership_type"] };
+        Returns: boolean;
+      };
       current_user_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["user_role"];
@@ -3376,6 +3514,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      user_has_membership: {
+        Args: {
+          p_type: Database["public"]["Enums"]["membership_type"];
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
     };
     Enums: {
       acquisition_purpose: "residence" | "investment" | "business" | "other";
@@ -3452,6 +3597,14 @@ export type Database = {
         | "rejected";
       listing_type: "sale" | "rent" | "lease" | "short_term";
       locale_code: "en" | "fr";
+      membership_status:
+        | "pending_kyc"
+        | "pending_review"
+        | "approved"
+        | "rejected"
+        | "changes_requested"
+        | "suspended";
+      membership_type: "landlord" | "agent";
       order_fulfillment: "delivery" | "pickup";
       order_status:
         | "pending_payment"
@@ -3740,6 +3893,15 @@ export const Constants = {
       ],
       listing_type: ["sale", "rent", "lease", "short_term"],
       locale_code: ["en", "fr"],
+      membership_status: [
+        "pending_kyc",
+        "pending_review",
+        "approved",
+        "rejected",
+        "changes_requested",
+        "suspended",
+      ],
+      membership_type: ["landlord", "agent"],
       order_fulfillment: ["delivery", "pickup"],
       order_status: [
         "pending_payment",

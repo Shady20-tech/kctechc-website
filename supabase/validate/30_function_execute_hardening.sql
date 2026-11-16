@@ -47,6 +47,7 @@ declare
     'is_admin', 'is_super_admin', 'is_real_estate_admin', 'is_inquiry_manager',
     'current_user_role', 'current_agent_id', 'can_access_department',
     'is_department_editor',
+    'current_user_has_membership',
     'inquiry_is_for_agent_listing',
     'gtin_is_valid', 'generate_listing_reference', 'publish_state_is_consistent',
     'immutable_array_to_string',

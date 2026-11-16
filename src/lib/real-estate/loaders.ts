@@ -13,6 +13,7 @@ import type {
 import {
   buildGeographyTree,
   emptyGeographyCounts,
+  localizeGeographyName,
   type GeographyCounts,
   type GeographyOption,
 } from "./geography";
@@ -219,7 +220,7 @@ async function loadPublicLocations(
  * table exists precisely so that cannot happen by accident.
  */
 const LISTING_SELECT =
-  "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, regions (slug, name), agent_profiles (display_name)";
+  "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, regions (slug, name, name_fr), agent_profiles (display_name)";
 
 /** Attach images, translations and public positions to a set of rows. */
 async function enrich(
@@ -752,7 +753,7 @@ export async function loadGeoLandingTarget(
     if (level === "division") {
       const { data } = await supabase
         .from("divisions")
-        .select("id, slug, name, regions (slug, name)")
+        .select("id, slug, name, regions (slug, name, name_fr)")
         .eq("slug", slug)
         .maybeSingle();
       if (!data) return null;
@@ -839,26 +840,42 @@ export async function loadPublishedListings(
   }
 }
 
-/** Region slugs that currently have at least one published listing. */
-export async function loadListingRegionOptions(): Promise<
-  readonly { slug: string; name: string; count: number }[]
-> {
+/**
+ * Region slugs that currently have at least one published listing, with the name
+ * in the visitor's locale.
+ *
+ * `name` is the English name and `name_fr` the French one, so the region cards on
+ * the Real Estate landing page show the visitor's own language. The locale is a
+ * parameter rather than read from a request, so the loader stays pure and the
+ * caller passes the resolved locale it already holds.
+ */
+export async function loadListingRegionOptions(
+  locale: Locale,
+): Promise<readonly { slug: string; name: string; count: number }[]> {
   try {
     const supabase = createPublicClient();
     if (!supabase) return [];
 
     const { data } = await supabase
       .from("property_listings")
-      .select("regions (slug, name)")
+      .select("regions (slug, name, name_fr)")
       .in("status", ["published", "under_offer", "sold", "rented"]);
 
-    const counts = new Map<string, { slug: string; name: string; count: number }>();
+    const counts = new Map<
+      string,
+      { slug: string; name: string; count: number }
+    >();
     for (const row of data ?? []) {
       const region = regionFromRow(row as ListingRow);
       if (!region.slug) continue;
       const existing = counts.get(region.slug);
       if (existing) existing.count += 1;
-      else counts.set(region.slug, { ...region, count: 1 });
+      else
+        counts.set(region.slug, {
+          slug: region.slug,
+          name: localizeGeographyName(region, locale),
+          count: 1,
+        });
     }
 
     return [...counts.values()].sort((a, b) => b.count - a.count);
@@ -995,7 +1012,7 @@ export async function loadAdminListings(
     let query = supabase
       .from("property_listings")
       .select(
-        "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, region_id, division_id, subdivision_id, regions (slug, name), agent_profiles (display_name), listing_submissions (id, status)",
+        "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, region_id, division_id, subdivision_id, regions (slug, name, name_fr), agent_profiles (display_name), listing_submissions (id, status)",
       )
       .order("updated_at", { ascending: false })
       .limit(options.limit ?? 100);
@@ -1021,7 +1038,7 @@ export async function loadAdminListingById(
     const { data } = await supabase
       .from("property_listings")
       .select(
-        "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, region_id, division_id, subdivision_id, regions (slug, name), agent_profiles (display_name), listing_submissions (id, status)",
+        "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, region_id, division_id, subdivision_id, regions (slug, name, name_fr), agent_profiles (display_name), listing_submissions (id, status)",
       )
       .eq("id", id)
       .maybeSingle();

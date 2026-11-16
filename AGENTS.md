@@ -1568,6 +1568,46 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   Do not describe the site as machine-translating EN→FR: it is not, and no provider/credentials for
   one have been chosen.
 
+### Account capabilities and listing ownership (Phase 1.1/1.2)
+
+- **`profiles.role` is authorization; a `real_estate_memberships` row is a capability, and the two
+  never imply each other.** `role` decides whether a caller reaches the internal console and is
+  never self-assigned (migration 24). A capability decides whether a customer may act as a landlord
+  or an agent on the marketplace, is additive to a buyer account, and a user may hold both. Landlord
+  and agent are separate rows (one per `(user, membership_type)`), not a role.
+- **A `with check` clause guards the destination state; it does not guard the source row.** RLS
+  `using` decides which rows a policy lets you target, and `with check` decides what the row may look
+  like afterwards. `real_estate_memberships_update_own` (migration 57) had
+  `using (user_id = auth.uid())` and a `with check` pinning the *new* status to the pending states —
+  which looked like a self-escalation guard but let the owner target their own row in ANY state and
+  move it to `pending_review`. Reproduced against the harness: an owner reset an **approved**
+  membership and cleared a staff **suspension** (with its reason), both contradicting the migration's
+  own comment ("and nothing else") and making `applyForMembershipAction`'s `already_member` branch
+  dead code. `20260101000059_membership_owner_update_scope.sql` narrows `using` to
+  `APPLICANT_SETTABLE_STATUSES ∪ REAPPLICABLE_MEMBERSHIP_STATUSES` (pending states plus
+  `rejected`/`changes_requested`); `approved` and `suspended` are reachable only through the staff
+  policy. `memberships.test.ts` now extracts the policy's `using` clause from the latest migration
+  and asserts it matches those two constants, so the drift cannot recur silently.
+- **The capability model cannot be proven by the application, only by the database.** A Server
+  Action's role check is a *message*; the boundary is the RLS policy. `supabase/validate/100_account_capabilities_behaviour.sql`
+  asserts residency constraints, the capability/authorization split, and the ownership boundary
+  (one landlord cannot reach another's listing; a non-agent cannot be recorded as manager). The
+  owner-update source-state guard is asserted inside migration 59's own `do $$ … $$` block, because
+  the harness runs the migrations before the validate scripts and a regression should abort the
+  migration rather than ship.
+- **Region names come from `regions.name_fr`, and a public surface that renders a region must join
+  it.** The English name is `name`; a French page that read `name` alone showed "Far North" among
+  otherwise-French copy. `localizeGeographyName(row, locale)` (in `geography.ts`) is the single
+  localizer; `localizeListing` applies it to `regionName` on every path (including the source-locale
+  and no-overlay early returns), and `LISTING_SELECT`/the region-options loader embed
+  `regions (slug, name, name_fr)`. The names themselves are the vetted Open Admin Data dataset
+  (CC BY 4.0), seeded by migration — never invented.
+- **The geography source is the vetted dataset, not hand-typed rows.** Migration
+  `20260101000055_cameroon_divisions_and_subdivisions.sql` carries the 10 regions, 58 divisions and
+  360 subdivisions from "Cameroon Administrative Divisions" (Open Admin Data, CC BY 4.0), and
+  re-states the ten regions rather than assuming `seed.sql` ran (migrations apply before seeding).
+  Do not add or edit an administrative row by hand: extend the dataset and re-generate.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

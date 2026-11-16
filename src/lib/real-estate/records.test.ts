@@ -358,6 +358,43 @@ describe("localizeListing", () => {
     expect(localized.hasFallback).toBe(false);
   });
 
+  it("localizes the region name on the French path", () => {
+    // The region is a geography row, not an overlay field, so it is easy to miss
+    // — and a listing card reading "Far North" on a French page is exactly the
+    // defect a French visitor would notice.
+    const localized = localizeListing(
+      record({ regionName: "Far North", regionNameFr: "Extrême-Nord" }),
+      "fr",
+    );
+    expect(localized.regionName).toBe("Extrême-Nord");
+  });
+
+  it("localizes the region even with no content translation at all", () => {
+    // The early return for a missing overlay must still localize the region.
+    const localized = localizeListing(
+      record({ regionName: "Far North", regionNameFr: "Extrême-Nord" }),
+      "fr",
+    );
+    expect(localized.regionName).toBe("Extrême-Nord");
+    expect(localized.hasFallback).toBe(true);
+  });
+
+  it("falls back to the English region name when there is no French one", () => {
+    const localized = localizeListing(
+      record({ regionName: "Far North", regionNameFr: null }),
+      "fr",
+    );
+    expect(localized.regionName).toBe("Far North");
+  });
+
+  it("leaves the English region name alone for the source locale", () => {
+    const localized = localizeListing(
+      record({ regionName: "Far North", regionNameFr: "Extrême-Nord" }),
+      "en",
+    );
+    expect(localized.regionName).toBe("Far North");
+  });
+
   it("falls back for untranslated highlights and says so", () => {
     const localized = localizeListing(
       record({
