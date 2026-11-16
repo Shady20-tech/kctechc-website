@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ACCOUNT_TYPES, accountTypeRequiresKyc, isOldEnoughToApply } from "@/lib/real-estate/kyc";
 import { emailSchema, safeRedirectPathSchema } from "./common";
 
 /** Credentials accepted by the sign-in Server Action. */
@@ -20,9 +21,21 @@ export type SignInInput = z.infer<typeof signInSchema>;
  * validating it here rather than in the component means a mismatch cannot be
  * bypassed by posting the form directly.
  *
+ * `accountType` is the brief's requirement 2.1: the user chooses Buyer /
+ * Property Seeker, Landlord / Property Owner, or Real Estate Agent. It is a
+ * DECLARATION, not a capability — `handle_new_user` stores it on the profile and
+ * nothing reads it as a permission. A landlord or agent declaration routes the
+ * user to a KYC application; it never grants one.
+ *
  * `acceptPrivacy` is `z.literal(true)`: agreeing is a precondition of creating
  * the account, so a missing or unchecked value must fail validation rather than
  * being treated as an optional courtesy.
+ *
+ * `dateOfBirth` is required, because an adult-only rule has to be checked before
+ * a person declares an intent to publish property. The 18+ rule itself is NOT
+ * enforced here — a buyer account carries no age requirement, and the form
+ * applies the age check only when the chosen account type is a capability one.
+ * The authoritative check is the KYC application's CHECK constraint.
  */
 export const signUpSchema = z
   .object({
@@ -30,12 +43,27 @@ export const signUpSchema = z
     email: emailSchema,
     password: z.string().min(8).max(200),
     confirmPassword: z.string().min(8).max(200),
+    accountType: z.enum(ACCOUNT_TYPES),
+    dateOfBirth: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "invalidDate")
+      .refine((value) => {
+        const date = new Date(value);
+        return !Number.isNaN(date.getTime()) && date.getTime() <= Date.now();
+      }, "invalidDate"),
     acceptPrivacy: z.literal(true, { message: "privacyRequired" }),
   })
   .refine((value) => value.password === value.confirmPassword, {
     message: "passwordMismatch",
     path: ["confirmPassword"],
-  });
+  })
+  .refine(
+    (value) =>
+      !accountTypeRequiresKyc(value.accountType) ||
+      isOldEnoughToApply(value.dateOfBirth),
+    { message: "underage", path: ["dateOfBirth"] },
+  );
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
@@ -103,6 +131,8 @@ export const SIGN_UP_ERROR_KEYS = {
   email: "errEmail",
   password: "errPassword",
   confirmPassword: "errConfirmPassword",
+  accountType: "errAccountType",
+  dateOfBirth: "errDateOfBirth",
   acceptPrivacy: "errPrivacy",
   form: "errorBody",
 } as const satisfies Record<string, string>;

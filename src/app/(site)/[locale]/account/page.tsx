@@ -178,6 +178,13 @@ export default async function AccountPage({
     "errors.unconfigured": t("errors.unconfigured"),
   };
 
+  // The KYC tile is offered only to an account that declared a capability — a
+  // landlord or an agent. A buyer has nothing to verify, so the tile would be a
+  // link to a page that tells them so.
+  const declared = state.profile?.declaredAccountType ?? null;
+  const kycCapability =
+    declared === "landlord" || declared === "agent" ? declared : null;
+
   const tiles = [
     {
       key: "orders",
@@ -202,7 +209,18 @@ export default async function AccountPage({
       body: t("account.savedSearchesBody"),
       cta: t("account.savedSearchesCta"),
     },
-  ] as const;
+    ...(kycCapability
+      ? [
+          {
+            key: "kyc",
+            href: `/${resolved}/account/kyc?for=${kycCapability}`,
+            title: t("account.kyc.heading"),
+            body: t("account.kyc.intro"),
+            cta: t("account.kyc.continueCta"),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <SectionBand labelledBy="account-heading">

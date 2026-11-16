@@ -185,6 +185,8 @@ export async function signUpAction(
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
+    accountType: formData.get("accountType"),
+    dateOfBirth: formData.get("dateOfBirth"),
     // An unchecked box is absent from the payload, which `z.literal(true)`
     // rejects — the correct outcome, since consent is a precondition.
     acceptPrivacy: formData.get("acceptPrivacy") === "on" ? true : undefined,
@@ -208,7 +210,16 @@ export async function signUpAction(
     options: {
       // `full_name` is read by `handle_new_user` for the profile row. It is
       // presentation data, not an authorization input.
-      data: { full_name: parsed.data.fullName },
+      //
+      // `account_type` and `date_of_birth` are recorded on the profile as a
+      // DECLARATION. `handle_new_user` never reads a `role` key — that is the
+      // escalation migration 24 closed — and neither of these can grant a
+      // capability: only an approved KYC application does that.
+      data: {
+        full_name: parsed.data.fullName,
+        account_type: parsed.data.accountType,
+        date_of_birth: parsed.data.dateOfBirth,
+      },
       emailRedirectTo: confirmationRedirectUrl(),
     },
   });

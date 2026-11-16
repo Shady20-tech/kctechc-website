@@ -104,6 +104,24 @@ export function isRealEstateAdminRole(role: AppRole): boolean {
 }
 
 /**
+ * Roles that may decide a KYC application.
+ *
+ * `super_admin` ALONE. This is deliberately narrower than
+ * `REAL_ESTATE_ADMIN_ROLES`: the brief requires that a normal real-estate
+ * administrator must not hold KYC approval permission, so an identity decision
+ * is not delegated to the tier that manages listings.
+ *
+ * Mirrors the `is_super_admin()` guard inside `approve_kyc_application` and the
+ * `kyc_*_super_admin` policies; `roles.test.ts` asserts the two agree.
+ */
+export const KYC_REVIEWER_ROLES: readonly AppRole[] = ["super_admin"];
+
+/** True when `role` may approve or reject a KYC application. */
+export function isKycReviewerRole(role: AppRole): boolean {
+  return KYC_REVIEWER_ROLES.includes(role);
+}
+
+/**
  * Department ownership. A department admin may only manage their own
  * department; `super_admin` and `department_staff` are cross-department.
  */

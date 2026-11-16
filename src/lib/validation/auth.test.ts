@@ -20,6 +20,9 @@ const VALID_SIGN_UP = {
   email: "amina@example.com",
   password: "correct-horse",
   confirmPassword: "correct-horse",
+  // A buyer account: the declaration that carries no age requirement.
+  accountType: "buyer" as const,
+  dateOfBirth: "1990-05-01",
   acceptPrivacy: true as const,
 };
 
@@ -98,6 +101,49 @@ describe("signUpSchema", () => {
     if (!result.success) {
       expect(result.error.issues[0]?.path).toEqual(["confirmPassword"]);
     }
+  });
+
+  it("records the declared account type", () => {
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      accountType: "landlord",
+    });
+    expect(result.success && result.data.accountType).toBe("landlord");
+  });
+
+  it("refuses an unknown account type", () => {
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      accountType: "super_admin",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("refuses an under-18 landlord applicant", () => {
+    // One day short of 18 at the time of the test.
+    const almost = new Date(Date.now() - 17 * 365.25 * 24 * 3600 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      accountType: "landlord",
+      dateOfBirth: almost,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("allows a buyer of any age", () => {
+    // The 18+ rule applies to applying for a capability, not to holding a buyer
+    // account, so a minor may register as a property seeker.
+    const minor = new Date(Date.now() - 15 * 365.25 * 24 * 3600 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      accountType: "buyer",
+      dateOfBirth: minor,
+    });
+    expect(result.success).toBe(true);
   });
 
   it("requires the privacy acknowledgement", () => {

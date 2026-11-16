@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Package,
   Settings,
+  ShieldCheck,
   ShoppingCart,
   Users,
 } from "lucide-react";
@@ -66,6 +67,7 @@ export const ADMIN_NAV_ICON_KEYS = [
   "listings",
   "submissions",
   "memberships",
+  "kyc",
   "import",
   "content",
   "users",
@@ -182,6 +184,17 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "memberships",
         icon: Users,
         canSee: realEstateAdmin,
+      },
+      {
+        // The KYC review queue is SUPER-ADMIN ONLY. A plain real-estate
+        // administrator is deliberately not offered it: the brief requires that
+        // a normal administrator must not hold KYC approval permission, and the
+        // `kyc_applications_*` policies refuse them at the database anyway.
+        href: "/admin/real-estate/kyc",
+        labelKey: "kyc",
+        iconKey: "kyc",
+        icon: ShieldCheck,
+        canSee: superOnly,
       },
       {
         href: "/admin/real-estate/import",

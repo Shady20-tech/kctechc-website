@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +9,11 @@ import { TextField } from "@/components/ui/Form";
 import { signUpAction } from "@/lib/auth/actions";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
+import {
+  ACCOUNT_TYPES,
+  accountTypeRequiresKyc,
+  type AccountType,
+} from "@/lib/real-estate/kyc";
 import { SIGN_UP_ERROR_KEYS, type SignUpState } from "@/lib/validation/auth";
 
 const INITIAL_STATE: SignUpState = { status: "idle" };
@@ -58,10 +63,15 @@ export function SignUpForm({
 }) {
   const t = createTranslator(locale).t;
   const [state, formAction] = useActionState(signUpAction, INITIAL_STATE);
+  const [accountType, setAccountType] = useState<AccountType>("buyer");
 
   // The privacy notice now has its own route, so the acknowledgement links
   // straight to the policy rather than to a note on the contact page.
   const privacyHref = `/${locale}/privacy`;
+
+  // Only a landlord or an agent is applying to publish property, so only those
+  // are held to the adult rule. A buyer account carries no age requirement.
+  const requiresAdult = accountTypeRequiresKyc(accountType);
 
   if (state.status === "check_email") {
     return (
@@ -111,6 +121,62 @@ export function SignUpForm({
         required
         error={errorFor("fullName")}
       />
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-ink-900">
+          {t("auth.accountTypeLegend")}
+        </legend>
+        <p className="text-xs text-muted">{t("auth.accountTypeHint")}</p>
+        <div className="mt-1 space-y-2">
+          {ACCOUNT_TYPES.map((type) => (
+            <div key={type} className="flex items-start gap-2.5">
+              <input
+                id={`accountType-${type}`}
+                name="accountType"
+                type="radio"
+                value={type}
+                checked={accountType === type}
+                onChange={() => setAccountType(type)}
+                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong"
+              />
+              <label
+                htmlFor={`accountType-${type}`}
+                className="text-sm text-body"
+              >
+                <span className="font-medium text-ink-900">
+                  {t(`auth.accountType.${type}.label`)}
+                </span>
+                <span className="block text-xs text-muted">
+                  {t(`auth.accountType.${type}.body`)}
+                </span>
+              </label>
+            </div>
+          ))}
+        </div>
+        {errors.accountType ? (
+          <p className="text-xs font-medium text-red-700">
+            {errorFor("accountType")}
+          </p>
+        ) : null}
+      </fieldset>
+
+      <div>
+        <TextField
+          id="dateOfBirth"
+          name="dateOfBirth"
+          type="date"
+          label={t("auth.dateOfBirthLabel")}
+          autoComplete="bday"
+          required
+          aria-describedby="dateOfBirth-hint"
+          error={errorFor("dateOfBirth")}
+        />
+        <p id="dateOfBirth-hint" className="mt-1 text-xs text-muted">
+          {requiresAdult
+            ? t("auth.dateOfBirthHintAdult")
+            : t("auth.dateOfBirthHintBuyer")}
+        </p>
+      </div>
 
       <TextField
         id="email"

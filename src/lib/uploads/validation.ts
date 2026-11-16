@@ -5,6 +5,8 @@ import {
   MAX_ATTACHMENT_COUNT,
   MAX_AVATAR_BYTES,
   MAX_CONTENT_IMAGE_BYTES,
+  MAX_KYC_DOCUMENT_BYTES,
+  MAX_KYC_VIDEO_BYTES,
   MAX_PRODUCT_IMAGE_BYTES,
   MAX_PROJECT_IMAGE_BYTES,
   MAX_PROPERTY_IMAGE_BYTES,
@@ -15,6 +17,8 @@ export {
   MAX_ATTACHMENT_COUNT,
   MAX_AVATAR_BYTES,
   MAX_CONTENT_IMAGE_BYTES,
+  MAX_KYC_DOCUMENT_BYTES,
+  MAX_KYC_VIDEO_BYTES,
   MAX_PRODUCT_IMAGE_BYTES,
   MAX_PROJECT_IMAGE_BYTES,
   MAX_PROPERTY_IMAGE_BYTES,
@@ -44,7 +48,9 @@ export type UploadKind =
   | "content-image"
   | "avatar"
   | "product-image"
-  | "property-image";
+  | "property-image"
+  | "kyc-document"
+  | "kyc-video";
 
 /**
  * The MIME types an attachment may have.
@@ -87,6 +93,37 @@ export const ALLOWED_AVATAR_TYPES = [
   "image/webp",
 ] as const;
 
+/**
+ * KYC documents: an identity document, a proof of address or a land title.
+ *
+ * Images plus PDF, the same conservative set as an inquiry attachment. A land
+ * title is often a scan, so PDF is essential; nothing executable and no archive
+ * is accepted, because a ZIP's declared type says nothing about its contents.
+ */
+export const ALLOWED_KYC_DOCUMENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "application/pdf",
+] as const;
+
+/**
+ * The KYC face video.
+ *
+ * Three container types, which is what a phone or a laptop browser produces:
+ * MP4 (the near-universal camera default), WebM (Chrome's `MediaRecorder`
+ * default) and QuickTime/MOV (iOS Safari). The bytes are still checked — a file
+ * is accepted only when its leading bytes match one of these containers — so a
+ * `.mp4` that is not an MP4 is refused.
+ */
+export const ALLOWED_KYC_VIDEO_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+] as const;
+
 /** Byte limit per upload kind, matching each bucket's `file_size_limit`. */
 const LIMIT_FOR_KIND: Record<UploadKind, number> = {
   attachment: MAX_ATTACHMENT_BYTES,
@@ -95,6 +132,8 @@ const LIMIT_FOR_KIND: Record<UploadKind, number> = {
   avatar: MAX_AVATAR_BYTES,
   "product-image": MAX_PRODUCT_IMAGE_BYTES,
   "property-image": MAX_PROPERTY_IMAGE_BYTES,
+  "kyc-document": MAX_KYC_DOCUMENT_BYTES,
+  "kyc-video": MAX_KYC_VIDEO_BYTES,
 };
 
 /** Accepted MIME types per upload kind. */
@@ -105,6 +144,8 @@ const TYPES_FOR_KIND: Record<UploadKind, readonly string[]> = {
   avatar: ALLOWED_AVATAR_TYPES,
   "product-image": ALLOWED_PROJECT_IMAGE_TYPES,
   "property-image": ALLOWED_PROJECT_IMAGE_TYPES,
+  "kyc-document": ALLOWED_KYC_DOCUMENT_TYPES,
+  "kyc-video": ALLOWED_KYC_VIDEO_TYPES,
 };
 
 /** The file extension to use for a detected type. Never taken from the upload. */
@@ -116,6 +157,9 @@ const EXTENSION_FOR_MIME: Record<string, string> = {
   "image/heif": "heif",
   "image/avif": "avif",
   "application/pdf": "pdf",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
 };
 
 /**
@@ -128,8 +172,10 @@ const EXTENSION_FOR_MIME: Record<string, string> = {
  *
  * HEIC/HEIF is the awkward case. It is an ISO base media file, so its header is
  * an `ftyp` box whose brand identifies the variant, and the brand sits at offset
- * 8. Only brands that denote a still image are accepted — a video file shares the
- * same box structure, and accepting any `ftyp` would let an MP4 through.
+ * 8. An MP4 and a QuickTime movie share the same box structure, so the brand is
+ * what separates a still image from a video — and each is returned as its own
+ * type, so a video is refused by the image kinds (whose allowed list excludes
+ * it) rather than being silently accepted as a photograph.
  *
  * Returns null when nothing matches, which the caller treats as a rejection. An
  * unknown type is not assumed to be safe.
@@ -166,7 +212,25 @@ export function detectMimeType(bytes: Uint8Array): string | null {
     return "application/pdf";
   }
 
-  // ISO base media (HEIC/HEIF/AVIF): box size, then "ftyp", then a brand.
+  // WebM / Matroska: the EBML header 1A 45 DF A3. The container's DocType string
+  // ("webm" or "matroska") sits in the header, so the magic alone does not
+  // distinguish them; the DocType is searched for in the first 64 bytes, and a
+  // Matroska file (which is not a web video and has no accepted extension) is
+  // refused by returning null rather than being mislabelled.
+  if (
+    bytes[0] === 0x1a &&
+    bytes[1] === 0x45 &&
+    bytes[2] === 0xdf &&
+    bytes[3] === 0xa3
+  ) {
+    const window = bytes.subarray(0, Math.min(bytes.length, 64));
+    let ascii = "";
+    for (const byte of window) ascii += String.fromCharCode(byte);
+    return ascii.includes("webm") ? "video/webm" : null;
+  }
+
+  // ISO base media (HEIC/HEIF/AVIF/MP4/QuickTime): box size, then "ftyp", then a
+  // brand.
   if (matchesAscii(bytes, 4, "ftyp")) {
     const brand = asciiAt(bytes, 8, 4);
     if (brand === null) return null;
@@ -191,8 +255,28 @@ export function detectMimeType(bytes: Uint8Array): string | null {
 
     if (brand === "mif1" || brand === "msf1") return "image/heif";
 
-    // A `ftyp` box with a video brand (isom, mp42, avc1, qt, …) is not a still
-    // image and is refused by returning null rather than being mislabelled.
+    // QuickTime, which iOS Safari's camera produces.
+    if (brand === "qt  ") return "video/quicktime";
+
+    // MP4. The brand varies by muxer, so the accepted set is the ISO base media
+    // and MP4 brands a phone or browser produces. A brand outside it (an unknown
+    // or a Matroska-in-MP4 container) returns null rather than being assumed.
+    if (
+      brand === "isom" ||
+      brand === "iso2" ||
+      brand === "iso4" ||
+      brand === "iso5" ||
+      brand === "iso6" ||
+      brand === "mp41" ||
+      brand === "mp42" ||
+      brand === "avc1" ||
+      brand === "mmp4" ||
+      brand === "M4V " ||
+      brand === "dash"
+    ) {
+      return "video/mp4";
+    }
+
     return null;
   }
 

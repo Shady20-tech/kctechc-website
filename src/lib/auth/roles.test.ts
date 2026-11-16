@@ -13,7 +13,9 @@ import {
   APP_ROLES,
   DEPARTMENT_EDITOR_ROLES,
   ELEVATED_ROLES,
+  KYC_REVIEWER_ROLES,
   REAL_ESTATE_ADMIN_ROLES,
+  isKycReviewerRole,
 } from "@/lib/auth/roles";
 
 describe("isAppRole", () => {
@@ -198,6 +200,29 @@ describe("role model matches the database", () => {
     expect(canAccessDepartment("electrical_staff", "digital-marketing")).toBe(
       false,
     );
+  });
+
+  it("KYC_REVIEWER_ROLES matches is_super_admin()", () => {
+    // The KYC decision is the narrowest privileged action in the app: the brief
+    // requires that a normal real-estate administrator must not hold it. The
+    // predicate is `is_super_admin()`, so the mirror must name exactly the role
+    // that function accepts — a second role added to either side fails here.
+    const fn = allSql.match(
+      /create or replace function public\.is_super_admin\(\)[\s\S]*?\$\$;/i,
+    );
+    const body = fn?.[0];
+    expect(body, "is_super_admin() not found").toBeDefined();
+
+    const roles: string[] = [];
+    for (const m of (body as string).matchAll(/=\s*'([^']+)'/g)) {
+      if (m[1]) roles.push(m[1]);
+    }
+
+    expect([...KYC_REVIEWER_ROLES].sort()).toEqual(roles.sort());
+    // A plain real-estate administrator is deliberately not a KYC reviewer.
+    expect(isKycReviewerRole("real_estate_admin")).toBe(false);
+    expect(isKycReviewerRole("department_staff")).toBe(false);
+    expect(isKycReviewerRole("super_admin")).toBe(true);
   });
 
   it("no new account can be provisioned with a privileged role", () => {

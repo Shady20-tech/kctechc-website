@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_ROLE, isAppRole, type AppRole } from "./roles";
+import type { AccountType } from "@/lib/real-estate/kyc";
 
 export type Profile = {
   id: string;
@@ -19,6 +20,8 @@ export type Profile = {
   regionId: string | null;
   permanentResidency: boolean;
   profileCompletedAt: string | null;
+  declaredAccountType: AccountType | null;
+  dateOfBirth: string | null;
 };
 
 export type AuthState =
@@ -52,7 +55,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const { data: profileRow } = await supabase
     .from("profiles")
     .select(
-      "id, email, full_name, role, locale, phone, avatar_path, is_active, country_of_residence, country_iso_code, city, region_id, permanent_residency, profile_completed_at",
+      "id, email, full_name, role, locale, phone, avatar_path, is_active, country_of_residence, country_iso_code, city, region_id, permanent_residency, profile_completed_at, declared_account_type, date_of_birth",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -76,6 +79,10 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
         regionId: profileRow.region_id,
         permanentResidency: profileRow.permanent_residency ?? false,
         profileCompletedAt: profileRow.profile_completed_at,
+        declaredAccountType: isAccountType(profileRow.declared_account_type)
+          ? profileRow.declared_account_type
+          : null,
+        dateOfBirth: profileRow.date_of_birth,
       }
     : null;
 
@@ -86,6 +93,11 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
     profile,
   };
 });
+
+/** True when the value is a known account-type declaration. */
+function isAccountType(value: string | null): value is AccountType {
+  return value === "buyer" || value === "landlord" || value === "agent";
+}
 
 export async function getCurrentProfile(): Promise<Profile | null> {
   const state = await getAuthState();

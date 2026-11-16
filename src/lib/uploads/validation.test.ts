@@ -46,6 +46,17 @@ function ftyp(brand: string): Uint8Array {
   return bytes;
 }
 
+/** A minimal WebM/Matroska EBML header carrying a DocType. */
+function ebml(docType: string): Uint8Array {
+  const bytes = new Uint8Array(64);
+  bytes.set([0x1a, 0x45, 0xdf, 0xa3], 0);
+  bytes.set(
+    [...docType].map((character) => character.charCodeAt(0)),
+    16,
+  );
+  return bytes;
+}
+
 /** A minimal SVG document, which must never pass as an image. */
 function svgBytes(): Uint8Array {
   const svg =
@@ -68,12 +79,37 @@ describe("detectMimeType", () => {
     expect(detectMimeType(ftyp("mif1"))).toBe("image/heif");
   });
 
-  it("refuses an ISO media file carrying a video brand", () => {
-    // A `.mp4` must not be relabelled as an image just because it has a `ftyp`
-    // box, so these brands resolve to nothing rather than to a still format.
-    expect(detectMimeType(ftyp("isom"))).toBeNull();
-    expect(detectMimeType(ftyp("mp42"))).toBeNull();
-    expect(detectMimeType(ftyp("qt  "))).toBeNull();
+  it("detects a video brand as its own type, not as an image", () => {
+    // A `.mp4` must not be relabelled as a still image just because it has a
+    // `ftyp` box. It is detected as `video/mp4` so an image kind — whose allowed
+    // list excludes video — refuses it, while the KYC video kind accepts it.
+    expect(detectMimeType(ftyp("isom"))).toBe("video/mp4");
+    expect(detectMimeType(ftyp("mp42"))).toBe("video/mp4");
+    expect(detectMimeType(ftyp("qt  "))).toBe("video/quicktime");
+  });
+
+  it("detects WebM but refuses a Matroska container", () => {
+    expect(detectMimeType(ebml("webm"))).toBe("video/webm");
+    expect(detectMimeType(ebml("matroska"))).toBeNull();
+  });
+
+  it("does not accept a video as an image kind", () => {
+    // The separation is what stops a video being stored as a photograph: the
+    // image kinds' allowed list does not contain any `video/*`.
+    expect(
+      validateUpload(ftyp("isom"), "image/jpeg", { kind: "property-image" }).ok,
+    ).toBe(false);
+  });
+
+  it("accepts a video for the KYC video kind and an image for the document kind", () => {
+    expect(
+      validateUpload(ftyp("isom"), "video/mp4", { kind: "kyc-video" }).ok,
+    ).toBe(true);
+    expect(
+      validateUpload(withHeader(PDF), "application/pdf", {
+        kind: "kyc-document",
+      }).ok,
+    ).toBe(true);
   });
 
   it("does not accept an SVG as an image", () => {

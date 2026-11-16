@@ -1219,6 +1219,59 @@ export type Database = {
           },
         ];
       };
+      listing_legal_documents: {
+        Row: {
+          byte_size: number;
+          created_at: string;
+          description: string | null;
+          detected_mime: string;
+          id: string;
+          kind: Database["public"]["Enums"]["legal_document_kind"];
+          listing_id: string;
+          original_filename: string;
+          storage_path: string;
+          uploaded_by: string | null;
+          verified_at: string | null;
+          verified_by: string | null;
+        };
+        Insert: {
+          byte_size: number;
+          created_at?: string;
+          description?: string | null;
+          detected_mime: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["legal_document_kind"];
+          listing_id: string;
+          original_filename: string;
+          storage_path: string;
+          uploaded_by?: string | null;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
+        Update: {
+          byte_size?: number;
+          created_at?: string;
+          description?: string | null;
+          detected_mime?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["legal_document_kind"];
+          listing_id?: string;
+          original_filename?: string;
+          storage_path?: string;
+          uploaded_by?: string | null;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "listing_legal_documents_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "property_listings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       listing_media: {
         Row: {
           alt_text: string;
@@ -2105,6 +2158,10 @@ export type Database = {
           country_iso_code: string | null;
           country_of_residence: string;
           created_at: string;
+          date_of_birth: string | null;
+          declared_account_type:
+            | Database["public"]["Enums"]["account_type"]
+            | null;
           email: string | null;
           full_name: string | null;
           id: string;
@@ -2123,6 +2180,10 @@ export type Database = {
           country_iso_code?: string | null;
           country_of_residence?: string;
           created_at?: string;
+          date_of_birth?: string | null;
+          declared_account_type?:
+            | Database["public"]["Enums"]["account_type"]
+            | null;
           email?: string | null;
           full_name?: string | null;
           id: string;
@@ -2141,6 +2202,10 @@ export type Database = {
           country_iso_code?: string | null;
           country_of_residence?: string;
           created_at?: string;
+          date_of_birth?: string | null;
+          declared_account_type?:
+            | Database["public"]["Enums"]["account_type"]
+            | null;
           email?: string | null;
           full_name?: string | null;
           id?: string;
@@ -2447,6 +2512,169 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      real_estate_kyc_applications: {
+        Row: {
+          country_of_residence: string;
+          created_at: string;
+          current_location: string | null;
+          date_of_birth: string;
+          decision_reason: string | null;
+          declaration_accepted_at: string | null;
+          email: string;
+          full_legal_name: string;
+          id: string;
+          id_issuing_country: string;
+          id_number_last4: string | null;
+          id_type: Database["public"]["Enums"]["kyc_id_type"];
+          internal_notes: string | null;
+          membership_type: Database["public"]["Enums"]["kyc_membership_type"];
+          phone: string;
+          residency_status: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: Database["public"]["Enums"]["kyc_status"];
+          submitted_at: string | null;
+          updated_at: string;
+          user_id: string;
+          video_consent_at: string | null;
+        };
+        Insert: {
+          country_of_residence: string;
+          created_at?: string;
+          current_location?: string | null;
+          date_of_birth: string;
+          decision_reason?: string | null;
+          declaration_accepted_at?: string | null;
+          email: string;
+          full_legal_name: string;
+          id?: string;
+          id_issuing_country: string;
+          id_number_last4?: string | null;
+          id_type: Database["public"]["Enums"]["kyc_id_type"];
+          internal_notes?: string | null;
+          membership_type: Database["public"]["Enums"]["kyc_membership_type"];
+          phone: string;
+          residency_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: Database["public"]["Enums"]["kyc_status"];
+          submitted_at?: string | null;
+          updated_at?: string;
+          user_id: string;
+          video_consent_at?: string | null;
+        };
+        Update: {
+          country_of_residence?: string;
+          created_at?: string;
+          current_location?: string | null;
+          date_of_birth?: string;
+          decision_reason?: string | null;
+          declaration_accepted_at?: string | null;
+          email?: string;
+          full_legal_name?: string;
+          id?: string;
+          id_issuing_country?: string;
+          id_number_last4?: string | null;
+          id_type?: Database["public"]["Enums"]["kyc_id_type"];
+          internal_notes?: string | null;
+          membership_type?: Database["public"]["Enums"]["kyc_membership_type"];
+          phone?: string;
+          residency_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: Database["public"]["Enums"]["kyc_status"];
+          submitted_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          video_consent_at?: string | null;
+        };
+        Relationships: [];
+      };
+      real_estate_kyc_documents: {
+        Row: {
+          application_id: string;
+          byte_size: number;
+          created_at: string;
+          detected_mime: string;
+          id: string;
+          issuing_country: string | null;
+          kind: Database["public"]["Enums"]["kyc_document_kind"];
+          note: string | null;
+          original_filename: string;
+          storage_path: string;
+        };
+        Insert: {
+          application_id: string;
+          byte_size: number;
+          created_at?: string;
+          detected_mime: string;
+          id?: string;
+          issuing_country?: string | null;
+          kind: Database["public"]["Enums"]["kyc_document_kind"];
+          note?: string | null;
+          original_filename: string;
+          storage_path: string;
+        };
+        Update: {
+          application_id?: string;
+          byte_size?: number;
+          created_at?: string;
+          detected_mime?: string;
+          id?: string;
+          issuing_country?: string | null;
+          kind?: Database["public"]["Enums"]["kyc_document_kind"];
+          note?: string | null;
+          original_filename?: string;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_kyc_documents_application_id_fkey";
+            columns: ["application_id"];
+            isOneToOne: false;
+            referencedRelation: "real_estate_kyc_applications";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      real_estate_kyc_review_events: {
+        Row: {
+          action: Database["public"]["Enums"]["kyc_review_action"];
+          actor_id: string | null;
+          application_id: string;
+          created_at: string;
+          document_id: string | null;
+          id: string;
+          note: string | null;
+        };
+        Insert: {
+          action: Database["public"]["Enums"]["kyc_review_action"];
+          actor_id?: string | null;
+          application_id: string;
+          created_at?: string;
+          document_id?: string | null;
+          id?: string;
+          note?: string | null;
+        };
+        Update: {
+          action?: Database["public"]["Enums"]["kyc_review_action"];
+          actor_id?: string | null;
+          application_id?: string;
+          created_at?: string;
+          document_id?: string | null;
+          id?: string;
+          note?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_kyc_review_events_application_id_fkey";
+            columns: ["application_id"];
+            isOneToOne: false;
+            referencedRelation: "real_estate_kyc_applications";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       redirects: {
         Row: {
@@ -3312,7 +3540,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      approve_kyc_application: {
+        Args: {
+          p_application_id: string;
+          p_note?: string;
+          p_reviewer: string;
+        };
+        Returns: string;
+      };
       is_super_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_service_role: { Args: Record<PropertyKey, never>; Returns: boolean };
       listing_geography_counts: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -3523,6 +3760,40 @@ export type Database = {
       };
     };
     Enums: {
+      account_type: "buyer" | "landlord" | "agent";
+      kyc_document_kind:
+        | "id_front"
+        | "id_back"
+        | "face_video"
+        | "proof_of_address"
+        | "other";
+      kyc_id_type:
+        | "national_id_card"
+        | "international_passport"
+        | "other_government_id";
+      kyc_membership_type: "landlord" | "agent";
+      kyc_review_action:
+        | "submitted"
+        | "review_started"
+        | "document_viewed"
+        | "approved"
+        | "rejected"
+        | "changes_requested"
+        | "note_added";
+      kyc_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "changes_requested";
+      legal_document_kind:
+        | "land_title"
+        | "ownership_certificate"
+        | "sale_agreement"
+        | "agency_mandate"
+        | "owner_authorization"
+        | "other";
       acquisition_purpose: "residence" | "investment" | "business" | "other";
       appointment_status: "requested" | "confirmed" | "completed" | "cancelled";
       appointment_window: "morning" | "afternoon" | "anytime";
@@ -3812,6 +4083,45 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["buyer", "landlord", "agent"],
+      kyc_document_kind: [
+        "id_front",
+        "id_back",
+        "face_video",
+        "proof_of_address",
+        "other",
+      ],
+      kyc_id_type: [
+        "national_id_card",
+        "international_passport",
+        "other_government_id",
+      ],
+      kyc_membership_type: ["landlord", "agent"],
+      kyc_review_action: [
+        "submitted",
+        "review_started",
+        "document_viewed",
+        "approved",
+        "rejected",
+        "changes_requested",
+        "note_added",
+      ],
+      kyc_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "changes_requested",
+      ],
+      legal_document_kind: [
+        "land_title",
+        "ownership_certificate",
+        "sale_agreement",
+        "agency_mandate",
+        "owner_authorization",
+        "other",
+      ],
       acquisition_purpose: ["residence", "investment", "business", "other"],
       appointment_status: ["requested", "confirmed", "completed", "cancelled"],
       appointment_window: ["morning", "afternoon", "anytime"],

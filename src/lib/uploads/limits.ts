@@ -33,6 +33,19 @@ export const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 /** The largest property image accepted, matching the `property-media` bucket. */
 export const MAX_PROPERTY_IMAGE_BYTES = 10 * 1024 * 1024;
 
+/** The largest KYC document (identity document, land title) accepted. */
+export const MAX_KYC_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+/**
+ * The largest KYC face video accepted.
+ *
+ * A short phone recording of a person speaking their name is a few megabytes;
+ * 25 MiB is generous enough for a 60-second clip from a mid-range Android device
+ * without inviting a full-length upload. It is also the `kyc-documents` bucket's
+ * `file_size_limit`, so the bucket and the application agree.
+ */
+export const MAX_KYC_VIDEO_BYTES = 25 * 1024 * 1024;
+
 /** How many files one quote request may attach. */
 export const MAX_ATTACHMENT_COUNT = 5;
 
@@ -60,14 +73,17 @@ export const MAX_EDITOR_IMAGE_BYTES = Math.max(
  * the default a phone photograph of 2-8 MB was rejected with no message the
  * editor could act on, and the feature looked like it silently did nothing.
  *
- * The limit is the largest accepted image plus a margin for the multipart
+ * The limit is the largest accepted upload plus a margin for the multipart
  * boundaries, part headers and field metadata that ride alongside the bytes
- * (Next's own guidance is 10-20 KB of overhead for a typical upload). The
- * per-kind checks in `validation.ts` remain the real control on what is stored;
- * this only lets a legitimate file reach them.
+ * (Next's own guidance is 10-20 KB of overhead for a typical upload). The KYC
+ * face video is now the ceiling: a video posted through the KYC Server Action is
+ * larger than any image, so the derived value has to clear `MAX_KYC_VIDEO_BYTES`
+ * or the whole "record a face video" feature fails before the action runs — the
+ * exact silent failure this constant was introduced to fix. The per-kind checks
+ * in `validation.ts` remain the real control on what is stored.
  */
 export const SERVER_ACTION_BODY_SIZE_LIMIT =
-  MAX_EDITOR_IMAGE_BYTES + 2 * 1024 * 1024;
+  Math.max(MAX_EDITOR_IMAGE_BYTES, MAX_KYC_VIDEO_BYTES) + 2 * 1024 * 1024;
 
 /**
  * True when a chosen file is over `maxBytes`.

@@ -415,8 +415,23 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `content_translations` rows, queues the Tolgee jobs, and backfills existing articles. Before it,
   `'insight'` was a valid entity type and the read path merged French, but nothing ever wrote it, so
   `/fr` silently served English. See "Insight article translation" below for what this does *not* do.
-- 883 Vitest tests pass (66 files), `tsc --noEmit` is clean, ESLint is clean, and the production
-  build succeeds.
+- 999 Vitest tests pass (76 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds (137/137 static pages).
+- KYC verification (Phase 2 of the real-estate work) is implemented:
+  - Migration `20260101000060_kyc_verification.sql` creates `real_estate_kyc_applications`,
+    `real_estate_kyc_documents`, `real_estate_kyc_review_events` and `listing_legal_documents`,
+    the `kyc_*` enums, the `kyc-documents` private bucket, and `approve_kyc_application` — the one
+    function that writes a capability. Migration `20260101000061_signup_account_type.sql` adds
+    `profiles.declared_account_type` + `date_of_birth`, the `account_type` enum, and the age gate.
+  - The applicant surface is `/account/kyc` (`KycApplicationForm`, `KycDocumentUpload`); the
+    super-admin console is `/admin/real-estate/kyc` and `/admin/real-estate/kyc/[id]`
+    (`KycReviewPanel`).
+  - **A user-selected account type never grants privilege.** `declared_account_type` is a
+    declaration only; no RLS policy reads it, and `kyc.test.ts` scans every policy in the schema to
+    assert that. A capability exists only when `approve_kyc_application` (super-admin +
+    service-role only) writes `real_estate_memberships.status = 'approved'`.
+  - `isKycReviewerRole` (`KYC_REVIEWER_ROLES = ["super_admin"]`) is deliberately narrower than
+    `isRealEstateAdminRole`; `roles.test.ts` asserts it matches `is_super_admin()` in the SQL.
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -1607,6 +1622,58 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   360 subdivisions from "Cameroon Administrative Divisions" (Open Admin Data, CC BY 4.0), and
   re-states the ten regions rather than assuming `seed.sql` ran (migrations apply before seeding).
   Do not add or edit an administrative row by hand: extend the dataset and re-generate.
+
+### KYC verification gotchas worth not rediscovering
+
+- **A capability must be written by one function and nothing else.** The brief's central rule is
+  that a user-selected account type never grants posting permissions, so `approve_kyc_application`
+  is the only writer of `real_estate_memberships.status = 'approved'`, it is `security definer`,
+  and it is granted to `service_role` only. `declared_account_type` on `profiles` is a declaration:
+  no RLS policy reads it, and `kyc.test.ts` scans every `create policy` body in the migrations to
+  assert that. If a future policy needs the declaration, the rule has been broken, not extended.
+- **`isKycReviewerRole` is narrower than `isRealEstateAdminRole` on purpose.** A normal
+  real-estate administrator manages listings and must NOT decide identity; the reviewer set is
+  `["super_admin"]` and `roles.test.ts` asserts it matches `is_super_admin()` in the SQL. Do not
+  "simplify" the KYC console guard to `isRealEstateAdminRole` — that silently widens the decision.
+- **The applicant's write policies are state-scoped, so a rejected row can be resubmitted but an
+  approved one cannot.** `kyc_applications_update_own`'s `using` admits draft/submitted/rejected/
+  changes_requested and its `with check` holds the destination to draft/submitted with a null
+  reviewer, so an update can never move a row into `approved`. The application offers the
+  resubmit form for exactly the states the policy admits.
+- **A field-error message key that no dictionary defines renders its raw key, not blank.** The KYC
+  actions return stable keys (`errFullLegalName`, `videoConsent`, …) that the form maps through
+  `KYC_ERROR_KEYS`; every one must exist under `account.kyc` in both `en.json` and `fr.json`, or the
+  applicant sees `account.kyc.errPhone` as visible text. `KYC_ERROR_KEYS` is the map the convention
+  uses (`SIGN_UP_ERROR_KEYS`, `CHECKOUT_ERROR_KEYS`); add a field, add its key to all three places.
+- **A signed URL is the only way a KYC document is read, and only one loader returns a path.**
+  `loadKycDocumentPath` / the review action are super-admin-gated and the URL expires in 300s;
+  every other loader drops `storage_path` so a pointer to a private object cannot reach a render
+  path. `getKycDocumentUrlAction` re-checks the role and records a `document_viewed` event, so a
+  reviewer opening an identity document is a trail entry.
+- **A new `security definer` function must be classified in the same migration.** Supabase grants
+  `EXECUTE` to `anon`/`authenticated` on every new `public` function by default, and the Phase 12
+  hardening migration ran long before these; migration 60 revokes from both and re-grants only
+  `service_role`. The trigger functions (`audit_kyc_review_event`, `audit_kyc_application_status`)
+  are revoked too — Postgres does not check `EXECUTE` for a trigger function, but the grant is
+  still surface.
+- **`handle_new_user` is replaced, not amended, so only the LAST definition counts.** Migration 61
+  re-creates it to record `declared_account_type` and `date_of_birth`; the role handling is
+  unchanged (still `customer`, still ignoring a metadata `role` key), and `roles.test.ts` reads the
+  last definition to assert that. A test that scraped the first definition would pass against the
+  version that was fixed.
+- **A column shared by two audiences leaks the private one unless the read path filters it.**
+  `real_estate_kyc_review_events.note` holds both a decision reason the applicant must read and a
+  reviewer's private remark. `note_added` is internal by definition, but an approval's `p_note`
+  lands on the `approved` event and is documented as internal too — so a loader that only dropped
+  `note_added` still rendered a reviewer's approval note to the applicant. The applicant history
+  now strips the note from every action except `rejected` / `changes_requested`
+  (`isApplicantVisibleNote`), and a `note_added` row is dropped whole. Row-level security cannot
+  hide one column, so this is a read-path responsibility; `kyc.test.ts` pins the visible set.
+- **The KYC age gate is in two places for two reasons.** The signup form refuses an under-18
+  applicant who declares landlord/agent, so they are told immediately; the authoritative 18+ rule
+  is the `kyc_applicant_is_adult` CHECK on `real_estate_kyc_applications`, because that is where
+  identity evidence is reviewed. `profiles.date_of_birth` carries no age constraint — a minor may
+  hold a buyer account.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

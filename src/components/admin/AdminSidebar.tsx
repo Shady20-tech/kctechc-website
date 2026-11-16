@@ -45,6 +45,7 @@ const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
   listings: Building2,
   submissions: FileText,
   memberships: ShieldCheck,
+  kyc: ShieldCheck,
   import: FileText,
   content: FileText,
   users: Users,
