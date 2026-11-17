@@ -432,6 +432,25 @@ acceptance criteria pass. Then stop — do not start the next phase.
     service-role only) writes `real_estate_memberships.status = 'approved'`.
   - `isKycReviewerRole` (`KYC_REVIEWER_ROLES = ["super_admin"]`) is deliberately narrower than
     `isRealEstateAdminRole`; `roles.test.ts` asserts it matches `is_super_admin()` in the SQL.
+- Landlord and agent dashboards (Phase 3 of the real-estate work) are implemented:
+  - Migration `20260101000062_owner_listing_workflow.sql` pins a non-administrator listing to
+    `source = 'owner_submission'` (closing a self-publish hole — see the gotcha above), and adds the
+    owner's `listing_submissions` select/insert and `listing_media` write policies the guided form
+    needs. Its `do $$` block reproduces and re-proves the boundary on every migration application.
+  - Domain layer `src/lib/real-estate/dashboard.ts` (pure: `isOwnerSettableTransition`,
+    `OWNER_SETTABLE_TRANSITIONS`, `moderationState`, `summariseListings`, `accessibleDashboards`),
+    `dashboard-loaders.ts` (session-scoped reads that return empty on failure), `dashboard-actions.ts`
+    (create/update/status/submit/media/profile, all with the `authorize()` idiom), and
+    `dashboard-page.ts` (the shared route guard).
+  - Surfaces: `/account/landlord` and `/account/agent` (overview + verification gate),
+    `/…/new`, and `/…/[id]` (form + status controls + gallery); the agent dashboard adds the public
+    profile panel. All six routes are `force-dynamic` + `noindex`.
+  - The account page links a dashboard only for an approved capability, through the same
+    `accessibleDashboards()` predicate the routes guard with.
+  - `dashboard.test.ts` (17) and `owner-listing-workflow.test.ts` (7) cover the model and the
+    migration's shape.
+- 1027 Vitest tests pass (78 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds (145/145 static pages).
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -1674,6 +1693,108 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   is the `kyc_applicant_is_adult` CHECK on `real_estate_kyc_applications`, because that is where
   identity evidence is reviewed. `profiles.date_of_birth` carries no age constraint — a minor may
   hold a buyer account.
+
+### Landlord and agent dashboards (Phase 3)
+
+- **A dashboard is a *capability* surface, not a role surface.** `/account/landlord` and
+  `/account/agent` open for an approved `real_estate_memberships` row, never for a role and never
+  for the `declared_account_type` a user picked at signup. `accessibleDashboards()` is the single
+  predicate the account page links with and the routes guard with, so a link rendered there always
+  resolves to a page that renders. An application that is pending or sent back is NOT linked from
+  the account page: the capability card already shows its status and its action, and a second entry
+  point would be a link into a "waiting" panel. That panel is reachable by direct URL, which is
+  deliberate — a user mid-application can bookmark it.
+- **The capability check in the Server Action is a message; RLS is the control.** `requireCapability`
+  reads the caller's own approved membership so a user without one sees "apply first" instead of a
+  raw policy violation, but every write goes through the cookie-bound session client, so
+  `property_listings_insert_own_owner` / `..._update_own_owner` / `..._update_manager` are what
+  actually scope a dashboard to its owner's rows. `loadDashboardListingById` adds no ownership
+  filter for the same reason — a guessed id for another account's listing matches zero rows and the
+  route 404s.
+- **A landlord's listing is created as a draft with no `source` sent, and the trigger pins it to
+  `owner_submission`.** Do not "helpfully" send `source` from the dashboard action: the migration
+  62 pin is what puts the listing in the review workflow, and a second place that sets the value is
+  the exact shape of the bug that was closed. See the gotcha below.
+- **The dashboard offers no publish control, by design.** `OWNER_SETTABLE_TRANSITIONS` is
+  `published→archived`, `under_offer→archived`, `archived→draft` — withdraw and reopen, nothing
+  else. Publication is the reviewer's decision and `enforce_listing_lifecycle` refuses it without an
+  approved submission, so a publish button would be one the database always rejects. The test
+  asserts no owner-settable transition targets a public state.
+- **The status control's buttons are chosen from the server-rendered listing, not from local
+  state.** After a Server Action the page re-renders from the database, so the controls reflect what
+  happened rather than what was requested; a client-side optimistic toggle would show "withdrawn"
+  beside a row the trigger refused.
+- **`DashboardPanels` / `DashboardViews` are Server Components that translate directly; only the
+  interactive panels are Client Components.** The rule that a translator function cannot cross the
+  Server/Client boundary (`client-boundary.test.ts`) applies to the four `"use client"` dashboard
+  components, which therefore take `locale` and call `createTranslator(locale).t` themselves. The
+  server-rendered panels take `locale` and translate inline — passing them a label map would be a
+  hand-maintained copy of the message file.
+- **The listing form is separate from the console's `ListingForm` on purpose, but reuses its field
+  labels.** The console form carries operator vocabulary (import source, internal notes); the
+  dashboard's user owns one property. Sharing the component would mean leaking operator concepts
+  into a customer form or adding mode flags to the console's. The *labels* come from
+  `realEstate.admin.field*`, because duplicating them would be two spellings of "URL slug" waiting
+  to drift.
+- **An approved agent capability with no `agent_profiles` row cannot list.** `requireCapability`
+  returns `agent_profile_missing` rather than proceeding, because a listing with no `agent_id` has
+  no poster and the ownership trigger would reject the manager relationship anyway. The fix is a
+  staff action (create the agent record), which is why the message says so.
+- **`listing_private_details` is written through `set_listing_private_details`, and read through
+  `listing_private_details_api`.** The column is `geometry(Point,4326)`, which PostgREST cannot
+  send or return, so the RPC takes plain numbers and the `security_invoker` view returns them. Both
+  are reached with the session client so `listing_private_details` RLS stays the control.
+- **The gallery's object write uses the admin client; its row write uses the session client.** The
+  bucket has no browser write policy, so the object upload needs the service role — but the
+  `listing_media` row is gated by `listing_media_write_own_owner`, which is what actually scopes
+  which listing an object may be attached to. The object is uploaded first and removed if the row
+  insert then fails, so a failed insert leaves no orphan.
+
+### The self-publish hole: a column default is not a security boundary
+
+- **`listing_source` defaults to `admin`, and the review gate keyed only on
+  `source = 'owner_submission'`.** Before migration 62 an approved landlord could insert a listing
+  without naming a source — it was born `source = 'admin'` — and then publish it directly. The
+  `property_listings_insert_own_owner` policy required only `owner_id = auth.uid()` and an approved
+  landlord membership; nothing pinned `source`. Reproduced on a fresh 61-migration database: the
+  insert succeeded with `source = 'admin'` and the publish succeeded, with no submission row and no
+  administrator involved. The review workflow was optional for exactly the users it exists to
+  constrain.
+- **`enforce_listing_lifecycle` now pins a non-administrator write to `owner_submission`** on
+  INSERT, and refuses any attempt by such a caller to *set* a different source on UPDATE. An
+  administrator's write is untouched, so `source = 'admin'` (console) and `source = 'import'`
+  (CSV import) keep working. The trigger had to gain `source` in its column list
+  (`before insert or update of status, source`) or the anti-stripping check would never run — a
+  trigger that only fires on `status` cannot see a source rewrite.
+- **The trust predicate is `auth.uid() is null or is_real_estate_admin()`.** `auth.uid() is null`
+  is the trusted-context case — service role, psql, a migration, the validation harness — and it is
+  the same convention `forbid_self_role_change` uses. Without it, a migration or the harness
+  inserting a listing would be treated as an untrusted browser session and pinned to
+  `owner_submission`.
+- **A trigger or policy defect of this shape is invisible to TypeScript and to every unit test.**
+  It lives in the interaction between a column default, an RLS policy and a trigger, so only a real
+  database reproduces it. The `do $$` assertion at the foot of migration 62 runs on every
+  migration application and proves the boundary; `owner-listing-workflow.test.ts` is the cheaper
+  database-free complement that pins the *shape* of the fix so a later edit cannot quietly remove
+  it. Add a behavioural assertion to the migration when a boundary matters, not only a text test.
+- **`handle_new_user` provisions a `customer` profile on insert, so a fixture that inserts an
+  admin user must promote it afterwards.** `insert ... on conflict do nothing` for the auth row
+  leaves the admin a customer, and the assertion then passes for the wrong reason (the "admin"
+  write in case (d) would not be an administrator's at all). The migration does
+  `update public.profiles set role = 'real_estate_admin'` after the auth insert.
+- **A migration that seeds its own fixture must clean up — and "delete the row" is not enough.** The
+  fixture listings in migration 62 fire `sync_listing_translation_index`, which writes
+  `translation_entries`, `content_translations` and `translation_sync_jobs` rows. None of those has
+  a foreign key to `property_listings`, so deleting the listing cascades nothing: the block
+  originally stranded 9 entries, 18 translations and 9 queued sync jobs per application — a durable
+  queue of Tolgee work for listings that no longer exist. Reproduced on a fresh database by diffing
+  the orphan count with and without migration 62 (+6 entries). The cleanup now deletes the entries
+  and translations by fixture id **before** the listing delete (afterwards the `entity_id in
+  (select …)` subquery matches nothing, since the rows are already gone); the job rows then cascade
+  via their `translation_entry_id` FK. Note this is the general hazard, not a migration-62 quirk: any
+  fixture or application path that deletes a translatable entity must clear its translation rows.
+  Migration 58's own assertion block still strands 3 entries for the same reason — pre-existing and
+  already applied, so left alone rather than folded into this change.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -20,6 +20,7 @@ import {
   resolveOrderDepartments,
 } from "@/lib/orders/queries";
 import { loadSavedSearches } from "@/lib/real-estate/loaders";
+import { accessibleDashboards } from "@/lib/real-estate/dashboard";
 import {
   loadCameroonRegions,
   loadMyMembershipSummary,
@@ -185,6 +186,14 @@ export default async function AccountPage({
   const kycCapability =
     declared === "landlord" || declared === "agent" ? declared : null;
 
+  // A dashboard is offered only for a capability that is actually approved.
+  // `accessibleDashboards` is the same predicate the dashboard routes guard with,
+  // so a link rendered here always resolves to a page that renders. An
+  // application that is pending or sent back is *not* linked from here: the
+  // capability card below already shows its status and the action to take, and a
+  // second entry point would be a link into a "waiting" panel.
+  const dashboards = accessibleDashboards(memberships);
+
   const tiles = [
     {
       key: "orders",
@@ -194,6 +203,13 @@ export default async function AccountPage({
       body: t("account.ordersBody"),
       cta: t("account.ordersCta"),
     },
+    ...dashboards.map((kind) => ({
+      key: `${kind}Dashboard`,
+      href: `/${resolved}/account/${kind}`,
+      title: t(`account.dashboards.${kind}.accountTileTitle`),
+      body: t(`account.dashboards.${kind}.accountTileBody`),
+      cta: t(`account.dashboards.${kind}.accountTileCta`),
+    })),
     {
       key: "favorites",
       href: `/${resolved}/real-estate/favorites`,

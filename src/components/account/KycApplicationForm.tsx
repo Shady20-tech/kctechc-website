@@ -187,7 +187,7 @@ export function KycApplicationForm({
             <SelectField
               id="residencyStatus"
               name="residencyStatus"
-              label={t("account.kyc.residencyStatus")}
+              label={t("account.kyc.residencyStatusLabel")}
               defaultValue={application?.residencyStatus ?? "permanent"}
             >
               {KYC_RESIDENCY_STATUSES.map((status) => (
@@ -207,7 +207,7 @@ export function KycApplicationForm({
             <SelectField
               id="idType"
               name="idType"
-              label={t("account.kyc.idType")}
+              label={t("account.kyc.idTypeLabel")}
               defaultValue={application?.idType ?? "national_id_card"}
             >
               {KYC_ID_TYPES.map((type) => (
