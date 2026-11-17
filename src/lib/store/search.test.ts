@@ -1,198 +1,204 @@
 import { describe, expect, it } from "vitest";
+
 import {
+  activeStoreFilterKeys,
   buildStoreQuery,
-  filterProducts,
+  hasActiveStoreFilters,
   isStoreSort,
-  normalizeSearchTerm,
+  parseStoreFilters,
+  removeStoreFilter,
   sortLabelKey,
-  sortProducts,
+  STORE_SORTS,
 } from "@/lib/store/search";
-import type { LocalizedProduct } from "@/lib/store/types";
 
-function product(overrides: Partial<LocalizedProduct>): LocalizedProduct {
-  return {
-    id: "id",
-    categorySlug: "laptops",
-    departmentSlug: "digital-marketing",
-    slug: "slug",
-    sku: "SKU",
-    title: "Title",
-    shortDescription: "Short",
-    description: "Long",
-    specifications: [],
-    priceMinor: 1000,
-    currency: "XAF",
-    stock: 5,
-    availability: "in_stock",
-    condition: "new",
-    images: [],
-    hasFallback: false,
-    seo: {},
-    ...overrides,
-  };
-}
+/**
+ * The store's filter model and its URL contract.
+ *
+ * These are the properties a regression would silently break: that a bad URL
+ * value reads as "no filter" rather than as a rejected request, that one filter
+ * state is one address, and that a price bound always carries the currency it is
+ * expressed in. Filtering itself is proven by `store-catalogue.test.ts` against
+ * the RPC, not here.
+ */
 
-const CATALOGUE: LocalizedProduct[] = [
-  product({
-    id: "a",
-    title: "ThinkPad X1 Carbon",
-    sku: "KC-LAP-01",
-    priceMinor: 850000,
-    categorySlug: "laptops",
-    stock: 4,
-  }),
-  product({
-    id: "b",
-    title: "Ordinateur portable Pro",
-    sku: "KC-LAP-02",
-    priceMinor: 450000,
-    categorySlug: "laptops",
-    stock: 0,
-    availability: "out_of_stock",
-  }),
-  product({
-    id: "c",
-    title: "USB-C Hub",
-    sku: "KC-ACC-01",
-    priceMinor: 25000,
-    categorySlug: "accessories",
-    stock: 12,
-  }),
-];
-
-describe("normalizeSearchTerm", () => {
-  it("lowercases and trims", () => {
-    expect(normalizeSearchTerm("  ThinkPad  ")).toBe("thinkpad");
-  });
-
-  it("strips diacritics so an accented term matches an unaccented one", () => {
-    // A French visitor typing without accents must still find the product.
-    expect(normalizeSearchTerm("électrique")).toBe("electrique");
-    expect(normalizeSearchTerm("Ordinateur")).toBe("ordinateur");
-  });
-});
-
-describe("filterProducts", () => {
-  it("returns everything with no filters", () => {
-    expect(filterProducts(CATALOGUE, {})).toHaveLength(3);
-  });
-
-  it("matches a term against the title", () => {
-    const result = filterProducts(CATALOGUE, { query: "thinkpad" });
-    expect(result.map((entry) => entry.id)).toEqual(["a"]);
-  });
-
-  it("matches a term against the SKU", () => {
-    const result = filterProducts(CATALOGUE, { query: "KC-ACC-01" });
-    expect(result.map((entry) => entry.id)).toEqual(["c"]);
-  });
-
-  it("matches a term case-insensitively", () => {
-    expect(filterProducts(CATALOGUE, { query: "USB-C" })).toHaveLength(1);
-  });
-
-  it("matches an accented query against an unaccented title", () => {
-    const result = filterProducts(CATALOGUE, { query: "ordinateur" });
-    expect(result.map((entry) => entry.id)).toEqual(["b"]);
-  });
-
-  it("filters by category", () => {
-    const result = filterProducts(CATALOGUE, { category: "accessories" });
-    expect(result.map((entry) => entry.id)).toEqual(["c"]);
-  });
-
-  it("filters by in-stock availability", () => {
-    const result = filterProducts(CATALOGUE, { availability: "in_stock" });
-    expect(result.map((entry) => entry.id).sort()).toEqual(["a", "c"]);
-  });
-
-  it("filters by out-of-stock availability", () => {
-    const result = filterProducts(CATALOGUE, { availability: "out_of_stock" });
-    expect(result.map((entry) => entry.id)).toEqual(["b"]);
-  });
-
-  it("combines a term and a category", () => {
-    const result = filterProducts(CATALOGUE, {
-      query: "hub",
-      category: "accessories",
+describe("parseStoreFilters", () => {
+  it("returns an empty state for an empty URL", () => {
+    expect(parseStoreFilters({})).toEqual({
+      query: undefined,
+      category: undefined,
+      currency: undefined,
+      minPrice: undefined,
+      maxPrice: undefined,
+      inStock: undefined,
+      brand: undefined,
+      sort: undefined,
+      page: undefined,
     });
-    expect(result.map((entry) => entry.id)).toEqual(["c"]);
   });
 
-  it("returns nothing when nothing matches", () => {
-    expect(filterProducts(CATALOGUE, { query: "printer" })).toEqual([]);
+  it("reads a blank value as no filter, so ?q= and no q are one address", () => {
+    expect(parseStoreFilters({ q: "   " }).query).toBeUndefined();
+    expect(parseStoreFilters({ q: "" }).query).toBeUndefined();
   });
 
-  it("does not mutate the input list", () => {
-    const before = CATALOGUE.map((entry) => entry.id);
-    filterProducts(CATALOGUE, { sort: "price-desc" });
-    expect(CATALOGUE.map((entry) => entry.id)).toEqual(before);
+  it("floors a decimal price and rejects a non-numeric one", () => {
+    // A decimal reaching PostgREST is a failed request rather than a filter, and
+    // `price_minor` is an integer column.
+    expect(parseStoreFilters({ minPrice: "1.5" }).minPrice).toBeUndefined();
+    expect(parseStoreFilters({ minPrice: "abc" }).minPrice).toBeUndefined();
+    expect(parseStoreFilters({ minPrice: "500000" }).minPrice).toBe(500000);
+  });
+
+  it("applies the primary currency to a price bound that omits one", () => {
+    // Comparing a number against a price in an unknown unit is the cross-currency
+    // comparison the brief forbids, so a bound always carries its currency.
+    expect(parseStoreFilters({ maxPrice: "1000" }).currency).toBe("XAF");
+  });
+
+  it("keeps a currency on its own without inventing a price bound", () => {
+    const parsed = parseStoreFilters({ currency: "usd" });
+    expect(parsed.currency).toBe("USD");
+    expect(parsed.minPrice).toBeUndefined();
+  });
+
+  it("treats inStock=false as no filter, not as out-of-stock-only", () => {
+    expect(parseStoreFilters({ inStock: "false" }).inStock).toBeUndefined();
+    expect(parseStoreFilters({ inStock: "true" }).inStock).toBe(true);
+  });
+
+  it("rejects an unknown sort so a hand-edited URL falls back to relevance", () => {
+    expect(
+      parseStoreFilters({ sort: "'; drop table products; --" }).sort,
+    ).toBeUndefined();
+    expect(parseStoreFilters({ sort: "price-asc" }).sort).toBe("price-asc");
+  });
+
+  it("rejects page 0 and a non-numeric page", () => {
+    expect(parseStoreFilters({ page: "0" }).page).toBeUndefined();
+    expect(parseStoreFilters({ page: "-2" }).page).toBeUndefined();
+    expect(parseStoreFilters({ page: "3" }).page).toBe(3);
+  });
+
+  it("accepts a repeated parameter and takes the first value", () => {
+    expect(parseStoreFilters({ q: ["hub", "laptop"] }).query).toBe("hub");
   });
 });
 
-describe("sortProducts", () => {
-  it("sorts by ascending price", () => {
-    const result = sortProducts(CATALOGUE, "price-asc");
-    expect(result.map((entry) => entry.priceMinor)).toEqual([
-      25000, 450000, 850000,
-    ]);
+describe("buildStoreQuery", () => {
+  it("omits a default sort so one filter state has one URL", () => {
+    expect(buildStoreQuery({ query: "hub", sort: "relevance" })).toBe("?q=hub");
   });
 
-  it("sorts by descending price", () => {
-    const result = sortProducts(CATALOGUE, "price-desc");
-    expect(result.map((entry) => entry.priceMinor)).toEqual([
-      850000, 450000, 25000,
-    ]);
+  it("keeps a non-default sort", () => {
+    expect(buildStoreQuery({ sort: "price-asc" })).toBe("?sort=price-asc");
   });
 
-  it("sorts by name", () => {
-    const result = sortProducts(CATALOGUE, "name-asc");
-    expect(result[0]?.title).toBe("Ordinateur portable Pro");
+  it("omits page 1 and writes a later page", () => {
+    expect(buildStoreQuery({ page: 1 })).toBe("");
+    expect(buildStoreQuery({ page: 4 })).toBe("?page=4");
   });
 
-  it("is stable for equal prices", () => {
-    // An unstable order would differ between the server render and a client
-    // re-render, which React reports as a hydration mismatch.
-    const equal = [
-      product({ id: "z", priceMinor: 100 }),
-      product({ id: "a", priceMinor: 100 }),
-    ];
-    const first = sortProducts(equal, "price-asc").map((entry) => entry.id);
-    const second = sortProducts([...equal].reverse(), "price-asc").map(
-      (entry) => entry.id,
+  it("omits a cleared value rather than carrying the old one", () => {
+    expect(buildStoreQuery({ category: "laptops" })).toBe("?category=laptops");
+    expect(buildStoreQuery({})).toBe("");
+  });
+
+  it("round-trips through the parser", () => {
+    const filters = parseStoreFilters({
+      q: "hub",
+      category: "accessories",
+      minPrice: "1000",
+      inStock: "true",
+      sort: "price-desc",
+      page: "2",
+    });
+    const query = buildStoreQuery(filters);
+    const params = Object.fromEntries(new URLSearchParams(query.slice(1)));
+    expect(params).toMatchObject({
+      q: "hub",
+      category: "accessories",
+      minPrice: "1000",
+      currency: "XAF",
+      inStock: "true",
+      sort: "price-desc",
+      page: "2",
+    });
+  });
+});
+
+describe("hasActiveStoreFilters", () => {
+  it("is false for an empty state and a sort alone", () => {
+    expect(hasActiveStoreFilters({})).toBe(false);
+    // A sort is an ordering, not a filter: it must not make the page claim the
+    // result set is narrowed.
+    expect(hasActiveStoreFilters({ sort: "price-asc" })).toBe(false);
+  });
+
+  it("is true when any narrowing filter is set", () => {
+    expect(hasActiveStoreFilters({ query: "hub" })).toBe(true);
+    expect(hasActiveStoreFilters({ category: "laptops" })).toBe(true);
+    expect(hasActiveStoreFilters({ brand: "Lenovo" })).toBe(true);
+    expect(hasActiveStoreFilters({ inStock: true })).toBe(true);
+    expect(hasActiveStoreFilters({ minPrice: 0 })).toBe(true);
+    expect(hasActiveStoreFilters({ maxPrice: 100 })).toBe(true);
+  });
+});
+
+describe("activeStoreFilterKeys", () => {
+  it("lists the narrowing filters and never the sort", () => {
+    const keys = activeStoreFilterKeys({
+      query: "hub",
+      category: "laptops",
+      minPrice: 100,
+      maxPrice: 500,
+      inStock: true,
+      sort: "price-asc",
+    });
+    expect(keys).toEqual(["q", "category", "inStock", "minPrice", "maxPrice"]);
+  });
+});
+
+describe("removeStoreFilter", () => {
+  it("removes exactly one filter and drops the page", () => {
+    const next = removeStoreFilter(
+      { query: "hub", category: "laptops", page: 3 },
+      "category",
     );
-    expect(first).toEqual(second);
-    expect(first).toEqual(["a", "z"]);
+    expect(next.query).toBe("hub");
+    expect(next.category).toBeUndefined();
+    // Page 3 of a wider result set is not a meaningful page.
+    expect(next.page).toBeUndefined();
   });
 
-  it("ranks a title match above a description-only match on relevance", () => {
-    const items = [
-      product({ id: "desc", title: "Something", shortDescription: "hub here" }),
-      product({ id: "title", title: "Hub", shortDescription: "nothing" }),
-    ];
-    const result = sortProducts(items, "relevance", "hub");
-    expect(result[0]?.id).toBe("title");
+  it("clears the currency when the last price bound goes", () => {
+    // Otherwise removing "max price" leaves an orphaned `currency` in the URL.
+    const next = removeStoreFilter(
+      { minPrice: 100, currency: "XAF" },
+      "minPrice",
+    );
+    expect(next.minPrice).toBeUndefined();
+    expect(next.currency).toBeUndefined();
   });
 
-  it("leaves order untouched on relevance with no term", () => {
-    expect(
-      sortProducts(CATALOGUE, "relevance").map((entry) => entry.id),
-    ).toEqual(["a", "b", "c"]);
+  it("keeps the currency while another price bound remains", () => {
+    const next = removeStoreFilter(
+      { minPrice: 100, maxPrice: 500, currency: "XAF" },
+      "minPrice",
+    );
+    expect(next.currency).toBe("XAF");
   });
 });
 
 describe("isStoreSort", () => {
   it("accepts the known sorts", () => {
-    for (const value of ["relevance", "price-asc", "price-desc", "name-asc"]) {
+    for (const value of STORE_SORTS) {
       expect(isStoreSort(value), value).toBe(true);
     }
   });
 
   it("rejects anything else", () => {
-    // The sort arrives from a URL parameter a visitor can edit freely.
     expect(isStoreSort("price")).toBe(false);
     expect(isStoreSort(undefined)).toBe(false);
-    expect(isStoreSort("'; drop table products; --")).toBe(false);
   });
 });
 
@@ -200,43 +206,6 @@ describe("sortLabelKey", () => {
   it("maps each sort to a translation key", () => {
     expect(sortLabelKey("price-asc")).toBe("store.sortPriceAsc");
     expect(sortLabelKey("relevance")).toBe("store.sortRelevance");
-  });
-});
-
-describe("buildStoreQuery", () => {
-  it("omits a default sort so one filter state has one URL", () => {
-    const query = buildStoreQuery({ query: "hub", sort: "relevance" });
-    expect(query).toBe("?q=hub");
-  });
-
-  it("keeps a non-default sort", () => {
-    const query = buildStoreQuery({ sort: "price-asc" });
-    expect(query).toBe("?sort=price-asc");
-  });
-
-  it("omits a cleared value rather than carrying the old one", () => {
-    // The filters object is the whole desired state, so a key that is absent is
-    // absent from the URL — no stale `q` can survive.
-    const query = buildStoreQuery({ category: "laptops" });
-    expect(query).not.toContain("q=");
-    expect(query).toBe("?category=laptops");
-  });
-
-  it("returns an empty string when nothing is set", () => {
-    expect(buildStoreQuery({})).toBe("");
-  });
-
-  it("combines several filters", () => {
-    const query = buildStoreQuery({
-      query: "hub",
-      category: "accessories",
-      availability: "in_stock",
-      sort: "price-desc",
-    });
-    const params = new URLSearchParams(query);
-    expect(params.get("q")).toBe("hub");
-    expect(params.get("category")).toBe("accessories");
-    expect(params.get("availability")).toBe("in_stock");
-    expect(params.get("sort")).toBe("price-desc");
+    expect(sortLabelKey("newest")).toBe("store.sortNewest");
   });
 });

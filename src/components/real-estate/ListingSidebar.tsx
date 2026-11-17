@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { FilterSection } from "@/components/real-estate/FilterSection";
+import { MarketplaceFilterSection } from "@/components/marketplace/MarketplaceFilterSection";
+import { MarketplaceFilterSidebar } from "@/components/marketplace/MarketplaceFilterSidebar";
 import {
-  SearchableSelect,
-  type SearchableOption,
-} from "@/components/real-estate/SearchableSelect";
-import { Button, ButtonLink } from "@/components/ui/Button";
+  MarketplaceSearchableSelect,
+  type MarketplaceSearchableOption,
+} from "@/components/marketplace/MarketplaceSearchableSelect";
 import { TextField } from "@/components/ui/Form";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -101,19 +101,21 @@ export function ListingSidebar({
     router.push(`${basePath}${query ? `?${query}` : ""}`);
   }
 
-  const regionOptions: SearchableOption[] = geography.map((region) => ({
-    value: region.slug,
-    label: region.name,
-    count: region.count,
-  }));
-  const divisionOptions: SearchableOption[] = (
+  const regionOptions: MarketplaceSearchableOption[] = geography.map(
+    (region) => ({
+      value: region.slug,
+      label: region.name,
+      count: region.count,
+    }),
+  );
+  const divisionOptions: MarketplaceSearchableOption[] = (
     selectedRegion?.divisions ?? []
   ).map((division) => ({
     value: division.slug,
     label: division.name,
     count: division.count,
   }));
-  const subdivisionOptions: SearchableOption[] = (
+  const subdivisionOptions: MarketplaceSearchableOption[] = (
     selectedDivision?.subdivisions ?? []
   ).map((subdivision) => ({
     value: subdivision.slug,
@@ -124,11 +126,22 @@ export function ListingSidebar({
   const currencies = facets.currencies;
 
   return (
-    <form
-      method="get"
+    <MarketplaceFilterSidebar
       action={basePath}
-      className="flex h-full flex-col"
-      id="listing-filters-form"
+      variant={variant}
+      onClose={onClose}
+      activeCount={activeCount}
+      labels={{
+        submit:
+          variant === "drawer"
+            ? t("realEstate.search.applyFilters")
+            : t("realEstate.search.searchSubmit"),
+        clear: t("realEstate.search.clearAll"),
+        close: t("realEstate.search.closeFilters"),
+        activeCount: t("realEstate.search.filtersActiveCount", {
+          count: activeCount,
+        }),
+      }}
     >
       {view === "map" ? <input type="hidden" name="view" value="map" /> : null}
       {/* The cascade selects navigate immediately, but their values must also be
@@ -143,10 +156,9 @@ export function ListingSidebar({
         <input type="hidden" name="verified" value="true" />
       ) : null}
 
-      <div className="flex-1">
-        {/* Keyword. Kept in the sidebar as well as on the landing page so a
-            visitor who searched once can refine the term without going back. */}
-        <FilterSection title={t("realEstate.search.searchLabel")}>
+      {/* Keyword. Kept in the sidebar as well as on the landing page so a
+          visitor who searched once can refine the term without going back. */}
+      <MarketplaceFilterSection title={t("realEstate.search.searchLabel")}>
           <TextField
             id="filter-q"
             name="q"
@@ -155,11 +167,11 @@ export function ListingSidebar({
             placeholder={t("realEstate.search.searchPlaceholder")}
             defaultValue={filters.query ?? ""}
           />
-        </FilterSection>
+        </MarketplaceFilterSection>
 
         {/* A. Property categories - links, so a category is a real URL and works
             without JavaScript. The count comes from the matching facet bucket. */}
-        <FilterSection title={t("realEstate.search.categoriesHeading")}>
+        <MarketplaceFilterSection title={t("realEstate.search.categoriesHeading")}>
           <ul className="flex flex-col gap-0.5">
             {PROPERTY_CATEGORIES.map((category) => {
               const count = facets.categories.get(category.bucket);
@@ -187,13 +199,13 @@ export function ListingSidebar({
               );
             })}
           </ul>
-        </FilterSection>
+        </MarketplaceFilterSection>
 
         {/* B. Location - a cascading, searchable hierarchy plus a free-text
             neighbourhood field. */}
-        <FilterSection title={t("realEstate.search.locationHeading")}>
+        <MarketplaceFilterSection title={t("realEstate.search.locationHeading")}>
           <div className="flex flex-col gap-4">
-            <SearchableSelect
+            <MarketplaceSearchableSelect
               id="filter-region"
               label={t("realEstate.search.regionLabel")}
               options={regionOptions}
@@ -214,7 +226,7 @@ export function ListingSidebar({
                 });
               }}
             />
-            <SearchableSelect
+            <MarketplaceSearchableSelect
               id="filter-division"
               label={t("realEstate.search.divisionLabel")}
               options={divisionOptions}
@@ -233,7 +245,7 @@ export function ListingSidebar({
                 });
               }}
             />
-            <SearchableSelect
+            <MarketplaceSearchableSelect
               id="filter-subdivision"
               label={t("realEstate.search.subdivisionLabel")}
               options={subdivisionOptions}
@@ -257,11 +269,11 @@ export function ListingSidebar({
               defaultValue={filters.locality ?? ""}
             />
           </div>
-        </FilterSection>
+        </MarketplaceFilterSection>
 
         {/* C. Price - two fields side by side, each with the brief's wording, in
             one currency at a time. */}
-        <FilterSection title={t("realEstate.search.priceHeading")}>
+        <MarketplaceFilterSection title={t("realEstate.search.priceHeading")}>
           <div className="flex flex-col gap-4">
             {currencies.length > 1 ? (
               <label className="block text-sm font-medium text-ink-900">
@@ -321,10 +333,10 @@ export function ListingSidebar({
               })}
             </p>
           </div>
-        </FilterSection>
+        </MarketplaceFilterSection>
 
         {/* D. Property characteristics. */}
-        <FilterSection title={t("realEstate.search.characteristicsHeading")}>
+        <MarketplaceFilterSection title={t("realEstate.search.characteristicsHeading")}>
           <div className="flex flex-col gap-4">
             <label className="block text-sm font-medium text-ink-900">
               {t("realEstate.search.kindLabel")}
@@ -461,11 +473,11 @@ export function ListingSidebar({
               </fieldset>
             ) : null}
           </div>
-        </FilterSection>
+        </MarketplaceFilterSection>
 
         {/* E. Verified publishers. The badge is only ever shown for a membership
             a super admin granted and that is still approved. */}
-        <FilterSection title={t("realEstate.search.publishersHeading")}>
+        <MarketplaceFilterSection title={t("realEstate.search.publishersHeading")}>
           <label className="inline-flex items-start gap-2 text-sm text-body">
             <input
               type="checkbox"
@@ -486,35 +498,7 @@ export function ListingSidebar({
               </span>
             </span>
           </label>
-        </FilterSection>
-      </div>
-
-      <div
-        className={`mt-6 flex flex-wrap gap-3 ${
-          variant === "drawer"
-            ? "sticky bottom-0 -mx-5 border-t border-border bg-surface px-5 py-4"
-            : ""
-        }`}
-      >
-        <Button type="submit" variant="primary" className="flex-1">
-          {variant === "drawer"
-            ? t("realEstate.search.applyFilters")
-            : t("realEstate.search.searchSubmit")}
-        </Button>
-        <ButtonLink href={basePath} variant="secondary">
-          {t("realEstate.search.clearAll")}
-        </ButtonLink>
-        {variant === "drawer" && onClose ? (
-          <Button type="button" variant="ghost" onClick={onClose}>
-            {t("realEstate.search.closeFilters")}
-          </Button>
-        ) : null}
-        {activeCount > 0 ? (
-          <p className="w-full text-xs text-muted">
-            {t("realEstate.search.filtersActiveCount", { count: activeCount })}
-          </p>
-        ) : null}
-      </div>
+        </MarketplaceFilterSection>
 
       {/* The sort is carried through a submit so a filter change does not silently
           reset the ordering the visitor chose. */}
@@ -526,7 +510,7 @@ export function ListingSidebar({
       {filters.query ? (
         <input type="hidden" name="q" value={filters.query} />
       ) : null}
-    </form>
+    </MarketplaceFilterSidebar>
   );
 }
 

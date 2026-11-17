@@ -8,6 +8,10 @@ import {
   projectRegionFilterValues,
   projectServiceFilterValues,
   splitProjectMedia,
+  parseProjectFilters,
+  serializeProjectFilters,
+  activeProjectFilterKeys,
+  removeProjectFilter,
 } from "@/lib/content/projects";
 import type { LocalizedProject, ProjectRecord } from "@/lib/content/types";
 
@@ -373,5 +377,58 @@ describe("splitProjectMedia", () => {
     );
     expect(before?.storagePath).toBe("1.jpg");
     expect(after).toBeUndefined();
+  });
+});
+
+describe("parseProjectFilters and its helpers", () => {
+  it("reads a blank value as no filter, so one state is one address", () => {
+    expect(parseProjectFilters({ service: "  ", region: "" })).toEqual({
+      service: undefined,
+      region: undefined,
+      propertyType: undefined,
+    });
+  });
+
+  it("takes the first value of a repeated parameter", () => {
+    expect(
+      parseProjectFilters({ region: ["southwest", "littoral"] }),
+    ).toMatchObject({ region: "southwest" });
+  });
+
+  it("omits absent filters from the query string", () => {
+    expect(serializeProjectFilters({})).toBe("");
+    expect(serializeProjectFilters({ service: "solar-energy-systems" })).toBe(
+      "?service=solar-energy-systems",
+    );
+  });
+
+  it("lists the active keys in chip order and never the empty ones", () => {
+    expect(activeProjectFilterKeys({})).toEqual([]);
+    expect(
+      activeProjectFilterKeys({
+        service: "solar-energy-systems",
+        region: "southwest",
+        propertyType: "residential",
+      }),
+    ).toEqual(["service", "region", "propertyType"]);
+  });
+
+  it("removes exactly one filter and leaves the others", () => {
+    const next = removeProjectFilter(
+      { service: "solar-energy-systems", region: "southwest" },
+      "service",
+    );
+    expect(next.service).toBeUndefined();
+    expect(next.region).toBe("southwest");
+  });
+
+  it("round-trips through the parser and serializer", () => {
+    const filters = parseProjectFilters({
+      service: "solar-energy-systems",
+      region: "southwest",
+    });
+    expect(serializeProjectFilters(filters)).toBe(
+      "?service=solar-energy-systems&region=southwest",
+    );
   });
 });

@@ -8,7 +8,7 @@ import { ActiveFilterChips } from "@/components/real-estate/ActiveFilterChips";
 import { ListingGrid, listingHref } from "@/components/real-estate/ListingCard";
 import { ListingPagination } from "@/components/real-estate/ListingPagination";
 import { ListingSidebar } from "@/components/real-estate/ListingSidebar";
-import { MobileFilterDrawer } from "@/components/real-estate/MobileFilterDrawer";
+import { MarketplaceSearchLayout } from "@/components/marketplace/MarketplaceSearchLayout";
 import { ResultsToolbar } from "@/components/real-estate/ResultsToolbar";
 import { SaveSearchControl } from "@/components/real-estate/SaveSearchControl";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
@@ -32,6 +32,7 @@ import {
 import { qualifyListings } from "@/lib/real-estate/listings";
 import {
   PROPERTY_CATEGORIES,
+  activeFilterKeys,
   buildListingQuery,
   categoryForFilters,
   firstParam,
@@ -270,46 +271,67 @@ export default async function PropertyListingsPage({
         </div>
       </SectionBand>
 
-      <div className="container-page section-tight">
-        <div className="grid gap-8 lg:grid-cols-[17rem_1fr] xl:grid-cols-[18rem_1fr]">
-          {/* Desktop sidebar. `hidden` below `lg`; the drawer covers that range. */}
-          <aside
-            aria-label={t("realEstate.search.filtersHeading")}
-            className="hidden lg:block"
-          >
-            <div className="sticky top-24 rounded-card border border-border bg-surface p-5">
-              <ListingSidebar
-                locale={resolved}
-                geography={geography}
-                facets={facets}
-                filters={filters}
-                view={view}
-              />
+      <MarketplaceSearchLayout
+        sidebarAriaLabel={t("realEstate.search.filtersHeading")}
+        drawerLabels={{
+          open: t("realEstate.search.openFilters"),
+          title: t("realEstate.search.filtersHeading"),
+          close: t("realEstate.search.closeFilters"),
+        }}
+        activeCount={activeFilterKeys(filters).length}
+        filters={(variant) => (
+          <ListingSidebar
+            locale={resolved}
+            geography={geography}
+            facets={facets}
+            filters={filters}
+            view={view}
+            variant={variant}
+          />
+        )}
+        header={
+          <SectionBand labelledBy="property-search-heading">
+            <Breadcrumbs
+              items={breadcrumbs}
+              ariaLabel={t("a11y.breadcrumb")}
+              className="mb-6"
+            />
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1
+                  id="property-search-heading"
+                  className="display-tight font-display text-3xl font-bold text-ink-900 sm:text-4xl"
+                >
+                  {t("realEstate.search.heading")}
+                </h1>
+                <p className="mt-2 max-w-2xl text-base text-body">
+                  {t("realEstate.search.intro")}
+                </p>
+              </div>
+              <ButtonLink
+                href={`/${resolved}${REAL_ESTATE_PATH}`}
+                variant="ghost"
+                size="sm"
+              >
+                {t("realEstate.backToDepartment")}
+              </ButtonLink>
             </div>
-          </aside>
-
-          <div className="min-w-0">
-            <div className="mb-4 lg:hidden">
-              <MobileFilterDrawer
-                locale={resolved}
-                geography={geography}
-                facets={facets}
-                filters={filters}
-                view={view}
-              />
-            </div>
-
-            {hasPortfolio ? (
-              <ResultsToolbar
-                locale={resolved}
-                filters={filters}
-                view={view}
-                total={page.total}
-                locationLabel={locationLabel}
-                categoryLabel={categoryLabel}
-              />
-            ) : null}
-
+          </SectionBand>
+        }
+        toolbar={
+          hasPortfolio ? (
+            <ResultsToolbar
+              locale={resolved}
+              filters={filters}
+              view={view}
+              total={page.total}
+              locationLabel={locationLabel}
+              categoryLabel={categoryLabel}
+            />
+          ) : null
+        }
+        meta={
+          <>
             {active ? (
               <div className="mt-4">
                 <ActiveFilterChips
@@ -331,7 +353,10 @@ export default async function PropertyListingsPage({
                 />
               </div>
             ) : null}
-
+          </>
+        }
+        results={
+          <>
             {!hasPortfolio ? (
               <div className="mt-10 max-w-2xl rounded-card border border-border bg-surface p-8">
                 <h2 className="text-xl font-semibold text-ink-900">
@@ -437,23 +462,24 @@ export default async function PropertyListingsPage({
             <p className="mt-8 text-xs text-muted">
               {t("realEstate.search.trustBadgeNote")}
             </p>
-          </div>
-        </div>
-      </div>
-
-      <SectionBand tone="alt" labelledBy="property-search-links-heading">
-        <h2 id="property-search-links-heading" className="visually-hidden">
-          {t("realEstate.regionsHeading")}
-        </h2>
-        <p className="text-sm text-body">
-          <Link
-            href={`/${resolved}${REAL_ESTATE_PATH}`}
-            className="font-semibold text-dept-accent underline-offset-4 hover:underline"
-          >
-            {t("realEstate.backToDepartment")}
-          </Link>
-        </p>
-      </SectionBand>
+          </>
+        }
+        footer={
+          <SectionBand tone="alt" labelledBy="property-search-links-heading">
+            <h2 id="property-search-links-heading" className="visually-hidden">
+              {t("realEstate.regionsHeading")}
+            </h2>
+            <p className="text-sm text-body">
+              <Link
+                href={`/${resolved}${REAL_ESTATE_PATH}`}
+                className="font-semibold text-dept-accent underline-offset-4 hover:underline"
+              >
+                {t("realEstate.backToDepartment")}
+              </Link>
+            </p>
+          </SectionBand>
+        }
+      />
     </div>
   );
 }

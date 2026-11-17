@@ -678,6 +678,60 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   not a feature PR. Do not paper over it with a client-side `document.documentElement.lang` patch:
   that is invisible to crawlers and the pre-hydration paint.
 
+### Phase 6 — reusable multi-department filtering
+
+- **The search experience is one shared shell, not one per department.** `MarketplaceSearchLayout`
+  (two-column grid: `17rem`/`18rem` filter track + results), `MarketplaceFilterSidebar`,
+  `MarketplaceFilterSection`, `MarketplaceActiveFilters`, `MarketplaceMobileFilterDrawer`,
+  `MarketplacePagination`, `MarketplaceResultsToolbar`, `MarketplaceCategoryNavigation`,
+  `MarketplaceSearchHeader`, `MarketplaceEmptyState` and `MarketplaceSearchableSelect` live in
+  `src/components/marketplace/`. Real Estate, the Store index/category pages and the projects
+  gallery each pass their **own fields** through the layout's `filters(variant)` render prop — the
+  shell arranges, the department supplies controls — so the desktop column and the mobile drawer
+  render the *same* form and cannot drift. Do not build a fourth bespoke results layout: add a
+  binding component (`src/components/{store,content}/*Filters.tsx`) like `StoreActiveFilters` and
+  `ProjectActiveFilters` do.
+- **A filter is a URL, and the URL is the state.** Every department parses its filters from
+  `searchParams` (`parseListingFilters`, `parseStoreFilters`, `parseProjectFilters`), serializes the
+  whole state back (`buildStoreQuery`, `serializeProjectFilters`), and removes one filter by
+  rebuilding from the parsed object (`removeStoreFilter`). Never hold filter state in React and
+  never filter a loaded array in the browser — filtering, counting and pagination run in the
+  database (`search_property_listings`, `search_products`), which is what the brief rules out doing
+  any other way.
+- **A filtered view is `noindex`, and *every* filterable surface must apply the rule from its
+  parsed state.** Real Estate (`hasActiveFilters`) and the projects gallery (`isUnfiltered`) did;
+  the Store index and category pages did **not**, so `/en/digital-marketing/store?q=…&minPrice=…`
+  served `index, follow` — a near-duplicate of the bare store for every permutation. Both now pass
+  `noindex: hasActiveStoreFilters(filters)`. A category page pins its own segment
+  (`{ ...parseStoreFilters(await searchParams), category: undefined }`) before evaluating the rule,
+  so the segment alone never makes the view filtered. `localized-category-routing.test.ts` asserts
+  the directive on both store routes; the regression was proven by deleting the line and watching
+  it fail.
+- **`product_facets`/`search_products` are browser-callable RPCs and were added to the Phase 12
+  EXECUTE allow-list in the same change that created them** (`20260101000065_product_search_and_facets.sql`
+  plus the allow-lists in `20260101000041_function_execute_hardening.sql` and
+  `supabase/validate/30_function_execute_hardening.sql`). Supabase grants `EXECUTE` to
+  `anon`/`authenticated` on every new function by default, so a search RPC that is *not*
+  classified fails the subset assertion in the validate script.
+- **A category's facet count is keyed by canonical slug while the nav links by localized slug.**
+  `product_facets` returns canonical category ids → slugs; the sidebar resolves a `{value,label}`
+  through `loadCategoryRecord`/`resolveBySlug` and reads `facets.categories.get(record.slug)`, not
+  `category.slug`. Mixing them works in English (where the slugs match) and shows a zero count the
+  moment a French slug exists. `localized-category-routing.test.ts` pins both the count lookup and
+  the link build.
+- **A bilingual regression test cannot see a feature whose data source is empty.** The store
+  catalogue is empty without a configured Supabase, so the sidebar/nav/drawer render their honest
+  empty state and the *only* way to prove the filter controls is against the seeded database or by
+  reading the built HTML for the shared chrome. `MarketplaceComponents.test.tsx` (server markup),
+  `marketplace-i18n.test.ts` (EN/FR key parity) and the per-department bindings are what keep the
+  shell honest without a database.
+- **The mobile drawer is the same `Modal` the navigation drawer uses** (`placement="side"`), so
+  focus trapping, Escape, scroll lock and focus return are already handled — do not hand-roll a
+  second sheet. It is `lg:hidden`, the desktop column is `hidden lg:block`, and the two share the
+  filter form via the render prop. Verified in a real browser at 320/360/390px: `scrollWidth ===
+  clientWidth` on every department (no horizontal scroll), the trigger reads "Filters"/"Filtres"
+  with the active count, and opening it mounts one visible `role="dialog"` containing the form.
+
 ### Phase 13 gotchas worth not rediscovering
 
 - **The console page guard is a message, the write policy is the control.** `requireEditor` and

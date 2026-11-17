@@ -21,14 +21,14 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
  * option, Enter chooses it, Escape closes without choosing, and the active option
  * is announced through `aria-activedescendant` rather than by moving focus.
  */
-export type SearchableOption = {
+export type MarketplaceSearchableOption = {
   value: string;
   label: string;
   /** A trailing count, shown only when greater than zero. */
   count?: number;
 };
 
-export function SearchableSelect({
+export function MarketplaceSearchableSelect({
   id,
   label,
   hint,
@@ -44,7 +44,7 @@ export function SearchableSelect({
   id: string;
   label: string;
   hint?: string;
-  options: readonly SearchableOption[];
+  options: readonly MarketplaceSearchableOption[];
   value: string;
   placeholder: string;
   /** The label of the "no selection" option, offered first. */
@@ -73,7 +73,10 @@ export function SearchableSelect({
         : options.filter((option) =>
             normalize(option.label).includes(normalized),
           );
-    return [{ value: "", label: emptyLabel } as SearchableOption, ...matches];
+    return [
+      { value: "", label: emptyLabel } as MarketplaceSearchableOption,
+      ...matches,
+    ];
   }, [options, query, emptyLabel]);
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export function SearchableSelect({
   const describedBy =
     [hintId, disabledHintId].filter(Boolean).join(" ") || undefined;
 
-  function choose(option: SearchableOption) {
+  function choose(option: MarketplaceSearchableOption) {
     onSelect(option.value);
     setQuery("");
     setOpen(false);

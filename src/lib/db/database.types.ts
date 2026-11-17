@@ -3750,6 +3750,52 @@ export type Database = {
           view_count: number;
         }[];
       };
+      product_facets: {
+        Args: {
+          p_department_id?: string;
+        };
+        Returns: {
+          facet: string;
+          value: string;
+          total: number;
+        }[];
+      };
+      search_products: {
+        Args: {
+          p_availability?: Database["public"]["Enums"]["product_availability"];
+          p_brand?: string;
+          p_category_id?: string;
+          p_condition?: Database["public"]["Enums"]["product_condition"];
+          p_currency?: string;
+          p_department_id?: string;
+          p_in_stock?: boolean;
+          p_limit?: number;
+          p_locale?: Database["public"]["Enums"]["locale_code"];
+          p_max_price?: number;
+          p_min_price?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_sort?: string;
+        };
+        Returns: {
+          availability: Database["public"]["Enums"]["product_availability"];
+          brand: string;
+          category_id: string;
+          condition: Database["public"]["Enums"]["product_condition"];
+          currency: string;
+          department_id: string;
+          id: string;
+          price_minor: number;
+          published_at: string;
+          rank: number;
+          short_description: string;
+          sku: string;
+          slug: string;
+          stock: number;
+          title: string;
+          total_count: number;
+        }[];
+      };
       set_listing_localized_slug: {
         Args: {
           p_listing_id: string;

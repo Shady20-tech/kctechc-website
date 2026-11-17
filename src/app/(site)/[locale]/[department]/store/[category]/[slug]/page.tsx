@@ -14,8 +14,9 @@ import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo/structured-data";
+import { localizeCategory } from "@/lib/store/defaults";
 import {
-  loadCategoryBySlug,
+  loadCategoryRecord,
   loadProductBySlug,
   loadProductRecords,
   loadProductsInCategory,
@@ -77,12 +78,14 @@ export async function generateMetadata({
   const product = await loadProductBySlug(slug, locale, department);
   if (!product) return {};
 
-  const category = await loadCategoryBySlug(
+  const categoryRecord = await loadCategoryRecord(
     categorySegment,
     locale,
     department,
   );
-  if (!category || category.slug !== product.categorySlug) return {};
+  if (!categoryRecord || categoryRecord.slug !== product.categorySlug)
+    return {};
+  const category = localizeCategory(categoryRecord, locale);
 
   return buildMetadata({
     locale,
@@ -119,17 +122,18 @@ export default async function ProductDetailPage({
   const product = await loadProductBySlug(slug, resolved, department);
   if (!product) notFound();
 
-  const category = await loadCategoryBySlug(
+  // The category comparison is made on the CANONICAL slug on both sides. The URL
+  // segment is the locale's own slug while `product.categorySlug` is canonical, so
+  // comparing the localized form against the canonical one would 404 every
+  // translated category the moment a French slug exists.
+  const categoryRecord = await loadCategoryRecord(
     categorySegment,
     resolved,
     department,
   );
-  if (!category) notFound();
-
-  // The product must belong to the category in the URL. A mismatch is a 404: the
-  // canonical URL for this product is the one under its own category, and serving
-  // it under another would create a second address for the same content.
-  if (category.slug !== product.categorySlug) notFound();
+  if (!categoryRecord) notFound();
+  if (categoryRecord.slug !== product.categorySlug) notFound();
+  const category = localizeCategory(categoryRecord, resolved);
 
   // The canonical slug answers under a target locale so an inbound English link
   // does not break, but it is not the URL to index. A request that arrived by the

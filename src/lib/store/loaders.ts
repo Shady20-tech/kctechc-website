@@ -191,122 +191,207 @@ export async function loadProductRecords(
     if (categoryError || !categories || categories.length === 0)
       return fallback;
 
-    const categoryIdBySlug = new Map(
-      categories.map((category) => [category.id, category.slug]),
-    );
-    const categoryDepartment = new Map(
-      categories.map((category) => [
-        category.id,
-        (category.departments as { slug: string } | null)?.slug ?? "",
-      ]),
-    );
     const categoryIds = categories.map((category) => category.id);
 
     const { data: rows, error } = await supabase
       .from("products")
-      .select(
-        "id, category_id, slug, sku, brand, gtin, title, short_description, description, specifications, price_minor, currency, stock, availability, condition, published_at, updated_at",
-      )
+      .select(PRODUCT_SELECT)
       .in("category_id", categoryIds)
       .eq("publish_state", "published")
       .order("title", { ascending: true });
 
     if (error || !rows || rows.length === 0) return fallback;
 
-    const ids = rows.map((row) => row.id);
-
-    const [
-      { data: translations },
-      { data: slugs },
-      { data: media },
-      { data: seoRows },
-    ] = await Promise.all([
-      supabase
-        .from("content_translations")
-        .select("entity_id, field_name, locale, value, state")
-        .eq("entity_type", "product")
-        .in("entity_id", ids),
-      supabase
-        .from("product_slugs")
-        .select("product_id, locale, slug")
-        .in("product_id", ids),
-      supabase
-        .from("product_media")
-        .select("id, product_id, storage_path, alt_text, is_primary, position")
-        .in("product_id", ids)
-        .order("position", { ascending: true }),
-      supabase
-        .from("entity_seo")
-        .select(
-          "entity_id, locale, title, description, canonical_override, og_image_path, noindex",
-        )
-        .eq("entity_type", "product")
-        .in("entity_id", ids),
-    ]);
-
-    const overlays = groupProductTranslations(translations ?? []);
-
-    const localizedSlugs = new Map<string, Partial<Record<Locale, string>>>();
-    for (const row of slugs ?? []) {
-      if (row.locale !== "en" && row.locale !== "fr") continue;
-      const locale = row.locale as Locale;
-      const forProduct = localizedSlugs.get(row.product_id) ?? {};
-      forProduct[locale] = row.slug;
-      localizedSlugs.set(row.product_id, forProduct);
-    }
-
-    const mediaByProduct = new Map<string, ProductImage[]>();
-    for (const row of media ?? []) {
-      const list = mediaByProduct.get(row.product_id) ?? [];
-      list.push({
-        id: row.id,
-        storagePath: row.storage_path,
-        alt: row.alt_text,
-        isPrimary: row.is_primary,
-        position: row.position,
-      });
-      mediaByProduct.set(row.product_id, list);
-    }
-
-    const seoByProduct = new Map<string, Partial<Record<Locale, ProductSeo>>>();
-    for (const row of seoRows ?? []) {
-      if (row.locale !== "en" && row.locale !== "fr") continue;
-      const locale = row.locale as Locale;
-      const forProduct = seoByProduct.get(row.entity_id) ?? {};
-      forProduct[locale] = seoFromRow(row);
-      seoByProduct.set(row.entity_id, forProduct);
-    }
-
-    return rows.map((row) => {
-      const record: ProductRecord = {
-        id: row.id,
-        categorySlug: categoryIdBySlug.get(row.category_id) ?? "",
-        departmentSlug: categoryDepartment.get(row.category_id) ?? "",
-        slug: row.slug,
-        sku: row.sku,
-        brand: asString(row.brand),
-        gtin: asString(row.gtin),
-        title: row.title,
-        shortDescription: row.short_description,
-        description: row.description,
-        specifications: parseSpecifications(row.specifications),
-        priceMinor: row.price_minor,
-        currency: row.currency,
-        stock: row.stock,
-        availability: asAvailability(row.availability),
-        condition: asCondition(row.condition),
-        images: mediaByProduct.get(row.id) ?? [],
-        localizedSlugs: localizedSlugs.get(row.id),
-        translations: overlays.get(row.id),
-        seo: seoByProduct.get(row.id),
-        publishedAt: asString(row.published_at),
-        updatedAt: asString(row.updated_at),
-      };
-      return record;
-    });
+    return hydrateProductRows(rows);
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Load a specific set of published products by id.
+ *
+ * Used by the catalogue query: `search_products` returns the matching ids for one
+ * page, and only those rows are hydrated. That is what keeps a search payload
+ * bounded by the page size rather than by the catalogue size, and it means the
+ * filtering itself never happens in TypeScript.
+ *
+ * Returns an empty list on failure, so a database outage degrades the store to its
+ * empty state rather than to an error page.
+ */
+export async function loadProductRecordsByIds(
+  ids: readonly string[],
+): Promise<readonly ProductRecord[]> {
+  if (ids.length === 0) return [];
+  try {
+    const supabase = createPublicClient();
+    if (!supabase) return [];
+
+    const { data: rows, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .in("id", [...ids])
+      .eq("publish_state", "published");
+
+    if (error || !rows || rows.length === 0) return [];
+
+    const records = await hydrateProductRows(rows);
+    // Preserve the caller's order — the RPC's ranking — because a database
+    // returning rows in a different order would undo the relevance ordering.
+    const byId = new Map(records.map((record) => [record.id, record]));
+    return ids.flatMap((id) => {
+      const record = byId.get(id);
+      return record ? [record] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** The canonical columns every product read shares. */
+const PRODUCT_SELECT =
+  "id, category_id, slug, sku, brand, gtin, title, short_description, description, specifications, price_minor, currency, stock, availability, condition, published_at, updated_at";
+
+type ProductRow = {
+  id: string;
+  category_id: string;
+  slug: string;
+  sku: string;
+  brand: string | null;
+  gtin: string | null;
+  title: string;
+  short_description: string;
+  description: string;
+  specifications: unknown;
+  price_minor: number;
+  currency: string;
+  stock: number;
+  availability: string | null;
+  condition: string | null;
+  published_at: string | null;
+  updated_at: string | null;
+};
+
+/**
+ * Turn raw product rows into canonical records.
+ *
+ * The related rows — translations, localized slugs, media, SEO — are read for the
+ * supplied ids only, so this is one bounded round trip per relation regardless of
+ * how many products the catalogue holds.
+ */
+async function hydrateProductRows(
+  rows: readonly ProductRow[],
+): Promise<readonly ProductRecord[]> {
+  const supabase = createPublicClient();
+  if (!supabase) return [];
+
+  const ids = rows.map((row) => row.id);
+  const categoryIds = [...new Set(rows.map((row) => row.category_id))];
+
+  const [
+    { data: categories },
+    { data: translations },
+    { data: slugs },
+    { data: media },
+    { data: seoRows },
+  ] = await Promise.all([
+    supabase
+      .from("product_categories")
+      .select("id, slug, departments(slug)")
+      .in("id", categoryIds),
+    supabase
+      .from("content_translations")
+      .select("entity_id, field_name, locale, value, state")
+      .eq("entity_type", "product")
+      .in("entity_id", ids),
+    supabase
+      .from("product_slugs")
+      .select("product_id, locale, slug")
+      .in("product_id", ids),
+    supabase
+      .from("product_media")
+      .select("id, product_id, storage_path, alt_text, is_primary, position")
+      .in("product_id", ids)
+      .order("position", { ascending: true }),
+    supabase
+      .from("entity_seo")
+      .select(
+        "entity_id, locale, title, description, canonical_override, og_image_path, noindex",
+      )
+      .eq("entity_type", "product")
+      .in("entity_id", ids),
+  ]);
+
+  const categoryIdBySlug = new Map(
+    (categories ?? []).map((category) => [category.id, category.slug]),
+  );
+  const categoryDepartment = new Map(
+    (categories ?? []).map((category) => [
+      category.id,
+      (category.departments as { slug: string } | null)?.slug ?? "",
+    ]),
+  );
+
+  const overlays = groupProductTranslations(translations ?? []);
+
+  const localizedSlugs = new Map<string, Partial<Record<Locale, string>>>();
+  for (const row of slugs ?? []) {
+    if (row.locale !== "en" && row.locale !== "fr") continue;
+    const locale = row.locale as Locale;
+    const forProduct = localizedSlugs.get(row.product_id) ?? {};
+    forProduct[locale] = row.slug;
+    localizedSlugs.set(row.product_id, forProduct);
+  }
+
+  const mediaByProduct = new Map<string, ProductImage[]>();
+  for (const row of media ?? []) {
+    const list = mediaByProduct.get(row.product_id) ?? [];
+    list.push({
+      id: row.id,
+      storagePath: row.storage_path,
+      alt: row.alt_text,
+      isPrimary: row.is_primary,
+      position: row.position,
+    });
+    mediaByProduct.set(row.product_id, list);
+  }
+
+  const seoByProduct = new Map<string, Partial<Record<Locale, ProductSeo>>>();
+  for (const row of seoRows ?? []) {
+    if (row.locale !== "en" && row.locale !== "fr") continue;
+    const locale = row.locale as Locale;
+    const forProduct = seoByProduct.get(row.entity_id) ?? {};
+    forProduct[locale] = seoFromRow(row);
+    seoByProduct.set(row.entity_id, forProduct);
+  }
+
+  return rows.map((row) => {
+    const record: ProductRecord = {
+      id: row.id,
+      categorySlug: categoryIdBySlug.get(row.category_id) ?? "",
+      departmentSlug: categoryDepartment.get(row.category_id) ?? "",
+      slug: row.slug,
+      sku: row.sku,
+      brand: asString(row.brand),
+      gtin: asString(row.gtin),
+      title: row.title,
+      shortDescription: row.short_description,
+      description: row.description,
+      specifications: parseSpecifications(row.specifications),
+      priceMinor: row.price_minor,
+      currency: row.currency,
+      stock: row.stock,
+      availability: asAvailability(row.availability),
+      condition: asCondition(row.condition),
+      images: mediaByProduct.get(row.id) ?? [],
+      localizedSlugs: localizedSlugs.get(row.id),
+      translations: overlays.get(row.id),
+      seo: seoByProduct.get(row.id),
+      publishedAt: asString(row.published_at),
+      updatedAt: asString(row.updated_at),
+    };
+    return record;
+  });
 }
 
 /** Load published categories, canonical form. */
@@ -499,9 +584,27 @@ export async function loadCategoryBySlug(
   locale: Locale,
   departmentSlug?: string,
 ): Promise<LocalizedCategory | null> {
-  const records = await loadCategoryRecords(departmentSlug);
-  const record = resolveBySlug(records, segment, locale);
+  const record = await loadCategoryRecord(segment, locale, departmentSlug);
   return record ? localizeCategory(record, locale) : null;
+}
+
+/**
+ * Resolve a category URL segment to its canonical record.
+ *
+ * Callers that need to compare the category against a canonical identifier — a
+ * product's `categorySlug`, a facet count — must use this rather than
+ * `loadCategoryBySlug`, whose `slug` is the locale's own URL segment. Comparing a
+ * localized slug against a canonical one silently fails the moment a translation
+ * exists, which is why the record is the thing to hand around and `localizeCategory`
+ * is applied only at the point the name is rendered.
+ */
+export async function loadCategoryRecord(
+  segment: string,
+  locale: Locale,
+  departmentSlug?: string,
+): Promise<CategoryRecord | null> {
+  const records = await loadCategoryRecords(departmentSlug);
+  return resolveBySlug(records, segment, locale);
 }
 
 /**

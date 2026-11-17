@@ -1,6 +1,5 @@
-import { X } from "lucide-react";
-import Link from "next/link";
-
+import { MarketplaceActiveFilters } from "@/components/marketplace/MarketplaceActiveFilters";
+import type { MarketplaceActiveFilterChip } from "@/components/marketplace/types";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 import { formatListingPrice } from "@/lib/real-estate/records";
@@ -14,20 +13,19 @@ import {
 } from "@/lib/real-estate/search";
 
 /**
- * The active filters, as removable chips.
+ * The active listing filters, as removable chips.
  *
- * The point of this component is that a filtered result set has to say *why* it
- * is what it is. Without it, a visitor who lands on a shared link with four
- * filters applied sees a short list and no explanation, and the only way to
- * discover the cause is to open the filter panel and read every control.
+ * A binding over the shared `MarketplaceActiveFilters`: this component knows what
+ * a listing filter *is* — it reads the typed `ListingFilters` model, names each
+ * value from the published geography and the enum dictionaries, and builds the
+ * removal URL from the full filter state — and the shared component renders the
+ * chips. That split is what keeps the chip presentation identical across the
+ * departments without any department's filter model reaching another's.
  *
  * Each chip is a link to the same view with that one filter removed, built from
  * the full filter state rather than from a query-string splice. Splicing would
  * leave a stale `page` behind, and removing a region would leave an orphaned
  * division in the URL that the panel cannot display.
- *
- * A chip is a link, not a button: the target is a real URL, so it is shareable,
- * crawlable as `noindex, follow`, and works without JavaScript.
  */
 export function ActiveFilterChips({
   locale,
@@ -57,46 +55,35 @@ export function ActiveFilterChips({
 
   function hrefFor(key: FilterKey): string {
     const next = removeListingFilter(filters, key);
-    const params = new URLSearchParams(buildListingQuery(next).replace(/^\?/, ""));
+    const params = new URLSearchParams(
+      buildListingQuery(next).replace(/^\?/, ""),
+    );
     if (view === "map") params.set("view", "map");
     const query = params.toString();
     return `${basePath}${query ? `?${query}` : ""}`;
   }
 
+  const chips: MarketplaceActiveFilterChip[] = keys.map((key) => {
+    const label = filterLabel(filters, key, locale, t, locationNames);
+    return {
+      key,
+      label,
+      href: hrefFor(key),
+      removeLabel: t("realEstate.search.removeFilter", { filter: label }),
+    };
+  });
+
+  // Clear all is a link to the bare results path, so it drops every filter at
+  // once — including any the chip list cannot render, such as an orphaned
+  // division. It keeps the map view, which is a presentation choice rather than a
+  // filter.
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="mono-label text-muted">
-        {t("realEstate.search.activeFilters")}
-      </span>
-      <ul className="flex flex-wrap gap-2">
-        {keys.map((key) => (
-          <li key={key}>
-            <Link
-              href={hrefFor(key)}
-              className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-sm text-body transition-soft hover:border-dept-accent"
-              // The label names the filter and its value, so a screen-reader user
-              // hears "Remove filter Region: South West" rather than "Region".
-              aria-label={t("realEstate.search.removeFilter", {
-                filter: filterLabel(filters, key, locale, t, locationNames),
-              })}
-            >
-              <span>{filterLabel(filters, key, locale, t, locationNames)}</span>
-              <X aria-hidden="true" className="h-3.5 w-3.5" />
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {/* Clear all is a link to the bare results path, so it drops every filter
-          at once — including any the chip list cannot render, such as an
-          orphaned division. It keeps the map view, which is a presentation
-          choice rather than a filter. */}
-      <Link
-        href={view === "map" ? `${basePath}?view=map` : basePath}
-        className="text-sm font-medium text-dept-accent underline-offset-4 hover:underline"
-      >
-        {t("realEstate.search.clearAll")}
-      </Link>
-    </div>
+    <MarketplaceActiveFilters
+      chips={chips}
+      clearHref={view === "map" ? `${basePath}?view=map` : basePath}
+      clearLabel={t("realEstate.search.clearAll")}
+      label={t("realEstate.search.activeFilters")}
+    />
   );
 }
 
@@ -149,7 +136,9 @@ function filterLabel(
     case "maxPrice":
       return `${t("realEstate.search.maxPriceShort")}: ${formatMinor(filters.maxPrice, locale, filters.currency)}`;
     case "minBedrooms":
-      return t("realEstate.search.bedroomsChip", { count: filters.minBedrooms ?? 0 });
+      return t("realEstate.search.bedroomsChip", {
+        count: filters.minBedrooms ?? 0,
+      });
     case "minBathrooms":
       return t("realEstate.search.bathroomsChip", {
         count: filters.minBathrooms ?? 0,

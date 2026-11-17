@@ -338,6 +338,7 @@ declare
   v_allowed text[] := array[
     'place_order', 'search_property_listings', 'listing_geography_counts',
     'listing_facets',
+    'search_products', 'product_facets',
     'match_region_by_name', 'record_listing_view',
     'is_admin', 'is_super_admin', 'is_real_estate_admin', 'is_inquiry_manager',
     'current_user_role', 'current_agent_id', 'can_access_department',

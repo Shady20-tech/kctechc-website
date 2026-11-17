@@ -1,7 +1,14 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
 import { SectionBand } from "@/components/layout/PageShell";
+import { MarketplaceEmptyState } from "@/components/marketplace/MarketplaceEmptyState";
+import { MarketplacePagination } from "@/components/marketplace/MarketplacePagination";
+import { MarketplaceSearchLayout } from "@/components/marketplace/MarketplaceSearchLayout";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
+import { StoreActiveFilters } from "@/components/store/StoreActiveFilters";
+import { StoreFilterSidebar } from "@/components/store/StoreFilterSidebar";
+import { StoreResultsToolbar } from "@/components/store/StoreResultsToolbar";
 import { ProductGrid } from "@/components/store/ProductCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -12,11 +19,20 @@ import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo/structured-data";
+import { loadStoreFacets, queryCatalogue } from "@/lib/store/catalogue";
+import { localizeCategory } from "@/lib/store/defaults";
 import {
   loadCategories,
   loadCategoryBySlug,
-  loadProductsInCategory,
+  loadCategoryRecords,
+  resolveBySlug,
 } from "@/lib/store/loaders";
+import {
+  activeStoreFilterKeys,
+  buildStoreQuery,
+  hasActiveStoreFilters,
+  parseStoreFilters,
+} from "@/lib/store/search";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
@@ -24,9 +40,14 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
  *
  * The URL segment is the category's localized slug, so a French visitor sees
  * `/fr/digital-marketing/store/ordinateurs` and the English one sees
- * `/en/digital-marketing/store/laptops` for the same category. The segment is
- * resolved back to the category through `loadCategoryBySlug`, which applies the
- * same locale-scoped matching rules the product pages use.
+ * `/en/digital-marketing/store/laptops` for the same category.
+ *
+ * It is the store index scoped to one category, and it uses the *same* filtering
+ * experience: the category is pinned into the filter state and then every control
+ * — keyword, price, brand, in-stock, sort, pagination — works exactly as it does
+ * on the index. The category select is therefore not offered here; it is already
+ * decided by the URL. Everything else narrows within the category, and all of it
+ * happens in `search_products`, never by loading the category into React.
  *
  * A category whose localized slug differs from the canonical one is reachable at
  * both under its own locale — the canonical slug still answers, so an inbound
@@ -40,8 +61,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; department: string; category: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { locale, department, category: segment } = await params;
   if (!isLocale(locale)) return {};
@@ -52,18 +75,27 @@ export async function generateMetadata({
 
   const t = createTranslator(locale).t;
 
+  // The bare category page is indexable; a narrowed view of it is not, for the
+  // same reason a filtered store index is not — every price/brand permutation
+  // would be a near-duplicate. The category segment itself is pinned, so only the
+  // remaining filters decide indexability.
+  const filters = { ...parseStoreFilters(await searchParams), category: undefined };
+
   return buildMetadata({
     locale,
     pathWithoutLocale: `${storePathFor(department)}/${category.slug}`,
     title: `${category.name} · ${t("store.metaTitle")}`,
     description: category.description ?? t("store.metaDescription"),
+    noindex: hasActiveStoreFilters(filters),
   });
 }
 
 export default async function StoreCategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; department: string; category: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, department, category: segment } = await params;
   if (!isLocale(locale)) notFound();
@@ -74,37 +106,59 @@ export default async function StoreCategoryPage({
   const storePath = storePathFor(department);
 
   // The segment is matched against localized slugs; a miss is a 404, not an empty
-  // category, so a typo does not look like an out-of-stock catalogue.
-  const category = await loadCategoryBySlug(segment, resolved, department);
-  if (!category) notFound();
+  // category, so a typo does not look like an out-of-stock catalogue. The record
+  // is kept canonical because that is what the catalogue query filters on — the
+  // localized slug is only the URL segment.
+  const records = await loadCategoryRecords(department);
+  const record = resolveBySlug(records, segment, resolved);
+  if (!record) notFound();
+  const category = localizeCategory(record, resolved);
 
-  // Products are filtered by the canonical category slug, which is the stable
-  // identifier, while the URL keeps the localized one.
-  const canonical = (await loadCategories(resolved, department)).find(
-    (entry) => entry.slug === category.slug,
-  );
-  const products = await loadProductsInCategory(
-    canonical?.slug ?? category.slug,
-    resolved,
-    department,
-  );
+  const basePath = `/${resolved}${storePath}/${category.slug}`;
+  // The URL's own category is pinned into the filter state, so a stale `category`
+  // parameter in the query string cannot override the segment the visitor is on.
+  const filters = { ...parseStoreFilters(await searchParams), category: undefined };
 
-  const categoryPath = `/${resolved}${storePath}/${category.slug}`;
+  const [categories, facets] = await Promise.all([
+    loadCategories(resolved, department),
+    loadStoreFacets(department),
+  ]);
+
+  const page = await queryCatalogue({
+    departmentSlug: department,
+    locale: resolved,
+    query: filters.query,
+    categorySlug: record.slug,
+    currency: filters.currency,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    inStockOnly: filters.inStock,
+    brand: filters.brand,
+    sort: filters.sort,
+    page: filters.page,
+  });
+
+  const activeCount = activeStoreFilterKeys(filters).length;
+  const hasFilters = hasActiveStoreFilters(filters);
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
     { name: t("nav.store"), href: `/${resolved}${storePath}` },
-    { name: category.name, href: categoryPath },
+    { name: category.name, href: basePath },
   ];
 
   const listJsonLd = itemListJsonLd({
     name: category.name,
-    path: categoryPath,
-    items: products.map((product) => ({
+    path: basePath,
+    items: page.items.map((product) => ({
       name: product.title,
-      path: `/${resolved}${storePath}/${category.slug}/${product.slug}`,
+      path: `${basePath}/${product.slug}`,
     })),
   });
+
+  function hrefFor(target: number): string {
+    return `${basePath}${buildStoreQuery({ ...filters, page: target })}`;
+  }
 
   return (
     <>
@@ -112,63 +166,122 @@ export default async function StoreCategoryPage({
         data={breadcrumbJsonLd([
           { name: t("nav.home"), path: `/${resolved}` },
           { name: t("nav.store"), path: `/${resolved}${storePath}` },
-          { name: category.name, path: categoryPath },
+          { name: category.name, path: basePath },
         ])}
       />
       {listJsonLd ? <JsonLdScript data={listJsonLd} /> : null}
 
-      <SectionBand
-        labelledBy="category-heading"
-        {...departmentScopeProps(
-          department as (typeof DEPARTMENTS)[number]["slug"],
+      <MarketplaceSearchLayout
+        sidebarAriaLabel={t("store.filtersHeading")}
+        drawerLabels={{
+          open: t("store.openFilters"),
+          title: t("store.filtersHeading"),
+          close: t("store.closeFilters"),
+        }}
+        activeCount={activeCount}
+        filters={(variant) => (
+          <StoreFilterSidebar
+            locale={resolved}
+            basePath={basePath}
+            filters={filters}
+            facets={facets}
+            // The category is fixed by the URL, so the sidebar does not offer it.
+            categories={[]}
+            variant={variant}
+          />
         )}
-      >
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-8"
-        />
-        <PageIntro
-          eyebrow={t("store.categoryHeading")}
-          heading={category.name}
-          intro={category.description}
-        />
-        <h2 id="category-heading" className="visually-hidden">
-          {category.name}
-        </h2>
-      </SectionBand>
-
-      <SectionBand labelledBy="category-products-heading">
-        <h2 id="category-products-heading" className="visually-hidden">
-          {t("store.heading")}
-        </h2>
-
-        {products.length === 0 ? (
-          <div className="max-w-2xl">
-            <h3 className="text-xl font-semibold text-ink-900">
-              {t("store.categoryEmptyHeading")}
-            </h3>
-            <p className="mt-3 text-base text-body">
-              {t("store.categoryEmptyBody")}
-            </p>
-            <p className="mt-6">
-              <ButtonLink
-                href={`/${resolved}${storePath}`}
-                variant="secondary"
-              >
-                {t("store.backToStore")}
-              </ButtonLink>
-            </p>
-          </div>
-        ) : (
+        header={
+          <SectionBand
+            labelledBy="category-heading"
+            {...departmentScopeProps(
+              department as (typeof DEPARTMENTS)[number]["slug"],
+            )}
+          >
+            <Breadcrumbs
+              items={breadcrumbs}
+              ariaLabel={t("a11y.breadcrumb")}
+              className="mb-8"
+            />
+            <PageIntro
+              eyebrow={t("store.categoryHeading")}
+              heading={category.name}
+              intro={category.description}
+            />
+            <h2 id="category-heading" className="visually-hidden">
+              {category.name}
+            </h2>
+          </SectionBand>
+        }
+        toolbar={
+          <StoreResultsToolbar
+            locale={resolved}
+            basePath={basePath}
+            filters={filters}
+            total={page.total}
+          />
+        }
+        meta={
+          activeCount > 0 ? (
+            <div className="mt-4">
+              <StoreActiveFilters
+                locale={resolved}
+                basePath={basePath}
+                filters={filters}
+                categories={categories}
+              />
+            </div>
+          ) : null
+        }
+        results={
           <>
-            <p className="mb-6 text-sm text-muted">
-              {products.length === 1
-                ? t("store.resultsCountOne")
-                : t("store.resultsCount", { count: products.length })}
-            </p>
-            <ProductGrid products={products} locale={resolved} t={t} />
-            <p className="mt-10">
+            {page.items.length === 0 ? (
+              <div className="mt-2">
+                <MarketplaceEmptyState
+                  heading={
+                    hasFilters
+                      ? t("store.noResultsHeading")
+                      : t("store.categoryEmptyHeading")
+                  }
+                  body={
+                    hasFilters
+                      ? t("store.noResultsBody")
+                      : t("store.categoryEmptyBody")
+                  }
+                  action={
+                    <ButtonLink
+                      href={hasFilters ? basePath : `/${resolved}${storePath}`}
+                      variant="secondary"
+                    >
+                      {hasFilters
+                        ? t("store.clearFilters")
+                        : t("store.backToStore")}
+                    </ButtonLink>
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                <div className="mt-2">
+                  <ProductGrid products={page.items} locale={resolved} t={t} />
+                </div>
+                <MarketplacePagination
+                  page={page.page}
+                  pageCount={page.pageCount}
+                  hrefFor={hrefFor}
+                  labels={{
+                    nav: t("store.paginationLabel"),
+                    previous: t("store.previousPage"),
+                    next: t("store.nextPage"),
+                    page: (target) => t("store.pageNumber", { page: target }),
+                  }}
+                />
+              </>
+            )}
+          </>
+        }
+        footer={
+          <SectionBand tone="alt">
+            <p>
               <ButtonLink
                 href={`/${resolved}${storePath}`}
                 variant="ghost"
@@ -177,9 +290,9 @@ export default async function StoreCategoryPage({
                 {t("store.backToStore")}
               </ButtonLink>
             </p>
-          </>
-        )}
-      </SectionBand>
+          </SectionBand>
+        }
+      />
     </>
   );
 }

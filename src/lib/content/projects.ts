@@ -1,4 +1,9 @@
 import type { Locale } from "@/lib/i18n/locales";
+import {
+  cleanParam,
+  firstParam,
+  serializeQuery,
+} from "@/lib/marketplace/query";
 import type {
   LocalizedProject,
   LocalizedProjectMedia,
@@ -253,4 +258,71 @@ export function splitProjectMedia(project: LocalizedProject): {
     after: project.media.find((item) => item.role === "after"),
     general: project.media.filter((item) => item.role === "general"),
   };
+}
+
+/**
+ * The project filter keys, in the order the active-filter chips render.
+ *
+ * A gallery with three filters has three removable chips; naming them here means
+ * the chip list and the removal function cannot disagree about what a filter is.
+ */
+export const PROJECT_FILTER_PARAMS = [
+  "service",
+  "region",
+  "propertyType",
+] as const;
+
+export type ProjectFilterKey = (typeof PROJECT_FILTER_PARAMS)[number];
+
+/** Parse a project filter state from raw URL search params. */
+export function parseProjectFilters(
+  query: Record<string, string | string[] | undefined>,
+): ProjectFilters {
+  return {
+    service: cleanParam(firstParam(query.service)),
+    region: cleanParam(firstParam(query.region)),
+    propertyType: cleanParam(firstParam(query.propertyType)),
+  };
+}
+
+/** Serialize a project filter state, delegating to the shared query rules. */
+export function serializeProjectFilters(filters: ProjectFilters): string {
+  return serializeQuery({
+    service: filters.service,
+    region: filters.region,
+    propertyType: filters.propertyType,
+  });
+}
+
+/** The active project filters, in chip order. */
+export function activeProjectFilterKeys(
+  filters: ProjectFilters,
+): ProjectFilterKey[] {
+  const keys: ProjectFilterKey[] = [];
+  if (filters.service) keys.push("service");
+  if (filters.region) keys.push("region");
+  if (filters.propertyType) keys.push("propertyType");
+  return keys;
+}
+
+/** Remove one project filter, returning the new state. */
+export function removeProjectFilter(
+  filters: ProjectFilters,
+  key: ProjectFilterKey,
+): ProjectFilters {
+  const next: ProjectFilters = { ...filters };
+  switch (key) {
+    case "service":
+      next.service = undefined;
+      break;
+    case "region":
+      next.region = undefined;
+      break;
+    case "propertyType":
+      next.propertyType = undefined;
+      break;
+    default:
+      break;
+  }
+  return next;
 }

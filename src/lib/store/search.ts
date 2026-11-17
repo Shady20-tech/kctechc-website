@@ -1,28 +1,43 @@
-import type { LocalizedProduct } from "./types";
+import {
+  cleanParam,
+  firstParam,
+  parseCurrencyCode,
+  parsePositiveInt,
+  serializeQuery,
+} from "@/lib/marketplace/query";
 
 /**
- * Store search, filtering and sorting.
+ * The store's typed filter model and URL contract.
  *
- * Kept as pure functions over an already-localized product list so the behaviour
- * is testable without a database, and so the store page and the category page
- * cannot implement subtly different filtering.
+ * Every value is parsed defensively out of the URL, because a query parameter is
+ * text a visitor can edit: a bad price bound must read as "no bound" rather than
+ * as a request PostgREST rejects, and an unknown sort must fall back to relevance
+ * rather than throw. The parsed object is the complete desired state, so the
+ * serializer can be built from it alone — a key absent here is absent from the
+ * URL, which is what keeps one filter state to one address.
  *
- * Search is done in application code rather than in SQL because the catalogue is
- * small and the searchable text is the *localized* text, which lives in
- * `content_translations` rather than on the product row. A SQL trigram search
- * would only ever match the English canonical title, so a French visitor
- * searching "ordinateur" would find nothing. The trigram index on
- * `products.title` remains useful for the admin search, which is canonical-only.
+ * Filtering itself happens in the database (`search_products`, see
+ * `./catalogue`), not here. This module deliberately holds no matching logic: a
+ * second implementation in TypeScript would drift from the SQL, and loading the
+ * catalogue to filter it in React is the approach the brief rules out.
  */
 
-export type StoreSort = "relevance" | "price-asc" | "price-desc" | "name-asc";
+export type StoreSort =
+  | "relevance"
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "name-asc";
 
 export const STORE_SORTS: readonly StoreSort[] = [
   "relevance",
+  "newest",
   "price-asc",
   "price-desc",
   "name-asc",
 ];
+
+export const DEFAULT_STORE_SORT: StoreSort = "relevance";
 
 export function isStoreSort(value: string | undefined): value is StoreSort {
   return STORE_SORTS.includes(value as StoreSort);
@@ -31,6 +46,8 @@ export function isStoreSort(value: string | undefined): value is StoreSort {
 /** Translation key for a sort option's label. */
 export function sortLabelKey(sort: StoreSort): string {
   switch (sort) {
+    case "newest":
+      return "store.sortNewest";
     case "price-asc":
       return "store.sortPriceAsc";
     case "price-desc":
@@ -42,145 +59,164 @@ export function sortLabelKey(sort: StoreSort): string {
   }
 }
 
+/** The store's primary currency, matching the brief (XAF/FCFA). */
+export const STORE_PRIMARY_CURRENCY = "XAF";
+
+/** One page of the catalogue, at this size. */
+export const STORE_PAGE_SIZE = 12;
+
 export type StoreFilters = {
   query?: string;
+  /** A category's canonical slug. */
   category?: string;
-  availability?: "in_stock" | "out_of_stock";
+  /** The currency the price bounds are expressed in. */
+  currency?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  brand?: string;
   sort?: StoreSort;
+  page?: number;
 };
 
-/**
- * Normalize a search term for matching.
- *
- * Diacritics are stripped so "électrique" matches "electrique" and vice versa —
- * a French visitor typing without accents, or an English one typing a product
- * name that contains them, should still find the product. Case and surrounding
- * whitespace are removed for the same reason.
- */
-export function normalizeSearchTerm(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+export const STORE_FILTER_PARAMS = [
+  "q",
+  "category",
+  "currency",
+  "minPrice",
+  "maxPrice",
+  "inStock",
+  "brand",
+  "sort",
+  "page",
+] as const;
+
+export type StoreFilterKey = (typeof STORE_FILTER_PARAMS)[number];
+
+/** Parse a store filter state from raw URL search params. */
+export function parseStoreFilters(
+  query: Record<string, string | string[] | undefined>,
+): StoreFilters {
+  const minPrice = parsePositiveInt(firstParam(query.minPrice), { min: 0 });
+  const maxPrice = parsePositiveInt(firstParam(query.maxPrice), { min: 0 });
+  const currency = parseCurrencyCode(firstParam(query.currency));
+
+  // A price bound without a currency is applied in the store's primary currency
+  // rather than in an unknown unit. Comparing a number against a price in a
+  // currency the visitor never chose is exactly the cross-currency comparison the
+  // brief forbids, so the bound always carries the currency it is expressed in.
+  const hasPrice = minPrice !== undefined || maxPrice !== undefined;
+  const resolvedCurrency = hasPrice
+    ? (currency ?? STORE_PRIMARY_CURRENCY)
+    : currency;
+
+  return {
+    query: cleanParam(firstParam(query.q)),
+    category: cleanParam(firstParam(query.category)),
+    currency: resolvedCurrency,
+    minPrice,
+    maxPrice,
+    // Only `true` is a filter. `?inStock=false` is not "out of stock only" — that
+    // would be a second, unsupported filter — it is simply "no filter".
+    //
+    // `?availability=in_stock` is the shape this page shipped with, so it is read
+    // as the same filter rather than silently dropped: an inbound link or bookmark
+    // written before the redesign must keep working. `out_of_stock` is not offered
+    // and is not accepted, because there is no "out of stock only" filter.
+    inStock:
+      firstParam(query.inStock) === "true" ||
+      firstParam(query.availability) === "in_stock"
+        ? true
+        : undefined,
+    brand: cleanParam(firstParam(query.brand)),
+    sort: isStoreSort(firstParam(query.sort))
+      ? (firstParam(query.sort) as StoreSort)
+      : undefined,
+    page: parsePositiveInt(firstParam(query.page), { min: 1 }),
+  };
 }
 
-/** The text a search term is matched against for one product. */
-function searchableText(product: LocalizedProduct): string {
-  return normalizeSearchTerm(
-    [
-      product.title,
-      product.sku,
-      product.brand ?? "",
-      product.shortDescription,
-    ].join(" "),
+/** Serialize a store filter state as a query string. */
+export function buildStoreQuery(filters: StoreFilters): string {
+  return serializeQuery({
+    q: filters.query,
+    category: filters.category,
+    currency: filters.currency,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    inStock: filters.inStock ? "true" : undefined,
+    brand: filters.brand,
+    // The default is omitted rather than written out, so `/store` and
+    // `/store?sort=relevance` are not two addresses for the same page.
+    sort:
+      filters.sort && filters.sort !== DEFAULT_STORE_SORT
+        ? filters.sort
+        : undefined,
+    page: filters.page && filters.page > 1 ? filters.page : undefined,
+  });
+}
+
+/** True when at least one filter narrows the catalogue. */
+export function hasActiveStoreFilters(filters: StoreFilters): boolean {
+  return (
+    Boolean(filters.query) ||
+    Boolean(filters.category) ||
+    Boolean(filters.brand) ||
+    filters.minPrice !== undefined ||
+    filters.maxPrice !== undefined ||
+    filters.inStock === true
   );
 }
 
+/** The active filters, in the order the chips are rendered. */
+export function activeStoreFilterKeys(filters: StoreFilters): StoreFilterKey[] {
+  const keys: StoreFilterKey[] = [];
+  if (filters.query) keys.push("q");
+  if (filters.category) keys.push("category");
+  if (filters.brand) keys.push("brand");
+  if (filters.inStock) keys.push("inStock");
+  if (filters.minPrice !== undefined) keys.push("minPrice");
+  if (filters.maxPrice !== undefined) keys.push("maxPrice");
+  return keys;
+}
+
 /**
- * Filter and sort a localized product list.
+ * Remove one filter, returning the new state.
  *
- * An unrecognised sort falls back to relevance rather than throwing, because the
- * sort arrives from a URL query parameter that a visitor can edit freely.
+ * Page is dropped on every removal: page 4 of a narrower result set is not a
+ * meaningful page. A price bound also clears the currency when it was the only
+ * reason the currency was present, so removing "max price" does not leave an
+ * orphaned `currency` in the URL.
  */
-export function filterProducts(
-  products: readonly LocalizedProduct[],
+export function removeStoreFilter(
   filters: StoreFilters,
-): LocalizedProduct[] {
-  const term = filters.query ? normalizeSearchTerm(filters.query) : "";
-  const category = filters.category?.trim().toLowerCase() ?? "";
-
-  const filtered = products.filter((product) => {
-    if (category && product.categorySlug.toLowerCase() !== category) {
-      return false;
-    }
-
-    if (filters.availability === "in_stock" && product.stock <= 0) return false;
-    if (filters.availability === "out_of_stock" && product.stock > 0) {
-      return false;
-    }
-
-    if (term.length > 0 && !searchableText(product).includes(term)) {
-      return false;
-    }
-
-    return true;
-  });
-
-  return sortProducts(filtered, filters.sort ?? "relevance", term);
-}
-
-/**
- * Sort a product list.
- *
- * Price and name are compared with a locale-independent tiebreak on id, so the
- * order is stable: two products at the same price must not swap places between
- * the server render and a client re-render, which would be a hydration mismatch.
- */
-export function sortProducts(
-  products: readonly LocalizedProduct[],
-  sort: StoreSort,
-  term = "",
-): LocalizedProduct[] {
-  const list = [...products];
-
-  switch (sort) {
-    case "price-asc":
-      return list.sort(
-        (a, b) => a.priceMinor - b.priceMinor || a.id.localeCompare(b.id),
-      );
-    case "price-desc":
-      return list.sort(
-        (a, b) => b.priceMinor - a.priceMinor || a.id.localeCompare(b.id),
-      );
-    case "name-asc":
-      return list.sort(
-        (a, b) =>
-          a.title.localeCompare(b.title, undefined, { sensitivity: "base" }) ||
-          a.id.localeCompare(b.id),
-      );
+  key: StoreFilterKey,
+): StoreFilters {
+  const next: StoreFilters = { ...filters, page: undefined };
+  switch (key) {
+    case "q":
+      next.query = undefined;
+      break;
+    case "category":
+      next.category = undefined;
+      break;
+    case "brand":
+      next.brand = undefined;
+      break;
+    case "inStock":
+      next.inStock = undefined;
+      break;
+    case "minPrice":
+      next.minPrice = undefined;
+      break;
+    case "maxPrice":
+      next.maxPrice = undefined;
+      break;
     default:
-      // Relevance: a product whose title contains the term ranks above one that
-      // only matches on its description, then in-stock before out-of-stock.
-      // With no term this degrades to the catalogue's own order.
-      if (term.length === 0) return list;
-      return list.sort((a, b) => {
-        const aTitle = normalizeSearchTerm(a.title).includes(term) ? 0 : 1;
-        const bTitle = normalizeSearchTerm(b.title).includes(term) ? 0 : 1;
-        if (aTitle !== bTitle) return aTitle - bTitle;
-        const aStock = a.stock > 0 ? 0 : 1;
-        const bStock = b.stock > 0 ? 0 : 1;
-        return aStock - bStock || a.id.localeCompare(b.id);
-      });
+      break;
   }
-}
-
-/**
- * Serialize a filter state as a store query string.
- *
- * The filters object is the complete desired state, so a key absent from it is
- * absent from the URL. That is what keeps one filter state to one URL: an empty
- * or default value never appears, so `/store` and `/store?sort=relevance&q=` are
- * not two addresses for the same page — the duplicate-content concern that also
- * governs locale routing.
- *
- * Built from scratch rather than by patching the incoming params, so a stale
- * value cannot survive a filter change and a tracking parameter is not carried
- * into an internal link.
- */
-export function buildStoreQuery(filters: StoreFilters): string {
-  const params = new URLSearchParams();
-
-  if (filters.query && filters.query.length > 0) params.set("q", filters.query);
-  if (filters.category && filters.category.length > 0) {
-    params.set("category", filters.category);
+  if (next.minPrice === undefined && next.maxPrice === undefined) {
+    next.currency = undefined;
   }
-  if (filters.availability) params.set("availability", filters.availability);
-  // `relevance` is the default, so it is omitted rather than written out.
-  if (filters.sort && filters.sort !== "relevance") {
-    params.set("sort", filters.sort);
-  }
-
-  const serialized = params.toString();
-  return serialized ? `?${serialized}` : "";
+  return next;
 }
