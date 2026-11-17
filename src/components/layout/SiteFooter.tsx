@@ -1,8 +1,12 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Building2, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
 import { SocialLinks } from "@/components/layout/SocialLinks";
-import { DEPARTMENTS, type DepartmentSlug } from "@/lib/config/site";
+import {
+  DEPARTMENTS,
+  DEPARTMENT_EMAILS,
+  type DepartmentSlug,
+} from "@/lib/config/site";
 import type { SiteContent } from "@/lib/config/site-content";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
@@ -126,6 +130,20 @@ export function SiteFooter({
                     className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
                   >
                     {email}
+                  </a>
+                ))}
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <Building2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="flex flex-col">
+                {DEPARTMENTS.map((department) => (
+                  <a
+                    key={department.slug}
+                    href={`mailto:${DEPARTMENT_EMAILS[department.slug]}`}
+                    className="inline-flex min-h-6 items-center transition-soft hover:text-white hover:underline"
+                  >
+                    {DEPARTMENT_EMAILS[department.slug]}
                   </a>
                 ))}
               </span>

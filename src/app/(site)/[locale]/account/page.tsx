@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AvatarForm } from "@/components/admin/AvatarForm";
+import { resolveAvatarUrl } from "@/components/admin/Avatar";
 import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { MembershipCard } from "@/components/account/MembershipCard";
 import { ProfileResidencyForm } from "@/components/account/ProfileResidencyForm";
@@ -149,6 +151,26 @@ export default async function AccountPage({
     "errors.already_member": t("errors.already_member"),
     "errors.invalid_type": t("errors.invalid_type"),
     "errors.invalid": t("errors.invalid"),
+  };
+
+  const avatarLabels: Record<string, string> = {
+    avatarHeading: t("account.avatarHeading"),
+    avatarIntro: t("account.avatarIntro"),
+    avatarChoose: t("account.avatarChoose"),
+    avatarUpload: t("account.avatarUpload"),
+    avatarUploading: t("account.avatarUploading"),
+    avatarRemove: t("account.avatarRemove"),
+    avatarUpdated: t("account.avatarUpdated"),
+    "errors.no_file": t("errors.no_file"),
+    "errors.empty": t("errors.empty"),
+    "errors.too_large": t("errors.too_large"),
+    "errors.type_not_allowed": t("errors.type_not_allowed"),
+    "errors.unknown_type": t("errors.unknown_type"),
+    "errors.rate_limited": t("errors.rate_limited"),
+    "errors.upload_failed": t("errors.upload_failed"),
+    "errors.update_failed": t("errors.update_failed"),
+    "errors.unauthenticated": t("errors.unauthenticated"),
+    "errors.unconfigured": t("errors.unconfigured"),
   };
 
   const residencyLabels: Record<string, string> = {
@@ -302,6 +324,18 @@ export default async function AccountPage({
           ))}
         </div>
       </section>
+
+      {state.profile ? (
+        <div className="mt-12">
+          <Card className="max-w-2xl">
+            <AvatarForm
+              currentUrl={resolveAvatarUrl(state.profile.avatarPath)}
+              name={state.profile.fullName || state.email || ""}
+              labels={avatarLabels}
+            />
+          </Card>
+        </div>
+      ) : null}
 
       {state.profile ? (
         <div className="mt-12">

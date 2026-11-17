@@ -148,6 +148,7 @@ export async function uploadAvatarAction(
 
   revalidatePath("/admin/profile");
   revalidatePath("/admin");
+  revalidatePath("/[locale]/account", "page");
   return { ok: true, message: "avatar_updated" };
 }
 
@@ -176,6 +177,7 @@ export async function removeAvatarAction(): Promise<void> {
   });
 
   revalidatePath("/admin/profile");
+  revalidatePath("/[locale]/account", "page");
 }
 
 export async function changePasswordAction(

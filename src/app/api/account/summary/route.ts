@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { resolveDashboardHome } from "@/lib/auth/dashboard-home";
+import { resolveAccountSummary } from "@/lib/auth/account-summary";
 import { isLocale } from "@/lib/i18n/locales";
 
 /**
- * The signed-in caller's dashboard, for the public header's return control.
+ * The signed-in caller's account summary, for the public header controls.
  *
  * The shared site header must stay statically renderable — reading the session
  * there with `cookies()` would make every public page dynamic and cost the
  * prerendered HTML the SEO layer depends on — so the header renders its static
- * markup and this endpoint tells the client island whether the caller has a
- * dashboard to return to. It is the same split as `/api/cart/summary`.
+ * markup and this endpoint tells the client island whether the visitor is signed
+ * in, where their account lives, and whether they have a dashboard to return to.
+ * It is the same split as `/api/cart/summary`.
  *
- * It returns only a destination and a message key, never the profile, the role or
- * the memberships, so the response carries no more than the button needs.
- * `resolveDashboardHome` re-checks the session and the capability server-side, and
- * the destination page re-checks both again on arrival, so this endpoint is a
+ * It returns only the fields the controls display, never the role or the
+ * memberships, and the destinations re-check the session on arrival, so this is a
  * convenience rather than a control.
  *
  * `force-dynamic` because the answer depends on the request cookie.
@@ -26,9 +25,9 @@ export async function GET(request: Request) {
   const requested = new URL(request.url).searchParams.get("locale");
   const locale = requested && isLocale(requested) ? requested : "en";
 
-  const home = await resolveDashboardHome(locale);
+  const summary = await resolveAccountSummary(locale);
 
-  return NextResponse.json(home, {
+  return NextResponse.json(summary, {
     headers: { "cache-control": "no-store" },
   });
 }

@@ -6,7 +6,12 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
-import { DEPARTMENTS, isDepartmentSlug, type DepartmentSlug } from "@/lib/config/site";
+import {
+  DEPARTMENTS,
+  DEPARTMENT_EMAILS,
+  isDepartmentSlug,
+  type DepartmentSlug,
+} from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
 import { findSolarPackage } from "@/lib/content/solar-packages";
 import { loadServices } from "@/lib/content/loaders";
@@ -261,6 +266,36 @@ export default async function ContactPage({
                   </dd>
                 </div>
               </dl>
+            </section>
+
+            <section
+              aria-labelledby="contact-departments-heading"
+              className="rounded-card border border-border bg-surface-alt p-6"
+            >
+              <h2
+                id="contact-departments-heading"
+                className="text-base font-semibold text-ink-900"
+              >
+                {t("contact.departmentsHeading")}
+              </h2>
+              <p className="mt-2 text-sm text-body">
+                {t("contact.departmentsBody")}
+              </p>
+              <ul className="mt-4 space-y-3 text-sm">
+                {DEPARTMENTS.map((department) => (
+                  <li key={department.slug} className="flex flex-col">
+                    <span className="text-muted">
+                      {t(department.labelKey)}
+                    </span>
+                    <a
+                      href={`mailto:${DEPARTMENT_EMAILS[department.slug]}`}
+                      className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
+                    >
+                      {DEPARTMENT_EMAILS[department.slug]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </section>
 
             <section

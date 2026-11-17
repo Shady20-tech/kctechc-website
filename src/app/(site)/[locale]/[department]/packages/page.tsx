@@ -13,6 +13,7 @@ import {
   SOLAR_PACKAGES,
   solarPackagesInCategory,
 } from "@/lib/content/solar-packages";
+import { DEPARTMENT_EMAILS } from "@/lib/config/site";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -307,6 +308,7 @@ export default async function SolarPackagesPage({
               t={t}
               heading={t("contact.heading")}
               body={t("contact.intro")}
+              departmentEmail={DEPARTMENT_EMAILS["electrical-services"]}
             />
           </div>
         </div>

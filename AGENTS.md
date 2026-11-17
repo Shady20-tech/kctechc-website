@@ -2045,6 +2045,55 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   a sidebar link to a 404 is one click behind the dashboard, and a missing `exact` flag leaves
   "Overview" lit on every child route.
 
+### Session-aware header account control, department inboxes and the listings header
+
+- **The public header renders its account control as a client island fed by one JSON endpoint,
+  because reading the session in the shared layout would make every public page dynamic.**
+  `AccountAction` is an icon: a `User` glyph by default, replaced by the account's own profile
+  picture once `/api/account/summary` reports one. It renders the signed-out link (`/admin/login`)
+  on the server and on the first client render — `useAccountSummary`'s first value is `null`, so
+  there is no hydration mismatch — and swaps to the account hub once the answer arrives.
+  `useAccountSummary` (`src/lib/hooks/use-account-summary.ts`) is one module-level store shared by
+  every account control (desktop icon, mobile drawer item, `DashboardReturnAction`), so two islands
+  do not each fetch the same session.
+- **`/api/account/summary` replaced `/api/account/dashboard` and the two hooks were unified.**
+  `resolveAccountSummary` (`src/lib/auth/account-summary.ts`) returns `{ signedIn, accountHref,
+  name, avatarUrl, dashboard }` in one value; `DashboardReturnAction` reads `dashboard` from the
+  same store rather than its own endpoint. `use-dashboard-home.ts`, `use-session.ts` and
+  `api/account/dashboard/route.ts` were deleted as superseded. The endpoint carries only display
+  fields — never the role or the memberships — and the destinations re-check the session, so it is a
+  convenience, not a control.
+- **The account hub now hosts the profile-picture form**, not only the console. `AvatarForm` is
+  rendered on `/[locale]/account` under the same `account.avatar*` keys, and `uploadAvatarAction` /
+  `removeAvatarAction` revalidate `/[locale]/account` as well as `/admin/profile`, so a customer who
+  sets a picture sees it in the header after the revalidation.
+- **Department inboxes are a distinct fact from the corporate inboxes.** `DEPARTMENT_EMAILS`
+  (`src/lib/config/site.ts`) maps each `DepartmentSlug` to its own public address
+  (`kcdigital@`, `kcelectrical@`, `kcrealestate@kctechc.com`). They render on the department pages,
+  the department landing pages, the packages page and the contact page via
+  `ContactPrompt.departmentEmail`, and in the footer's Contact column. `SITE.emails` (the corporate
+  trio) is unchanged, so `site.test.ts`'s contact-block pin still holds.
+- **The listings page rendered its header twice.** `real-estate/listings/page.tsx` mounted a
+  standalone `SectionBand` header *and* passed the same block into the layout's `header` slot, so
+  the page served two breadcrumb navs and two `id="property-search-heading"` elements (an invalid
+  duplicate id and a duplicate `<h1>` region). Only the listings page did this — store and project
+  pages were clean. Verified in the built HTML: exactly one `<h1>` and one
+  `id="property-search-heading"` (the other grep hits are the RSC flight payload, which is normal).
+- **A message key added to the top-level `errors` block must exist in both locales.** The account
+  avatar form maps `no_file` / `empty` / `too_large` / `type_not_allowed` / `unknown_type` /
+  `rate_limited` / `upload_failed` / `update_failed` / `unauthenticated` / `unconfigured` through
+  the label map; `empty`, `type_not_allowed`, `unknown_type` and `update_failed` were missing from
+  both `en.json` and `fr.json` and are now present. A missing key renders its raw name, not blank.
+- **`next dev`/`next build` regenerate `.next/types/validator.ts`, so a deleted route leaves a
+  stale reference that fails `tsc`.** After removing `api/account/dashboard/route.ts`, `tsc --noEmit`
+  failed on `Cannot find module '../../src/app/api/account/dashboard/route.js'` until `.next` was
+  removed. `rm -rf .next` before the type check, as the Phase 7 gotcha already notes.
+- **Lighthouse must be run against the HTTPS preview URL, not the pod IP.** Testing
+  `http://<pod-ip>:12000` reports best-practices 79 because `is-on-https` and `redirects-http` fail
+  on a plain-HTTP origin — an artifact of the harness, not the app. Over
+  `https://work-1-…` the same page measured SEO 100 / accessibility 100 / best-practices 100 (perf
+  91 under `--throttling-method=devtools`).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

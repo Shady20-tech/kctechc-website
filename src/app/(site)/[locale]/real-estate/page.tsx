@@ -12,6 +12,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { PROPERTY_SEARCH_PATH, REAL_ESTATE_PATH } from "@/lib/config/navigation";
+import { DEPARTMENT_EMAILS } from "@/lib/config/site";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
@@ -204,6 +205,7 @@ export default async function RealEstatePage({
                 t={t}
                 heading={t("contact.heading")}
                 body={t("contact.intro")}
+                departmentEmail={DEPARTMENT_EMAILS["real-estate"]}
               />
             </div>
           </div>

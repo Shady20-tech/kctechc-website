@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * The public header's return-to-dashboard control.
  *
  * The header is statically rendered and cannot read the session, so this island
- * asks `/api/account/dashboard` whether the caller has a dashboard. These
+ * asks `/api/account/summary` whether the caller has a dashboard. These
  * assertions pin the three behaviours that make that safe:
  *
  *   - nothing renders for a customer with no dashboard (the requirement: only
@@ -36,6 +36,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** A signed-in account summary with no dashboard. */
+function signedIn(dashboard: unknown = null) {
+  return {
+    signedIn: true,
+    accountHref: "/en/account",
+    name: "A Customer",
+    avatarUrl: null,
+    dashboard,
+  };
+}
+
 async function renderAction(compact = false) {
   const { DashboardReturnAction } =
     await import("@/components/layout/DashboardReturnAction");
@@ -44,7 +55,10 @@ async function renderAction(compact = false) {
 
 describe("DashboardReturnAction", () => {
   it("renders nothing for an account with no dashboard", async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => null });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => signedIn(null),
+    });
     await renderAction();
 
     // Give the fetch a chance to resolve, then assert absence.
@@ -61,10 +75,11 @@ describe("DashboardReturnAction", () => {
   it("links a console role to the admin console", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({
-        href: "/admin",
-        labelKey: "account.dashboards.returnToConsole",
-      }),
+      json: async () =>
+        signedIn({
+          href: "/admin",
+          labelKey: "account.dashboards.returnToConsole",
+        }),
     });
     await renderAction();
 
@@ -75,10 +90,11 @@ describe("DashboardReturnAction", () => {
   it("links a landlord capability to the localized dashboard", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({
-        href: "/en/account/landlord",
-        labelKey: "account.dashboards.landlord.title",
-      }),
+      json: async () =>
+        signedIn({
+          href: "/en/account/landlord",
+          labelKey: "account.dashboards.landlord.title",
+        }),
     });
     await renderAction();
 
@@ -91,10 +107,11 @@ describe("DashboardReturnAction", () => {
   it("keeps the label in the accessible name when compact", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({
-        href: "/en/account/agent",
-        labelKey: "account.dashboards.agent.title",
-      }),
+      json: async () =>
+        signedIn({
+          href: "/en/account/agent",
+          labelKey: "account.dashboards.agent.title",
+        }),
     });
     await renderAction(true);
 
@@ -106,10 +123,11 @@ describe("DashboardReturnAction", () => {
   it("translates the label for a French visitor", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({
-        href: "/fr/account/landlord",
-        labelKey: "account.dashboards.landlord.title",
-      }),
+      json: async () =>
+        signedIn({
+          href: "/fr/account/landlord",
+          labelKey: "account.dashboards.landlord.title",
+        }),
     });
     const { DashboardReturnAction } =
       await import("@/components/layout/DashboardReturnAction");

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { buttonClasses, type ButtonSize } from "@/components/ui/Button";
-import { useDashboardHome } from "@/lib/hooks/use-dashboard-home";
+import { useAccountSummary } from "@/lib/hooks/use-account-summary";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 
@@ -19,10 +19,12 @@ import { createTranslator } from "@/lib/i18n/translator";
  *
  * The header is a Server Component and must stay one, so the decision cannot be
  * made there without reading `cookies()` and making every public page dynamic. It
- * is therefore a client island, and `/api/account/dashboard` supplies the answer
- * — the same split as the cart badge (`CartAction` + `/api/cart/summary`). Nothing
- * renders until the answer arrives, so the server and first client render agree
- * and there is no hydration mismatch.
+ * is therefore a client island, and the shared account summary
+ * (`useAccountSummary` + `/api/account/summary`) supplies the answer — the same
+ * store the account icon reads, so one request answers both controls rather than
+ * two islands asking the server about the same session. Nothing renders until the
+ * answer arrives, so the server and first client render agree and there is no
+ * hydration mismatch.
  *
  * The label is resolved from a message key rather than a server-sent string: a
  * translator function cannot cross the Server/Client boundary, and the translator
@@ -49,7 +51,7 @@ export function DashboardReturnAction({
 }) {
   const t = createTranslator(locale).t;
   const pathname = usePathname();
-  const home = useDashboardHome(locale, pathname);
+  const home = useAccountSummary(locale, pathname)?.dashboard ?? null;
 
   if (!home) return null;
 

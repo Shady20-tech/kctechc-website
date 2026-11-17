@@ -243,34 +243,6 @@ export default async function PropertyListingsPage({
       />
       {listJsonLd ? <JsonLdScript data={listJsonLd} /> : null}
 
-      <SectionBand labelledBy="property-search-heading">
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-6"
-        />
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1
-              id="property-search-heading"
-              className="display-tight font-display text-3xl font-bold text-ink-900 sm:text-4xl"
-            >
-              {t("realEstate.search.heading")}
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-body">
-              {t("realEstate.search.intro")}
-            </p>
-          </div>
-          <ButtonLink
-            href={`/${resolved}${REAL_ESTATE_PATH}`}
-            variant="ghost"
-            size="sm"
-          >
-            {t("realEstate.backToDepartment")}
-          </ButtonLink>
-        </div>
-      </SectionBand>
-
       <MarketplaceSearchLayout
         sidebarAriaLabel={t("realEstate.search.filtersHeading")}
         drawerLabels={{

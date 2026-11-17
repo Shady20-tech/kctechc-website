@@ -196,6 +196,7 @@ export function MobileMenu({
                 signInLabel={labels.signIn}
                 accountLabel={labels.account}
                 size="lg"
+                showLabel
                 className="w-full"
                 onNavigate={close}
               />

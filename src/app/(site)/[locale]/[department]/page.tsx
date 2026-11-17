@@ -12,7 +12,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ContactPrompt, CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { HeroMedia } from "@/components/ui/HeroMedia";
-import { BRAND_COLORS, DEPARTMENTS } from "@/lib/config/site";
+import { BRAND_COLORS, DEPARTMENTS, DEPARTMENT_EMAILS } from "@/lib/config/site";
 import { departmentCopyPrefix } from "@/lib/content/department-copy";
 import { departmentHasServices } from "@/lib/content/defaults";
 import { loadServices } from "@/lib/content/loaders";
@@ -381,6 +381,7 @@ export default async function DepartmentPage({
                   t={t}
                   heading={t("contact.heading")}
                   body={t("contact.intro")}
+                  departmentEmail={DEPARTMENT_EMAILS[definition.slug]}
                 />
 
                 <nav
@@ -491,6 +492,7 @@ export default async function DepartmentPage({
                 t={t}
                 heading={t("contact.heading")}
                 body={t("contact.intro")}
+                departmentEmail={DEPARTMENT_EMAILS[definition.slug]}
               />
 
               <nav

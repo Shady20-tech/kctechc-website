@@ -60,6 +60,21 @@ export type DepartmentSlug =
   | "electrical-services"
   | "real-estate";
 
+/**
+ * Department contact addresses.
+ *
+ * Each department has its own public inbox so an enquiry reaches the team that
+ * answers it. They are a distinct fact from `SITE.emails` (the corporate inboxes
+ * shown on the contact page and in the footer), and are rendered on the
+ * department's own pages. Keyed by `DepartmentSlug` so a department without an
+ * entry simply shows no department address rather than a wrong one.
+ */
+export const DEPARTMENT_EMAILS: Record<DepartmentSlug, string> = {
+  "digital-marketing": "kcdigital@kctechc.com",
+  "electrical-services": "kcelectrical@kctechc.com",
+  "real-estate": "kcrealestate@kctechc.com",
+};
+
 export type DepartmentDefinition = {
   slug: DepartmentSlug;
   /** Accent colour used for the department's visual identity. */

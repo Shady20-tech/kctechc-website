@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
@@ -53,17 +53,23 @@ export function CtaBand({
 
 /**
  * Compact contact prompt for sidebars and inline placements.
+ *
+ * `departmentEmail` is the department's own inbox, shown above the quote button so
+ * a visitor can reach that team directly. It is optional: a placement with no
+ * department (or one without a published address) simply renders the button.
  */
 export function ContactPrompt({
   locale,
   t,
   heading,
   body,
+  departmentEmail,
 }: {
   locale: Locale;
   t: Translator["t"];
   heading: string;
   body: string;
+  departmentEmail?: string;
 }) {
   return (
     <aside
@@ -77,6 +83,17 @@ export function ContactPrompt({
         {heading}
       </h2>
       <p className="mt-2 text-sm text-body">{body}</p>
+      {departmentEmail ? (
+        <p className="mt-3 flex items-center gap-2 text-sm">
+          <Mail aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
+          <a
+            href={`mailto:${departmentEmail}`}
+            className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"
+          >
+            {departmentEmail}
+          </a>
+        </p>
+      ) : null}
       <ButtonLink
         href={`/${locale}/contact`}
         variant="accent"
