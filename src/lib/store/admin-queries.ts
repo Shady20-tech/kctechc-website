@@ -93,7 +93,7 @@ export async function listProductsForAdmin(
 
   const { data: media } = await admin
     .from("product_media")
-    .select("product_id, storage_path, alt_text, is_primary, position")
+    .select("id, product_id, storage_path, alt_text, is_primary, position")
     .in(
       "product_id",
       rows.map((row) => row.id),
@@ -104,6 +104,7 @@ export async function listProductsForAdmin(
   for (const row of media ?? []) {
     const list = mediaByProduct.get(row.product_id) ?? [];
     list.push({
+      id: row.id,
       storagePath: row.storage_path,
       alt: row.alt_text,
       isPrimary: row.is_primary,
@@ -161,7 +162,7 @@ export async function loadProductForAdmin(
       .maybeSingle(),
     admin
       .from("product_media")
-      .select("storage_path, alt_text, is_primary, position")
+      .select("id, storage_path, alt_text, is_primary, position")
       .eq("product_id", id)
       .order("position", { ascending: true }),
   ]);
@@ -192,6 +193,7 @@ export async function loadProductForAdmin(
     categorySlug: category?.slug ?? "",
     departmentSlug,
     images: (media ?? []).map((m) => ({
+      id: m.id,
       storagePath: m.storage_path,
       alt: m.alt_text,
       isPrimary: m.is_primary,

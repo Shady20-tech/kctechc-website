@@ -41,14 +41,32 @@ import type { PropertyListingRecord } from "./types";
  * use. It is not the default: a default that surfaces whatever is most-viewed
  * would be a ranking the company did not choose.
  */
-export type ListingSort = "newest" | "price-asc" | "price-desc" | "most-viewed";
+export type ListingSort =
+  | "relevance"
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "most-viewed";
 
+/** The sort options, in the order the toolbar offers them. */
 export const LISTING_SORTS: readonly ListingSort[] = [
+  "relevance",
   "newest",
   "price-asc",
   "price-desc",
   "most-viewed",
 ];
+
+/**
+ * The default ordering.
+ *
+ * "Most relevant" is first in the toolbar because it is the most useful default
+ * when a keyword is present, but it is not the URL default: an unfiltered browse
+ * has no query to rank against, so `relevance` would rank every listing equally
+ * and degrade to `newest`. The page therefore defaults to `newest` and never
+ * writes it to the URL, keeping one filter state to one URL.
+ */
+export const DEFAULT_LISTING_SORT: ListingSort = "newest";
 
 export function isListingSort(value: string | undefined): value is ListingSort {
   return LISTING_SORTS.includes(value as ListingSort);
@@ -57,6 +75,8 @@ export function isListingSort(value: string | undefined): value is ListingSort {
 /** Translation key for a sort option's label. */
 export function listingSortLabelKey(sort: ListingSort): string {
   switch (sort) {
+    case "relevance":
+      return "realEstate.search.sortRelevance";
     case "price-asc":
       return "realEstate.search.sortPriceAsc";
     case "price-desc":
@@ -86,6 +106,7 @@ export const LISTING_SORT_TO_SQL: Record<
   ListingSort,
   Database["public"]["Enums"]["listing_sort_order"]
 > = {
+  relevance: "relevance",
   newest: "newest",
   "price-asc": "price_asc",
   "price-desc": "price_desc",
@@ -116,10 +137,33 @@ export type ListingFilters = {
   regionSlug?: string;
   divisionSlug?: string;
   subdivisionSlug?: string;
+  /** Free-text city or neighbourhood, matched against the stored locality. */
+  locality?: string;
   listingType?: ListingType;
   propertyKind?: ListingPropertyKind;
   propertyType?: PropertyType;
   statuses?: readonly ListingStatus[];
+  /**
+   * ISO 4217 code to filter prices by.
+   *
+   * Prices are compared within ONE currency only. The database stores a currency
+   * per listing and there is no exchange-rate feed, so comparing a XAF price to a
+   * NGN price would be comparing two different units as though they were equal.
+   * When this is unset the price bounds still apply, but only among listings
+   * whose currency matches the visitor's chosen one once they pick one — see the
+   * note on `buildListingQuery`.
+   */
+  currency?: string;
+  /** Restrict to listings whose landlord or agent holds a verified capability. */
+  verifiedOnly?: boolean;
+  /**
+   * Amenity slugs the listing must have (all of them).
+   *
+   * The slugs are free text in the database, so the sidebar offers only the ones
+   * that actually occur — see `loadListingFacets`. Offering a fixed list would
+   * risk a checkbox that matches nothing.
+   */
+  amenities?: readonly string[];
   minPrice?: number;
   maxPrice?: number;
   minBedrooms?: number;
@@ -137,10 +181,14 @@ export const LISTING_FILTER_PARAMS = [
   "region",
   "division",
   "subdivision",
+  "locality",
   "type",
   "kind",
   "propertyType",
   "status",
+  "currency",
+  "verified",
+  "amenity",
   "minPrice",
   "maxPrice",
   "minBedrooms",
@@ -151,6 +199,62 @@ export const LISTING_FILTER_PARAMS = [
   "page",
   "view",
 ] as const;
+
+/**
+ * The primary Cameroon currency, and the default the price controls state.
+ *
+ * XAF has no minor unit (`minorUnitDivisor("XAF") === 1`), so a price is already
+ * a whole franc. The currency is presented because a listing may be priced in
+ * another currency, and a price filter must say which unit it applies to.
+ */
+export const PRIMARY_CURRENCY = "XAF";
+
+/**
+ * Parse a currency code, accepting only a three-letter ISO-shaped value.
+ *
+ * Uppercased so `?currency=xaf` and `?currency=XAF` are one filter state. A value
+ * that is not three letters is dropped rather than passed to the database, whose
+ * `property_listings_currency_format` check would reject it and surface as a
+ * failed request.
+ */
+export function parseCurrency(value: string | null): string | undefined {
+  if (value === null) return undefined;
+  const trimmed = value.trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(trimmed) ? trimmed : undefined;
+}
+
+/** Parse the verified-only flag. Present and not `"false"` means true. */
+export function parseVerifiedOnly(value: string | null): boolean | undefined {
+  if (value === null) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "" || normalized === "false" || normalized === "0") {
+    return undefined;
+  }
+  return true;
+}
+
+/**
+ * Parse the amenity filter.
+ *
+ * Accepts a repeat (`amenity=pool&amenity=solar`) and a comma-joined single value,
+ * the same two forms `parseListingStatuses` accepts and for the same reason: a
+ * link built by this application and one pasted by hand should mean the same
+ * thing. Slugs are lowercased and trimmed, and an empty list is `undefined` rather
+ * than `[]` so the filter reads as absent.
+ */
+export function parseAmenities(
+  value: string | string[] | undefined,
+): string[] | undefined {
+  if (value === undefined) return undefined;
+  const raw = Array.isArray(value) ? value : [value];
+  const values = raw
+    .flatMap((entry) => entry.split(","))
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+
+  const unique = [...new Set(values)];
+  return unique.length > 0 ? unique : undefined;
+}
 
 /**
  * How many listings one page of results holds.
@@ -298,10 +402,14 @@ export const FILTER_KEYS = [
   "region",
   "division",
   "subdivision",
+  "locality",
   "type",
   "kind",
   "propertyType",
   "status",
+  "currency",
+  "verified",
+  "amenity",
   "minPrice",
   "maxPrice",
   "minBedrooms",
@@ -323,6 +431,8 @@ export function isFilterActive(filters: ListingFilters, key: FilterKey): boolean
       return Boolean(filters.divisionSlug);
     case "subdivision":
       return Boolean(filters.subdivisionSlug);
+    case "locality":
+      return Boolean(filters.locality);
     case "type":
       return Boolean(filters.listingType);
     case "kind":
@@ -331,6 +441,12 @@ export function isFilterActive(filters: ListingFilters, key: FilterKey): boolean
       return Boolean(filters.propertyType);
     case "status":
       return Boolean(filters.statuses && filters.statuses.length > 0);
+    case "currency":
+      return Boolean(filters.currency);
+    case "verified":
+      return filters.verifiedOnly === true;
+    case "amenity":
+      return Boolean(filters.amenities && filters.amenities.length > 0);
     case "minPrice":
       return filters.minPrice !== undefined;
     case "maxPrice":
@@ -384,6 +500,9 @@ export function removeListingFilter(
     case "subdivision":
       next.subdivisionSlug = undefined;
       break;
+    case "locality":
+      next.locality = undefined;
+      break;
     case "type":
       next.listingType = undefined;
       break;
@@ -395,6 +514,21 @@ export function removeListingFilter(
       break;
     case "status":
       next.statuses = undefined;
+      break;
+    case "currency":
+      // Clearing the currency also clears the price bounds: a bound expressed in
+      // one currency has no meaning once the currency is gone, and leaving it
+      // would apply a number the visitor can no longer see to a unit they did not
+      // choose.
+      next.currency = undefined;
+      next.minPrice = undefined;
+      next.maxPrice = undefined;
+      break;
+    case "verified":
+      next.verifiedOnly = undefined;
+      break;
+    case "amenity":
+      next.amenities = undefined;
       break;
     case "minPrice":
       next.minPrice = undefined;
@@ -442,6 +576,7 @@ export function buildListingQuery(filters: ListingFilters): string {
   if (filters.regionSlug) params.set("region", filters.regionSlug);
   if (filters.divisionSlug) params.set("division", filters.divisionSlug);
   if (filters.subdivisionSlug) params.set("subdivision", filters.subdivisionSlug);
+  if (filters.locality) params.set("locality", filters.locality);
   if (filters.listingType) params.set("type", filters.listingType);
   if (filters.propertyKind) params.set("kind", filters.propertyKind);
   if (filters.propertyType) params.set("propertyType", filters.propertyType);
@@ -450,6 +585,16 @@ export function buildListingQuery(filters: ListingFilters): string {
       filters.statuses?.includes(status),
     );
     params.set("status", ordered.join(","));
+  }
+  // The currency is written whenever a price bound is present, even if it is the
+  // primary one, because a bare number with no unit is what the brief forbids.
+  // It is written even when the visitor never changed the selector, so a shared
+  // link states the unit its price bounds are in.
+  if (filters.currency) params.set("currency", filters.currency);
+  if (filters.verifiedOnly === true) params.set("verified", "true");
+  if (filters.amenities && filters.amenities.length > 0) {
+    // Sorted so two links to the same set of amenities serialize identically.
+    params.set("amenity", [...filters.amenities].sort().join(","));
   }
   if (filters.minPrice !== undefined) {
     params.set("minPrice", String(filters.minPrice));
@@ -523,10 +668,14 @@ export function parseListingFilters(
     regionSlug: firstParam(searchParams.region)?.trim() || undefined,
     divisionSlug: firstParam(searchParams.division)?.trim() || undefined,
     subdivisionSlug: firstParam(searchParams.subdivision)?.trim() || undefined,
+    locality: firstParam(searchParams.locality)?.trim() || undefined,
     listingType: parseListingType(firstParam(searchParams.type)),
     propertyKind: parsePropertyKind(firstParam(searchParams.kind)),
     propertyType: parsePropertyType(firstParam(searchParams.propertyType)),
     statuses: parseListingStatuses(searchParams.status),
+    currency: parseCurrency(firstParam(searchParams.currency)),
+    verifiedOnly: parseVerifiedOnly(firstParam(searchParams.verified)),
+    amenities: parseAmenities(searchParams.amenity),
     minPrice: parsePositive(parseNumberParam(firstParam(searchParams.minPrice))),
     maxPrice: parsePositive(parseNumberParam(firstParam(searchParams.maxPrice))),
     minBedrooms: parsePositive(
@@ -577,6 +726,113 @@ export function parseListingFilters(
  */
 export const BEDROOM_FILTER_OPTIONS = [1, 2, 3, 4, 5] as const;
 export const BATHROOM_FILTER_OPTIONS = [1, 2, 3, 4] as const;
+
+/**
+ * The property categories the marketplace navigation offers.
+ *
+ * Each category is a *named filter combination*, not a new taxonomy: the
+ * database's own `listing_type`, `listing_property_kind` and `property_type`
+ * values are what back these, and the sidebar's count for a category comes from
+ * the matching bucket in `listing_facets()`. That is what keeps a category link
+ * and its count from disagreeing — both are the same predicate.
+ *
+ * `bucket` is the identifier the facet function returns and the URL carries, so
+ * adding a category means adding a bucket in SQL and an entry here; the two are
+ * asserted to agree by `search.test.ts` against the migration.
+ */
+export type PropertyCategoryBucket =
+  | "all"
+  | "for_sale"
+  | "for_rent"
+  | "short_term"
+  | "land_sale"
+  | "land_rent"
+  | "commercial"
+  | "house"
+  | "apartment";
+
+export type PropertyCategory = {
+  bucket: PropertyCategoryBucket;
+  /** The filter state this category stands for. */
+  filters: Pick<ListingFilters, "listingType" | "propertyKind" | "propertyType">;
+  /** The message key for its label, under `realEstate.categories.*`. */
+  labelKey: string;
+};
+
+export const PROPERTY_CATEGORIES: readonly PropertyCategory[] = [
+  { bucket: "all", filters: {}, labelKey: "realEstate.categories.all" },
+  {
+    bucket: "for_sale",
+    filters: { listingType: "sale" },
+    labelKey: "realEstate.categories.forSale",
+  },
+  {
+    bucket: "for_rent",
+    filters: { listingType: "rent" },
+    labelKey: "realEstate.categories.forRent",
+  },
+  {
+    bucket: "land_sale",
+    filters: { listingType: "sale", propertyKind: "land" },
+    labelKey: "realEstate.categories.landSale",
+  },
+  {
+    bucket: "land_rent",
+    filters: { listingType: "rent", propertyKind: "land" },
+    labelKey: "realEstate.categories.landRent",
+  },
+  {
+    bucket: "short_term",
+    filters: { listingType: "short_term" },
+    labelKey: "realEstate.categories.shortTerm",
+  },
+  {
+    bucket: "commercial",
+    filters: { propertyType: "commercial" },
+    labelKey: "realEstate.categories.commercial",
+  },
+  {
+    bucket: "house",
+    filters: { propertyKind: "house" },
+    labelKey: "realEstate.categories.house",
+  },
+  {
+    bucket: "apartment",
+    filters: { propertyKind: "apartment" },
+    labelKey: "realEstate.categories.apartment",
+  },
+];
+
+/** The category whose filter state matches, for marking the active one. */
+export function categoryForFilters(
+  filters: ListingFilters,
+): PropertyCategoryBucket | undefined {
+  const match = PROPERTY_CATEGORIES.find(
+    (category) =>
+      (category.filters.listingType ?? undefined) === filters.listingType &&
+      (category.filters.propertyKind ?? undefined) === filters.propertyKind &&
+      (category.filters.propertyType ?? undefined) === filters.propertyType,
+  );
+  // `all` matches the empty filter state, so an unfiltered browse reports it.
+  return match?.bucket;
+}
+
+/** Apply a category to a filter state, clearing the fields it does not set. */
+export function applyCategory(
+  filters: ListingFilters,
+  bucket: PropertyCategoryBucket,
+): ListingFilters {
+  const category =
+    PROPERTY_CATEGORIES.find((entry) => entry.bucket === bucket) ??
+    PROPERTY_CATEGORIES[0]!;
+  return {
+    ...filters,
+    listingType: category.filters.listingType,
+    propertyKind: category.filters.propertyKind,
+    propertyType: category.filters.propertyType,
+    page: undefined,
+  };
+}
 
 /**
  * Pick listings related to one listing, for the "more properties" strip.

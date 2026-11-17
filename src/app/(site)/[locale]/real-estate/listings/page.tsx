@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { SectionBand } from "@/components/layout/PageShell";
 import { PropertyMap } from "@/components/maps/PropertyMap";
 import { ActiveFilterChips } from "@/components/real-estate/ActiveFilterChips";
 import { ListingGrid, listingHref } from "@/components/real-estate/ListingCard";
-import { ListingFilterPanel } from "@/components/real-estate/ListingFilterPanel";
 import { ListingPagination } from "@/components/real-estate/ListingPagination";
+import { ListingSidebar } from "@/components/real-estate/ListingSidebar";
+import { MobileFilterDrawer } from "@/components/real-estate/MobileFilterDrawer";
+import { ResultsToolbar } from "@/components/real-estate/ResultsToolbar";
 import { SaveSearchControl } from "@/components/real-estate/SaveSearchControl";
-import { ViewToggle } from "@/components/real-estate/ViewToggle";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
-import { PageIntro } from "@/components/ui/PageIntro";
 import { PROPERTY_SEARCH_PATH, REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -24,12 +25,15 @@ import {
 } from "@/lib/maps/adapter";
 import {
   loadFavoriteListingIds,
+  loadListingFacets,
   loadListingGeographyTree,
   queryListings,
 } from "@/lib/real-estate/loaders";
 import { qualifyListings } from "@/lib/real-estate/listings";
 import {
+  PROPERTY_CATEGORIES,
   buildListingQuery,
+  categoryForFilters,
   firstParam,
   hasActiveFilters,
   parseListingFilters,
@@ -39,32 +43,29 @@ import { breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo/structured-data";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
- * Property listings browser.
+ * Property listings browser — the marketplace results surface.
  *
- * One route serves the list and the map, and the view is a query parameter rather
- * than a second URL. Two URLs for one result set is the duplicate-content problem
- * the locale routing already avoids.
+ * A two-column layout on desktop: a compact filter sidebar (sections A–E of the
+ * brief) and the results. Below `lg` the sidebar is replaced by a drawer so
+ * nothing overflows horizontally.
  *
  * Filtering, counting and pagination happen in the database, in
- * `search_property_listings`. The page used to filter a fetched list in
- * TypeScript, which meant the result count described the fetched page rather than
- * the market, and pagination would have required loading the whole catalogue into
- * the browser. The RPC returns the page and its total from one query, so the
- * number shown and the rows returned cannot disagree.
+ * `search_property_listings`. The page never loads the catalogue into React and
+ * filters it — the RPC returns the page and its total from one query, so the
+ * number shown and the rows returned cannot disagree, and the facet counts come
+ * from `listing_facets` under the same visibility predicate.
  *
  * The search is localized inside the RPC: it matches the canonical English
  * columns and the French translations, so a French visitor searching "terrain"
- * finds a listing whose English title says "land". Doing that here would mean the
- * browser holding both languages for every listing.
+ * finds a listing whose English title says "land".
  *
  * ## Indexability
  *
  * A filtered view is `noindex, follow`. An arbitrary combination of region, price
  * and bedrooms is a view of the catalogue, not a page with content of its own;
- * indexing every combination would flood the index with near-duplicates and dilute
- * the pages that do have content. The unfiltered browser is indexable, and so is a
- * geographic landing page once an editor has published content for it — that is
- * what `geo_landing_content` is for.
+ * indexing every combination would flood the index with near-duplicates. The
+ * unfiltered browser is indexable, and so is a geographic landing page once an
+ * editor has published content for it.
  */
 
 export async function generateMetadata({
@@ -107,16 +108,20 @@ export default async function PropertyListingsPage({
   const view = firstParam(query.view) === "map" ? "map" : "list";
   const filters = parseListingFilters(query);
 
-  const [page, geography, favoriteIds] = await Promise.all([
+  const [page, geography, facets, favoriteIds] = await Promise.all([
     queryListings({
       query: filters.query,
       regionSlug: filters.regionSlug,
       divisionSlug: filters.divisionSlug,
       subdivisionSlug: filters.subdivisionSlug,
+      locality: filters.locality,
       listingType: filters.listingType,
       propertyKind: filters.propertyKind,
       propertyType: filters.propertyType,
       statuses: filters.statuses,
+      currency: filters.currency,
+      verifiedOnly: filters.verifiedOnly,
+      amenities: filters.amenities,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
       minBedrooms: filters.minBedrooms,
@@ -128,6 +133,7 @@ export default async function PropertyListingsPage({
       locale: resolved,
     }),
     loadListingGeographyTree(resolved),
+    loadListingFacets(),
     loadFavoriteListingIds(),
   ]);
 
@@ -136,6 +142,43 @@ export default async function PropertyListingsPage({
   // A total of zero with no filters means the portfolio is genuinely empty, which
   // is a different message from "your filters matched nothing".
   const hasPortfolio = page.total > 0 || active;
+
+  // The current location and category, named for the toolbar. The names are read
+  // from the geography tree the sidebar already loaded, so the toolbar and the
+  // selector cannot disagree.
+  const selectedRegion = geography.find(
+    (region) => region.slug === filters.regionSlug,
+  );
+  const selectedDivision = selectedRegion?.divisions.find(
+    (division) => division.slug === filters.divisionSlug,
+  );
+  const selectedSubdivision = selectedDivision?.subdivisions.find(
+    (subdivision) => subdivision.slug === filters.subdivisionSlug,
+  );
+  const locationLabel =
+    selectedSubdivision?.name ??
+    selectedDivision?.name ??
+    selectedRegion?.name ??
+    filters.locality;
+  const categoryBucket = categoryForFilters(filters);
+  const category = PROPERTY_CATEGORIES.find(
+    (entry) => entry.bucket === categoryBucket,
+  );
+  const categoryLabel =
+    category && category.bucket !== "all" ? t(category.labelKey) : undefined;
+
+  // The published names for the geography slugs in the URL, so a chip reads
+  // "Southwest" rather than "Southwest-region" derived from the slug.
+  const locationNames = new Map<string, string>();
+  for (const region of geography) {
+    locationNames.set(region.slug, region.name);
+    for (const division of region.divisions) {
+      locationNames.set(division.slug, division.name);
+      for (const subdivision of division.subdivisions) {
+        locationNames.set(subdivision.slug, subdivision.name);
+      }
+    }
+  }
 
   // Only listings with a published, coarsened position can be drawn. Exact
   // coordinates never reach this component: the loader reads the API view, which
@@ -155,7 +198,10 @@ export default async function PropertyListingsPage({
   });
 
   const hrefById = Object.fromEntries(
-    qualified.map((entry) => [entry.record.id, listingHref(entry.record, resolved)]),
+    qualified.map((entry) => [
+      entry.record.id,
+      listingHref(entry.record, resolved),
+    ]),
   );
 
   const breadcrumbs: BreadcrumbItem[] = [
@@ -180,7 +226,7 @@ export default async function PropertyListingsPage({
   const currentQuery = buildListingQuery(filters);
 
   return (
-    <>
+    <div {...departmentScopeProps("real-estate")}>
       <JsonLdScript
         data={breadcrumbJsonLd([
           { name: t("nav.home"), path: `/${resolved}` },
@@ -196,167 +242,218 @@ export default async function PropertyListingsPage({
       />
       {listJsonLd ? <JsonLdScript data={listJsonLd} /> : null}
 
-      <SectionBand
-        labelledBy="property-search-heading"
-        {...departmentScopeProps("real-estate")}
-      >
+      <SectionBand labelledBy="property-search-heading">
         <Breadcrumbs
           items={breadcrumbs}
           ariaLabel={t("a11y.breadcrumb")}
-          className="mb-8"
+          className="mb-6"
         />
-        <PageIntro
-          eyebrow={t("realEstate.eyebrow")}
-          heading={t("realEstate.search.heading")}
-          intro={t("realEstate.search.intro")}
-        />
-        <h2 id="property-search-heading" className="visually-hidden">
-          {t("realEstate.search.heading")}
-        </h2>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1
+              id="property-search-heading"
+              className="display-tight font-display text-3xl font-bold text-ink-900 sm:text-4xl"
+            >
+              {t("realEstate.search.heading")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-base text-body">
+              {t("realEstate.search.intro")}
+            </p>
+          </div>
+          <ButtonLink
+            href={`/${resolved}${REAL_ESTATE_PATH}`}
+            variant="ghost"
+            size="sm"
+          >
+            {t("realEstate.backToDepartment")}
+          </ButtonLink>
+        </div>
       </SectionBand>
 
-      <SectionBand tone="alt" labelledBy="property-filters-heading">
-        <h2 id="property-filters-heading" className="visually-hidden">
-          {t("realEstate.search.filterLabel")}
-        </h2>
-        <ListingFilterPanel
-          locale={resolved}
-          geography={geography}
-          filters={filters}
-          view={view}
-        />
-      </SectionBand>
-
-      <SectionBand labelledBy="property-results-heading">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 id="property-results-heading" className="visually-hidden">
-            {t("realEstate.search.heading")}
-          </h2>
-          {page.total > 0 ? (
-            <div className="flex flex-wrap items-center gap-4">
-              <ViewToggle locale={resolved} t={t} filters={filters} view={view} />
-              <SaveSearchControl
+      <div className="container-page section-tight">
+        <div className="grid gap-8 lg:grid-cols-[17rem_1fr] xl:grid-cols-[18rem_1fr]">
+          {/* Desktop sidebar. `hidden` below `lg`; the drawer covers that range. */}
+          <aside
+            aria-label={t("realEstate.search.filtersHeading")}
+            className="hidden lg:block"
+          >
+            <div className="sticky top-24 rounded-card border border-border bg-surface p-5">
+              <ListingSidebar
                 locale={resolved}
-                queryString={currentQuery}
+                geography={geography}
+                facets={facets}
                 filters={filters}
+                view={view}
               />
             </div>
-          ) : null}
-        </div>
+          </aside>
 
-        {active ? (
-          <div className="mt-6">
-            <ActiveFilterChips
-              locale={resolved}
-              t={t}
-              filters={filters}
-              view={view}
-            />
-          </div>
-        ) : null}
+          <div className="min-w-0">
+            <div className="mb-4 lg:hidden">
+              <MobileFilterDrawer
+                locale={resolved}
+                geography={geography}
+                facets={facets}
+                filters={filters}
+                view={view}
+              />
+            </div>
 
-        {!hasPortfolio ? (
-          <div className="mt-10 max-w-2xl">
-            <h3 className="text-xl font-semibold text-ink-900">
-              {t("realEstate.search.emptyHeading")}
-            </h3>
-            <p className="mt-3 text-base text-body">
-              {t("realEstate.search.emptyBody")}
-            </p>
-            <p className="mt-6">
-              <ButtonLink
-                href={`/${resolved}${REAL_ESTATE_PATH}`}
-                variant="secondary"
-              >
-                {t("realEstate.backToDepartment")}
-              </ButtonLink>
-            </p>
-          </div>
-        ) : page.items.length === 0 ? (
-          <div className="mt-10 max-w-2xl">
-            <h3 className="text-xl font-semibold text-ink-900">
-              {t("realEstate.search.noResultsHeading")}
-            </h3>
-            <p className="mt-3 text-base text-body">
-              {t("realEstate.search.noResultsBody")}
-            </p>
-            <p className="mt-6">
-              <ButtonLink
-                href={`/${resolved}${PROPERTY_SEARCH_PATH}`}
-                variant="secondary"
-              >
-                {t("realEstate.search.clearFilters")}
-              </ButtonLink>
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="mt-6 mb-6 text-sm text-muted" aria-live="polite">
-              {page.total === 1
-                ? t("realEstate.search.resultsCountOne")
-                : t("realEstate.search.resultsCount", { count: page.total })}
-              {active ? ` · ${t("realEstate.search.filterLabel")}` : ""}
-            </p>
+            {hasPortfolio ? (
+              <ResultsToolbar
+                locale={resolved}
+                filters={filters}
+                view={view}
+                total={page.total}
+                locationLabel={locationLabel}
+                categoryLabel={categoryLabel}
+              />
+            ) : null}
 
-            {view === "map" && !mapStyle.unavailable ? (
-              <div>
-                <PropertyMap
-                  points={points}
-                  styleUrl={mapStyle.styleUrl}
-                  view={viewForPoints(points)}
-                  cluster
-                  hrefById={hrefById}
-                  ariaLabel={t("realEstate.search.mapAriaLabel")}
-                  loadingLabel={t("realEstate.search.mapLoading")}
-                  unavailableLabel={t("realEstate.search.mapUnavailable")}
-                  openLabel={t("actions.learnMore")}
+            {active ? (
+              <div className="mt-4">
+                <ActiveFilterChips
+                  locale={resolved}
+                  t={t}
+                  filters={filters}
+                  view={view}
+                  locationNames={locationNames}
                 />
-                <p className="mt-3 text-sm text-muted">
-                  {t("realEstate.search.mapApproxNotice")}
+              </div>
+            ) : null}
+
+            {page.total > 0 ? (
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                <SaveSearchControl
+                  locale={resolved}
+                  queryString={currentQuery}
+                  filters={filters}
+                />
+              </div>
+            ) : null}
+
+            {!hasPortfolio ? (
+              <div className="mt-10 max-w-2xl rounded-card border border-border bg-surface p-8">
+                <h2 className="text-xl font-semibold text-ink-900">
+                  {t("realEstate.search.emptyHeading")}
+                </h2>
+                <p className="mt-3 text-base text-body">
+                  {t("realEstate.search.emptyBody")}
                 </p>
-                <p className="mt-1 text-sm text-muted">
-                  {t("realEstate.search.countOnMap", { count: points.length })}
+                <p className="mt-6">
+                  <ButtonLink
+                    href={`/${resolved}${REAL_ESTATE_PATH}`}
+                    variant="secondary"
+                  >
+                    {t("realEstate.backToDepartment")}
+                  </ButtonLink>
                 </p>
-                {/* The list is always rendered under the map, so every property
-                    remains reachable by keyboard and to a reader without WebGL.
-                    The map and the list are two views of the SAME page of results,
-                    so the counts cannot diverge. */}
-                <div className="mt-10">
+              </div>
+            ) : page.items.length === 0 ? (
+              <div className="mt-10 max-w-2xl rounded-card border border-border bg-surface p-8">
+                <h2 className="text-xl font-semibold text-ink-900">
+                  {t("realEstate.search.noResultsHeading")}
+                </h2>
+                <p className="mt-3 text-base text-body">
+                  {filters.query
+                    ? t("realEstate.search.noResultsForQuery", {
+                        query: filters.query,
+                      })
+                    : t("realEstate.search.noResultsBody")}
+                </p>
+                <p className="mt-6">
+                  <ButtonLink
+                    href={`/${resolved}${PROPERTY_SEARCH_PATH}`}
+                    variant="secondary"
+                  >
+                    {t("realEstate.search.clearAll")}
+                  </ButtonLink>
+                </p>
+              </div>
+            ) : (
+              <>
+                {view === "map" && !mapStyle.unavailable ? (
+                  <div className="mt-6">
+                    <PropertyMap
+                      points={points}
+                      styleUrl={mapStyle.styleUrl}
+                      view={viewForPoints(points)}
+                      cluster
+                      hrefById={hrefById}
+                      ariaLabel={t("realEstate.search.mapAriaLabel")}
+                      loadingLabel={t("realEstate.search.mapLoading")}
+                      unavailableLabel={t("realEstate.search.mapUnavailable")}
+                      openLabel={t("actions.learnMore")}
+                    />
+                    <p className="mt-3 text-sm text-muted">
+                      {t("realEstate.search.mapApproxNotice")}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      {t("realEstate.search.countOnMap", {
+                        count: points.length,
+                      })}
+                    </p>
+                  </div>
+                ) : null}
+
+                {view === "map" && mapStyle.unavailable ? (
+                  <p className="mt-6 text-sm text-muted" role="status">
+                    {t("realEstate.search.mapUnavailable")}
+                  </p>
+                ) : null}
+
+                {/* The list is always rendered, under the map as well, so every
+                    property remains reachable by keyboard and to a reader without
+                    WebGL. Both are two views of the SAME page of results. */}
+                <div className="mt-6">
                   <ListingGrid
                     listings={qualified.map((entry) => entry.record)}
                     locale={resolved}
                     t={t}
                     favoriteIds={favoriteIds}
+                    className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
                   />
                 </div>
-              </div>
-            ) : (
-              <>
-                {view === "map" ? (
-                  <p className="mb-6 text-sm text-muted" role="status">
-                    {t("realEstate.search.mapUnavailable")}
-                  </p>
-                ) : null}
-                <ListingGrid
-                  listings={qualified.map((entry) => entry.record)}
+
+                <ListingPagination
                   locale={resolved}
                   t={t}
-                  favoriteIds={favoriteIds}
+                  filters={filters}
+                  page={page.page}
+                  pageCount={page.pageCount}
+                  view={view}
                 />
+
+                <p className="mt-6 text-sm text-muted">
+                  {t("realEstate.search.showingRange", {
+                    from: (page.page - 1) * page.pageSize + 1,
+                    to: (page.page - 1) * page.pageSize + page.items.length,
+                    total: page.total,
+                  })}
+                </p>
               </>
             )}
 
-            <ListingPagination
-              locale={resolved}
-              t={t}
-              filters={filters}
-              page={page.page}
-              pageCount={page.pageCount}
-              view={view}
-            />
-          </>
-        )}
+            <p className="mt-8 text-xs text-muted">
+              {t("realEstate.search.trustBadgeNote")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <SectionBand tone="alt" labelledBy="property-search-links-heading">
+        <h2 id="property-search-links-heading" className="visually-hidden">
+          {t("realEstate.regionsHeading")}
+        </h2>
+        <p className="text-sm text-body">
+          <Link
+            href={`/${resolved}${REAL_ESTATE_PATH}`}
+            className="font-semibold text-dept-accent underline-offset-4 hover:underline"
+          >
+            {t("realEstate.backToDepartment")}
+          </Link>
+        </p>
       </SectionBand>
-    </>
+    </div>
   );
 }

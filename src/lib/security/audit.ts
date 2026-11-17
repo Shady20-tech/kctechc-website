@@ -37,6 +37,7 @@ export const AUDIT_ACTIONS = [
   "membership_suspended",
   "membership_changes_requested",
   "membership_status_changed",
+  "membership_verification_changed",
   "kyc_submitted",
   "kyc_approved",
   "kyc_rejected",

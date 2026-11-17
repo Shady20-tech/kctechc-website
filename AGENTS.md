@@ -451,6 +451,27 @@ acceptance criteria pass. Then stop — do not start the next phase.
     migration's shape.
 - 1027 Vitest tests pass (78 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (145/145 static pages).
+- Phase 4 (Jiji-style marketplace redesign) is implemented:
+  - Migration `20260101000063_listing_sort_relevance.sql` adds the `relevance` value to
+    `listing_sort_order` in its own migration (Postgres refuses to use a new enum value in the
+    transaction that adds it). Migration
+    `20260101000064_publisher_verification_and_search_filters.sql` adds the publisher-verification
+    columns/triggers and redefines `search_property_listings` with `p_currency`, `p_verified_only`
+    and `p_amenities`, plus the new `listing_facets()` RPC.
+  - Search layer `src/lib/real-estate/search.ts`: `ListingFilters` gained `currency`,
+    `verifiedOnly` and `amenities`; `PROPERTY_CATEGORIES` drives both the landing shortcuts and the
+    sidebar; `parseCurrency`/`parseVerifiedOnly`/`parseAmenities` are the URL boundary.
+  - Surfaces: the redesigned marketplace landing (`MarketplaceSearch`: location + keyword +
+    search + category shortcuts) and the two-column listings view (`ListingSidebar` with
+    collapsible `FilterSection` groups, `ResultsToolbar`, `ActiveFilterChips`, `MobileFilterDrawer`,
+    `VerifiedBadge`, compact `ListingCard`).
+  - Super-admin verification console at `/admin/real-estate/verification`
+    (`PublisherVerificationForm`, `verification-actions.ts`); the badge is written only by a super
+    admin through the session client, so `enforce_membership_verification` is the control.
+  - Multi-image upload for products (`media-actions.ts`), listings (`media-actions.ts`,
+    `dashboard-actions.ts`), with a "use as card image" control for products.
+  - 1102 Vitest tests pass (84 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+    build succeeds (145/145 static pages).
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -1795,6 +1816,82 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   fixture or application path that deletes a translatable entity must clear its translation rows.
   Migration 58's own assertion block still strands 3 entries for the same reason — pre-existing and
   already applied, so left alone rather than folded into this change.
+
+### Marketplace redesign (Phase 4) gotchas worth not rediscovering
+
+- **A new enum value cannot be used in the migration that adds it.** Postgres raises "unsafe use of
+  new value of enum type" for `listing_sort_order` if `relevance` is added and then referenced by
+  the search function in the same transaction, and Supabase runs each migration in one transaction.
+  Migration 63 adds the value alone; migration 64 is the first place it may be used. This is why
+  there are two migrations for one change.
+- **A price filter is meaningless across currencies, so the currency predicate must travel with the
+  bound.** `search_property_listings` compares `p_min_price`/`p_max_price` only among rows whose
+  `p_currency` matches, and the loader sends `p_currency` whenever a bound is present (defaulting to
+  XAF). Sending a bound without a currency, or comparing a XAF figure to an NGN one, is exactly what
+  the brief forbids; there is no exchange-rate feed. Clearing the currency in the URL clears the
+  bounds with it (`removeListingFilter("currency")`), because a bound expressed in a currency that
+  is no longer selected cannot be displayed or cleared by the visitor.
+- **A facet count must come from the same predicate the search uses, or it is a fabricated
+  statistic.** `listing_facets()` returns category, currency and amenity counts under the identical
+  public-visibility set, so a shortcut reading "12" leads to a result set of 12. The sidebar's
+  currency selector and amenity checkboxes are built from the values that actually occur — never a
+  fixed list — so neither can offer a choice that matches nothing.
+- **A verification badge is a deliberate super-admin grant, not an inference from a KYC approval.**
+  `real_estate_memberships.verified_at`/`verified_by` are written only through
+  `setPublisherVerificationAction`, which uses the **session** client so
+  `enforce_membership_verification` (raises unless `is_super_admin()`) is the control. The trigger
+  clears the badge when a membership leaves `approved`, so a suspension revokes the public mark with
+  no action here. The reviewer set is `isKycReviewerRole` (`super_admin` only), deliberately
+  narrower than the real-estate administrator set. `property_listings.publisher_verified` is
+  denormalized because PostgREST cannot express the `exists` subquery the card needs, and it is
+  maintained by triggers on both the listing write and the membership change.
+- **The trigger must look only at an incoming NON-NULL badge value.** Clearing a badge on suspension
+  changes `verified_at` from a value to null; a naive "did the columns change?" test would read that
+  as a badge write and refuse it, so a real-estate administrator could not suspend a verified member
+  — the opposite of the intent.
+- **The mobile filter drawer and the desktop sidebar are one component, not two.** `MobileFilterDrawer`
+  renders the same `ListingSidebar` in its `drawer` variant inside the shared `Modal`
+  (`placement="side"`), so focus trapping, Escape, scroll lock and focus return are the navigation
+  drawer's behaviour and the two presentations cannot drift. The trigger reports the active-filter
+  count, because "Filter" alone gives no indication that a short list is the visitor's own doing.
+- **Every new `security definer` function needs its EXECUTE classified in the same migration.**
+  Supabase grants `EXECUTE` to `anon`/`authenticated` on every new `public` function by default, and
+  the Phase 12 hardening ran long before migration 64; `publisher_is_verified`,
+  `enforce_membership_verification` and the sync triggers are revoked from both roles there.
+  `search_property_listings` and `listing_facets` are deliberate public RPCs and keep their grant —
+  both pin the public status set internally, so the grant is not a way to read a draft.
+- **A chip is a link built from the full filter state, never a query-string splice.** Splicing would
+  leave a stale `page` behind, and removing a region would strand an orphaned division in the URL the
+  panel cannot display. `removeListingFilter` also drops a region's division and subdivision with it.
+- **The card's save control is a nested button, not a second link.** The whole card is one link (so a
+  screen reader announces one target), and `FavoriteButton` is an independently focusable button
+  inside it. `ListingCard.test.tsx` pins both the single-link default and the nested button when a
+  favourite state is supplied.
+- **An empty `?verified=` is a cleared checkbox, not a filter.** `parseVerifiedOnly` returns
+  `undefined` for `""`, `"false"` and `"0"`; only `"true"`/`"1"` enable it. Treating a bare param as
+  "on" would hide listings for a visitor who had just cleared the filter.
+- **A multi-image action reads `getAll("image")`, and a single-file read silently drops the rest.**
+  The three upload paths (`store/media-actions.ts`, `real-estate/media-actions.ts`,
+  `real-estate/dashboard-actions.ts`) append positions from the existing count and take primary only
+  once (`is_primary: !primaryTaken`), so a second upload into a gallery does not demote the card
+  image. `multi-image-upload.test.ts` pins the shape, since the behaviour lives inside a Server
+  Action that needs a live Supabase project.
+- **`setProductPrimaryImageAction` demotes before it promotes.** The partial unique index permits at
+  most one primary per product, so promoting first would violate it; the test asserts the ordering
+  within that function's body, not the whole module (an earlier promotion in the remove path would
+  otherwise satisfy a naive ordering check).
+- **The Jiji reference screenshots are a layout reference, not a data source.** No Nigerian price,
+  inventory count or market statistic is copied; every number on the page comes from a published
+  database row, and an empty portfolio says so. This is the brief's rule and the reason the landing
+  page renders an honest empty state when there is no inventory.
+- **Mobile Lighthouse performance is 96–98 on the marketplace routes under applied (`devtools`)
+  throttling — the site's own home page is 91.** There is no marketplace-specific regression;
+  desktop is 100/100/100/100. Do not chase the residual against the default Lantern simulation,
+  which this repo has already established overstates LCP here.
+- **`prettier --check` flags `src/app/(static)/admin/(console)/store/[id]/page.tsx` before this
+  change too.** It is pre-existing format debt, so the minimal hand edit is correct; running
+  `prettier --write` on it would add unrelated reformatting churn to a feature diff. The new test
+  files were formatted with `--write` because they are new.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

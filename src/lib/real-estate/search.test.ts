@@ -42,6 +42,7 @@ function listing(
     priceOnRequest: false,
     images: [],
     isFeatured: false,
+    publisherVerified: false,
     viewCount: 0,
     inquiryCount: 0,
     createdAt: "2026-01-01T00:00:00.000Z",

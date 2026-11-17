@@ -232,7 +232,7 @@ export async function loadProductRecords(
         .in("product_id", ids),
       supabase
         .from("product_media")
-        .select("product_id, storage_path, alt_text, is_primary, position")
+        .select("id, product_id, storage_path, alt_text, is_primary, position")
         .in("product_id", ids)
         .order("position", { ascending: true }),
       supabase
@@ -259,6 +259,7 @@ export async function loadProductRecords(
     for (const row of media ?? []) {
       const list = mediaByProduct.get(row.product_id) ?? [];
       list.push({
+        id: row.id,
         storagePath: row.storage_path,
         alt: row.alt_text,
         isPrimary: row.is_primary,

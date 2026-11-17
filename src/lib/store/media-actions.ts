@@ -75,13 +75,20 @@ async function departmentSlugForProduct(
 }
 
 /**
- * Attach an image to a product and make it the primary one.
+ * Append images to a product's gallery.
  *
- * The first image a product receives becomes primary. A later upload replaces the
- * primary rather than appending, because the storefront renders one image per
- * card and the editor uploading a second photo means "use this one", not "keep
- * both and I cannot tell which is shown". The previous object is removed after the
- * row is repointed, so a failure mid-way leaves the old image in place.
+ * A product is sold on its gallery, so the editor uploading a second photograph
+ * means "show both" — this appends rather than replacing. The first image becomes
+ * primary; later ones are appended, exactly as the property gallery behaves.
+ *
+ * The form accepts several files at once, so a whole set of product photographs
+ * is one submit rather than one submit per image. The files are stored in the
+ * order the editor chose them, and the gallery's positions follow the existing
+ * count so an append never renumbers what is already there.
+ *
+ * The department comes from the product, never from the request, so a product in
+ * a department the caller may not edit is treated as not-found and the action and
+ * the RLS write policy agree on the boundary.
  */
 export async function uploadProductImageAction(
   formData: FormData,
@@ -95,12 +102,10 @@ export async function uploadProductImageAction(
   const altText = String(formData.get("altText") ?? "").trim();
   if (altText.length === 0) return { ok: false, error: "alt_required" };
 
-  const file = formData.get("image");
-  if (!(file instanceof File)) return { ok: false, error: "no_file" };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const verdict = validateUpload(bytes, file.type, { kind: "product-image" });
-  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  const files = formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) return { ok: false, error: "no_file" };
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
@@ -113,66 +118,66 @@ export async function uploadProductImageAction(
     return { ok: false, error: "not_found" };
   }
 
-  const { data: existing } = await admin
+  const { count } = await admin
     .from("product_media")
-    .select("id, storage_path")
-    .eq("product_id", productId)
-    .eq("is_primary", true)
-    .maybeSingle();
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId);
 
-  // UUID-based name so two uploads in the same second cannot collide, and the
-  // extension comes from the detected type rather than the supplied filename.
-  const objectPath = productMediaPath(
-    productId,
-    `${randomUUID()}.${verdict.extension}`,
-  );
+  let position = count ?? 0;
+  let stored = 0;
+  // The first upload in this batch is primary only when the gallery was empty.
+  let primaryTaken = position > 0;
 
-  const { error: uploadError } = await admin.storage
-    .from(PRODUCT_MEDIA_BUCKET)
-    .upload(objectPath, bytes, {
-      contentType: verdict.mime,
-      upsert: false,
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const verdict = validateUpload(bytes, file.type, { kind: "product-image" });
+    if (!verdict.ok) {
+      // A batch that is partly invalid leaves the valid files in place rather
+      // than rolling back a completed upload: the editor can see what landed and
+      // retry only the file the message names.
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: verdict.reason };
+    }
+
+    // UUID-based name so two uploads in the same second cannot collide, and the
+    // extension comes from the detected type rather than the supplied filename.
+    const objectPath = productMediaPath(
+      productId,
+      `${randomUUID()}.${verdict.extension}`,
+    );
+
+    const { error: uploadError } = await admin.storage
+      .from(PRODUCT_MEDIA_BUCKET)
+      .upload(objectPath, bytes, {
+        contentType: verdict.mime,
+        upsert: false,
+      });
+    if (uploadError) {
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "upload_failed" };
+    }
+
+    const { error: insertError } = await admin.from("product_media").insert({
+      product_id: productId,
+      storage_path: objectPath,
+      alt_text: altText.slice(0, 300),
+      // The first photograph is the card/OG image; later ones are gallery only. A
+      // partial unique index permits at most one primary per product.
+      is_primary: !primaryTaken,
+      position,
     });
-  if (uploadError) return { ok: false, error: "upload_failed" };
-
-  // Demote the current primary before promoting the new row: a partial unique
-  // index allows only one primary per product, so the order matters.
-  if (existing) {
-    const { error: demoteError } = await admin
-      .from("product_media")
-      .update({ is_primary: false })
-      .eq("id", existing.id);
-    if (demoteError) {
+    if (insertError) {
       await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([objectPath]);
-      return { ok: false, error: "write_failed" };
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "write_failed" };
     }
-  }
 
-  const { error: insertError } = await admin.from("product_media").insert({
-    product_id: productId,
-    storage_path: objectPath,
-    alt_text: altText.slice(0, 300),
-    is_primary: true,
-    position: 0,
-  });
-  if (insertError) {
-    if (existing) {
-      await admin
-        .from("product_media")
-        .update({ is_primary: true })
-        .eq("id", existing.id);
-    }
-    await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([objectPath]);
-    return { ok: false, error: "write_failed" };
-  }
-
-  if (existing) {
-    await admin.from("product_media").delete().eq("id", existing.id);
-    if (existing.storage_path !== objectPath) {
-      await admin.storage
-        .from(PRODUCT_MEDIA_BUCKET)
-        .remove([existing.storage_path]);
-    }
+    primaryTaken = true;
+    position += 1;
+    stored += 1;
   }
 
   await recordAudit({
@@ -180,7 +185,7 @@ export async function uploadProductImageAction(
     action: "product_updated",
     entityType: "product",
     entityId: productId,
-    metadata: { field: "primary_image", bytes: bytes.byteLength },
+    metadata: { field: "media_added", count: stored },
   });
 
   revalidatePath("/admin/store");
@@ -189,6 +194,147 @@ export async function uploadProductImageAction(
   revalidatePath(`/en${storePathFor(departmentSlug)}`);
   revalidatePath(`/fr${storePathFor(departmentSlug)}`);
   return { ok: true, message: "image_added" };
+}
+
+/**
+ * Remove one image from a product.
+ *
+ * The row is deleted first, then the object: if the object removal fails the
+ * orphan costs a few kilobytes, whereas the reverse order would delete the bytes
+ * behind a row that still renders, producing a broken image.
+ *
+ * When the removed image was the primary one, the next image is promoted so the
+ * product always has a card image for as long as it has any image at all — which
+ * matters because a published product cannot exist without media.
+ */
+export async function removeProductImageAction(
+  formData: FormData,
+): Promise<ProductMediaState> {
+  const gate = await requireEditor();
+  if (!gate.ok) return { ok: false, error: gate.error };
+
+  const productId = String(formData.get("productId") ?? "").trim();
+  const mediaId = String(formData.get("mediaId") ?? "").trim();
+  if (!productId || !mediaId) return { ok: false, error: "not_found" };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  const departmentSlug = await departmentSlugForProduct(admin, productId);
+  if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { data: media } = await admin
+    .from("product_media")
+    .select("id, product_id, storage_path, is_primary")
+    .eq("id", mediaId)
+    .eq("product_id", productId)
+    .maybeSingle();
+  if (!media) return { ok: false, error: "not_found" };
+
+  const { error: deleteError } = await admin
+    .from("product_media")
+    .delete()
+    .eq("id", mediaId);
+  if (deleteError) return { ok: false, error: "write_failed" };
+
+  await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([media.storage_path]);
+
+  if (media.is_primary) {
+    const { data: next } = await admin
+      .from("product_media")
+      .select("id")
+      .eq("product_id", productId)
+      .order("position", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (next) {
+      await admin
+        .from("product_media")
+        .update({ is_primary: true })
+        .eq("id", next.id);
+    }
+  }
+
+  await recordAudit({
+    actorId: gate.userId,
+    action: "product_updated",
+    entityType: "product",
+    entityId: productId,
+    metadata: { field: "media_removed" },
+  });
+
+  revalidatePath("/admin/store");
+  revalidatePath(`/admin/store/${productId}`);
+  revalidatePath("/sitemap.xml");
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
+  return { ok: true, message: "image_removed" };
+}
+
+/**
+ * Choose which image is the card image.
+ *
+ * The first uploaded image is primary by default, but "the first one I happened
+ * to send" is not necessarily the best front-of-card shot. Promoting one image
+ * demotes the rest in a single statement, because the partial unique index
+ * permits at most one primary per product — so the demote must happen before the
+ * promote or the index rejects the write.
+ */
+export async function setProductPrimaryImageAction(
+  formData: FormData,
+): Promise<ProductMediaState> {
+  const gate = await requireEditor();
+  if (!gate.ok) return { ok: false, error: gate.error };
+
+  const productId = String(formData.get("productId") ?? "").trim();
+  const mediaId = String(formData.get("mediaId") ?? "").trim();
+  if (!productId || !mediaId) return { ok: false, error: "not_found" };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  const departmentSlug = await departmentSlugForProduct(admin, productId);
+  if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { data: media } = await admin
+    .from("product_media")
+    .select("id")
+    .eq("id", mediaId)
+    .eq("product_id", productId)
+    .maybeSingle();
+  if (!media) return { ok: false, error: "not_found" };
+
+  const { error: demoteError } = await admin
+    .from("product_media")
+    .update({ is_primary: false })
+    .eq("product_id", productId)
+    .eq("is_primary", true);
+  if (demoteError) return { ok: false, error: "write_failed" };
+
+  const { error: promoteError } = await admin
+    .from("product_media")
+    .update({ is_primary: true })
+    .eq("id", mediaId);
+  if (promoteError) return { ok: false, error: "write_failed" };
+
+  await recordAudit({
+    actorId: gate.userId,
+    action: "product_updated",
+    entityType: "product",
+    entityId: productId,
+    metadata: { field: "primary_image_set", media_id: mediaId },
+  });
+
+  revalidatePath("/admin/store");
+  revalidatePath(`/admin/store/${productId}`);
+  revalidatePath("/sitemap.xml");
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
+  return { ok: true, message: "primary_set" };
 }
 
 /**

@@ -39,6 +39,7 @@ function summary(
     reviewNotes: null,
     suspendedAt: null,
     suspensionReason: null,
+    isVerified: false,
     ...overrides,
   };
 }

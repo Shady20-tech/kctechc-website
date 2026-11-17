@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   Activity,
+  BadgeCheck,
   BarChart3,
   Briefcase,
   Building2,
@@ -45,6 +46,7 @@ const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
   listings: Building2,
   submissions: FileText,
   memberships: ShieldCheck,
+  verification: BadgeCheck,
   kyc: ShieldCheck,
   import: FileText,
   content: FileText,

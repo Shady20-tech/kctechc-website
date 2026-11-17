@@ -101,8 +101,8 @@ describe("isPurchasable", () => {
 
 describe("primaryImage", () => {
   const images: ProductImage[] = [
-    { storagePath: "b.jpg", alt: "B", isPrimary: false, position: 2 },
-    { storagePath: "a.jpg", alt: "A", isPrimary: true, position: 1 },
+    { id: "img-b", storagePath: "b.jpg", alt: "B", isPrimary: false, position: 2 },
+    { id: "img-a", storagePath: "a.jpg", alt: "A", isPrimary: true, position: 1 },
   ];
 
   it("prefers the image flagged primary", () => {

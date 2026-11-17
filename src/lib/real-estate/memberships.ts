@@ -81,9 +81,24 @@ export type MembershipRecord = {
   reviewNotes: string | null;
   suspendedAt: string | null;
   suspensionReason: string | null;
+  /**
+   * When a super admin granted this member a public verification badge.
+   *
+   * The badge is a *second* statement on top of an approval: an approved
+   * membership means KC Technology reviewed the applicant's identity, while a
+   * verification badge is a public trust mark a super admin grants deliberately.
+   * Null means no badge. The database clears it whenever the membership leaves
+   * `approved`, so a suspended member cannot keep a public mark.
+   */
+  verifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
+
+/** True when the record holds an approved, unrevoked verification badge. */
+export function isVerifiedMembership(record: MembershipRecord): boolean {
+  return record.status === "approved" && record.verifiedAt !== null;
+}
 
 /** True when the status is a live capability. */
 export function isActiveMembershipStatus(status: MembershipStatus): boolean {
@@ -155,6 +170,8 @@ export type MembershipSummary = {
   reviewNotes: string | null;
   suspendedAt: string | null;
   suspensionReason: string | null;
+  /** True when the capability holds an approved, unrevoked verification badge. */
+  isVerified: boolean;
 };
 
 /**
@@ -178,6 +195,7 @@ export function summariseMemberships(
       reviewNotes: record?.reviewNotes ?? null,
       suspendedAt: record?.suspendedAt ?? null,
       suspensionReason: record?.suspensionReason ?? null,
+      isVerified: record ? isVerifiedMembership(record) : false,
     };
   });
 }

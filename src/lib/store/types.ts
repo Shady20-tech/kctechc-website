@@ -25,6 +25,8 @@ export type ProductSpecification = {
 };
 
 export type ProductImage = {
+  /** The `product_media` row id, for the admin gallery's per-image controls. */
+  id: string;
   /**
    * Storage object path, or `null` when the image is served from the bundled
    * `public/` catalogue rather than from Storage (the seeded solar packages —

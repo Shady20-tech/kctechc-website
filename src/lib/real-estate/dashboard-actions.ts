@@ -527,7 +527,13 @@ export async function setListingStatusAction(
 }
 
 /**
- * Append a photograph to a listing's gallery.
+ * Append photographs to a listing's gallery.
+ *
+ * The form accepts several files at once, so a whole set of property photographs
+ * is one submit rather than one submit per image. The files are stored in the
+ * order the editor chose them, and the gallery's positions follow the existing
+ * count so an append never renumbers what is already there. The first upload in a
+ * batch becomes primary only when the gallery was empty.
  *
  * The row insert uses the session client so the `listing_media_write_own_owner`
  * policy is the control, and the object write uses the admin client because the
@@ -548,12 +554,10 @@ export async function uploadDashboardListingImageAction(
   const altText = cell(formData, "altText").trim();
   if (altText.length === 0) return { ok: false, error: "alt_required" };
 
-  const file = formData.get("image");
-  if (!(file instanceof File)) return { ok: false, error: "no_file" };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const verdict = validateUpload(bytes, file.type, { kind: "property-image" });
-  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  const files = formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) return { ok: false, error: "no_file" };
 
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "unconfigured" };
@@ -573,35 +577,60 @@ export async function uploadDashboardListingImageAction(
     .select("id", { count: "exact", head: true })
     .eq("listing_id", listingId);
 
-  const existingCount = count ?? 0;
+  let position = count ?? 0;
+  let stored = 0;
+  // The first upload in this batch is primary only when the gallery was empty.
+  let primaryTaken = position > 0;
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  const objectPath = listingMediaPath(
-    listingId,
-    `${randomUUID()}.${verdict.extension}`,
-  );
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const verdict = validateUpload(bytes, file.type, { kind: "property-image" });
+    if (!verdict.ok) {
+      // A partly-invalid batch keeps what already landed rather than discarding a
+      // completed upload, so the editor can retry only the file the message names.
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: verdict.reason };
+    }
 
-  const { error: uploadError } = await admin.storage
-    .from(PROPERTY_MEDIA_BUCKET)
-    .upload(objectPath, bytes, {
-      contentType: verdict.mime,
-      upsert: false,
+    const objectPath = listingMediaPath(
+      listingId,
+      `${randomUUID()}.${verdict.extension}`,
+    );
+
+    const { error: uploadError } = await admin.storage
+      .from(PROPERTY_MEDIA_BUCKET)
+      .upload(objectPath, bytes, {
+        contentType: verdict.mime,
+        upsert: false,
+      });
+    if (uploadError) {
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "upload_failed" };
+    }
+
+    const { error: insertError } = await supabase.from("listing_media").insert({
+      listing_id: listingId,
+      storage_path: objectPath,
+      alt_text: altText.slice(0, 300),
+      is_primary: !primaryTaken,
+      position,
     });
-  if (uploadError) return { ok: false, error: "upload_failed" };
 
-  const { error: insertError } = await supabase.from("listing_media").insert({
-    listing_id: listingId,
-    storage_path: objectPath,
-    alt_text: altText.slice(0, 300),
-    is_primary: existingCount === 0,
-    position: existingCount,
-  });
+    if (insertError) {
+      await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "write_failed" };
+    }
 
-  if (insertError) {
-    await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
-    return { ok: false, error: "write_failed" };
+    primaryTaken = true;
+    position += 1;
+    stored += 1;
   }
 
   await recordAudit({
@@ -609,7 +638,7 @@ export async function uploadDashboardListingImageAction(
     action: "listing_updated",
     entityType: "property_listing",
     entityId: listingId,
-    metadata: { via: `${kind}_dashboard`, field: "media_added" },
+    metadata: { via: `${kind}_dashboard`, field: "media_added", count: stored },
   });
 
   revalidateListingSurfaces(listingId, listing.slug);

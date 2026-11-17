@@ -2310,6 +2310,7 @@ export type Database = {
           property_kind: Database["public"]["Enums"]["listing_property_kind"];
           property_type: Database["public"]["Enums"]["property_type"];
           published_at: string | null;
+          publisher_verified: boolean;
           reference: string;
           region_id: string;
           search_vector: unknown;
@@ -2352,6 +2353,7 @@ export type Database = {
           property_kind: Database["public"]["Enums"]["listing_property_kind"];
           property_type: Database["public"]["Enums"]["property_type"];
           published_at?: string | null;
+          publisher_verified?: boolean;
           reference?: string;
           region_id: string;
           search_vector?: never;
@@ -2394,6 +2396,7 @@ export type Database = {
           property_kind?: Database["public"]["Enums"]["listing_property_kind"];
           property_type?: Database["public"]["Enums"]["property_type"];
           published_at?: string | null;
+          publisher_verified?: boolean;
           reference?: string;
           region_id?: string;
           search_vector?: never;
@@ -2482,6 +2485,8 @@ export type Database = {
           suspension_reason: string | null;
           updated_at: string;
           user_id: string;
+          verified_at: string | null;
+          verified_by: string | null;
         };
         Insert: {
           approved_at?: string | null;
@@ -2496,6 +2501,8 @@ export type Database = {
           suspension_reason?: string | null;
           updated_at?: string;
           user_id: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
         };
         Update: {
           approved_at?: string | null;
@@ -2510,6 +2517,8 @@ export type Database = {
           suspension_reason?: string | null;
           updated_at?: string;
           user_id?: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
         };
         Relationships: [];
       };
@@ -3550,6 +3559,14 @@ export type Database = {
       };
       is_super_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_service_role: { Args: Record<PropertyKey, never>; Returns: boolean };
+      listing_facets: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          facet: string;
+          value: string;
+          total: number;
+        }[];
+      };
       listing_geography_counts: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -3686,9 +3703,11 @@ export type Database = {
       search_property_listings: {
         Args: {
           p_amenities?: string[];
+          p_currency?: string;
           p_division_id?: string;
           p_limit?: number;
           p_listing_type?: Database["public"]["Enums"]["listing_type"];
+          p_locality?: string;
           p_locale?: Database["public"]["Enums"]["locale_code"];
           p_max_price?: number;
           p_max_size?: number;
@@ -3704,6 +3723,7 @@ export type Database = {
           p_sort?: Database["public"]["Enums"]["listing_sort_order"];
           p_statuses?: Database["public"]["Enums"]["listing_status"][];
           p_subdivision_id?: string;
+          p_verified_only?: boolean;
         };
         Returns: {
           bathrooms: number;
@@ -3720,6 +3740,7 @@ export type Database = {
           price_period: Database["public"]["Enums"]["price_period"];
           property_kind: Database["public"]["Enums"]["listing_property_kind"];
           published_at: string;
+          publisher_verified: boolean;
           rank: number;
           reference: string;
           region_slug: string;
@@ -3855,7 +3876,12 @@ export type Database = {
         | "restaurant"
         | "mixed_use"
         | "other";
-      listing_sort_order: "newest" | "price_asc" | "price_desc" | "most_viewed";
+      listing_sort_order:
+        | "relevance"
+        | "newest"
+        | "price_asc"
+        | "price_desc"
+        | "most_viewed";
       listing_source: "admin" | "agent" | "owner_submission" | "import";
       listing_status:
         | "draft"
@@ -4189,7 +4215,13 @@ export const Constants = {
         "mixed_use",
         "other",
       ],
-      listing_sort_order: ["newest", "price_asc", "price_desc", "most_viewed"],
+      listing_sort_order: [
+        "relevance",
+        "newest",
+        "price_asc",
+        "price_desc",
+        "most_viewed",
+      ],
       listing_source: ["admin", "agent", "owner_submission", "import"],
       listing_status: [
         "draft",

@@ -43,6 +43,7 @@ declare
   v_browser_roles text[] := array['anon', 'authenticated'];
   v_allowed text[] := array[
     'place_order', 'search_property_listings', 'listing_geography_counts',
+    'listing_facets',
     'match_region_by_name', 'record_listing_view',
     'is_admin', 'is_super_admin', 'is_real_estate_admin', 'is_inquiry_manager',
     'current_user_role', 'current_agent_id', 'can_access_department',
@@ -140,7 +141,7 @@ begin
   -- ---------------------------------------------------------------------------
   for v_role in select unnest(v_browser_roles)
   loop
-    if not has_function_privilege(v_role, 'public.search_property_listings(text, uuid, uuid, uuid, public.listing_type, public.listing_property_kind, public.property_type, bigint, bigint, smallint, smallint, integer, integer, public.listing_status[], text[], public.locale_code, public.listing_sort_order, integer, integer)', 'EXECUTE') then
+    if not has_function_privilege(v_role, 'public.search_property_listings(text, uuid, uuid, uuid, public.listing_type, public.listing_property_kind, public.property_type, bigint, bigint, smallint, smallint, integer, integer, public.listing_status[], text[], text, boolean, public.locale_code, public.listing_sort_order, integer, integer)', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute search_property_listings (browse would break)', v_role;
     end if;
     if not has_function_privilege(v_role, 'public.is_admin()', 'EXECUTE') then

@@ -117,7 +117,11 @@ export function DashboardMediaPanel({
           <Notice tone="warning">{t(`errors.${state.error}`)}</Notice>
         ) : null}
         {state?.ok ? (
-          <Notice tone="success">{t(`${base}.imageAdded`)}</Notice>
+          <Notice tone="success">
+            {state.message === "image_added_partial"
+              ? t(`${base}.imageAddedPartial`)
+              : t(`${base}.imageAdded`)}
+          </Notice>
         ) : null}
         {tooLarge ? (
           <Notice tone="warning">{t("errors.too_large")}</Notice>
@@ -143,13 +147,18 @@ export function DashboardMediaPanel({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             required
+            multiple
             onChange={(event) => {
-              const file = event.target.files?.[0];
-              setTooLarge(file ? file.size > MAX_PROPERTY_IMAGE_BYTES : false);
+              const files = Array.from(event.target.files ?? []);
+              setTooLarge(
+                files.some((file) => file.size > MAX_PROPERTY_IMAGE_BYTES),
+              );
             }}
             className="text-sm text-body file:mr-3 file:rounded-control file:border-0 file:bg-surface-alt file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink-900"
           />
-          <p className="text-xs text-muted">{t(`${base}.imagesLimitHint`)}</p>
+          <p className="text-xs text-muted">
+            {t(`${base}.imagesLimitHint`)} {t(`${base}.imageUploadMultipleHint`)}
+          </p>
         </div>
 
         <UploadButton

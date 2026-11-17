@@ -56,6 +56,8 @@ export default async function AdminEditListingPage({
     imageUpload: t("realEstate.admin.imageUpload"),
     imageUploading: t("realEstate.admin.imageUploading"),
     imageAdded: t("realEstate.admin.imageAdded"),
+    imageAddedPartial: t("realEstate.admin.imageAddedPartial"),
+    imageUploadMultipleHint: t("realEstate.admin.imageUploadMultipleHint"),
     imageRemove: t("realEstate.admin.imageRemove"),
     noImagesYet: t("realEstate.admin.noImagesYet"),
     primaryBadge: t("realEstate.admin.primaryBadge"),

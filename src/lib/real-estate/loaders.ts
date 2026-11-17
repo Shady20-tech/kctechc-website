@@ -27,6 +27,7 @@ import {
 import {
   LISTINGS_PAGE_SIZE,
   LISTING_SORT_TO_SQL,
+  PRIMARY_CURRENCY,
   type ListingSort,
 } from "./search";
 import type {
@@ -220,7 +221,7 @@ async function loadPublicLocations(
  * table exists precisely so that cannot happen by accident.
  */
 const LISTING_SELECT =
-  "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, regions (slug, name, name_fr), agent_profiles (display_name)";
+  "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, publisher_verified, created_at, updated_at, regions (slug, name, name_fr), agent_profiles (display_name)";
 
 /** Attach images, translations and public positions to a set of rows. */
 async function enrich(
@@ -384,10 +385,16 @@ export interface ListingQueryParams {
   regionSlug?: string;
   divisionSlug?: string;
   subdivisionSlug?: string;
+  /** Free-text city or neighbourhood match. */
+  locality?: string;
   listingType?: ListingType;
   propertyKind?: ListingPropertyKind;
   propertyType?: PropertyType;
   statuses?: readonly ListingStatus[];
+  /** The currency the price bounds are expressed in. */
+  currency?: string;
+  verifiedOnly?: boolean;
+  amenities?: readonly string[];
   minPrice?: number;
   maxPrice?: number;
   minBedrooms?: number;
@@ -450,6 +457,19 @@ export async function queryListings(
         p_listing_type: params.listingType ?? undefined,
         p_property_kind: params.propertyKind ?? undefined,
         p_property_type: params.propertyType ?? undefined,
+        // The currency is applied whenever a price bound is present, so the two
+        // numbers compared are always the same unit. Comparing a XAF price to a
+        // NGN price as though the figures were equivalent is what the brief
+        // forbids, and there is no exchange-rate feed to convert them.
+        p_currency:
+          params.minPrice !== undefined || params.maxPrice !== undefined
+            ? (params.currency ?? PRIMARY_CURRENCY)
+            : params.currency ?? undefined,
+        p_verified_only: params.verifiedOnly === true ? true : undefined,
+        p_amenities:
+          params.amenities && params.amenities.length > 0
+            ? [...params.amenities]
+            : undefined,
         p_min_price: params.minPrice ?? undefined,
         p_max_price: params.maxPrice ?? undefined,
         p_min_bedrooms: params.minBedrooms ?? undefined,
@@ -648,6 +668,66 @@ export async function loadListingGeographyTree(
 }
 
 /**
+ * The facet counts the marketplace navigation renders.
+ *
+ * One RPC call returns the category buckets, the currencies in use and the
+ * amenities actually recorded — all under the same visibility predicate the
+ * search uses, so a count beside a shortcut always equals the result set its link
+ * leads to. Nothing here is invented: a category with no listings shows no count,
+ * and a currency or amenity that occurs on no listing is not offered at all.
+ *
+ * Returns empty maps on any failure, so a database outage degrades to "no counts"
+ * rather than an error page — the navigation still works, it just stops claiming
+ * numbers.
+ */
+export type ListingFacets = {
+  categories: ReadonlyMap<string, number>;
+  currencies: readonly { code: string; count: number }[];
+  amenities: readonly { slug: string; count: number }[];
+};
+
+export const EMPTY_LISTING_FACETS: ListingFacets = {
+  categories: new Map(),
+  currencies: [],
+  amenities: [],
+};
+
+export async function loadListingFacets(): Promise<ListingFacets> {
+  try {
+    const supabase = createPublicClient();
+    if (!supabase) return EMPTY_LISTING_FACETS;
+
+    const { data, error } = await supabase.rpc("listing_facets");
+    if (error || !data) return EMPTY_LISTING_FACETS;
+
+    const categories = new Map<string, number>();
+    const currencies: { code: string; count: number }[] = [];
+    const amenities: { slug: string; count: number }[] = [];
+
+    for (const row of data) {
+      const total = Number(row.total ?? 0);
+      if (row.facet === "category") categories.set(row.value, total);
+      else if (row.facet === "currency") {
+        currencies.push({ code: row.value, count: total });
+      } else if (row.facet === "amenity") {
+        amenities.push({ slug: row.value, count: total });
+      }
+    }
+
+    // Most-used first, so the selector leads with the currencies and amenities
+    // the market actually uses; ties break on the value for a stable order.
+    const byCount = <T extends { count: number }>(a: T, b: T) =>
+      b.count - a.count;
+    currencies.sort((a, b) => byCount(a, b) || a.code.localeCompare(b.code));
+    amenities.sort((a, b) => byCount(a, b) || a.slug.localeCompare(b.slug));
+
+    return { categories, currencies, amenities };
+  } catch {
+    return EMPTY_LISTING_FACETS;
+  }
+}
+
+/**
  * The curated content for a geographic landing page, if an editor published any.
  *
  * The return value is what decides indexability, and the absence of a row is a
@@ -833,6 +913,38 @@ export async function loadPublishedListings(
     if (options.featuredOnly) query = query.eq("is_featured", true);
 
     const { data, error } = await query;
+    if (error || !data) return [];
+    return enrich(data);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The most-viewed published listings, for the marketplace landing page's
+ * "trending" strip.
+ *
+ * "Trending" is a claim about the data, so it is derived from the view counts the
+ * site already records (`record_listing_view`) — never invented. A listing with
+ * no views yet is excluded, so a fresh portfolio shows nothing here rather than
+ * presenting arbitrary properties as popular.
+ */
+export async function loadTrendingListings(
+  options: { limit?: number } = {},
+): Promise<PropertyListingRecord[]> {
+  try {
+    const supabase = createPublicClient();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+      .from("property_listings")
+      .select(LISTING_SELECT)
+      .in("status", ["published", "under_offer"])
+      .gt("view_count", 0)
+      .order("view_count", { ascending: false })
+      .order("published_at", { ascending: false })
+      .limit(options.limit ?? 4);
+
     if (error || !data) return [];
     return enrich(data);
   } catch {

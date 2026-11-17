@@ -67,6 +67,7 @@ export const ADMIN_NAV_ICON_KEYS = [
   "listings",
   "submissions",
   "memberships",
+  "verification",
   "kyc",
   "import",
   "content",
@@ -184,6 +185,18 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "memberships",
         icon: Users,
         canSee: realEstateAdmin,
+      },
+      {
+        // Publisher verification is SUPER-ADMIN ONLY, like the KYC queue and for
+        // the same reason: a public trust mark is an identity decision, not a
+        // listing decision, so it is not delegated to the real-estate
+        // administrator tier. The `enforce_membership_verification` trigger is
+        // what actually refuses a lesser role.
+        href: "/admin/real-estate/verification",
+        labelKey: "verification",
+        iconKey: "verification",
+        icon: ShieldCheck,
+        canSee: superOnly,
       },
       {
         // The KYC review queue is SUPER-ADMIN ONLY. A plain real-estate

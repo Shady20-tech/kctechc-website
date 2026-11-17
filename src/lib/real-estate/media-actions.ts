@@ -68,13 +68,16 @@ function revalidateGallery(listingId: string, listingSlug?: string) {
 }
 
 /**
- * Append an image to a listing's gallery.
+ * Append photographs to a listing's gallery.
  *
  * Unlike the product form, this appends rather than replaces: a property is sold
  * on its gallery, so the editor uploading a second photograph means "show both".
- * The first image becomes primary, later ones are appended. Alt text is required
- * by the table's own check constraint, so it is required here too rather than
- * letting a database rejection surface as an opaque write failure.
+ * The form accepts several files at once, so a whole set of property photographs
+ * is one submit; the files are stored in the order the editor chose them and the
+ * gallery's positions follow the existing count. The first upload in a batch
+ * becomes primary only when the gallery was empty. Alt text is required by the
+ * table's own check constraint, so it is required here too rather than letting a
+ * database rejection surface as an opaque write failure.
  */
 export async function uploadListingImageAction(
   formData: FormData,
@@ -88,12 +91,10 @@ export async function uploadListingImageAction(
   const altText = String(formData.get("altText") ?? "").trim();
   if (altText.length === 0) return { ok: false, error: "alt_required" };
 
-  const file = formData.get("image");
-  if (!(file instanceof File)) return { ok: false, error: "no_file" };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const verdict = validateUpload(bytes, file.type, { kind: "property-image" });
-  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  const files = formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) return { ok: false, error: "no_file" };
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
@@ -110,35 +111,60 @@ export async function uploadListingImageAction(
     .select("id", { count: "exact", head: true })
     .eq("listing_id", listingId);
 
-  const existingCount = count ?? 0;
+  let position = count ?? 0;
+  let stored = 0;
+  // The first upload in this batch is primary only when the gallery was empty.
+  let primaryTaken = position > 0;
 
-  // A UUID name so two uploads in the same second cannot collide. The extension
-  // comes from the detected type, not the filename the browser supplied.
-  const objectPath = listingMediaPath(
-    listingId,
-    `${randomUUID()}.${verdict.extension}`,
-  );
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const verdict = validateUpload(bytes, file.type, { kind: "property-image" });
+    if (!verdict.ok) {
+      // A partly-invalid batch keeps what already landed rather than discarding a
+      // completed upload, so the editor can retry only the file the message names.
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: verdict.reason };
+    }
 
-  const { error: uploadError } = await admin.storage
-    .from(PROPERTY_MEDIA_BUCKET)
-    .upload(objectPath, bytes, {
-      contentType: verdict.mime,
-      upsert: false,
+    // A UUID name so two uploads in the same second cannot collide. The extension
+    // comes from the detected type, not the filename the browser supplied.
+    const objectPath = listingMediaPath(
+      listingId,
+      `${randomUUID()}.${verdict.extension}`,
+    );
+
+    const { error: uploadError } = await admin.storage
+      .from(PROPERTY_MEDIA_BUCKET)
+      .upload(objectPath, bytes, {
+        contentType: verdict.mime,
+        upsert: false,
+      });
+    if (uploadError) {
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "upload_failed" };
+    }
+
+    const { error: insertError } = await admin.from("listing_media").insert({
+      listing_id: listingId,
+      storage_path: objectPath,
+      alt_text: altText.slice(0, 300),
+      // The first photograph is the card image; later ones are gallery only. A
+      // partial unique index permits at most one primary per listing.
+      is_primary: !primaryTaken,
+      position,
     });
-  if (uploadError) return { ok: false, error: "upload_failed" };
+    if (insertError) {
+      await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
+      return stored > 0
+        ? { ok: true, message: "image_added_partial" }
+        : { ok: false, error: "write_failed" };
+    }
 
-  const { error: insertError } = await admin.from("listing_media").insert({
-    listing_id: listingId,
-    storage_path: objectPath,
-    alt_text: altText.slice(0, 300),
-    // The first photograph is the card image; later ones are gallery only. A
-    // partial unique index permits at most one primary per listing.
-    is_primary: existingCount === 0,
-    position: existingCount,
-  });
-  if (insertError) {
-    await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
-    return { ok: false, error: "write_failed" };
+    primaryTaken = true;
+    position += 1;
+    stored += 1;
   }
 
   await recordAudit({
@@ -146,7 +172,7 @@ export async function uploadListingImageAction(
     action: "listing_updated",
     entityType: "property_listing",
     entityId: listingId,
-    metadata: { field: "media_added", bytes: bytes.byteLength },
+    metadata: { field: "media_added", count: stored },
   });
 
   revalidateGallery(listingId, String(listing.slug ?? ""));

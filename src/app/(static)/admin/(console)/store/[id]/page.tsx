@@ -45,19 +45,33 @@ export default async function AdminProductPage({
   if (!product) notFound();
 
   const image = primaryImage(product.images);
-  // Admin shows the *uploaded* asset only. A seeded package's `storage_path` is a
-  // placeholder with no object behind it, and showing its bundled brochure image
-  // here would imply an upload the editor could replace.
-  const currentImageUrl =
-    image?.storagePath ? storagePublicUrl(image.storagePath) : null;
   const published = product.publishState === "published";
 
+  // Admin shows the *uploaded* assets only. A seeded package's `storage_path` is a
+  // placeholder with no object behind it, and showing its bundled brochure image
+  // here would imply an upload the editor could replace.
+  const gallery = product.images.map((entry) => ({
+    id: entry.id,
+    url: entry.storagePath ? storagePublicUrl(entry.storagePath) : null,
+    alt: entry.alt,
+    isPrimary: entry.isPrimary,
+    position: entry.position,
+  }));
+
   const labels: Record<string, string> = {
-    imageHeading: t("admin.store.imageHeading"),
-    imageIntro: t("admin.store.imageIntro"),
+    imagesHeading: t("admin.store.imagesHeading"),
+    imagesIntro: t("admin.store.imagesIntro"),
     imageUpload: t("admin.store.imageUpload"),
     imageUploading: t("admin.store.imageUploading"),
     imageAdded: t("admin.store.imageAdded"),
+    imageAddedPartial: t("admin.store.imageAddedPartial"),
+    imageUploadMultipleHint: t("admin.store.imageUploadMultipleHint"),
+    makePrimary: t("admin.store.makePrimary"),
+    primarySet: t("admin.store.primarySet"),
+    imageRemove: t("admin.store.imageRemove"),
+    imageRemoved: t("admin.store.imageRemoved"),
+    primaryBadge: t("admin.store.primaryBadge"),
+    positionLabel: t("admin.store.positionLabel"),
     noImageYet: t("admin.store.noImageYet"),
     altLabel: t("admin.store.altLabel"),
     altPlaceholder: t("admin.store.altPlaceholder"),
@@ -69,7 +83,7 @@ export default async function AdminProductPage({
     unpublish: t("admin.store.unpublish"),
     publishedNotice: t("admin.store.publishedNotice"),
     unpublishedNotice: t("admin.store.unpublishedNotice"),
-    imageLimitHint: t("admin.store.imageLimitHint"),
+    imagesLimitHint: t("admin.store.imageLimitHint"),
     saving: t("adminContent.saving"),
   };
   for (const key of [
@@ -130,10 +144,9 @@ export default async function AdminProductPage({
         <div>
           <ProductMediaForm
             productId={product.id}
-            currentImageUrl={currentImageUrl}
+            images={gallery}
             altText={image?.alt ?? product.title}
             published={published}
-            hasImage={product.images.length > 0}
             labels={labels}
           />
         </div>

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getAuthState } from "@/lib/auth/session";
-import { isRealEstateAdminRole } from "@/lib/auth/roles";
+import { isKycReviewerRole, isRealEstateAdminRole } from "@/lib/auth/roles";
 import type { Locale } from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +39,7 @@ function toRecord(row: {
   review_notes: string | null;
   suspended_at: string | null;
   suspension_reason: string | null;
+  verified_at: string | null;
   created_at: string;
   updated_at: string;
 }): MembershipRecord {
@@ -52,13 +53,14 @@ function toRecord(row: {
     reviewNotes: row.review_notes,
     suspendedAt: row.suspended_at,
     suspensionReason: row.suspension_reason,
+    verifiedAt: row.verified_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
 const MEMBERSHIP_SELECT =
-  "id, user_id, membership_type, status, kyc_reference, approved_at, review_notes, suspended_at, suspension_reason, created_at, updated_at";
+  "id, user_id, membership_type, status, kyc_reference, approved_at, review_notes, suspended_at, suspension_reason, verified_at, created_at, updated_at";
 
 /** The signed-in user's own membership rows. */
 export async function loadMyMemberships(): Promise<MembershipRecord[]> {
@@ -142,6 +144,63 @@ export async function loadCameroonRegions(
       .order("sort_order", { ascending: true });
 
     return regionOptions(data ?? [], locale);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The approved memberships, for the super admin's verification console.
+ *
+ * A verification badge is a public trust mark, so the console lists the
+ * capabilities that could carry one — the approved rows — rather than the pending
+ * queue. A super admin grants the badge to a member they have decided on, not to
+ * an application.
+ *
+ * Returns an empty list for a caller who is not a super admin, rather than
+ * relying on the page guard alone, so the loader is safe to call from anywhere.
+ */
+export async function loadVerifiedMembershipCandidates(): Promise<
+  MembershipQueueEntry[]
+> {
+  try {
+    const auth = await getAuthState();
+    if (auth.status !== "authenticated" || !auth.profile) return [];
+    if (!isKycReviewerRole(auth.profile.role)) return [];
+
+    const supabase = await createClient();
+    if (!supabase) return [];
+
+    const { data } = await supabase
+      .from("real_estate_memberships")
+      .select(MEMBERSHIP_SELECT)
+      .eq("status", "approved")
+      .order("approved_at", { ascending: false });
+
+    if (!data || data.length === 0) return [];
+
+    const records = data.map(toRecord);
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .in(
+        "id",
+        records.map((record) => record.userId),
+      );
+
+    const byId = new Map(
+      (profiles ?? []).map((row) => [
+        row.id,
+        { email: row.email ?? null, fullName: row.full_name ?? null },
+      ]),
+    );
+
+    return records.map((record) => ({
+      ...record,
+      email: byId.get(record.userId)?.email ?? null,
+      fullName: byId.get(record.userId)?.fullName ?? null,
+    }));
   } catch {
     return [];
   }

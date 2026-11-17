@@ -113,6 +113,16 @@ export type PropertyListingRecord = {
   agentId?: string;
   agentName?: string;
 
+  /**
+   * True when the listing's poster (its agent's user, else its owner) holds an
+   * approved, verified membership.
+   *
+   * This is the KC Technology identity-review badge — a statement that we
+   * reviewed the poster's identity. It is deliberately NOT a claim about land
+   * title or ownership, which no badge on this site can establish.
+   */
+  publisherVerified: boolean;
+
   /** The coarsened position, safe to publish. Never the exact one. */
   publicLocation?: { longitude: number; latitude: number; precisionMetres: number };
 

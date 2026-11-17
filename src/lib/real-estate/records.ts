@@ -150,6 +150,7 @@ export function toListingRecord(
     listedOn: asString(row.listed_on),
     agentId: asString(row.agent_id),
     agentName: agentNameFromRow(row),
+    publisherVerified: row.publisher_verified === true,
 
     publicLocation: extras.publicLocation,
     localizedSlugs: extras.localizedSlugs,

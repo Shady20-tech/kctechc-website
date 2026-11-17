@@ -34,11 +34,21 @@ export function ActiveFilterChips({
   t,
   filters,
   view,
+  locationNames,
 }: {
   locale: Locale;
   t: Translator["t"];
   filters: ListingFilters;
   view: "list" | "map";
+  /**
+   * The published names for the geography slugs in the URL, keyed by slug.
+   *
+   * The page already loads the geography tree, so the real name is available and
+   * a chip should read "Southwest Region", not "Southwest-region" derived from the
+   * slug. A slug with no entry falls back to the humanized slug, which keeps the
+   * chip honest for a hand-typed URL the selector never offered.
+   */
+  locationNames?: ReadonlyMap<string, string>;
 }) {
   const keys = activeFilterKeys(filters);
   if (keys.length === 0) return null;
@@ -67,15 +77,25 @@ export function ActiveFilterChips({
               // The label names the filter and its value, so a screen-reader user
               // hears "Remove filter Region: South West" rather than "Region".
               aria-label={t("realEstate.search.removeFilter", {
-                filter: filterLabel(filters, key, locale, t),
+                filter: filterLabel(filters, key, locale, t, locationNames),
               })}
             >
-              <span>{filterLabel(filters, key, locale, t)}</span>
+              <span>{filterLabel(filters, key, locale, t, locationNames)}</span>
               <X aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>
           </li>
         ))}
       </ul>
+      {/* Clear all is a link to the bare results path, so it drops every filter
+          at once — including any the chip list cannot render, such as an
+          orphaned division. It keeps the map view, which is a presentation
+          choice rather than a filter. */}
+      <Link
+        href={view === "map" ? `${basePath}?view=map` : basePath}
+        className="text-sm font-medium text-dept-accent underline-offset-4 hover:underline"
+      >
+        {t("realEstate.search.clearAll")}
+      </Link>
     </div>
   );
 }
@@ -93,16 +113,21 @@ function filterLabel(
   key: FilterKey,
   locale: Locale,
   t: Translator["t"],
+  locationNames?: ReadonlyMap<string, string>,
 ): string {
+  const nameFor = (slug: string | undefined) =>
+    (slug ? locationNames?.get(slug) : undefined) ?? humanize(slug);
   switch (key) {
     case "q":
       return `${t("realEstate.search.chipQuery")}: ${filters.query}`;
     case "region":
-      return `${t("realEstate.search.regionLabel")}: ${humanize(filters.regionSlug)}`;
+      return `${t("realEstate.search.regionLabel")}: ${nameFor(filters.regionSlug)}`;
     case "division":
-      return `${t("realEstate.search.divisionLabel")}: ${humanize(filters.divisionSlug)}`;
+      return `${t("realEstate.search.divisionLabel")}: ${nameFor(filters.divisionSlug)}`;
     case "subdivision":
-      return `${t("realEstate.search.subdivisionLabel")}: ${humanize(filters.subdivisionSlug)}`;
+      return `${t("realEstate.search.subdivisionLabel")}: ${nameFor(filters.subdivisionSlug)}`;
+    case "locality":
+      return `${t("realEstate.search.cityLabel")}: ${filters.locality}`;
     case "type":
       return `${t("realEstate.search.typeLabel")}: ${t(`realEstate.types.${filters.listingType}`)}`;
     case "kind":
@@ -113,10 +138,16 @@ function filterLabel(
       return `${t("realEstate.search.statusLabel")}: ${(filters.statuses ?? [])
         .map((status) => t(listingStatusLabelKey(status)))
         .join(", ")}`;
+    case "currency":
+      return `${t("realEstate.search.currencyLabel")}: ${filters.currency ?? ""}`;
+    case "verified":
+      return t("realEstate.search.verifiedOnlyChip");
+    case "amenity":
+      return `${t("realEstate.search.amenitiesLabel")}: ${(filters.amenities ?? []).join(", ")}`;
     case "minPrice":
-      return `${t("realEstate.search.minPriceShort")}: ${formatMinor(filters.minPrice, locale)}`;
+      return `${t("realEstate.search.minPriceShort")}: ${formatMinor(filters.minPrice, locale, filters.currency)}`;
     case "maxPrice":
-      return `${t("realEstate.search.maxPriceShort")}: ${formatMinor(filters.maxPrice, locale)}`;
+      return `${t("realEstate.search.maxPriceShort")}: ${formatMinor(filters.maxPrice, locale, filters.currency)}`;
     case "minBedrooms":
       return t("realEstate.search.bedroomsChip", { count: filters.minBedrooms ?? 0 });
     case "minBathrooms":
@@ -148,12 +179,16 @@ function humanize(slug: string | undefined): string {
 }
 
 /** Format a whole-franc amount for a chip, without a period suffix. */
-function formatMinor(value: number | undefined, locale: Locale): string {
+function formatMinor(
+  value: number | undefined,
+  locale: Locale,
+  currency: string | undefined,
+): string {
   if (value === undefined) return "";
   return formatListingPrice(
     {
       priceMinor: value,
-      currency: "XAF",
+      currency: currency ?? "XAF",
       pricePeriod: "total",
       priceOnRequest: false,
     },
