@@ -2167,7 +2167,7 @@ export type Database = {
           id: string;
           is_active: boolean;
           locale: Database["public"]["Enums"]["locale_code"];
-          permanent_residency: boolean;
+          permanent_residency: boolean | null;
           phone: string | null;
           profile_completed_at: string | null;
           region_id: string | null;
@@ -2189,7 +2189,7 @@ export type Database = {
           id: string;
           is_active?: boolean;
           locale?: Database["public"]["Enums"]["locale_code"];
-          permanent_residency?: boolean;
+          permanent_residency?: boolean | null;
           phone?: string | null;
           profile_completed_at?: string | null;
           region_id?: string | null;
@@ -2211,7 +2211,7 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           locale?: Database["public"]["Enums"]["locale_code"];
-          permanent_residency?: boolean;
+          permanent_residency?: boolean | null;
           phone?: string | null;
           profile_completed_at?: string | null;
           region_id?: string | null;

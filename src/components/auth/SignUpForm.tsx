@@ -179,6 +179,53 @@ export function SignUpForm({
       </div>
 
       <TextField
+        id="phone"
+        name="phone"
+        type="tel"
+        label={t("auth.phoneLabel")}
+        hint={t("auth.phoneHint")}
+        autoComplete="tel"
+        required
+        error={errorFor("phone")}
+      />
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-ink-900">
+          {t("auth.permanentResidencyLegend")}
+        </legend>
+        <p className="text-xs text-muted">{t("auth.permanentResidencyHint")}</p>
+        <div className="mt-1 space-y-2">
+          {(
+            [
+              ["true", t("auth.permanentResidencyYes")],
+              ["false", t("auth.permanentResidencyNo")],
+            ] as const
+          ).map(([value, label]) => (
+            <div key={value} className="flex items-start gap-2.5">
+              <input
+                id={`permanentResidency-${value}`}
+                name="permanentResidency"
+                type="radio"
+                value={value}
+                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong"
+              />
+              <label
+                htmlFor={`permanentResidency-${value}`}
+                className="text-sm text-body"
+              >
+                {label}
+              </label>
+            </div>
+          ))}
+        </div>
+        {errors.permanentResidency ? (
+          <p className="text-xs font-medium text-red-700">
+            {errorFor("permanentResidency")}
+          </p>
+        ) : null}
+      </fieldset>
+
+      <TextField
         id="email"
         name="email"
         type="email"

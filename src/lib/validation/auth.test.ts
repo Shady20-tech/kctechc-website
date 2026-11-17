@@ -23,6 +23,8 @@ const VALID_SIGN_UP = {
   // A buyer account: the declaration that carries no age requirement.
   accountType: "buyer" as const,
   dateOfBirth: "1990-05-01",
+  phone: "+237 679 202 265",
+  permanentResidency: "true",
   acceptPrivacy: true as const,
 };
 
@@ -170,6 +172,50 @@ describe("signUpSchema", () => {
     expect(result.success).toBe(true);
     expect(result.success && "role" in result.data).toBe(false);
   });
+
+  it("requires a phone number", () => {
+    const { phone: _omitted, ...withoutPhone } = VALID_SIGN_UP;
+    expect(signUpSchema.safeParse(withoutPhone).success).toBe(false);
+  });
+
+  it("refuses a phone number that is not one", () => {
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      phone: "call me maybe",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("reads the residency declaration as a boolean", () => {
+    const yes = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      permanentResidency: "true",
+    });
+    expect(yes.success && yes.data.permanentResidency).toBe(true);
+
+    const no = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      permanentResidency: "false",
+    });
+    expect(no.success && no.data.permanentResidency).toBe(false);
+  });
+
+  it("treats an unanswered residency question as undefined, not as false", () => {
+    // Null/undefined is the honest third state. Coercing a blank answer to
+    // `false` would record a statement the user never made.
+    const { permanentResidency: _omitted, ...withoutAnswer } = VALID_SIGN_UP;
+    const result = signUpSchema.safeParse(withoutAnswer);
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.permanentResidency).toBeUndefined();
+  });
+
+  it("refuses a junk residency value", () => {
+    const result = signUpSchema.safeParse({
+      ...VALID_SIGN_UP,
+      permanentResidency: "maybe",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("forgotPasswordSchema", () => {
@@ -180,7 +226,9 @@ describe("forgotPasswordSchema", () => {
   });
 
   it("rejects an invalid email", () => {
-    expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(false);
+    expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(
+      false,
+    );
   });
 });
 

@@ -42,7 +42,9 @@ export async function updateProfileResidencyAction(
     countryIsoCode: String(formData.get("countryIsoCode") ?? ""),
     city: String(formData.get("city") ?? ""),
     regionId: String(formData.get("regionId") ?? ""),
-    permanentResidency: formData.get("permanentResidency") === "on",
+    // The select sends "" / "true" / "false". "" is the "not stated" option, so
+    // the schema turns it into null rather than into a fabricated `false`.
+    permanentResidency: String(formData.get("permanentResidency") ?? ""),
   });
 
   if (!parsed.success) {

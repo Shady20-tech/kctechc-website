@@ -36,6 +36,13 @@ export type SignInInput = z.infer<typeof signInSchema>;
  * enforced here — a buyer account carries no age requirement, and the form
  * applies the age check only when the chosen account type is a capability one.
  * The authoritative check is the KYC application's CHECK constraint.
+ *
+ * `phone` and `permanentResidency` are the two fields the brief asks for at
+ * sign-up. The phone is a required international-format number (the same rule the
+ * account-page form applies, and the database's `profiles_phone_format` CHECK);
+ * the residency declaration is a boolean stored as `true`/`false`, with a blank
+ * selection normalised to `undefined` so an unanswered question is stored as null
+ * rather than as a fabricated "yes".
  */
 export const signUpSchema = z
   .object({
@@ -52,6 +59,19 @@ export const signUpSchema = z
         const date = new Date(value);
         return !Number.isNaN(date.getTime()) && date.getTime() <= Date.now();
       }, "invalidDate"),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^[0-9+ ()./-]{5,32}$/, "invalidPhone"),
+    // The form sends the string "true" / "false", or nothing at all. Anything
+    // else — including an absent field — is "not stated" (undefined), which the
+    // action stores as null. `z.enum` on the strings keeps a junk value out.
+    permanentResidency: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((value) =>
+        value === undefined ? undefined : value === "true",
+      ),
     acceptPrivacy: z.literal(true, { message: "privacyRequired" }),
   })
   .refine((value) => value.password === value.confirmPassword, {
@@ -133,6 +153,8 @@ export const SIGN_UP_ERROR_KEYS = {
   confirmPassword: "errConfirmPassword",
   accountType: "errAccountType",
   dateOfBirth: "errDateOfBirth",
+  phone: "errPhone",
+  permanentResidency: "errPermanentResidency",
   acceptPrivacy: "errPrivacy",
   form: "errorBody",
 } as const satisfies Record<string, string>;

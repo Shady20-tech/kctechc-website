@@ -18,7 +18,7 @@ export type Profile = {
   countryIsoCode: string | null;
   city: string | null;
   regionId: string | null;
-  permanentResidency: boolean;
+  permanentResidency: boolean | null;
   profileCompletedAt: string | null;
   declaredAccountType: AccountType | null;
   dateOfBirth: string | null;
@@ -77,7 +77,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
         countryIsoCode: profileRow.country_iso_code,
         city: profileRow.city,
         regionId: profileRow.region_id,
-        permanentResidency: profileRow.permanent_residency ?? false,
+        permanentResidency: profileRow.permanent_residency,
         profileCompletedAt: profileRow.profile_completed_at,
         declaredAccountType: isAccountType(profileRow.declared_account_type)
           ? profileRow.declared_account_type

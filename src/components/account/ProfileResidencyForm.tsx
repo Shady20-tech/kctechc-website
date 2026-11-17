@@ -36,7 +36,7 @@ export function ProfileResidencyForm({
     countryIsoCode: string | null;
     city: string | null;
     regionId: string | null;
-    permanentResidency: boolean;
+    permanentResidency: boolean | null;
   };
   regions: readonly { id: string; name: string }[];
   labels: Record<string, string>;
@@ -148,17 +148,22 @@ export function ProfileResidencyForm({
           </SelectField>
         ) : null}
 
-        <div className="flex items-start gap-3">
-          <input
+        <div>
+          <SelectField
             id="permanentResidency"
             name="permanentResidency"
-            type="checkbox"
-            defaultChecked={profile.permanentResidency}
-            className="mt-1 h-4 w-4 rounded border-border-strong text-dept-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          />
-          <label htmlFor="permanentResidency" className="text-sm text-body">
-            {labels.permanentResidencyLabel}
-          </label>
+            label={labels.permanentResidencyLabel ?? ""}
+            hint={labels.permanentResidencyHint}
+            defaultValue={
+              profile.permanentResidency === null
+                ? ""
+                : String(profile.permanentResidency)
+            }
+          >
+            <option value="">{labels.permanentResidencyUnstated}</option>
+            <option value="true">{labels.permanentResidencyYes}</option>
+            <option value="false">{labels.permanentResidencyNo}</option>
+          </SelectField>
         </div>
 
         <SaveButton label={labels.save} pendingLabel={labels.saving} />

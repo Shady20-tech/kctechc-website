@@ -449,8 +449,27 @@ acceptance criteria pass. Then stop — do not start the next phase.
     `accessibleDashboards()` predicate the routes guard with.
   - `dashboard.test.ts` (17) and `owner-listing-workflow.test.ts` (7) cover the model and the
     migration's shape.
-- 1027 Vitest tests pass (78 files), `tsc --noEmit` is clean, ESLint is clean, and the production
-  build succeeds (145/145 static pages).
+- The two dashboards were consolidated into one dynamic route tree with a sidebar shell:
+  `src/app/(site)/[locale]/account/[dashboard]/{layout,page,new,[id]}` serves both `landlord` and
+  `agent` (the six static pages were deleted). `src/components/account/DashboardShell.tsx` is the
+  shared chrome — a sticky `bg-ink-950` sidebar on desktop and an off-canvas drawer below `lg`,
+  mirroring the admin console's stacking (`relative z-20` bar, `z-10` panel, `z-0` backdrop) so the
+  backdrop cannot win the `z-index` tie and swallow nav taps. `src/lib/real-estate/dashboard-nav.ts`
+  is the pure nav model (leaf module, icon keys, kind- and locale-qualified hrefs, an `exact` flag
+  for the overview entry). The layout authenticates and 404s an unknown kind but does not decide
+  capability, so a pending applicant still reaches the verification panel. `dashboard-nav.test.ts`
+  (14) and `DashboardShell.test.tsx` (5) cover the model and the stacking rule.
+- Sign-up now collects a phone number and a residency declaration.
+  `20260101000066_signup_phone_and_residency.sql` drops the `not null default true` from
+  `profiles.permanent_residency` (null is "not stated") and re-creates `handle_new_user` to read
+  `phone` and `permanent_residency` from the sign-up metadata, with a `do $$` self-test for the
+  round-trip and the escalation guard. The `SignUpForm` gained the phone field and the residency
+  radio; `ProfileResidencyForm` stores a stated "no" as an explicit `false`.
+- 1170 Vitest tests run (90 files) with `tsc --noEmit` and ESLint clean. The one failure is
+  `src/lib/store/storage.test.ts` ("uses the Storage URL for an ordinary product"), which asserts a
+  null URL when Storage is unconfigured; it fails only because the local `.env.local` points at the
+  dockerised stack, and it fails identically at `HEAD` with that file present. It is environmental,
+  not a regression.
 - Phase 4 (Jiji-style marketplace redesign) is implemented:
   - Migration `20260101000063_listing_sort_relevance.sql` adds the `relevance` value to
     `listing_sort_order` in its own migration (Postgres refuses to use a new enum value in the
@@ -1946,6 +1965,46 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   change too.** It is pre-existing format debt, so the minimal hand edit is correct; running
   `prettier --write` on it would add unrelated reformatting churn to a feature diff. The new test
   files were formatted with `--write` because they are new.
+
+### Sign-up phone and residency, and the dashboard sidebar shell
+
+- **A column that defaults to `true` fabricates a fact about every new account.** `profiles.permanent_residency`
+  was `boolean not null default true`, which was fine while it was only ever set on the account page
+  by a person who saw the checkbox. It is not fine as a sign-up field: a default of `true` silently
+  claims every new account IS a permanent resident. Migration
+  `20260101000066_signup_phone_and_residency.sql` drops the `not null` and the default so null is the
+  honest third state — "not stated" — and the account page's select stores an explicit `false` for a
+  stated "no". Do not reintroduce a default: an unanswered question and a stated "no" are different
+  answers, and the schema now distinguishes them.
+- **`handle_new_user` is replaced, not amended, so a new sign-up field must be added to its latest
+  definition and nowhere else.** Migration 66 re-creates the trigger to read `phone` and
+  `permanent_residency` from the sign-up metadata, carrying forward everything migration 61 did
+  (locale resolution, the account-type declaration, the date-of-birth parse) and — critically — the
+  rule that the role is never taken from client-supplied metadata. Its `do $$` self-test proves the
+  round-trip and the escalation guard on the migration that introduces it, and the fixture deletes
+  its `auth.users` rows (the profiles cascade with them).
+- **A blank radio answer must stay `undefined`, not become `false`.** The sign-up action sends the
+  residency value as the string `"true"`/`"false"` and omits the key when unanswered, so an absent
+  answer is distinguishable from a stated "no"; the trigger turns anything else into null. Coercing
+  the blank case to `false` in the schema would record a statement the user never made.
+- **The landlord and agent dashboards share one route tree and one shell, and the shell is the only
+  place they authenticate.** `src/app/(site)/[locale]/account/[dashboard]/{layout,page,new,[id]}`
+  serves both kinds, replacing the six static `landlord/` and `agent/` pages. The layout resolves the
+  dynamic `[dashboard]` segment to a kind or 404s and redirects an anonymous visitor to sign-in with
+  the dashboard as the return target; it does NOT decide capability, because a viewer whose
+  application is pending must still reach the dashboard and see the verification panel. The static
+  `kyc` sibling wins over the dynamic segment and is unaffected.
+- **The dashboard shell mirrors the admin sidebar on purpose, including its stacking rules.** The
+  mobile bar is `relative z-20`, the panel `z-10` and the backdrop `z-0`. As a sibling at the same
+  `z` the backdrop (later in DOM order) would win the tie and swallow every tap on a nav link — the
+  exact bug the admin drawer had. `DashboardShell.test.tsx` asserts the panel's `z` is greater than
+  the backdrop's, because that is the property that failed, not the markup.
+- **The dashboard nav model is a leaf module, addressed by icon key.** `src/lib/real-estate/dashboard-nav.ts`
+  carries no icon components (a function cannot cross into a Client Component) and builds hrefs from
+  the kind and locale, so it is unit-testable without a database. `dashboard-nav.test.ts` resolves
+  every href against the file tree and pins the "overview only on its exact route" highlight rule —
+  a sidebar link to a 404 is one click behind the dashboard, and a missing `exact` flag leaves
+  "Overview" lit on every child route.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

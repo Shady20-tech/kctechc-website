@@ -282,6 +282,14 @@
     "dateOfBirthHintBuyer": "Sert uniquement à tenir vos informations de compte exactes.",
     "errAccountType": "Choisissez un type de compte.",
     "errDateOfBirth": "Saisissez une date de naissance valide. Les propriétaires et agents doivent avoir 18 ans ou plus.",
+    "phoneLabel": "Numéro de téléphone",
+    "phoneHint": "Indiquez l'indicatif du pays, par exemple +237 679-202-265.",
+    "errPhone": "Saisissez un numéro de téléphone, avec l'indicatif du pays.",
+    "permanentResidencyLegend": "Êtes-vous résident permanent de votre ville ?",
+    "permanentResidencyHint": "Cela nous aide à vous montrer des annonces et des contacts pertinents par rapport à votre lieu de vie réel.",
+    "permanentResidencyYes": "Oui, je suis résident permanent de ma ville",
+    "permanentResidencyNo": "Non, je ne suis pas résident permanent de ma ville",
+    "errPermanentResidency": "Veuillez nous indiquer si vous êtes résident permanent.",
     "accountType": {
       "buyer": {
         "label": "Acheteur / Chercheur de bien",
@@ -2556,7 +2564,11 @@
     "regionLabel": "Région",
     "regionHint": "La région où vous résidez.",
     "regionPlaceholder": "Choisir une région",
-    "permanentResidencyLabel": "Je suis résident permanent de mon pays de résidence",
+    "permanentResidencyLabel": "Résidence permanente",
+    "permanentResidencyHint": "Êtes-vous résident permanent du pays et de la ville que vous avez indiqués ?",
+    "permanentResidencyUnstated": "Préfère ne pas répondre",
+    "permanentResidencyYes": "Oui, je suis résident permanent",
+    "permanentResidencyNo": "Non, je ne suis pas résident permanent",
     "save": "Enregistrer",
     "saving": "Enregistrement…",
     "updated": "Vos informations ont été enregistrées.",
@@ -2671,6 +2683,24 @@
       "invalidType": "Cette capacité n'est pas reconnue."
     },
     "dashboards": {
+      "nav": {
+        "sidebarLabel": "Navigation du tableau de bord",
+        "openMenu": "Ouvrir le menu de navigation",
+        "closeMenu": "Fermer le menu de navigation",
+        "yourAccount": "Votre compte",
+        "signOut": "Se déconnecter",
+        "overview": "Aperçu",
+        "create": "Ajouter un bien",
+        "favorites": "Favoris enregistrés",
+        "savedSearches": "Recherches enregistrées",
+        "kyc": "Vérification d'identité",
+        "account": "Accueil du compte"
+      },
+      "navSections": {
+        "sectionManage": "Gérer",
+        "sectionActivity": "Votre activité",
+        "sectionAccount": "Compte"
+      },
       "common": {
         "metaTitle": "Tableau de bord propriétaire",
         "metaDescription": "Gérez les biens que vous publiez avec KC Technology Corporation : brouillons, statut de vérification et annonces publiées.",

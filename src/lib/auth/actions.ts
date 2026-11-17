@@ -187,6 +187,10 @@ export async function signUpAction(
     confirmPassword: formData.get("confirmPassword"),
     accountType: formData.get("accountType"),
     dateOfBirth: formData.get("dateOfBirth"),
+    phone: formData.get("phone"),
+    // A radio group sends the chosen value or nothing at all; an unanswered
+    // question stays undefined and is stored as null rather than as a "yes".
+    permanentResidency: formData.get("permanentResidency") ?? undefined,
     // An unchecked box is absent from the payload, which `z.literal(true)`
     // rejects — the correct outcome, since consent is a precondition.
     acceptPrivacy: formData.get("acceptPrivacy") === "on" ? true : undefined,
@@ -215,10 +219,20 @@ export async function signUpAction(
       // DECLARATION. `handle_new_user` never reads a `role` key — that is the
       // escalation migration 24 closed — and neither of these can grant a
       // capability: only an approved KYC application does that.
+      //
+      // `phone` and `permanent_residency` are the same kind of thing: profile
+      // facts recorded by `handle_new_user`. The residency value is sent as the
+      // string "true"/"false" so an absent answer is distinguishable from a
+      // stated "no"; the trigger turns anything else into null.
       data: {
         full_name: parsed.data.fullName,
         account_type: parsed.data.accountType,
         date_of_birth: parsed.data.dateOfBirth,
+        phone: parsed.data.phone,
+        permanent_residency:
+          parsed.data.permanentResidency === undefined
+            ? undefined
+            : String(parsed.data.permanentResidency),
       },
       emailRedirectTo: confirmationRedirectUrl(),
     },

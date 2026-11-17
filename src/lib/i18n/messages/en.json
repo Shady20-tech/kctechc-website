@@ -282,6 +282,14 @@
     "dateOfBirthHintBuyer": "Used to keep your account details accurate.",
     "errAccountType": "Choose an account type.",
     "errDateOfBirth": "Enter a valid date of birth. Landlords and agents must be 18 or older.",
+    "phoneLabel": "Phone number",
+    "phoneHint": "Include the country code, for example +237 679-202-265.",
+    "errPhone": "Enter a phone number, including the country code.",
+    "permanentResidencyLegend": "Are you a permanent resident of your city?",
+    "permanentResidencyHint": "This helps us show listings and contacts that are relevant to where you actually live.",
+    "permanentResidencyYes": "Yes, I am a permanent resident of my city",
+    "permanentResidencyNo": "No, I am not a permanent resident of my city",
+    "errPermanentResidency": "Please tell us whether you are a permanent resident.",
     "accountType": {
       "buyer": {
         "label": "Buyer / Property Seeker",
@@ -2556,7 +2564,11 @@
     "regionLabel": "Region",
     "regionHint": "The region you live in.",
     "regionPlaceholder": "Select a region",
-    "permanentResidencyLabel": "I am a permanent resident of my country of residence",
+    "permanentResidencyLabel": "Permanent residency",
+    "permanentResidencyHint": "Are you a permanent resident of the country and city you stated?",
+    "permanentResidencyUnstated": "Prefer not to say",
+    "permanentResidencyYes": "Yes, I am a permanent resident",
+    "permanentResidencyNo": "No, I am not a permanent resident",
     "save": "Save changes",
     "saving": "Saving…",
     "updated": "Your details were saved.",
@@ -2671,6 +2683,24 @@
       "invalidType": "That capability is not recognised."
     },
     "dashboards": {
+      "nav": {
+        "sidebarLabel": "Dashboard navigation",
+        "openMenu": "Open navigation menu",
+        "closeMenu": "Close navigation menu",
+        "yourAccount": "Your account",
+        "signOut": "Sign out",
+        "overview": "Overview",
+        "create": "Add a property",
+        "favorites": "Saved favourites",
+        "savedSearches": "Saved searches",
+        "kyc": "Identity verification",
+        "account": "Account home"
+      },
+      "navSections": {
+        "sectionManage": "Manage",
+        "sectionActivity": "Your activity",
+        "sectionAccount": "Account"
+      },
       "common": {
         "metaTitle": "Landlord dashboard",
         "metaDescription": "Manage the property you list with KC Technology Corporation: drafts, review status and published listings.",

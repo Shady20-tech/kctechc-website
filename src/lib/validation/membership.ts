@@ -62,7 +62,14 @@ export const profileResidencySchema = z.object({
     .or(z.literal("")),
   city: z.string().trim().max(120, "tooLong").or(z.literal("")),
   regionId: z.uuid().or(z.literal("")),
-  permanentResidency: z.boolean(),
+  // A three-state select: "true" / "false" / "" (not stated). Null is a real
+  // answer here, distinct from a stated "no", so an empty selection must not be
+  // coerced to `false`.
+  permanentResidency: z
+    .enum(["true", "false", ""])
+    .transform((value) =>
+      value === "" ? null : value === "true",
+    ),
 });
 
 export type ProfileResidencyInput = z.infer<typeof profileResidencySchema>;
