@@ -491,6 +491,7 @@
       "intro": "Filter the portfolio by the things that matter: where it is, what it is, and what it costs.",
       "resultsCount": "{count} properties",
       "resultsCountOne": "1 property",
+      "resultsHeading": "Property results",
       "noResultsHeading": "No properties match your filters",
       "noResultsBody": "Try widening the region or the price range, or clear the filters to see everything.",
       "emptyHeading": "No properties are published yet",

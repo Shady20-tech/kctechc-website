@@ -431,6 +431,12 @@ export default async function PropertyListingsPage({
                     property remains reachable by keyboard and to a reader without
                     WebGL. Both are two views of the SAME page of results. */}
                 <div className="mt-6">
+                  {/* The results region needs its own heading so the card `h3`s
+                      descend from something: without it the document jumps
+                      h1 -> h3 and Lighthouse's heading-order check fails. */}
+                  <h2 className="visually-hidden">
+                    {t("realEstate.search.resultsHeading")}
+                  </h2>
                   <ListingGrid
                     listings={qualified.map((entry) => entry.record)}
                     locale={resolved}

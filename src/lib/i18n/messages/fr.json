@@ -491,6 +491,7 @@
       "intro": "Filtrez le portefeuille selon ce qui compte : où se trouve le bien, ce qu'il est, et son prix.",
       "resultsCount": "{count} biens",
       "resultsCountOne": "1 bien",
+      "resultsHeading": "Résultats",
       "noResultsHeading": "Aucun bien ne correspond à vos filtres",
       "noResultsBody": "Essayez d'élargir la région ou la fourchette de prix, ou effacez les filtres pour tout voir.",
       "emptyHeading": "Aucun bien n'est encore publié",

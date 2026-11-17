@@ -266,12 +266,19 @@ where p.publisher_verified
 -- type change. `create or replace` can only replace a function with the same
 -- argument list, and a changed return type is refused outright — leaving the old
 -- overload in place would make every RPC call fail with "function is not unique".
+--
+-- The signature named here must be the one that ACTUALLY EXISTS at this point —
+-- the 19-argument version created by 20260101000030 — not the 22-argument one this
+-- migration is about to create. Dropping the new signature was a no-op that left
+-- the old overload alive, so `create or replace` added a second function and the
+-- `comment on function` below failed with "function name is not unique", aborting
+-- the whole migration on a fresh database.
 -- -----------------------------------------------------------------------------
 drop function if exists public.search_property_listings(
-  text, uuid, uuid, uuid, text, public.listing_type, public.listing_property_kind,
-  public.property_type,
+  text, uuid, uuid, uuid,
+  public.listing_type, public.listing_property_kind, public.property_type,
   bigint, bigint, smallint, smallint, integer, integer,
-  public.listing_status[], text[], text, boolean,
+  public.listing_status[], text[],
   public.locale_code, public.listing_sort_order,
   integer, integer
 );
@@ -636,7 +643,12 @@ begin
     region_id, owner_id, status, slug
   )
   values (
-    'Verification proof listing', 'Fixture.', 'sale', 'house', 'residential',
+    -- The description must clear `property_listings_description_length`
+    -- (20-20000 chars); a short placeholder aborts the migration on a fresh
+    -- database before any of the assertions below run.
+    'Verification proof listing',
+    'A fixture used to prove the publisher-verification boundary.',
+    'sale', 'house', 'residential',
     v_region, v_landlord, 'draft', 'verification-proof-listing'
   )
   returning id into v_listing;
