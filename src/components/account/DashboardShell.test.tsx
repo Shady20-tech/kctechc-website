@@ -51,6 +51,8 @@ function renderShell() {
       }}
       locale="en"
       kind="landlord"
+      siteLabel="View main site"
+      siteHref="/en"
     >
       <p>Overview content</p>
     </DashboardShell>,
@@ -119,6 +121,17 @@ describe("DashboardShell mobile drawer", () => {
     expect(document.getElementById("dashboard-sidebar")!.className).toContain(
       "hidden",
     );
+  });
+
+  it("offers a link back to the main site", () => {
+    renderShell();
+
+    // The shared chrome is hidden on this tree, so the shell is what carries the
+    // "return to the site" affordance. Both the mobile bar and the desktop top bar
+    // render it.
+    const links = screen.getAllByRole("link", { name: /view main site/i });
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).toHaveAttribute("href", "/en");
   });
 
   it("offers a sign-out control that posts to the customer sign-out action", () => {

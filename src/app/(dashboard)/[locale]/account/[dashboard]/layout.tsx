@@ -68,6 +68,7 @@ export default async function DashboardLayout({
     closeMenu: t("account.dashboards.nav.closeMenu"),
     yourAccount: t("account.dashboards.nav.yourAccount"),
     signOut: t("account.dashboards.nav.signOut"),
+    viewSite: t("account.dashboards.nav.viewSite"),
   };
   for (const role of [
     "super_admin",
@@ -105,6 +106,8 @@ export default async function DashboardLayout({
       user={user}
       locale={resolved}
       kind={dashboard}
+      siteHref={`/${resolved}`}
+      siteLabel={t("account.dashboards.nav.viewSite")}
     >
       {children}
     </DashboardShell>

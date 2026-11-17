@@ -1,5 +1,6 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
+import { ViewSiteLink } from "@/components/layout/ViewSiteLink";
 import { resolveAvatarUrl } from "@/components/admin/Avatar";
 import { navSectionsForRoleClient } from "@/lib/admin/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
@@ -41,6 +42,7 @@ export default async function ConsoleLayout({
     settings: t("adminNav.settings"),
     password: t("adminNav.password"),
     signOut: t("adminNav.signOut"),
+    viewSite: t("adminNav.viewSite"),
   };
   for (const role of [
     "super_admin",
@@ -75,6 +77,7 @@ export default async function ConsoleLayout({
         sections={sections}
         labels={labels}
         user={user}
+        siteLabel={t("adminNav.viewSite")}
         accountMenu={
           <AdminUserMenu
             name={user.name}
@@ -93,7 +96,8 @@ export default async function ConsoleLayout({
       />
 
       <div className="min-w-0 flex-1">
-        <header className="hidden items-center justify-end border-b border-border bg-surface px-8 py-3 lg:flex">
+        <header className="hidden items-center justify-between gap-4 border-b border-border bg-surface px-8 py-3 lg:flex">
+          <ViewSiteLink href="/" label={t("adminNav.viewSite")} tone="light" />
           <AdminUserMenu
             name={user.name}
             email={user.email}

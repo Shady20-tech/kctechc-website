@@ -53,6 +53,7 @@ function renderSidebar() {
         role: "super_admin",
         avatarUrl: null,
       }}
+      siteLabel="View main site"
       accountMenu={<Link href="/admin/profile">My profile</Link>}
     />,
   );
@@ -120,6 +121,16 @@ describe("AdminSidebar mobile drawer", () => {
     expect(
       screen.getAllByRole("link", { name: /my profile/i }).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("offers a link back to the main site", () => {
+    renderSidebar();
+
+    // The console has no public header, so the sidebar's top bar is what carries
+    // the "return to the site" affordance.
+    const links = screen.getAllByRole("link", { name: /view main site/i });
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).toHaveAttribute("href", "/");
   });
 
   it("closes the drawer when a nav link is followed", () => {

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { Modal } from "@/components/ui/Modal";
 import { AccountAction } from "./AccountAction";
+import { DashboardReturnAction } from "./DashboardReturnAction";
 import type { NavEntry } from "@/lib/config/navigation";
 import type { DepartmentSlug } from "@/lib/config/site";
 import { isDepartmentSlug } from "@/lib/config/site";
@@ -183,7 +184,13 @@ export function MobileMenu({
               })}
             </ul>
 
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
+              <DashboardReturnAction
+                locale={locale}
+                size="lg"
+                className="w-full"
+                onNavigate={close}
+              />
               <AccountAction
                 locale={locale}
                 signInLabel={labels.signIn}

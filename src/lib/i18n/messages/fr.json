@@ -1926,7 +1926,8 @@
     "work": "Réalisations",
     "memberships": "Habilitations",
     "kyc": "Examen KYC",
-    "verification": "Verification des publieurs"
+    "verification": "Verification des publieurs",
+    "viewSite": "Voir le site principal"
   },
   "roleName": {
     "super_admin": "Super administrateur",
@@ -2694,7 +2695,8 @@
         "favorites": "Favoris enregistrés",
         "savedSearches": "Recherches enregistrées",
         "kyc": "Vérification d'identité",
-        "account": "Accueil du compte"
+        "account": "Accueil du compte",
+        "viewSite": "Voir le site principal"
       },
       "navSections": {
         "sectionManage": "Gérer",
@@ -2968,7 +2970,8 @@
         "profileMissing": "Votre fiche agent n'a pas encore été créée. Contactez-nous et nous la créerons.",
         "publicPageCta": "Voir vos annonces publiques",
         "agentProfileRequired": "Votre fiche agent n'a pas encore été créée : une annonce ne peut donc pas vous être attribuée. Contactez-nous pour la créer."
-      }
+      },
+      "returnToConsole": "Console d'administration"
     }
   },
   "offline": {

@@ -1926,7 +1926,8 @@
     "work": "Work Done",
     "memberships": "Memberships",
     "kyc": "KYC review",
-    "verification": "Publisher verification"
+    "verification": "Publisher verification",
+    "viewSite": "View main site"
   },
   "roleName": {
     "super_admin": "Super administrator",
@@ -2694,7 +2695,8 @@
         "favorites": "Saved favourites",
         "savedSearches": "Saved searches",
         "kyc": "Identity verification",
-        "account": "Account home"
+        "account": "Account home",
+        "viewSite": "View main site"
       },
       "navSections": {
         "sectionManage": "Manage",
@@ -2968,7 +2970,8 @@
         "profileMissing": "Your agent record has not been set up yet. Contact us and we will create it.",
         "publicPageCta": "View your public listings",
         "agentProfileRequired": "Your agent record has not been set up yet, so a listing cannot be attributed to you. Contact us to have it created."
-      }
+      },
+      "returnToConsole": "Admin console"
     }
   },
   "offline": {

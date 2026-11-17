@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { Avatar } from "@/components/admin/Avatar";
+import { ViewSiteLink } from "@/components/layout/ViewSiteLink";
 import { Button } from "@/components/ui/Button";
 import { customerSignOutAction } from "@/lib/auth/customer-sign-out";
 import type { DashboardKind } from "@/lib/real-estate/dashboard";
@@ -45,17 +46,17 @@ const NAV_ICONS: Record<DashboardNavIconKey, typeof LayoutDashboard> = {
 /**
  * The sidebar shell shared by the landlord and agent dashboards.
  *
+ * It mirrors the admin console's shell so the two read as one product: a dark
+ * fixed sidebar on desktop, a disclosure drawer below `lg`, and a light top bar
+ * over the content that carries the "view main site" link and the account menu.
+ * The dashboards render *without* the public marketing header and footer — the
+ * `(dashboard)` route group sees to that — so this shell is the whole frame.
+ *
  * A Client Component for the same two genuinely client-side reasons the admin
  * sidebar is one: it needs the current pathname to mark the active entry, and it
  * owns the mobile open/closed state. Everything else — the nav sections, the
  * labels and the viewer's own identity — is resolved on the server and passed in
  * already localized, so this component holds no authorization logic.
- *
- * It mirrors the admin console's shell deliberately: a customer who is also staff,
- * and a visitor who has seen the console, should find the two dashboards laid out
- * the same way. On desktop the sidebar is a fixed column; below `lg` it collapses
- * to a top bar with a disclosure button, because a persistent 16rem column on a
- * phone would leave no room for the listings these dashboards exist to show.
  *
  * The stacking rules are copied from the admin sidebar on purpose: the mobile bar
  * is `relative z-20`, the panel `z-10`, and the backdrop `z-0`. As a sibling at
@@ -68,6 +69,8 @@ export function DashboardShell({
   user,
   locale,
   kind,
+  siteHref = "/",
+  siteLabel,
   children,
 }: {
   sections: readonly DashboardNavSection[];
@@ -76,6 +79,10 @@ export function DashboardShell({
   user: { name: string; email: string; role: string; avatarUrl: string | null };
   locale: string;
   kind: DashboardKind;
+  /** Where "View main site" goes; the gateway by default. */
+  siteHref?: string;
+  /** The "View main site" label, already localized. */
+  siteLabel: string;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -116,31 +123,75 @@ export function DashboardShell({
     </nav>
   );
 
+  const accountMenu = (
+    <div className="mt-6 space-y-3 border-t border-ink-700 pt-4">
+      <div className="flex items-center gap-3 px-3">
+        <Avatar src={user.avatarUrl} name={user.name || user.email} size="sm" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-white">
+            {user.name || user.email}
+          </p>
+          <p className="truncate text-xs text-ink-300">
+            {labels[`role.${user.role}`] ?? user.role}
+          </p>
+        </div>
+      </div>
+
+      <Link
+        href={`/${locale}/account`}
+        onClick={() => setOpen(false)}
+        className="flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium text-ink-200 transition-soft hover:bg-white/5 hover:text-white"
+      >
+        <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />
+        <span>{labels.yourAccount}</span>
+      </Link>
+
+      <form action={customerSignOutAction} className="px-1">
+        <input type="hidden" name="locale" value={locale} />
+        <button
+          type="submit"
+          className="w-full rounded-control px-2 py-2 text-left text-sm font-medium text-ink-200 transition-soft hover:bg-white/5 hover:text-white"
+        >
+          {labels.signOut}
+        </button>
+      </form>
+    </div>
+  );
+
   return (
-    <div className="lg:flex lg:items-start">
-      {/* Mobile bar. `relative z-20` keeps it above the drawer panel (`z-10`) and
-          the backdrop (`z-0`) so the toggle stays tappable while the drawer is open. */}
+    <div className="min-h-screen bg-surface-alt lg:flex">
+      {/* Mobile bar. `relative z-20` keeps it, and the "view site" control it
+          carries, above the drawer panel (`z-10`) and the backdrop (`z-0`), so
+          the toggle and every nav link stay tappable while the drawer is open. */}
       <div className="relative z-20 flex items-center justify-between border-b border-ink-700 bg-ink-950 px-4 py-3 lg:hidden">
         <p className="font-display text-base font-bold text-white">
           {labels.consoleName}
         </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/10"
-          aria-expanded={open}
-          aria-controls="dashboard-sidebar"
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? (
-            <X aria-hidden="true" className="h-5 w-5" />
-          ) : (
-            <Menu aria-hidden="true" className="h-5 w-5" />
-          )}
-          <span className="visually-hidden">
-            {open ? labels.closeMenu : labels.openMenu}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ViewSiteLink
+            href={siteHref}
+            label={siteLabel}
+            tone="ink"
+            className="text-ink-200"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/10"
+            aria-expanded={open}
+            aria-controls="dashboard-sidebar"
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? (
+              <X aria-hidden="true" className="h-5 w-5" />
+            ) : (
+              <Menu aria-hidden="true" className="h-5 w-5" />
+            )}
+            <span className="visually-hidden">
+              {open ? labels.closeMenu : labels.openMenu}
+            </span>
+          </Button>
+        </div>
       </div>
 
       <aside
@@ -149,7 +200,7 @@ export function DashboardShell({
           open
             ? "relative z-10 block max-h-[calc(100dvh-4rem)] overflow-y-auto"
             : "hidden"
-        } bg-ink-950 lg:sticky lg:top-18 lg:z-auto lg:block lg:h-[calc(100dvh-4.5rem)] lg:max-h-none lg:w-64 lg:shrink-0 lg:overflow-y-auto`}
+        } bg-ink-950 lg:sticky lg:top-0 lg:z-auto lg:block lg:h-screen lg:max-h-none lg:w-64 lg:shrink-0 lg:overflow-y-auto`}
       >
         <div className="flex h-full flex-col p-4">
           <Link
@@ -161,42 +212,7 @@ export function DashboardShell({
 
           <div className="mt-0 flex-1 lg:mt-6">{nav}</div>
 
-          <div className="mt-6 space-y-3 border-t border-ink-700 pt-4">
-            <div className="flex items-center gap-3 px-3">
-              <Avatar
-                src={user.avatarUrl}
-                name={user.name || user.email}
-                size="sm"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  {user.name || user.email}
-                </p>
-                <p className="truncate text-xs text-ink-300">
-                  {labels[`role.${user.role}`] ?? user.role}
-                </p>
-              </div>
-            </div>
-
-            <Link
-              href={`/${locale}/account`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium text-ink-200 transition-soft hover:bg-white/5 hover:text-white"
-            >
-              <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />
-              <span>{labels.yourAccount}</span>
-            </Link>
-
-            <form action={customerSignOutAction} className="px-1">
-              <input type="hidden" name="locale" value={locale} />
-              <button
-                type="submit"
-                className="w-full rounded-control px-2 py-2 text-left text-sm font-medium text-ink-200 transition-soft hover:bg-white/5 hover:text-white"
-              >
-                {labels.signOut}
-              </button>
-            </form>
-          </div>
+          {accountMenu}
         </div>
       </aside>
 
@@ -211,7 +227,15 @@ export function DashboardShell({
         />
       ) : null}
 
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1">
+        <header className="hidden items-center justify-between gap-4 border-b border-border bg-surface px-8 py-3 lg:flex">
+          <ViewSiteLink href={siteHref} label={siteLabel} tone="light" />
+        </header>
+
+        <main id="main" className="px-4 py-8 sm:px-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

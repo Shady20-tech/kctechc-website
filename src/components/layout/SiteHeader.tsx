@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import type { Translator } from "@/lib/i18n/translator";
 import { AccountAction } from "./AccountAction";
 import { CartAction } from "./CartAction";
+import { DashboardReturnAction } from "./DashboardReturnAction";
 import { DepartmentsMenu } from "./DepartmentsMenu";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
@@ -104,6 +105,7 @@ export function SiteHeader({
           />
           <span aria-hidden="true" className="h-6 w-px bg-white/15" />
           <CartAction locale={locale} />
+          <DashboardReturnAction locale={locale} compact />
           <AccountAction
             locale={locale}
             signInLabel={t("actions.signIn")}

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { Avatar } from "@/components/admin/Avatar";
+import { ViewSiteLink } from "@/components/layout/ViewSiteLink";
 import { Button } from "@/components/ui/Button";
 import {
   isNavItemActive,
@@ -73,6 +74,8 @@ export function AdminSidebar({
   labels,
   user,
   accountMenu,
+  siteHref = "/",
+  siteLabel,
 }: {
   sections: readonly AdminNavSectionClient[];
   /** Fully resolved labels, keyed by the nav entry's `labelKey`. */
@@ -85,6 +88,10 @@ export function AdminSidebar({
    * in one tap instead of hunting inside the drawer.
    */
   accountMenu: ReactNode;
+  /** Where "View main site" goes; the gateway by default. */
+  siteHref?: string;
+  /** The "View main site" label, already localized. */
+  siteLabel: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -135,6 +142,7 @@ export function AdminSidebar({
           {labels.consoleName}
         </p>
         <div className="flex items-center gap-2">
+          <ViewSiteLink href={siteHref} label={siteLabel} tone="ink" compact />
           <Button
             variant="ghost"
             size="sm"

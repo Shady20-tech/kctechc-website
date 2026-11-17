@@ -77,11 +77,15 @@ describe("dashboardNavSections", () => {
 });
 
 describe("every dashboard nav destination resolves to a real route", () => {
-  // A route group is not part of the URL, so the account tree lives under
-  // `src/app/(site)/[locale]/account` and the real-estate surfaces under
-  // `src/app/(site)/[locale]/real-estate`. A query string addresses a page that
-  // exists, so only the path part is resolved.
-  const SITE_ROOT = path.resolve(process.cwd(), "src/app/(site)/[locale]");
+  // A route group is not part of the URL, so the dashboards live under
+  // `src/app/(dashboard)/[locale]/account` (their own chrome-free group) while the
+  // shared real-estate surfaces live under `src/app/(site)/[locale]/real-estate`.
+  // Both roots are searched, because the nav links into both. A query string
+  // addresses a page that exists, so only the path part is resolved.
+  const ROOTS = [
+    path.resolve(process.cwd(), "src/app/(dashboard)/[locale]"),
+    path.resolve(process.cwd(), "src/app/(site)/[locale]"),
+  ];
 
   function pageFor(href: string, kind: string): string {
     const route = href.split("?")[0]!;
@@ -94,7 +98,7 @@ describe("every dashboard nav destination resolves to a real route", () => {
       new RegExp(`^/account/${kind}(/|$)`),
       "/account/[dashboard]$1",
     );
-    return path.join(SITE_ROOT, concrete, "page.tsx");
+    return path.join(concrete, "page.tsx");
   }
 
   it("has a page file for every dashboard href", () => {
@@ -102,8 +106,10 @@ describe("every dashboard nav destination resolves to a real route", () => {
     for (const kind of ["landlord", "agent"] as const) {
       for (const section of dashboardNavSections(kind, LOCALE)) {
         for (const item of section.items) {
-          const page = pageFor(item.href, kind);
-          if (!existsSync(page)) missing.push(`${item.href} -> ${page}`);
+          const relative = pageFor(item.href, kind);
+          if (!ROOTS.some((root) => existsSync(path.join(root, relative)))) {
+            missing.push(`${item.href} -> ${relative}`);
+          }
         }
       }
     }
