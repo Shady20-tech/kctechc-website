@@ -10,12 +10,12 @@ phase roadmap. Keep both files synchronized with the specification as the build 
 
 KC Technology Corporation corporate website plus three department experiences under one brand:
 
-| Department | Public localized path | Accent |
-| --- | --- | --- |
-| Corporate gateway (root, language-neutral) | `/` | Brand ink / teal |
-| Digital Marketing (store) | `/{locale}/digital-marketing` | `#0066CC` |
-| Electrical Services | `/{locale}/electrical-services` | `#C2410C` |
-| Real Estate | `/{locale}/real-estate` | `#1E5631` |
+| Department                                 | Public localized path           | Accent           |
+| ------------------------------------------ | ------------------------------- | ---------------- |
+| Corporate gateway (root, language-neutral) | `/`                             | Brand ink / teal |
+| Digital Marketing (store)                  | `/{locale}/digital-marketing`   | `#0066CC`        |
+| Electrical Services                        | `/{locale}/electrical-services` | `#C2410C`        |
+| Real Estate                                | `/{locale}/real-estate`         | `#1E5631`        |
 
 Accent hex values are the text-safe variants used on light surfaces; each also has a `-bright`
 counterpart for dark ink bands (see section 5).
@@ -58,6 +58,7 @@ legal claims, staff, testimonials, or case-study metrics.
 ## 4. Non-negotiable architecture rules
 
 ### Localization
+
 - Root `/` stays language-neutral (`x-default`) — offer EN/FR + department choices, do not guess.
 - Localized app lives in `src/app/(site)/[locale]/...`; the `(site)` group holds the public chrome
   and `(static)` holds internal/admin routes. `src/proxy.ts` does only lightweight
@@ -67,6 +68,7 @@ legal claims, staff, testimonials, or case-study metrics.
   untranslated/unpublished locale content from being indexed as fully localized pages.
 
 ### Dynamic translation rule (critical)
+
 - Static UI text → normal Tolgee keys. Dynamic DB content → **never** static JSON dictionaries.
 - Canonical structured content lives in Supabase; localized content lives in Supabase translation
   tables / typed localized fields so the site works even if Tolgee is down.
@@ -83,6 +85,7 @@ legal claims, staff, testimonials, or case-study metrics.
   and re-syncs, but **never destroys existing translations**.
 
 ### Security
+
 - Supabase service-role key is server-only. No secrets in `NEXT_PUBLIC_*`.
 - Authorization enforced by **RLS** in the database, not by hiding UI routes.
 - Least-privilege policies for visitor/customer/agent/department staff/admin/super admin.
@@ -95,6 +98,7 @@ legal claims, staff, testimonials, or case-study metrics.
 - Admin/auth/private routes are `noindex`.
 
 ### Storage
+
 - Separate buckets/folders: public site media, product media, property media, electrical project
   media, private inquiry attachments, private admin documents.
 - Public media may use public URLs; sensitive uploads use signed URLs. Validate type + size
@@ -102,21 +106,23 @@ legal claims, staff, testimonials, or case-study metrics.
   fields, keep the asset→entity→locale relationship, always render through `next/image`.
 
 ### Payments
+
 - **The site takes no payment itself, and no longer integrates a payment provider.** Fapshi was
-  removed. An order records the customer's chosen *method* as an intent only
+  removed. An order records the customer's chosen _method_ as an intent only
   (`mobile_money_mtn`, `mobile_money_orange`, `bank_transfer`, `cash_on_confirmation`); the order
   is emailed to the business (`ORDERS_NOTIFY_TO`, else `SITE.emails`) and the team contacts the
   customer to confirm stock, delivery and final payment (MTN/Orange Mobile Money, bank transfer, or
-  as agreed). `card` remains a valid *stored* enum value for legacy rows but is never offered.
+  as agreed). `card` remains a valid _stored_ enum value for legacy rows but is never offered.
 - **Never fake a successful payment.** There is no automated charge, so nothing may present an
   order as paid. `pending_payment` is the state of every placed order until a staff member records
   a received payment (`recordManualPayment`), which writes the `payments` row (`provider='manual'`)
-  and advances the order. The customer confirmation email says the order is *awaiting confirmation*,
+  and advances the order. The customer confirmation email says the order is _awaiting confirmation_,
   never that it is paid.
 - Bank transfer and mobile money are settled manually/offline; the recorded method is intent, and
   the admin notification labels it as such so it is not mistaken for money received.
 
 ### Maps & geography
+
 - Real estate supports list/map toggle, clustered markers, single-property map, safe coordinate
   storage, and no accidental exposure of exact coordinates for private/approximate listings.
 - Cameroon hierarchy: Region → Division → Subdivision. Seed the ten regions (Adamawa, Centre, East,
@@ -125,6 +131,7 @@ legal claims, staff, testimonials, or case-study metrics.
 - PostGIS only when needed, in a dedicated extension schema — not exposed through `public`.
 
 ### Money
+
 - Primary currency XAF/FCFA. USD equivalent display only where content explicitly supports it and
   never with invented exchange rates. Format with `Intl.NumberFormat` (`en-CM` / `fr-CM`).
 
@@ -183,7 +190,7 @@ is unavailable. Do not move the border or the opaque background into the utility
 `backdrop-filter` would then render a translucent fill with no blur, which fails contrast.
 
 **Glass tint is a contrast decision, not a taste one.** A translucent header composites over whatever
-is behind it, and the worst case is the sticky header at scroll 0 sitting over the *white* page, not
+is behind it, and the worst case is the sticky header at scroll 0 sitting over the _white_ page, not
 over the dark hero. At `0.72` the inactive language link (`text-white/60`) measured **4.21:1**; the
 current `0.78` gives **4.98:1**. Anything that lightens the tint, or lowers the opacity of text on
 glass, needs that pair re-measured. Lighthouse catches this — run it, don't eyeball it.
@@ -261,9 +268,10 @@ works. Never delete a working feature because another approach looks cleaner. Pr
 changes. Keep this file synchronized.
 
 At the end of every phase:
+
 1. `tsc --noEmit` (type check) → 2. ESLint CLI → 3. unit/integration tests → 4. production build
-(when practical) → 5. phase-specific smoke tests → 6. inspect generated HTML for SEO-critical public
-pages → 7. fix everything found → 8. report and **STOP**.
+   (when practical) → 5. phase-specific smoke tests → 6. inspect generated HTML for SEO-critical public
+   pages → 7. fix everything found → 8. report and **STOP**.
 
 If an external credential is unavailable, test the code path with a deterministic config or a
 disabled state — never by pretending the external service succeeded.
@@ -283,7 +291,7 @@ acceptance criteria pass. Then stop — do not start the next phase.
   the three department entry pages, `/about`, `/contact` with the inquiry pipeline (migration,
   Zod schema, server action, form), and the shared design/UI kit.
 - Primary navigation is `Home · About us · Departments (dropdown) · Services · Gallery · Contact ·
-  Insights`. Departments are a dropdown on desktop and a labelled group in the mobile drawer; the
+Insights`. Departments are a dropdown on desktop and a labelled group in the mobile drawer; the
   department anchors stay in the DOM while the panel is closed so all three remain crawlable.
 - `/services` is a corporate index that routes to the three departments. `/gallery` renders an
   explicit empty state because no project photography was supplied — see the gotcha below before
@@ -349,7 +357,7 @@ acceptance criteria pass. Then stop — do not start the next phase.
     `public` function, re-grants `service_role`, and re-grants only the deliberate browser-callable
     functions to `anon`/`authenticated`. It also redefines `review_listing_submission` with the
     `is_real_estate_admin()` guard it was missing. See the gotchas below.
-  - `supabase/validate/30_function_execute_hardening.sql` asserts the *subset* property — no
+  - `supabase/validate/30_function_execute_hardening.sql` asserts the _subset_ property — no
     non-trigger `public` function is executable by a browser key unless it is on the allow-list —
     which is what makes a new, unclassified function fail the check.
   - `supabase/validate/00_supabase_shim.sql` now also creates the `storage.buckets` table the
@@ -414,7 +422,7 @@ acceptance criteria pass. Then stop — do not start the next phase.
   `sync_insight_translation_index` trigger (title/summary/body), writes the source and target
   `content_translations` rows, queues the Tolgee jobs, and backfills existing articles. Before it,
   `'insight'` was a valid entity type and the read path merged French, but nothing ever wrote it, so
-  `/fr` silently served English. See "Insight article translation" below for what this does *not* do.
+  `/fr` silently served English. See "Insight article translation" below for what this does _not_ do.
 - 999 Vitest tests pass (76 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (137/137 static pages).
 - KYC verification (Phase 2 of the real-estate work) is implemented:
@@ -624,9 +632,9 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **`@theme` is for Tailwind's `theme` layer; a `[data-theme]` token block belongs in `base`.** The
   generated `--color-*` names only resolve because Tailwind v4 emits the plain `:root,:host` block
   without `@property { inherits: false }` (that is only emitted for `--tw-*`), so a subtree
-  override cascades. Do not add these tokens to `@theme`, which would sit *below* `base` and lose.
+  override cascades. Do not add these tokens to `@theme`, which would sit _below_ `base` and lose.
 - **`data-theme` is applied to `<html>`, not to `departmentScopeProps`.** That helper is shared
-  with individual department *cards*, so adding `data-theme` there puts a misleading attribute on a
+  with individual department _cards_, so adding `data-theme` there puts a misleading attribute on a
   card on a corporate page. The path is the single source of truth for the document theme.
 - **`generateViewport` and `generateMetadata` can coexist on one route, and both may be async.**
   Adding `generateViewport` for the department `theme-color` did not change the prerender status
@@ -684,14 +692,14 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 ### Known defect: `<html lang>` is always `en` (pre-existing, unfixed)
 
 - **`src/app/layout.tsx` hardcodes `lang="en"`, so every `/fr` route serves `<html lang="en">`.**
-  The locale segment (`[locale]`) is nested under the `(site)` group *below* the root layout, so the
+  The locale segment (`[locale]`) is nested under the `(site)` group _below_ the root layout, so the
   root layout cannot see it and Next 16's `next/root-params` is unavailable (root params must be
   segments before the root layout). Verified against the running build: `/fr` and `/fr/about` both
   return `<html lang="en">`, and the FR `<title>` falls back to the untranslated default
   (`KC Technology Corporation`) because the locale layout's `generateMetadata` has no `title`.
   This violates the SEO rule "correct `html[lang]`" and is a screen-reader pronunciation problem.
   It predates the founder's-message work (introduced in the Phase 1 layout). The fix is a route
-  restructure — move the locale segment to `src/app/[locale]/layout.tsx` so it *is* the root layout
+  restructure — move the locale segment to `src/app/[locale]/layout.tsx` so it _is_ the root layout
   (or add a `next/root-params` accessor) and set `lang` from the resolved locale — but that touches
   every route group and the admin tree, so it belongs in its own change with its own verification,
   not a feature PR. Do not paper over it with a client-side `document.documentElement.lang` patch:
@@ -707,7 +715,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   `src/components/marketplace/`. Real Estate, the Store index/category pages and the projects
   gallery each pass their **own fields** through the layout's `filters(variant)` render prop — the
   shell arranges, the department supplies controls — so the desktop column and the mobile drawer
-  render the *same* form and cannot drift. Do not build a fourth bespoke results layout: add a
+  render the _same_ form and cannot drift. Do not build a fourth bespoke results layout: add a
   binding component (`src/components/{store,content}/*Filters.tsx`) like `StoreActiveFilters` and
   `ProjectActiveFilters` do.
 - **A filter is a URL, and the URL is the state.** Every department parses its filters from
@@ -717,7 +725,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   never filter a loaded array in the browser — filtering, counting and pagination run in the
   database (`search_property_listings`, `search_products`), which is what the brief rules out doing
   any other way.
-- **A filtered view is `noindex`, and *every* filterable surface must apply the rule from its
+- **A filtered view is `noindex`, and _every_ filterable surface must apply the rule from its
   parsed state.** Real Estate (`hasActiveFilters`) and the projects gallery (`isUnfiltered`) did;
   the Store index and category pages did **not**, so `/en/digital-marketing/store?q=…&minPrice=…`
   served `index, follow` — a near-duplicate of the bare store for every permutation. Both now pass
@@ -730,7 +738,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   EXECUTE allow-list in the same change that created them** (`20260101000065_product_search_and_facets.sql`
   plus the allow-lists in `20260101000041_function_execute_hardening.sql` and
   `supabase/validate/30_function_execute_hardening.sql`). Supabase grants `EXECUTE` to
-  `anon`/`authenticated` on every new function by default, so a search RPC that is *not*
+  `anon`/`authenticated` on every new function by default, so a search RPC that is _not_
   classified fails the subset assertion in the validate script.
 - **A category's facet count is keyed by canonical slug while the nav links by localized slug.**
   `product_facets` returns canonical category ids → slugs; the sidebar resolves a `{value,label}`
@@ -740,7 +748,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   the link build.
 - **A bilingual regression test cannot see a feature whose data source is empty.** The store
   catalogue is empty without a configured Supabase, so the sidebar/nav/drawer render their honest
-  empty state and the *only* way to prove the filter controls is against the seeded database or by
+  empty state and the _only_ way to prove the filter controls is against the seeded database or by
   reading the built HTML for the shared chrome. `MarketplaceComponents.test.tsx` (server markup),
   `marketplace-i18n.test.ts` (EN/FR key parity) and the per-department bindings are what keep the
   shell honest without a database.
@@ -748,7 +756,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   focus trapping, Escape, scroll lock and focus return are already handled — do not hand-roll a
   second sheet. It is `lg:hidden`, the desktop column is `hidden lg:block`, and the two share the
   filter form via the render prop. Verified in a real browser at 320/360/390px: `scrollWidth ===
-  clientWidth` on every department (no horizontal scroll), the trigger reads "Filters"/"Filtres"
+clientWidth` on every department (no horizontal scroll), the trigger reads "Filters"/"Filtres"
   with the active count, and opening it mounts one visible `role="dialog"` containing the form.
 
 ### Phase 13 gotchas worth not rediscovering
@@ -759,25 +767,25 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   `20260101000042_department_project_editing.sql`. The row writes deliberately use the cookie-bound
   client (never the service-role client) so that policy is what refuses a cross-department write.
 - **`getAdminProject` must be scoped, not just the list.** The public select policy makes another
-  department's *published* project world-readable, so a guessed id would otherwise open an edit
+  department's _published_ project world-readable, so a guessed id would otherwise open an edit
   form whose save the write policy then refuses. Scoping the detail read to
   `departmentsForRole(role)` turns that into a 404, so the page and the database agree.
 - **A comment that promises a constraint is not the constraint.** The department-scoped write policy
-  on `electrical_project_services` initially checked only that the *project* was in an editable
+  on `electrical_project_services` initially checked only that the _project_ was in an editable
   department, while the migration comment said services were scoped too. Nothing in the schema ties
   `service_id`'s department to the project's, so a crafted POST could link an Electrical Services
   service to a Digital Marketing project; the console's picker was only a UI filter. The policy now
   joins `services` and requires `s.department_id = p.department_id`, and
   `40_department_work_behaviour.sql` proves both the accepted and the refused link. When a comment
   claims a boundary, implement it in the policy or delete the claim.
-- **An allow-list entry is a claim about the *caller*, so verify it against the code, not the
+- **An allow-list entry is a claim about the _caller_, so verify it against the code, not the
   function's name.** `place_order` sat on the Phase 12 browser allow-list as "guest checkout" on the
   assumption the storefront called it through the publishable key. It does not: the only caller is
   `submitCheckout`, which uses the service-role client, so the grant only widened the surface of a
   `SECURITY DEFINER` write that authorizes a cart by id alone and takes a caller-supplied
   `p_customer_id`. Before granting a function to `anon`/`authenticated`, grep for its `rpc(` call
   sites and check which client each one holds (`createAdminClient` vs the cookie-bound or public
-  client), and ask whether the function's *internal* authorization is real.
+  client), and ask whether the function's _internal_ authorization is real.
 - **A bucket declared only in `supabase/config.toml` does not exist in production.** `config.toml`
   is local-dev tooling; a hosted project gets its buckets from `storage.buckets`. Migration 37 moved
   four buckets into the schema for exactly this reason but omitted `project-media` and
@@ -798,28 +806,28 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   and `src/lib/auth/roles.test.ts` already failed `prettier --check` before this phase. Running
   `prettier --write` on them adds unrelated reformatting churn to a feature diff; make the minimal
   edit by hand and leave the pre-existing debt alone.
-- **A file's *encoding* is part of the diff, and a byte-level fix can corrupt unrelated characters.**
+- **A file's _encoding_ is part of the diff, and a byte-level fix can corrupt unrelated characters.**
   An em-dash written through the editor landed as a lone `0x97` byte, and a naive
   `replace(b"\x97", ...)` then also hit the `0x97` inside `●` (U+25CF = `E2 97 8F`), corrupting
-  every bullet in the file. Repair by rewriting the *whole* mis-encoded sequence
+  every bullet in the file. Repair by rewriting the _whole_ mis-encoded sequence
   (`\xe2\x80\x94`) rather than a single byte, verify with `python3 -c "...decode('utf-8')"`, and
   prefer plain ASCII in new doc prose.
 
 ### Phase 12 gotchas worth not rediscovering
 
-- **Supabase grants function `EXECUTE` to `anon` and `authenticated` *by name*, not through
+- **Supabase grants function `EXECUTE` to `anon` and `authenticated` _by name_, not through
   `PUBLIC`.** `REVOKE ALL ON FUNCTION ... FROM PUBLIC` removes only the `=X` ACL entry; the
   `anon=X` and `authenticated=X` entries survive, so every function stays callable from a browser
-  key. Supabase's own guidance is to revoke from *both* `public` and the role. The first revision
+  key. Supabase's own guidance is to revoke from _both_ `public` and the role. The first revision
   of migration 41 revoked from `PUBLIC` alone and so secured nothing — and its assertion only
   checked the named privileged functions, which still held their per-role grants, so it passed.
-  The migration now revokes from `anon, authenticated` explicitly, and the assertion is a *subset*
+  The migration now revokes from `anon, authenticated` explicitly, and the assertion is a _subset_
   check (nothing reachable is outside the allow-list) rather than a deny-list. Reproduce the
   difference against a clean database before trusting a grant migration; the ACL is
   `{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}` after a plain
   `REVOKE ... FROM PUBLIC`.
 - **Postgres checks `EXECUTE` for RLS policy functions, CHECK constraints, column defaults and
-  stored generated columns — but *not* for trigger functions.** A blanket revoke therefore breaks
+  stored generated columns — but _not_ for trigger functions.** A blanket revoke therefore breaks
   browser writes in three non-obvious places and leaves triggers working:
   - role predicates used inside RLS policies (`is_admin`, `is_real_estate_admin`,
     `current_agent_id`, `inquiry_is_for_agent_listing`, …) — without them the table becomes
@@ -829,11 +837,11 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   - helper functions inside a **stored generated column** (`immutable_array_to_string` in
     `property_listings.search_vector`) — this one is the easiest to miss because the dependency is
     in the column expression, not a constraint.
-  Enumerate these from `pg_proc`/`pg_attrdef`/`pg_constraint`/`pg_index` rather than by eye, and
-  allow-list them in the same migration that revokes.
+    Enumerate these from `pg_proc`/`pg_attrdef`/`pg_constraint`/`pg_index` rather than by eye, and
+    allow-list them in the same migration that revokes.
 - **`review_listing_submission` was `SECURITY DEFINER` with no internal role check.** It publishes
   a listing, and the only check was the Server Action's `authorize()` — which a direct PostgREST
-  call never runs. The application calls it with the *session* client (so `auth.uid()` attributes
+  call never runs. The application calls it with the _session_ client (so `auth.uid()` attributes
   the reviewer), which means it must stay reachable by `authenticated`; the fix is the
   `is_real_estate_admin()` guard inside the function, not a revoke. The same predicate backs the
   `listing_submissions_write_admin` policy and `REAL_ESTATE_ADMIN_ROLES` in `src/lib/auth/roles.ts`.
@@ -857,7 +865,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **A `"use server"` module may only export async functions.** The directive turns every export
   into a callable endpoint, so a plain helper or a constant beside the actions passes `tsc` and
   every unit test and then fails the production build with "Server Actions must be async
-  functions". Shared logic belongs in a module *without* the directive. `normalizeSearchQuery`
+  functions". Shared logic belongs in a module _without_ the directive. `normalizeSearchQuery`
   lives in `search.ts` for exactly this reason. `src/lib/security/server-actions.test.ts` scans
   every `"use server"` file and rejects a non-async export.
 - **A renamed route needs a redirect for its whole subtree, not just the index.** The browse
@@ -932,7 +940,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **`next.config.ts` cannot import application modules.** It is transpiled standalone before the
   `@/` alias exists, so importing `@/lib/config/navigation` fails the build with
   `Cannot find module './src/lib/config/site'`. Redirect tables live in `src/lib/config/redirects.ts`,
-  which may only reach leaf modules by *relative* path (`../i18n/locales` is a pure data module with
+  which may only reach leaf modules by _relative_ path (`../i18n/locales` is a pure data module with
   no imports of its own). `navigation.ts` re-exports from it for app code.
 - **A renamed route needs a redirect for the locale-prefixed URL, not just the bare one.** Phase 2
   linked to the section as `/${locale}/blog`, so `/en/blog` and `/fr/blog` were live, indexable URLs.
@@ -963,7 +971,6 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **Sitemap articles are data-driven and the route is `async`.** `sitemap()` awaits `loadInsights`,
   which returns `[]` when Supabase is unreachable, so a database outage degrades the sitemap instead
   of failing it.
-
 
 ### Phase 1 gotchas worth not rediscovering
 
@@ -1057,7 +1064,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   widening nav spacing, changing `container-page`, or adding a nav entry, re-measure French at
   1280px — English passing means nothing, since English has ~50px more slack.
 - **Nav links and the dropdown trigger must share one box model** (`inline-flex items-center
-  whitespace-nowrap`). As flex items they shrink below their text width and wrap without
+whitespace-nowrap`). As flex items they shrink below their text width and wrap without
   `whitespace-nowrap`, and an `inline` box reports a shorter rect than an `inline-flex` one — either
   one puts a single item on a different baseline from the rest of the bar.
 - **The language switcher abbreviates to `EN`/`FR` in the header.** The full names cost ~60px more
@@ -1092,7 +1099,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   photography (headline-band luminance 0.05–0.26 before the scrim). Lighter images need the left and
   middle stops raised back toward 0.9. The 1024px width matters: it is inside the `md` container
   where the copy column is still narrow but the scrim gradient is already the desktop one, and it is
-  where the breadcrumb lands near the start of the gradient. Tune on 1440 *and* 1024.
+  where the breadcrumb lands near the start of the gradient. Tune on 1440 _and_ 1024.
 - **On narrow viewports the scrim must be vertical.** Below `1023px` the hero copy runs edge to edge
   and stacks from ~10% to ~90% of the hero, so a rightward taper leaves the wrapped line ends over
   open photo. The mobile rule in `globals.css` flattens the gradient and strengthens it downward.
@@ -1179,7 +1186,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   stale file is excluded.
 - **The i18n parity test splits keys on dots, so a literal `"state.draft"` key is read as nested.**
   It reduces the tree by each segment, hits `undefined`, and throws `Cannot read properties of
-  undefined`. Message keys with a dot must be nested objects (`state: { draft: ... }`), not flat keys.
+undefined`. Message keys with a dot must be nested objects (`state: { draft: ... }`), not flat keys.
 - **The admin sidebar's active-link check must not use `startsWith` for `/admin` alone**, or the
   dashboard entry stays highlighted on every console route. `isNavItemActive` special-cases `/admin`
   to an exact match and uses `href + "/"` boundaries elsewhere so `/admin/logs` does not match
@@ -1187,7 +1194,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **A server-mutating action needs `revalidatePath` on both the list and, when one exists, the detail
   route.** Revalidating only `/admin/content` leaves the article's own edit page serving the old row.
 - **Client-code animation state must never reach the server HTML.** The scroll reveal works because
-  the resting state is the *visible* one: the component adds `data-reveal="pending"` in a `useEffect`,
+  the resting state is the _visible_ one: the component adds `data-reveal="pending"` in a `useEffect`,
   so a crawler, a no-JS visitor and the pre-hydration paint all get full-opacity markup with no
   attribute. Setting the offset state during render instead would emit `data-reveal="pending"` in
   `en.html` and publish an invisible block. Verify by grepping the built HTML, not by eyeballing the
@@ -1213,7 +1220,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   exports are the declared intent; `src/proxy.test.ts` asserts the real literal against them, which
   is what keeps the two in step. Add a root metadata route (like `manifest.webmanifest`) to both.
 - **Emulate the matcher correctly when testing it.** The pattern is `/((?!…).*)`, so the leading `/`
-  is consumed *before* the lookahead: test `/_next/static` as `_next/static`. Passing a
+  is consumed _before_ the lookahead: test `/_next/static` as `_next/static`. Passing a
   slash-prefixed path makes every literal exclusion fail to match, leaving only the extension list
   doing any work and hiding a broken test behind passing assertions.
 - **Don't put an `aria-label` on the logo lockup.** It renders `shortName` below `sm` and
@@ -1362,7 +1369,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   INSERT trigger.** A seed cannot insert a product already-published and attach its media in the same
   statement: the trigger fires on the insert and raises. The pattern that works — and that the
   admin flow already follows — is insert as `draft`, insert `product_media`, then `update … set
-  publish_state = 'published'`. The original `20260101000045` inserted `published` directly and would
+publish_state = 'published'`. The original `20260101000045` inserted `published` directly and would
   have failed on any fresh database for that reason too.
 - **A validation assertion written as a global row count breaks the moment the migration set seeds
   real data.** `10_store_behaviour.sql` asserted `anon sees exactly 1 product`, which was true only
@@ -1400,7 +1407,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
   filter is not a control.
 - **A new `SECURITY DEFINER` trigger function must still be revoked by hand.** Supabase grants
   `EXECUTE` to `anon`/`authenticated` on every new function, and the Phase 12 hardening migration
-  ran *before* `20260101000049` created `sync_insight_media_translation_index`, so the revoke is
+  ran _before_ `20260101000049` created `sync_insight_media_translation_index`, so the revoke is
   repeated in the same migration that creates it. Add a function in a later migration and you must
   classify it there too.
 
@@ -1522,7 +1529,7 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 - **Create and image are still two steps, but the gap is now bridged.** `ProductForm`, `InsightForm`
   and `ListingForm` deliberately carry no image field — the record must exist before an object can
   be namespaced under its id, and a single multipart body that both creates a row and uploads to a
-  bucket has no clean rollback if the upload fails. What was missing was the *signpost*: the create
+  bucket has no clean rollback if the upload fails. What was missing was the _signpost_: the create
   forms now render a link to the detail page ("Add an image" / "Add property images") in their
   success notice, so "create then add image" is discoverable rather than something the editor has to
   infer.
@@ -1595,7 +1602,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   is the property that actually failed.
 - **The mobile console had no sign-out at all.** The account menu lives in the top bar, which was
   `hidden lg:flex`, so below `lg` a signed-in phone user had no profile link and no way to sign out.
-  The fix renders the *same* `AdminUserMenu` dropdown in a second top bar that is `lg:hidden`, so a
+  The fix renders the _same_ `AdminUserMenu` dropdown in a second top bar that is `lg:hidden`, so a
   phone gets the identical one-tap menu a desktop user has — rather than an inline list buried at
   the bottom of the drawer, which is what a first attempt did. Two bars, one component: do not give
   the menu a second renderer (`variant="inline"`) that can drift from the dropdown. The menu is the
@@ -1654,7 +1661,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   nothing ever wrote the French rows.** `loadInsightRecords` selects from `content_translations`
   where `entity_type = 'insight'` and `localizeInsight` merges title/summary/body — but there was no
   `sync_insight_translation_index` trigger. Products (migration 12), electrical projects (14),
-  property listings (22) and insight *media* (49) each had one; the article's own text did not. So an
+  property listings (22) and insight _media_ (49) each had one; the article's own text did not. So an
   article published by staff stored English once, `/fr` found no overlay, `resolveLocalized` fell
   back to canonical, and the French page silently served English — with no `translation_entries`
   row, no `content_translations` row and no queued job, so nothing downstream could fix it either.
@@ -1664,15 +1671,15 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   property of the data, so an article written by the admin form, a migration or a psql session is
   indexed alike. Doing it in `createInsightAction`/`updateInsightAction` would leave any other write
   path unindexed — and the `content_translations` insert the action would need is a `SECURITY
-  DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
+DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
 - **The field list is title/summary/body and nothing else.** It is exactly what `localizeInsight`
   merges and `groupTranslations` understands. `slug` is deliberately excluded: the article route
   resolves the canonical slug in both locales and there is no `insight_slugs` table, so indexing it
   would create Tolgee keys nothing reads. The two `entity_seo` fields the product/listing triggers
   index are excluded too — `loadInsightRecords` does not read `entity_seo` for insights.
 - **A new function created after migration 41 keeps Supabase's default browser grant.** The Phase 12
-  hardening ran *before* this migration existed, so `insight_translatable_fields()` (not a trigger
-  function) would otherwise stay executable by `anon`/`authenticated` and fail the *subset*
+  hardening ran _before_ this migration existed, so `insight_translatable_fields()` (not a trigger
+  function) would otherwise stay executable by `anon`/`authenticated` and fail the _subset_
   assertion in `30_function_execute_hardening.sql`. The revoke is repeated in the same migration that
   creates it. Any later migration that adds a function must classify it the same way.
 - **A backfill is required, not optional.** Articles written before the trigger have no index rows;
@@ -1706,7 +1713,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 - **A `with check` clause guards the destination state; it does not guard the source row.** RLS
   `using` decides which rows a policy lets you target, and `with check` decides what the row may look
   like afterwards. `real_estate_memberships_update_own` (migration 57) had
-  `using (user_id = auth.uid())` and a `with check` pinning the *new* status to the pending states —
+  `using (user_id = auth.uid())` and a `with check` pinning the _new_ status to the pending states —
   which looked like a self-escalation guard but let the owner target their own row in ANY state and
   move it to `pending_review`. Reproduced against the harness: an owner reset an **approved**
   membership and cleared a staff **suspension** (with its reason), both contradicting the migration's
@@ -1717,7 +1724,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   policy. `memberships.test.ts` now extracts the policy's `using` clause from the latest migration
   and asserts it matches those two constants, so the drift cannot recur silently.
 - **The capability model cannot be proven by the application, only by the database.** A Server
-  Action's role check is a *message*; the boundary is the RLS policy. `supabase/validate/100_account_capabilities_behaviour.sql`
+  Action's role check is a _message_; the boundary is the RLS policy. `supabase/validate/100_account_capabilities_behaviour.sql`
   asserts residency constraints, the capability/authorization split, and the ownership boundary
   (one landlord cannot reach another's listing; a non-agent cannot be recorded as manager). The
   owner-update source-state guard is asserted inside migration 59's own `do $$ … $$` block, because
@@ -1790,7 +1797,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 
 ### Landlord and agent dashboards (Phase 3)
 
-- **A dashboard is a *capability* surface, not a role surface.** `/account/landlord` and
+- **A dashboard is a _capability_ surface, not a role surface.** `/account/landlord` and
   `/account/agent` open for an approved `real_estate_memberships` row, never for a role and never
   for the `declared_account_type` a user picked at signup. `accessibleDashboards()` is the single
   predicate the account page links with and the routes guard with, so a link rendered there always
@@ -1827,7 +1834,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
 - **The listing form is separate from the console's `ListingForm` on purpose, but reuses its field
   labels.** The console form carries operator vocabulary (import source, internal notes); the
   dashboard's user owns one property. Sharing the component would mean leaking operator concepts
-  into a customer form or adding mode flags to the console's. The *labels* come from
+  into a customer form or adding mode flags to the console's. The _labels_ come from
   `realEstate.admin.field*`, because duplicating them would be two spellings of "URL slug" waiting
   to drift.
 - **An approved agent capability with no `agent_profiles` row cannot list.** `requireCapability`
@@ -1844,6 +1851,38 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   which listing an object may be attached to. The object is uploaded first and removed if the row
   insert then fails, so a failed insert leaves no orphan.
 
+### Dashboard chrome-free shell (the `(dashboard)` route group)
+
+- **The landlord and agent dashboards render without the public marketing chrome, and the route
+  group is how.** They used to live under `(site)/[locale]/`, so the sticky public header and the
+  full footer wrapped the sidebar on every page and a dashboard read as a marketing page with a menu
+  bolted on. They now live in `src/app/(dashboard)/[locale]/account/[dashboard]/...`, whose layout
+  renders only the `SkipLink` — the same chrome-free treatment the console gets from `(static)`.
+  A route group is not part of the URL, so every address is unchanged.
+- **Two route groups may declare the same `[locale]` segment as long as no two pages resolve to the
+  same path.** `(site)` keeps `/{locale}/account` and `/{locale}/account/kyc` (public-chrome
+  pages); `(dashboard)` owns `/{locale}/account/{kind}` and its children. `kyc` is a static segment
+  inside `[dashboard]`'s directory space, so it resolves against the `(site)` page; the split is
+  valid because the resolved paths differ. If a future `{kind}` value collided with `kyc` the build
+  would fail with a parallel-pages error, which is the check that keeps this honest.
+- **A signed-in user reaches their workspace from the public site through a client island, not from
+  the shared header.** The header must stay statically renderable — reading `cookies()` there would
+  make every public page dynamic and cost the prerendered HTML — so `DashboardReturnAction`
+  (`src/components/layout/DashboardReturnAction.tsx`) asks `GET /api/account/dashboard` and renders
+  nothing until the answer arrives, the same split as `CartAction` + `/api/cart/summary`. The
+  module-level store (`useDashboardHome`) is shared by the desktop bar and the mobile drawer so the
+  two islands do not double the request.
+- **`resolveDashboardHome` maps a console role to the non-localized `/admin` and an approved
+  capability to the localized `/{locale}/account/{kind}`, and returns null for a plain customer.**
+  The two destinations do not share a URL shape; the console wins when a caller is both staff and a
+  capability holder. Nothing in the link is authoritative — the destination re-checks the session,
+  the role and the capability server-side.
+- **The dashboards deliberately do not mount the Tolgee provider.** No component under the tree
+  calls `useTranslate` — the server panels use `createTranslator` and the client panels call it
+  themselves (`client-boundary.test.ts` enforces the boundary) — so a provider there would be an
+  unused client bundle. `force-dynamic` is on the group layout because the shell reads the session
+  cookie.
+
 ### The self-publish hole: a column default is not a security boundary
 
 - **`listing_source` defaults to `admin`, and the review gate keyed only on
@@ -1855,7 +1894,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   administrator involved. The review workflow was optional for exactly the users it exists to
   constrain.
 - **`enforce_listing_lifecycle` now pins a non-administrator write to `owner_submission`** on
-  INSERT, and refuses any attempt by such a caller to *set* a different source on UPDATE. An
+  INSERT, and refuses any attempt by such a caller to _set_ a different source on UPDATE. An
   administrator's write is untouched, so `source = 'admin'` (console) and `source = 'import'`
   (CSV import) keep working. The trigger had to gain `source` in its column list
   (`before insert or update of status, source`) or the anti-stripping check would never run — a
@@ -1869,7 +1908,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   It lives in the interaction between a column default, an RLS policy and a trigger, so only a real
   database reproduces it. The `do $$` assertion at the foot of migration 62 runs on every
   migration application and proves the boundary; `owner-listing-workflow.test.ts` is the cheaper
-  database-free complement that pins the *shape* of the fix so a later edit cannot quietly remove
+  database-free complement that pins the _shape_ of the fix so a later edit cannot quietly remove
   it. Add a behavioural assertion to the migration when a boundary matters, not only a text test.
 - **`handle_new_user` provisions a `customer` profile on insert, so a fixture that inserts an
   admin user must promote it afterwards.** `insert ... on conflict do nothing` for the auth row
@@ -1884,7 +1923,7 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   queue of Tolgee work for listings that no longer exist. Reproduced on a fresh database by diffing
   the orphan count with and without migration 62 (+6 entries). The cleanup now deletes the entries
   and translations by fixture id **before** the listing delete (afterwards the `entity_id in
-  (select …)` subquery matches nothing, since the rows are already gone); the job rows then cascade
+(select …)` subquery matches nothing, since the rows are already gone); the job rows then cascade
   via their `translation_entry_id` FK. Note this is the general hazard, not a migration-62 quirk: any
   fixture or application path that deletes a translatable entity must clear its translation rows.
   Migration 58's own assertion block still strands 3 entries for the same reason — pre-existing and
