@@ -19,7 +19,6 @@ import {
 } from "./geography";
 import {
   groupListingTranslations,
-  regionFromRow,
   toListingImage,
   toListingRecord,
   type ListingRow,
@@ -960,6 +959,15 @@ export async function loadTrendingListings(
  * the Real Estate landing page show the visitor's own language. The locale is a
  * parameter rather than read from a request, so the loader stays pure and the
  * caller passes the resolved locale it already holds.
+ *
+ * The counting is done by `listing_geography_counts`, not by reading the
+ * listings. An earlier version selected every published listing with its joined
+ * region and tallied them in JS: that reads the whole portfolio on every landing
+ * page render, and worse, it silently reports a wrong number once the portfolio
+ * passes PostgREST's `max-rows` cap — the response is truncated, so the regions
+ * beyond the cut vanish from the index. The RPC applies the same visibility
+ * predicate as the search and aggregates in the database, so the count beside a
+ * region equals the result set its link leads to, whatever the portfolio size.
  */
 export async function loadListingRegionOptions(
   locale: Locale,
@@ -968,29 +976,21 @@ export async function loadListingRegionOptions(
     const supabase = createPublicClient();
     if (!supabase) return [];
 
-    const { data } = await supabase
-      .from("property_listings")
-      .select("regions (slug, name, name_fr)")
-      .in("status", ["published", "under_offer", "sold", "rented"]);
+    const [regions, counts] = await Promise.all([
+      supabase.from("regions").select("id, slug, name, name_fr"),
+      loadListingGeographyCounts(),
+    ]);
 
-    const counts = new Map<
-      string,
-      { slug: string; name: string; count: number }
-    >();
-    for (const row of data ?? []) {
-      const region = regionFromRow(row as ListingRow);
-      if (!region.slug) continue;
-      const existing = counts.get(region.slug);
-      if (existing) existing.count += 1;
-      else
-        counts.set(region.slug, {
-          slug: region.slug,
-          name: localizeGeographyName(region, locale),
-          count: 1,
-        });
-    }
+    if (!regions.data) return [];
 
-    return [...counts.values()].sort((a, b) => b.count - a.count);
+    return regions.data
+      .map((region) => ({
+        slug: region.slug,
+        name: localizeGeographyName(region, locale),
+        count: counts.regions.get(region.id) ?? 0,
+      }))
+      .filter((region) => region.count > 0)
+      .sort((a, b) => b.count - a.count);
   } catch {
     return [];
   }

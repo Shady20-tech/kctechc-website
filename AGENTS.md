@@ -2238,7 +2238,54 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   `initdb` into a scratch directory and start it on `/tmp` with `-k /tmp`; the `postgres` OS user
   cannot read the workspace, so **pipe each migration's bytes through `psql`'s stdin** rather than
   passing `-f <path>`, and strip the `\set`/`\i` meta-command lines before feeding the validate
-  scripts. 68 migrations apply cleanly and all 11 validate scripts pass on a fresh database.
+  scripts. 69 migrations apply cleanly and all 12 validate scripts pass on a fresh database.
+
+### Phase 8 performance audit: the overlay was built for every search
+
+- **`search_property_listings` built its translation overlay for *every* search, including the ones
+  that never read it.** The `localized` CTE is `string_agg` over every `content_translations` row for
+  `entity_type = 'property_listing'` in the requested locale, grouped by `entity_id` — a full scan
+  plus a sort. Only the keyword branch (`loc.value ilike …`) ever reads it, but the planner built it
+  unconditionally. Measured with `auto_explain` *inside* the function (a plain `EXPLAIN` cannot see
+  through it) on a 6,000-listing portfolio skewed toward Littoral/Centre: that scan was roughly half
+  the total time of a location/category/price browse. Migration
+  `20260101000070_search_performance.sql` gates the CTE on `cross join params` / `params.q is not
+  null`, so it becomes a no-op for a structured browse. On the same data the `content_translations`
+  scan goes from ~7 ms (12,000 rows) to `never executed`, and a browse drops from ~30-45 ms to
+  ~16-25 ms. **A CTE with no dependency on the query's parameters is still materialised** — that is
+  the whole defect; adding the dependency is the fix.
+- **Result equivalence was checked, not assumed.** The rewrite is a `create or replace` of the same
+  22-argument function, compared against the previous definition over 18 filter combinations
+  (locale, keyword, sort, price, bedrooms, size, locality, status, amenities, paging) — identical
+  rows and order in every case. **A first pass at this comparison "passed" 13 cases that were
+  actually erroring**: passing `p_min_bedrooms=>2` without a cast makes Postgres unable to resolve
+  the overload, so both sides returned empty stdout and compared equal. Assert the exit code (or
+  hash the output with the error text included) when comparing two function versions, or a missing
+  cast reads as a match.
+- **Indexes were added only where a plan proved them, and the ones that did not are recorded as
+  deliberately absent.** `content_translations_localized_idx` is a covering index
+  `(entity_type, locale, field_name) include (entity_id, value)`; it turns the keyword-path overlay
+  into an `Index Only Scan` and measured ~65 ms → ~53 ms. Partial indexes on `division_id`,
+  `subdivision_id`, `(currency, price_minor)` and `view_count` were each created and measured
+  against the real function on the skewed portfolio and changed nothing — the planner kept the
+  sequential scan and the timings did not move — so they are not shipped. The geography tables are
+  10/58/360 rows, so an index on a listing's geography column cannot pay for itself. A review that
+  asks "why is there no index on `division_id`" should read the migration header.
+- **`loadListingRegionOptions` downloaded the whole portfolio to count it.** It selected every
+  published listing with its joined region and tallied in JS. That reads the entire table on every
+  landing-page render, and — the worse half — it silently reports *wrong* numbers once the portfolio
+  passes PostgREST's `max-rows` cap, because the response is truncated and the regions past the cut
+  vanish from the index. It now counts through `listing_geography_counts()` (the RPC the filter
+  already uses, so the count beside a region equals the result set its link leads to) and selects
+  only the ten region rows. Counts verified identical to the old JS tally on the 6k portfolio. **This
+  is the general trap: any "count by downloading rows" loader is correct only until the table grows
+  past the row cap, and then it is quietly wrong rather than slow.**
+- **A 500-account / 6,000-listing portfolio is a small dataset, and the honest conclusion is that the
+  SQL was already the bottleneck's *shape*, not its indexes.** `N+1` was checked and does not exist:
+  `enrich()` batches `loadListingImages` / `loadPublicLocations` / `loadListingTranslations` through
+  `Promise.all`, each using `.in()` on the page's ids, and the listings page composes
+  `queryListings` / geography / facets / favourites in one `Promise.all`. Do not "optimise" by adding
+  indexes to the filter columns without measuring first — on this shape they do not help.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
