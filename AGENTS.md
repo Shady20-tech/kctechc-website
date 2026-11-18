@@ -2392,6 +2392,44 @@ verification badge is written by `setPublisherVerificationAction` through the se
 `--throttling-method=devtools`. This is the third time this repo has hit the Lantern overstatement
 on this app; use applied throttling before chasing a simulated-LCP regression.
 
+### Corporate page heroes (`PageHero`) and the scrim's protected column
+
+- **`src/components/ui/PageHero.tsx` is the shared on-ink hero for the corporate pages** (`/about`,
+  `/services`, `/gallery`, `/contact`). It renders `HeroMedia` as the backdrop, the decorative grid
+  and glows (`aria-hidden`), the breadcrumb trail, a mono eyebrow, the `h1` with the heading rule, the
+  lede, optional children (CTAs) and an optional `meta` definition list. The About page and the three
+  section pages all use it, so a change to the hero is one file, not four.
+- **The hero's `meta` strip must stay inside the copy column (`max-w-3xl`), not span the container.**
+  The `.hero-scrim` is weighted to the inline-start edge, so a three-column strip across the full
+  width puts its last column over the *lightly* scrimmed right side of the photograph. Measured over
+  the bright corporate backdrop, the third column's label fell to **1.4:1** (mean background). It
+  now sits in `max-w-3xl`, where every column is inside the protected zone; re-measured worst-case
+  mean-background ratio is **5.36:1**, in line with the pre-existing department heroes (5.52:1).
+  Anything new that lands under hero copy on the *right* of the band needs the same re-measurement.
+- **Measure hero contrast against the mean background, and against the pre-existing heroes as a
+  baseline.** The 98th-percentile-pixel standard fails the department heroes the scrim was tuned
+  against (min 1.53:1 on `en/electrical-services`), so it is too harsh to be the pass/fail line —
+  a single specular pixel is not what a reader experiences. The useful measurement is the mean
+  background under each glyph run, compared with the existing heroes; both must clear 4.5:1.
+- **The full-page screenshot is a hostile environment for this measurement: fixed overlays land at
+  the wrong offset.** The PWA install banner (`aside.fixed inset-x-3 bottom-3`) is painted once in a
+  `fullPage` capture and appeared as a white band across the hero, which read as a 1.19:1 contrast
+  failure on `dd.mt-2`. Remove `position: fixed` elements before capturing, and prefer a
+  `visibility: hidden` per text element over hiding the hero (hiding the section also hides the
+  photo, because descendants set their own visibility).
+- **An opaque pill's label is measured against the pill, not the photo.** The `a.cta-lift` hero CTAs
+  report ~1.0:1 against the backdrop because their own `bg-*` is what the label sits on; exclude them
+  from a hero-copy scan or compare each against its own computed background.
+- **`chairman-portrait-v2.jpg` is the current portrait, and the filename carries the version on
+  purpose.** `next/image` serves optimised images with `max-age=14400`, so replacing a file in place
+  leaves the old bytes in caches; ship a new filename and update `PORTRAIT_SRC` and
+  `hero-images.test.ts` together. The image is still a development placeholder pending a real
+  photograph — do not present it as a photograph of the founder.
+- **A new `accentOnInk` button variant exists for filled accent controls on an ink band.** On ink the
+  accent resolves to `--dept-accent-bright`, where white text is ~2:1; the variant pairs
+  `bg-dept-accent-bright` with `text-ink-950` instead. Use it for any CTA inside `PageHero`'s
+  `on-ink` band rather than `variant="accent"`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

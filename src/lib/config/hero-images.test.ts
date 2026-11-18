@@ -86,11 +86,26 @@ describe("department hero images", () => {
  * mistyped or missing file fails the same silent way a hero does. It is a
  * portrait rather than a landscape, so it is asserted separately instead of
  * being folded into the hero check above.
+ *
+ * The path is asserted to match the component's constant rather than being
+ * hard-coded twice: the filename carries a version suffix so a byte swap
+ * actually reaches the browser past the image optimiser's cache, and a bump in
+ * one place without the other would leave the test passing against a file
+ * nothing renders.
  */
 describe("chairman portrait", () => {
-  const file = join(PUBLIC_DIR, "brand/chairman-portrait.jpg");
+  const source = readFileSync(
+    join(process.cwd(), "src/components/ui/ChairmanMessage.tsx"),
+    "utf8",
+  );
+  const declared = /const PORTRAIT_SRC = "([^"]+)"/.exec(source)?.[1];
+
+  it("declares a portrait path", () => {
+    expect(declared).toBeTruthy();
+  });
 
   it("resolves to a complete, portrait-oriented JPEG", () => {
+    const file = join(PUBLIC_DIR, declared!);
     expect(existsSync(file), `${file} is missing`).toBe(true);
     const bytes = readFileSync(file);
     expect(bytes.readUInt16BE(0), "not a JPEG").toBe(JPEG_SOI);

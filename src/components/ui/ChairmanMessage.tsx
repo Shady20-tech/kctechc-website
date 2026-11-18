@@ -27,7 +27,15 @@ import { createTranslator } from "@/lib/i18n/translator";
 
 export type ChairmanMessageVariant = "full" | "summary";
 
-const PORTRAIT_SRC = "/brand/chairman-portrait.jpg";
+/**
+ * The founder's portrait.
+ *
+ * The filename carries a version suffix on purpose: `next/image` serves an
+ * optimised variant with a long `max-age`, so replacing the bytes behind an
+ * unchanged URL leaves the old photograph cached for hours. Shipping a new file
+ * name is what actually swaps the image.
+ */
+const PORTRAIT_SRC = "/brand/chairman-portrait-v2.jpg";
 
 export function ChairmanMessage({
   locale,

@@ -1,13 +1,16 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SectionBand } from "@/components/layout/PageShell";
 import { SocialLinks } from "@/components/layout/SocialLinks";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
-import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { ButtonLink } from "@/components/ui/Button";
 import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
-import { PageIntro } from "@/components/ui/PageIntro";
+import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
+import { PageHero } from "@/components/ui/PageHero";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
@@ -17,6 +20,7 @@ import {
   breadcrumbJsonLd,
   organizationJsonLd,
 } from "@/lib/seo/structured-data";
+import { departmentScopeProps } from "@/lib/theme/department-scope";
 
 /**
  * About the company.
@@ -89,18 +93,42 @@ export default async function AboutPage({
         ])}
       />
 
-      <SectionBand tone="accent">
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-6"
-        />
-        <PageIntro
-          eyebrow={t("about.eyebrow")}
-          heading={t("about.heading")}
-          intro={t("about.intro")}
-        />
-      </SectionBand>
+      <PageHero
+        eyebrow={t("about.eyebrow")}
+        heading={t("about.heading")}
+        intro={t("about.intro")}
+        breadcrumbs={breadcrumbs}
+        breadcrumbLabel={t("a11y.breadcrumb")}
+        image="/hero/corporate-v3.jpg"
+        meta={[
+          {
+            term: t("footer.officeHeading"),
+            detail: t("about.heroMetaOffice"),
+          },
+          {
+            term: t("nav.departments"),
+            detail: t("about.heroMetaDepartments"),
+          },
+          { term: t("footer.mottoLabel"), detail: site.motto },
+        ]}
+      >
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink
+            href={`/${resolved}/services`}
+            variant="accentOnInk"
+            size="lg"
+          >
+            {t("nav.services")}
+          </ButtonLink>
+          <ButtonLink
+            href={`/${resolved}/contact`}
+            variant="secondaryOnInk"
+            size="lg"
+          >
+            {t("actions.contact")}
+          </ButtonLink>
+        </div>
+      </PageHero>
 
       <SectionBand labelledBy="about-who-heading">
         <div className="grid gap-8 lg:grid-cols-3">
@@ -259,27 +287,38 @@ export default async function AboutPage({
         >
           {t("about.departmentsHeading")}
         </h2>
+        <p className="mt-3 max-w-2xl text-base text-body">
+          {t("about.departmentsIntro")}
+        </p>
         <ul className="mt-6 grid gap-6 sm:grid-cols-3">
           {DEPARTMENTS.map((department) => (
             <li
               key={department.slug}
-              className="rounded-card border border-border bg-surface p-6 shadow-card"
-              style={{
-                borderTopColor: department.accent,
-                borderTopWidth: "4px",
-              }}
+              {...departmentScopeProps(department.slug)}
             >
-              <h3 className="text-base font-semibold text-ink-900">
-                {t(department.labelKey)}
-              </h3>
-              <p className="mt-2 text-sm text-body">
-                {t(department.descriptionKey)}
-              </p>
               <Link
                 href={`/${resolved}/${department.slug}`}
-                className="mt-4 inline-block text-sm font-semibold text-ink-900 underline underline-offset-4 transition-soft hover:text-dept-accent"
+                className="card-edge group flex h-full flex-col rounded-card border border-border bg-surface p-6 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
               >
-                {t("actions.visitDepartment")}
+                <span
+                  aria-hidden="true"
+                  className="flex h-11 w-11 items-center justify-center rounded-control bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
+                >
+                  <DepartmentIcon slug={department.slug} className="h-5 w-5" />
+                </span>
+                <h3 className="mt-5 text-base font-semibold text-ink-900">
+                  {t(department.labelKey)}
+                </h3>
+                <p className="mt-2 flex-1 text-sm text-body">
+                  {t(department.descriptionKey)}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-ink-900 transition-soft group-hover:text-dept-accent">
+                  {t("actions.visitDepartment")}
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="card-arrow h-4 w-4"
+                  />
+                </span>
               </Link>
             </li>
           ))}

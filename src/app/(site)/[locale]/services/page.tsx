@@ -3,10 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
-import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { ButtonLink } from "@/components/ui/Button";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
-import { PageIntro } from "@/components/ui/PageIntro";
+import { PageHero } from "@/components/ui/PageHero";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -69,18 +70,44 @@ export default async function ServicesPage({
         ])}
       />
 
-      <SectionBand tone="accent">
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-6"
-        />
-        <PageIntro
-          eyebrow={t("services.eyebrow")}
-          heading={t("services.heading")}
-          intro={t("services.intro")}
-        />
-      </SectionBand>
+      <PageHero
+        eyebrow={t("services.eyebrow")}
+        heading={t("services.heading")}
+        intro={t("services.intro")}
+        breadcrumbs={breadcrumbs}
+        breadcrumbLabel={t("a11y.breadcrumb")}
+        meta={[
+          {
+            term: t("services.heroMeta1Term"),
+            detail: t("services.heroMeta1Body"),
+          },
+          {
+            term: t("services.heroMeta2Term"),
+            detail: t("services.heroMeta2Body"),
+          },
+          {
+            term: t("services.heroMeta3Term"),
+            detail: t("services.heroMeta3Body"),
+          },
+        ]}
+      >
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink
+            href={`/${resolved}/contact`}
+            variant="accentOnInk"
+            size="lg"
+          >
+            {t("actions.getQuote")}
+          </ButtonLink>
+          <ButtonLink
+            href={`/${resolved}/about`}
+            variant="secondaryOnInk"
+            size="lg"
+          >
+            {t("nav.about")}
+          </ButtonLink>
+        </div>
+      </PageHero>
 
       <SectionBand labelledBy="services-departments-heading">
         <h2

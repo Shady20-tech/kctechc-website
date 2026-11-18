@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { ContactForm } from "@/components/inquiries/ContactForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
-import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
-import { PageIntro } from "@/components/ui/PageIntro";
+import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { PageHero } from "@/components/ui/PageHero";
 import {
   DEPARTMENTS,
   DEPARTMENT_EMAILS,
@@ -60,7 +60,11 @@ export default async function ContactPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ department?: string; service?: string; package?: string }>;
+  searchParams: Promise<{
+    department?: string;
+    service?: string;
+    package?: string;
+  }>;
 }) {
   const { locale } = await params;
   const { department, service, package: packageId } = await searchParams;
@@ -137,18 +141,28 @@ export default async function ContactPage({
         ])}
       />
 
-      <SectionBand tone="accent">
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-6"
-        />
-        <PageIntro
-          eyebrow={t("contact.eyebrow")}
-          heading={t("contact.heading")}
-          intro={t("contact.intro")}
-        />
-      </SectionBand>
+      <PageHero
+        eyebrow={t("contact.eyebrow")}
+        heading={t("contact.heading")}
+        intro={t("contact.intro")}
+        breadcrumbs={breadcrumbs}
+        breadcrumbLabel={t("a11y.breadcrumb")}
+        image="/hero/corporate-v3.jpg"
+        meta={[
+          {
+            term: t("footer.phoneLabel"),
+            detail: site.contact.phones.join(" · "),
+          },
+          {
+            term: t("footer.emailLabel"),
+            detail: site.contact.email,
+          },
+          {
+            term: t("contact.officeHoursHeading"),
+            detail: t("contact.heroHours"),
+          },
+        ]}
+      />
 
       <SectionBand labelledBy="contact-form-heading">
         <div className="grid gap-10 lg:grid-cols-3">
@@ -248,7 +262,9 @@ export default async function ContactPage({
                   </dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="visually-hidden">{t("footer.addressLabel")}</dt>
+                  <dt className="visually-hidden">
+                    {t("footer.addressLabel")}
+                  </dt>
                   <MapPin
                     aria-hidden="true"
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted"
@@ -284,9 +300,7 @@ export default async function ContactPage({
               <ul className="mt-4 space-y-3 text-sm">
                 {DEPARTMENTS.map((department) => (
                   <li key={department.slug} className="flex flex-col">
-                    <span className="text-muted">
-                      {t(department.labelKey)}
-                    </span>
+                    <span className="text-muted">{t(department.labelKey)}</span>
                     <a
                       href={`mailto:${DEPARTMENT_EMAILS[department.slug]}`}
                       className="inline-flex min-h-6 items-center text-ink-700 underline underline-offset-4"

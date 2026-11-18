@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, Camera } from "lucide-react";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
-import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
-import { PageIntro } from "@/components/ui/PageIntro";
+import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
+import { ButtonLink } from "@/components/ui/Button";
+import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
+import { PageHero } from "@/components/ui/PageHero";
 import { DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -69,45 +72,114 @@ export default async function GalleryPage({
         ])}
       />
 
-      <SectionBand tone="accent">
-        <Breadcrumbs
-          items={breadcrumbs}
-          ariaLabel={t("a11y.breadcrumb")}
-          className="mb-6"
-        />
-        <PageIntro
-          eyebrow={t("gallery.eyebrow")}
-          heading={t("gallery.heading")}
-          intro={t("gallery.intro")}
-        />
-      </SectionBand>
+      <PageHero
+        eyebrow={t("gallery.eyebrow")}
+        heading={t("gallery.heading")}
+        intro={t("gallery.intro")}
+        breadcrumbs={breadcrumbs}
+        breadcrumbLabel={t("a11y.breadcrumb")}
+        image="/hero/electrical-services-v2.jpg"
+      >
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink
+            href={`/${resolved}/contact`}
+            variant="accentOnInk"
+            size="lg"
+          >
+            {t("actions.contact")}
+          </ButtonLink>
+          <ButtonLink
+            href={`/${resolved}/services`}
+            variant="secondaryOnInk"
+            size="lg"
+          >
+            {t("nav.services")}
+          </ButtonLink>
+        </div>
+      </PageHero>
 
       <SectionBand labelledBy="gallery-empty-heading">
-        <div className="max-w-2xl rounded-card border border-border bg-surface-alt p-8">
-          <h2
-            id="gallery-empty-heading"
-            className="text-lg font-semibold text-ink-900"
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:items-start">
+          <div>
+            <h2
+              id="gallery-empty-heading"
+              className="font-display text-2xl font-bold text-ink-900"
+            >
+              {t("gallery.emptyHeading")}
+            </h2>
+            <span aria-hidden="true" className="heading-rule" />
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-body">
+              {t("gallery.emptyBody")}
+            </p>
+          </div>
+
+          {/* The publication rule, stated as a rule rather than as prose. It is the
+              reason the page is empty, and a reader who understands it does not
+              read the emptiness as a broken page. */}
+          <aside
+            aria-labelledby="gallery-rule-heading"
+            className="rounded-card border border-border bg-surface-alt p-6"
           >
-            {t("gallery.emptyHeading")}
-          </h2>
-          <p className="mt-3 text-base text-body">{t("gallery.emptyBody")}</p>
+            <span
+              aria-hidden="true"
+              className="flex h-11 w-11 items-center justify-center rounded-control bg-ink-950 text-white"
+            >
+              <Camera className="h-5 w-5" />
+            </span>
+            <h2
+              id="gallery-rule-heading"
+              className="mt-4 text-base font-semibold text-ink-900"
+            >
+              {t("gallery.ruleHeading")}
+            </h2>
+            <ul className="mt-3 space-y-2 text-sm text-body">
+              {[
+                t("gallery.ruleItem1"),
+                t("gallery.ruleItem2"),
+                t("gallery.ruleItem3"),
+              ].map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span aria-hidden="true" className="text-dept-accent">
+                    —
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
         </div>
 
-        <h3 className="mono-label mt-10 text-muted">
+        <h3 className="mono-label mt-14 text-muted">
           {t("gallery.browseDepartments")}
         </h3>
-        <ul className="mt-4 grid gap-4 sm:grid-cols-3">
+        <ul className="mt-5 grid gap-4 sm:grid-cols-3">
           {DEPARTMENTS.map((department) => (
-            <li key={department.slug} {...departmentScopeProps(department.slug)}>
+            <li
+              key={department.slug}
+              {...departmentScopeProps(department.slug)}
+            >
               <Link
                 href={`/${resolved}/${department.slug}`}
-                className="card-edge block rounded-card border border-border bg-surface p-5 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
+                className="card-edge group flex h-full flex-col rounded-card border border-border bg-surface p-5 shadow-card transition-soft hover:border-border-strong hover:shadow-raised"
               >
-                <span className="block text-sm font-semibold text-ink-900">
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 items-center justify-center rounded-control bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
+                >
+                  <DepartmentIcon slug={department.slug} className="h-5 w-5" />
+                </span>
+                <span className="mt-4 block text-sm font-semibold text-ink-900">
                   {t(department.labelKey)}
                 </span>
-                <span className="mt-1 block text-sm text-body">
+                <span className="mt-1 flex-1 block text-sm text-body">
                   {t(department.descriptionKey)}
+                </span>
+                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink-900 transition-soft group-hover:text-dept-accent">
+                  {t("actions.visitDepartment")}
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="card-arrow h-4 w-4"
+                  />
                 </span>
               </Link>
             </li>

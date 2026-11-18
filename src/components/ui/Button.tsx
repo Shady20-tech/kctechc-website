@@ -17,6 +17,7 @@ export type ButtonVariant =
   | "secondary"
   | "accent"
   | "accentOnInk"
+  | "secondaryOnInk"
   | "ghost"
   | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -36,6 +37,12 @@ const VARIANTS: Record<ButtonVariant, string> = {
   // bright value, where white text would be unreadable (1.7:1), so this pairing
   // uses ink text on the bright fill instead.
   accentOnInk: "bg-dept-accent-bright text-ink-950 hover:opacity-90",
+  // The outlined dark-band counterpart. `secondary` is ink-on-light, so on an ink
+  // band it disappears; this keeps white type and a border that clears the 3:1
+  // boundary rule. `border-white/40` is the lightest stop that does — the /20 and
+  // /25 borders elsewhere on ink measure 1.75-2.25:1.
+  secondaryOnInk:
+    "border border-white/40 bg-transparent text-white hover:bg-white/10",
   ghost: "bg-transparent text-ink-900 hover:bg-ink-50",
   danger: "bg-red-700 text-white hover:bg-red-800",
 };
