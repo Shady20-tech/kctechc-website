@@ -141,4 +141,18 @@ describe("DashboardShell mobile drawer", () => {
     const signOut = screen.getByRole("button", { name: "Sign out" });
     expect(signOut.closest("form")).toBeTruthy();
   });
+
+  it("styles the sidebar sign-out as a control, not a nav link", () => {
+    renderShell();
+    openDrawer();
+
+    const signOut = screen.getByRole("button", { name: "Sign out" });
+    // A bordered control on the ink sidebar. As a text row it read as one more
+    // nav link rather than the action that ends the session.
+    expect(signOut.className).toContain("rounded-control");
+    expect(signOut.className).toContain("border");
+    // The border must clear the 3:1 boundary rule on the ink band, which the
+    // surrounding /25 and /20 CTAs do not.
+    expect(signOut.className).toContain("border-white/40");
+  });
 });

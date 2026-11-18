@@ -7,6 +7,7 @@ import {
   Building2,
   Heart,
   LayoutDashboard,
+  LogOut,
   Menu,
   PlusCircle,
   Search,
@@ -148,10 +149,16 @@ export function DashboardShell({
 
       <form action={customerSignOutAction} className="px-1">
         <input type="hidden" name="locale" value={locale} />
+        {/* A bordered control rather than a bare text row: beside the nav links a
+            text-only "sign out" read as one more link rather than an action.
+            `border-white/40` is the lightest white-on-ink border that still clears
+            the 3:1 boundary rule — the surrounding ink-band CTAs use /25, which
+            does not. */}
         <button
           type="submit"
-          className="w-full rounded-control px-2 py-2 text-left text-sm font-medium text-ink-200 transition-soft hover:bg-white/5 hover:text-white"
+          className="cta-lift inline-flex w-full items-center justify-center gap-2 rounded-control border border-white/40 px-3 py-2 text-sm font-semibold text-white transition-soft hover:bg-white/10"
         >
+          <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />
           {labels.signOut}
         </button>
       </form>
