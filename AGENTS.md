@@ -2156,6 +2156,24 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   The route-group move left the generated validator requiring old `page.js` paths. `rm -rf .next`
   before the build regenerates it; `npx tsc --noEmit` alone can miss it if the stale file is
   excluded.
+- **`rm -rf .next` while the preview server is running destroys that server's own asset
+  directory, and every asset then 500s in a way that looks like an application regression.**
+  The preview runs `node .next/standalone/server.js` with its cwd *inside* `.next`, so deleting
+  `.next` pulls the directory out from under the live process. The HTML still returns 200, but
+  `/_next/static/chunks/*.css`, `/_next/static/media/*` and `public/` files all 500 — so the page
+  renders unstyled, the listing-card images measure at the wrong aspect ratio (the `aspect-[4/3]`
+  box collapses without CSS) and Lighthouse reports `errors-in-console`, `image-aspect-ratio`,
+  `image-size-responsive` and a `target-size` failure. A first pass at this concluded the
+  marketplace redesign had broken accessibility and image sizing; the fix was to stop the server,
+  rebuild, re-copy the assets and restart it. **Before treating a Lighthouse failure on the preview
+  as a code defect, assert an asset's status code** (`curl -o /dev/null -w '%{http_code}'
+  <origin>/_next/static/chunks/<name>.css`) — a 500 there means the server, not the app. The
+  restart sequence is: `kill` the `next-server` PID, `npx next build`, `rm -rf
+  .next/standalone/public .next/standalone/.next/static`, `cp -r public .next/standalone/public`,
+  `cp -r .next/static .next/standalone/.next/static`, then relaunch `node .next/standalone/server.js`
+  with the captured environment (`PORT=12000`, the `NEXT_PUBLIC_*` values and
+  `SUPABASE_SERVICE_ROLE_KEY`). Note the server binds the *hostname*, not `127.0.0.1`, so probe it
+  by the public URL or the container hostname rather than loopback.
 - **A test that asserts "the environment is unconfigured" is not a behaviour test, and it fails in
   any environment that is configured.** `src/lib/store/storage.test.ts` asserted
   `storagePublicUrl(...)` was `null` to prove an ordinary product resolves through Storage rather
