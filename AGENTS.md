@@ -530,8 +530,16 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     Storage-object cleanup (cover, gallery, product media) still uses the service-role client,
     because the buckets have no browser write policy; `deleteProductAction` gained that cleanup so a
     deleted product no longer leaves orphaned photographs.
-  - 1193 Vitest tests pass (92 files), `tsc --noEmit` is clean, ESLint is clean, and the production
-    build succeeds (137/137 static pages).
+  - 1194 Vitest tests pass (92 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+    build succeeds. All 11 `supabase/validate/*.sql` scripts pass on a fresh PostgreSQL 17 database
+    (69 migrations).
+- The property price sort is currency-scoped. Migration
+  `20260101000069_price_sort_currency_scope.sql` replaces `search_property_listings` (same
+  signature, so the Phase 12 browser grant is untouched) so `price_asc`/`price_desc` group by the
+  currency code before comparing prices, and no listing is ever ordered against one priced in a
+  different unit. The migration's own `do $$` block asserts the grouping against
+  `pg_get_functiondef` and is verified load-bearing; `marketplace.test.ts` pins the migration text
+  as the cheaper complement.
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -2183,6 +2191,54 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   for a non-package SKU — and moves the unconfigured branch into its own test that mocks
   `@/lib/config/env` with an empty `supabaseUrl` via `vi.doMock` + `vi.resetModules`. It now passes
   with the URL set and with it unset. Do not "fix" such a test by relaxing it to `toBeDefined()`.
+
+### Price sorting is a currency-scoped claim, and the harness had drifted
+
+- **A price filter scoped to one currency does not make the price *sort* scoped.** Migration 64
+  added `p_currency` and required the price bound to match it, but `price_asc`/`price_desc` still
+  ordered by the raw `price_minor`. A portfolio holding more than one currency was therefore
+  ordered by two numbers that mean different things — a XAF 85,000,000 listing sorted above a USD
+  300,000 one and read as "cheaper". There is no exchange-rate feed and the brief forbids inventing
+  one, so `20260101000069_price_sort_currency_scope.sql` puts a currency-grouping key ahead of the
+  price case in the `ORDER BY`. Every matching listing still appears; the ordering simply stops
+  making a cross-currency claim. Reproduced on a real database: with two fixtures whose raw
+  magnitudes and currency-grouped order differ, the new function returns a different sequence than
+  the old one for the same rows.
+- **The function is `create or replace`, so the signature — and therefore the Phase 12 browser
+  grant that names it — is unchanged.** Do not `drop` and recreate it: the grant names the exact
+  argument list, and a changed signature would silently take search off the allow-list (and fail
+  `30_function_execute_hardening.sql`'s subset assertion).
+- **The assertion lives in the migration, not only in a text test.** The `do $$` block reads
+  `pg_get_functiondef` and fails the migration if the currency grouping is absent. Verified as
+  load-bearing by installing an ungrouped copy of the function and watching the block raise. A
+  Vitest that greps the migration text cannot see a later migration replacing the function without
+  the grouping; the database check can.
+- **Two validators had drifted behind the schema, and both failed on a fresh database before this
+  change.** They are pre-existing, not caused by the currency work, but a red harness makes every
+  future verification worthless, so they were fixed here:
+  - `30_function_execute_hardening.sql` pinned `search_property_listings`'s signature *without* the
+    `p_locality text` argument that migration 64 introduced, so `has_function_privilege` raised
+    `function ... does not exist` — and it would have hidden a genuine grant regression behind that
+    error.
+  - `100_account_capabilities_behaviour.sql` published a listing with only an owner/agent
+    authorization on file. Migration 62 pins every non-administrator listing to
+    `source = 'owner_submission'`, so publication now also requires an `approved`
+    `listing_submissions` row; the validator was updated to record that approval as the
+    administrator, which is the workflow the application actually uses.
+- **A validator that inserts a fixed `slug` is not re-runnable, and a second run reports a
+  misleading error.** `100_…` uses `'p1-validated-listing'`; on an already-populated database the
+  insert raises `duplicate key value violates unique constraint "property_listings_slug_key"`,
+  which reads like a policy failure and is not. Run each validate script against a **fresh** database
+  (apply `00_supabase_shim.sql`, then the migrations in filename order, then the scripts) rather
+  than against a database a previous run left behind.
+- **The local Postgres harness is available in this container after installing it.** There is no
+  Docker socket and no preinstalled server, but `sudo apt-get install postgresql-17
+  postgresql-client-17 postgresql-17-postgis-3 postgresql-contrib-17` gives a real PostgreSQL 17.11
+  with the four extensions the migrations need (`citext`, `pg_trgm`, `pgcrypto`, `postgis`).
+  `initdb` into a scratch directory and start it on `/tmp` with `-k /tmp`; the `postgres` OS user
+  cannot read the workspace, so **pipe each migration's bytes through `psql`'s stdin** rather than
+  passing `-f <path>`, and strip the `\set`/`\i` meta-command lines before feeding the validate
+  scripts. 68 migrations apply cleanly and all 11 validate scripts pass on a fresh database.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

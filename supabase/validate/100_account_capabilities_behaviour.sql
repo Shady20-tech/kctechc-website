@@ -446,6 +446,20 @@ begin
   );
   reset role;
 
+  -- The listing is pinned to `owner_submission` (migration 62 pins every
+  -- non-administrator write), so publication also requires an approved review
+  -- row. Record that approval as the administrator, which is the only role the
+  -- `listing_submissions_write_admin` policy admits.
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-0000000000c5', true);
+  insert into public.listing_submissions
+    (listing_id, status, submitted_by, submitter_name, reviewed_by, reviewed_at)
+  values (
+    v_listing, 'approved', 'f0000000-0000-0000-0000-0000000000c3', 'Agent',
+    'f0000000-0000-0000-0000-0000000000c5', now()
+  );
+  reset role;
+
   -- Now publication is permitted.
   set local role authenticated;
   perform set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-0000000000c3', true);

@@ -153,6 +153,18 @@ describe("price currency", () => {
     expect(parseListingFilters({ currency: "dollars" }).currency).toBeUndefined();
     expect(parseListingFilters({ currency: "" }).currency).toBeUndefined();
   });
+
+  it("scopes the price sort to one currency in the database", () => {
+    // The filter compares within a currency, but the *sort* is a separate claim:
+    // `price_asc` ordering by the raw `price_minor` puts a XAF 85,000,000 listing
+    // above a USD 300,000 one and reads as "cheaper". Migration 69 groups the
+    // price sort by the currency code so prices are only ever ordered against
+    // each other inside one unit. Asserted against the migration because this is
+    // a property of the SQL, which no unit test exercises.
+    const migration = readMigration("20260101000069");
+    expect(migration).toContain("then v.currency end asc");
+    expect(migration).toContain("position('then v.currency end asc' in v_body)");
+  });
 });
 
 describe("characteristic filters", () => {

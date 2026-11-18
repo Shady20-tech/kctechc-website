@@ -144,7 +144,7 @@ begin
   -- ---------------------------------------------------------------------------
   for v_role in select unnest(v_browser_roles)
   loop
-    if not has_function_privilege(v_role, 'public.search_property_listings(text, uuid, uuid, uuid, public.listing_type, public.listing_property_kind, public.property_type, bigint, bigint, smallint, smallint, integer, integer, public.listing_status[], text[], text, boolean, public.locale_code, public.listing_sort_order, integer, integer)', 'EXECUTE') then
+    if not has_function_privilege(v_role, 'public.search_property_listings(text, uuid, uuid, uuid, text, public.listing_type, public.listing_property_kind, public.property_type, bigint, bigint, smallint, smallint, integer, integer, public.listing_status[], text[], text, boolean, public.locale_code, public.listing_sort_order, integer, integer)', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute search_property_listings (browse would break)', v_role;
     end if;
     if not has_function_privilege(v_role, 'public.is_admin()', 'EXECUTE') then
