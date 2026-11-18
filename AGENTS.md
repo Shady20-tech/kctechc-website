@@ -499,6 +499,39 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     `dashboard-actions.ts`), with a "use as card image" control for products.
   - 1102 Vitest tests pass (84 files), `tsc --noEmit` is clean, ESLint is clean, and the production
     build succeeds (145/145 static pages).
+- Phase 7 (admin management and content lifecycle) is implemented:
+  - Migrations `20260101000067_admin_content_lifecycle_and_deletion.sql` and
+    `20260101000068_content_deletion.sql` add the `audit_logs.reason` column, a
+    `forbid_unsanctioned_delete` trigger on `property_listings`, `products`,
+    `electrical_projects` and `insights` (a `for all` policy's DELETE grant is not a removal path),
+    `archive_listing` / `delete_listing_permanently` for listings, and
+    `delete_content_permanently` for products/projects/insights. Both new RPCs are classified for
+    the Phase 12 EXECUTE surface in the migration that creates them.
+  - Multi-image upload for **projects** (`uploadProjectMediaAction`) and **insights**
+    (`uploadInsightImageAction`) now reads every file from `formData.getAll("image")` and stores the
+    batch, stopping at the first refused file and reporting `media_added_partial` /
+    `image_added_partial` so a partly-valid batch keeps what landed. The project form restricts the
+    input to one file unless the role is `general`, because the before/after slot is unique.
+  - Edit mode for products: `ProductForm` takes an optional `initial` prop and posts to
+    `updateProductAction` (validated by `productUpdateSchema`), rendered on
+    `/admin/(console)/store/[id]`.
+  - Deletion UI: `DeleteContentForm` (super-admin-only, two-step reason confirmation) on the
+    product, project and article detail pages; `ListingLifecycleForm` (archive for any real-estate
+    admin, permanent delete for a super admin) on the listing detail page.
+  - The admin listings table gained a GET-form search/status filter (`loadAdminListings` takes
+    `search`), so the applied filters live in the URL and the query is filtered in the database.
+  - **The permanent-deletion RPCs are called with the cookie-bound session client, never the
+    service-role client.** `delete_content_permanently` and `delete_listing_permanently` authorize
+    inside the database with `is_super_admin()`, which reads `auth.uid()`; a service-role call
+    carries no JWT subject, so the guard would refuse every deletion. `deleteProductAction` and
+    `deleteInsightAction` originally used the admin client and so could never delete anything —
+    a defect invisible to `tsc` and to every unit test, since both clients share one type.
+    `admin-deletion.test.ts` now reads the source and asserts the RPC's client is the session one.
+    Storage-object cleanup (cover, gallery, product media) still uses the service-role client,
+    because the buckets have no browser write policy; `deleteProductAction` gained that cleanup so a
+    deleted product no longer leaves orphaned photographs.
+  - 1193 Vitest tests pass (92 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+    build succeeds (137/137 static pages).
 - Demo accounts were removed. `scripts/seed-demo-users.sql` is deleted and migration
   `20260101000051_remove_demo_accounts.sql` deletes any rows it left behind (by the reserved
   `@demo.kctechc.test` domain), so a database that once ran the seed no longer holds nine
@@ -2093,6 +2126,45 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   on a plain-HTTP origin — an artifact of the harness, not the app. Over
   `https://work-1-…` the same page measured SEO 100 / accessibility 100 / best-practices 100 (perf
   91 under `--throttling-method=devtools`).
+
+### Phase 7 admin lifecycle gotchas worth not rediscovering
+
+- **A `SECURITY DEFINER` RPC that authorizes with `is_super_admin()` must be called through the
+  session client, not the service-role client.** `is_super_admin()` reads `auth.uid()`, which is the
+  JWT subject; a service-role call carries none, so the guard sees an anonymous caller and refuses.
+  `deleteProductAction` and `deleteInsightAction` called `delete_content_permanently` through
+  `createAdminClient()` and so could never delete anything — while `deleteProjectAction` and
+  `deleteListingAction`, written independently, used the session client and worked. The two clients
+  share one TypeScript type, so `tsc`, ESLint and every behavioural test passed; only a real
+  request would have shown it. The rule is: if the function's body checks `auth.uid()`-derived
+  state, call it with the client that carries the cookie. `admin-deletion.test.ts` now reads the
+  source and asserts which client each delete action invokes the RPC on. Storage-object removal
+  beside it is the opposite case — the buckets have no browser write policy, so it uses the
+  service-role client.
+- **A cascade deletes rows, not objects.** `delete_content_permanently` deletes the product row and
+  `product_media` cascades, but nothing removes the files from the bucket. `deleteInsightAction` and
+  `deleteProjectAction` read the media paths and remove the objects first; `deleteProductAction` did
+  not, so a deleted product left orphaned photographs. Read the paths while the rows still exist —
+  after the delete the rows are gone and the paths are unrecoverable.
+- **A unique before/after media slot cannot be filled by a batch.** `project_media` has a partial
+  unique index permitting one `before` and one `after` per project, so the multi-file upload accepts
+  a batch only for the `general` role; the form reflects that (`multiple={role === "general"}`) and
+  the action refuses the combination regardless. A partial batch (`media_added_partial`) keeps the
+  files that landed rather than rolling back a completed upload — the editor sees what arrived and
+  retries only the refused file.
+- **`.next/types/validator.ts` goes stale after a route move and fails `next build`, not `tsc`.**
+  The route-group move left the generated validator requiring old `page.js` paths. `rm -rf .next`
+  before the build regenerates it; `npx tsc --noEmit` alone can miss it if the stale file is
+  excluded.
+- **A test that asserts "the environment is unconfigured" is not a behaviour test, and it fails in
+  any environment that is configured.** `src/lib/store/storage.test.ts` asserted
+  `storagePublicUrl(...)` was `null` to prove an ordinary product resolves through Storage rather
+  than the bundled-package table. That is only true while `NEXT_PUBLIC_SUPABASE_URL` is unset, so it
+  failed in this container (which sets it) with nothing actually wrong. The fix asserts the real
+  invariant — `productImageSrc` returns `storagePublicUrl(path)`, and `seededImage` returns `null`
+  for a non-package SKU — and moves the unconfigured branch into its own test that mocks
+  `@/lib/config/env` with an empty `supabaseUrl` via `vi.doMock` + `vi.resetModules`. It now passes
+  with the URL set and with it unset. Do not "fix" such a test by relaxing it to `toBeDefined()`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

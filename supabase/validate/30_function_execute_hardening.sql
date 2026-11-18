@@ -54,7 +54,9 @@ declare
     'gtin_is_valid', 'generate_listing_reference', 'publish_state_is_consistent',
     'immutable_array_to_string',
     'set_listing_private_details', 'set_listing_localized_slug',
-    'review_listing_submission'
+    'review_listing_submission',
+    'archive_listing', 'delete_listing_permanently',
+    'delete_content_permanently'
   ];
   v_role text;
   v_leak text;

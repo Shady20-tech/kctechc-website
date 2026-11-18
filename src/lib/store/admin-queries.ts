@@ -30,6 +30,10 @@ export type AdminProduct = {
   categoryName: string;
   categorySlug: string;
   departmentSlug: string;
+  brand: string;
+  gtin: string;
+  seoTitle: string;
+  seoDescription: string;
   images: ProductImage[];
 };
 
@@ -81,7 +85,7 @@ export async function listProductsForAdmin(
   const { data: rows } = await admin
     .from("products")
     .select(
-      "id, category_id, slug, sku, title, short_description, description, price_minor, currency, stock, publish_state, published_at, updated_at",
+      "id, category_id, slug, sku, title, short_description, description, brand, gtin, price_minor, currency, stock, publish_state, published_at, updated_at",
     )
     .in(
       "category_id",
@@ -132,6 +136,10 @@ export async function listProductsForAdmin(
       categoryName: category?.name ?? "—",
       categorySlug: category?.slug ?? "",
       departmentSlug: category?.departmentSlug ?? "",
+      brand: row.brand ?? "",
+      gtin: row.gtin ?? "",
+      seoTitle: "",
+      seoDescription: "",
       images: mediaByProduct.get(row.id) ?? [],
     };
   });
@@ -148,13 +156,13 @@ export async function loadProductForAdmin(
   const { data: row, error } = await admin
     .from("products")
     .select(
-      "id, category_id, slug, sku, title, short_description, description, price_minor, currency, stock, publish_state, published_at, updated_at",
+      "id, category_id, slug, sku, title, short_description, description, brand, gtin, price_minor, currency, stock, publish_state, published_at, updated_at",
     )
     .eq("id", id)
     .maybeSingle();
   if (error || !row) return null;
 
-  const [{ data: category }, { data: media }] = await Promise.all([
+  const [{ data: category }, { data: media }, { data: seo }] = await Promise.all([
     admin
       .from("product_categories")
       .select("id, slug, name, departments(slug)")
@@ -165,6 +173,13 @@ export async function loadProductForAdmin(
       .select("id, storage_path, alt_text, is_primary, position")
       .eq("product_id", id)
       .order("position", { ascending: true }),
+    admin
+      .from("entity_seo")
+      .select("title, description")
+      .eq("entity_type", "product")
+      .eq("entity_id", id)
+      .eq("locale", "en")
+      .maybeSingle(),
   ]);
 
   // Scoped, not just the list: a published product in another department is
@@ -192,6 +207,10 @@ export async function loadProductForAdmin(
     categoryName: category?.name ?? "—",
     categorySlug: category?.slug ?? "",
     departmentSlug,
+    brand: row.brand ?? "",
+    gtin: row.gtin ?? "",
+    seoTitle: seo?.title ?? "",
+    seoDescription: seo?.description ?? "",
     images: (media ?? []).map((m) => ({
       id: m.id,
       storagePath: m.storage_path,

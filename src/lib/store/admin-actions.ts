@@ -2,13 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthState } from "@/lib/auth/session";
-import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
+import {
+  canAccessDepartment,
+  isDepartmentEditorRole,
+  isSuperAdminRole,
+} from "@/lib/auth/roles";
 import { storePathFor } from "@/lib/config/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { PRODUCT_MEDIA_BUCKET } from "@/lib/store/storage";
 import {
   DEFAULT_PRODUCT_CURRENCY,
   fieldErrors,
   productInputSchema,
+  productUpdateSchema,
 } from "@/lib/store/product-input";
 import { isTolgeeSyncConfigured } from "@/lib/tolgee/server-client";
 
@@ -225,6 +232,223 @@ export async function createProductAction(
     syncWarning,
     seoWarning,
   };
+}
+
+/**
+ * Update an existing product.
+ *
+ * Mirrors `createProductAction`: the department is re-read from the category the
+ * editor picked, never taken from the form, and the write goes through the
+ * service-role client after the department check — the RLS policy is the same
+ * boundary creation uses. SEO overrides live in `entity_seo`, so they are upserted
+ * there and the `entity_seo` trigger re-indexes them; this action does not touch
+ * the translation index.
+ *
+ * The slug and SKU are editable. Changing a slug changes the product's URL, which
+ * is the editor's call; the store resolves the localized and canonical slugs, so
+ * an inbound link to the old slug is not silently broken by this — it is a normal
+ * slug change, the same as renaming at creation.
+ */
+export async function updateProductAction(
+  formData: FormData,
+): Promise<CreateProductResult> {
+  const auth = await getAuthState();
+  if (auth.status !== "authenticated") {
+    return { ok: false, error: "unauthenticated" };
+  }
+  if (!auth.profile || !isDepartmentEditorRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const parsed = productUpdateSchema.safeParse({
+    productId: formData.get("productId"),
+    title: formData.get("title"),
+    slug: formData.get("slug"),
+    sku: formData.get("sku"),
+    categoryId: formData.get("categoryId"),
+    shortDescription: formData.get("shortDescription"),
+    description: formData.get("description"),
+    brand: formData.get("brand") ?? "",
+    gtin: formData.get("gtin") ?? "",
+    priceMinor: formData.get("priceMinor"),
+    stock: formData.get("stock"),
+    seoTitle: formData.get("seoTitle") ?? "",
+    seoDescription: formData.get("seoDescription") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: "invalid", fields: fieldErrors(parsed.error) };
+  }
+
+  const input = parsed.data;
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  // The product's current category decides which department it belongs to, and
+  // the submitted category must resolve to a department the caller may edit.
+  const { data: category } = await admin
+    .from("product_categories")
+    .select("id, departments(slug)")
+    .eq("id", input.categoryId)
+    .maybeSingle();
+
+  const departmentSlug =
+    (category?.departments as { slug: string } | null)?.slug ?? null;
+  if (!category || !departmentSlug) {
+    return { ok: false, error: "invalid" };
+  }
+  if (!canAccessDepartment(auth.profile.role, departmentSlug)) {
+    return { ok: false, error: "forbidden_department" };
+  }
+
+  // Scoped read: a published product in another department is world-readable, so
+  // a guessed id must not open an edit whose save the write policy would refuse.
+  const { data: existing } = await admin
+    .from("products")
+    .select("id, product_categories(departments(slug))")
+    .eq("id", input.productId)
+    .maybeSingle();
+  if (!existing) return { ok: false, error: "not_found" };
+
+  const existingSlug =
+    (
+      existing.product_categories as {
+        departments: { slug: string } | null;
+      } | null
+    )?.departments?.slug ?? null;
+  if (!existingSlug || !canAccessDepartment(auth.profile.role, existingSlug)) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error } = await admin
+    .from("products")
+    .update({
+      category_id: input.categoryId,
+      slug: input.slug,
+      sku: input.sku,
+      title: input.title,
+      short_description: input.shortDescription,
+      description: input.description,
+      brand: input.brand || null,
+      gtin: input.gtin || null,
+      price_minor: input.priceMinor,
+      stock: input.stock,
+    })
+    .eq("id", input.productId);
+
+  if (error) {
+    const message = error.message ?? "";
+    if (message.includes("slug") || message.includes("sku")) {
+      return {
+        ok: false,
+        error: "duplicate",
+        fields: {
+          [message.includes("sku") ? "sku" : "slug"]:
+            "A product already uses this value.",
+        },
+      };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  const seoTitle = input.seoTitle || null;
+  const seoDescription = input.seoDescription || null;
+  let seoWarning: string | undefined;
+
+  if (seoTitle || seoDescription) {
+    const { error: seoError } = await admin.from("entity_seo").upsert(
+      {
+        entity_type: "product",
+        entity_id: input.productId,
+        locale: "en",
+        title: seoTitle,
+        description: seoDescription,
+        updated_by: auth.userId,
+      },
+      { onConflict: "entity_type,entity_id,locale" },
+    );
+    if (seoError) seoWarning = "seo_write_failed";
+  }
+
+  revalidatePath(`/en${storePathFor(departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
+
+  return {
+    ok: true,
+    productId: input.productId,
+    translationKeyCount: 0,
+    syncQueued: 0,
+    seoWarning,
+  };
+}
+
+/**
+ * Permanently delete a product. Super-admin only.
+ *
+ * The order-history safety is structural: `order_items.product_id` is
+ * `on delete set null` and every line keeps its own title/sku/slug/price snapshot,
+ * so removing a product does not rewrite a past order — it only drops the link.
+ * The role check here is a message; `delete_content_permanently`'s own
+ * `is_super_admin()` guard is the control.
+ */
+export async function deleteProductAction(
+  productId: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const auth = await getAuthState();
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
+  if (auth.status !== "authenticated") {
+    return { ok: false, error: "unauthenticated" };
+  }
+  if (!auth.profile || !isSuperAdminRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length < 10) return { ok: false, error: "reason_required" };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  // Remove the stored objects first, while the media rows still name them. The
+  // product delete cascades `product_media`, but nothing removes the objects, so
+  // without this a deleted product would leave its photographs orphaned in the
+  // bucket. The read and the removal use the service-role client because the
+  // bucket has no browser write policy; the row delete below does not.
+  const { data: media } = await admin
+    .from("product_media")
+    .select("storage_path")
+    .eq("product_id", productId);
+  const paths = (media ?? []).map((row) => row.storage_path);
+  if (paths.length > 0) {
+    await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove(paths);
+  }
+
+  // The session client, not the service-role one: `delete_content_permanently`
+  // authorizes with `is_super_admin()`, which reads `auth.uid()`. A service-role
+  // call carries no JWT subject, so the guard would refuse every deletion.
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "unconfigured" };
+
+  const { error } = await supabase.rpc("delete_content_permanently", {
+    p_entity_type: "product",
+    p_entity_id: productId,
+    p_reason: trimmed,
+  });
+
+  if (error) {
+    if (error.message.includes("at least 10 characters")) {
+      return { ok: false, error: "reason_required" };
+    }
+    if (error.message.includes("Unknown product")) {
+      return { ok: false, error: "not_found" };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  revalidatePath("/admin/store");
+  return { ok: true };
 }
 
 /**

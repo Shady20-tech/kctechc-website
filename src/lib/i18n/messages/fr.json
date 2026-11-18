@@ -448,7 +448,13 @@
       "publishedNotice": "Le produit est en ligne sur le site.",
       "unpublishedNotice": "Le produit est repassé en brouillon et n'est plus public.",
       "imageLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
-      "goToImage": "Ajouter une image"
+      "goToImage": "Ajouter une image",
+      "updatedHeading": "Produit mis à jour",
+      "updatedBody": "Vos modifications sont enregistrées.",
+      "saveChanges": "Enregistrer les modifications",
+      "editHeading": "Modifier le produit",
+      "editIntro": "Mettez à jour les détails du produit. Les images sont gérées ci-dessous, sur la page du produit.",
+      "deleteHeading": "Supprimer définitivement ce produit"
     },
     "projectsHeading": "Projets électriques",
     "projectsIntro": "Créez et publiez des fiches de projet. Un projet ne devient public que lorsqu'il est publié, et la publication exige une date de publication.",
@@ -476,7 +482,33 @@
     "publish": "Publier",
     "unpublish": "Remettre en brouillon",
     "archive": "Archiver",
-    "backToAdmin": "Retour à l'administration"
+    "backToAdmin": "Retour à l'administration",
+    "deleteForm": {
+      "heading": "Supprimer définitivement ce {entity}",
+      "intro": "Cette action est irréversible. L'enregistrement et ses images sont supprimés définitivement, et la suppression est consignée dans le journal d'audit. Pour le retirer de la circulation tout en le conservant, archivez-le plutôt.",
+      "reasonLabel": "Motif de la suppression",
+      "reasonHint": "Au moins 10 caractères. Ce motif est consigné dans le journal d'audit.",
+      "submit": "Supprimer définitivement",
+      "confirmTitle": "Supprimer définitivement ce {entity} ?",
+      "confirmBody": "Cette action est irréversible. Confirmez uniquement si ce {entity} doit être supprimé définitivement.",
+      "confirm": "Oui, supprimer définitivement",
+      "cancel": "Annuler",
+      "submitting": "Suppression…",
+      "done": "{entity} supprimé",
+      "errorHeading": "Suppression impossible",
+      "errors": {
+        "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+        "forbidden": "Seul un super administrateur peut supprimer définitivement du contenu.",
+        "unconfigured": "La base de données n'est pas connectée.",
+        "reason_required": "Saisissez un motif d'au moins 10 caractères.",
+        "not_found": "Cet enregistrement n'existe plus.",
+        "retained_history": "Cet enregistrement a un historique conservé et ne peut pas être supprimé définitivement. Archivez-le plutôt.",
+        "write_failed": "La suppression n'a pas abouti. Veuillez réessayer."
+      },
+      "entityProduct": "produit",
+      "entityProject": "projet",
+      "entityArticle": "article"
+    }
   },
   "realEstate": {
     "metaTitle": "Immobilier au Cameroun",
@@ -779,6 +811,14 @@
       "listingsHeading": "Annonces",
       "listingsIntro": "Toutes les annonces du portefeuille, quel que soit leur statut.",
       "noListings": "Aucune annonce pour l'instant. Créez-en une, ou importez un fichier.",
+      "searchLabel": "Rechercher des annonces",
+      "searchPlaceholder": "Référence, titre ou localité",
+      "statusFilterLabel": "Statut",
+      "allStatuses": "Tous les statuts",
+      "applyFilters": "Appliquer",
+      "clearFilters": "Effacer",
+      "resultsCount": "{count} annonces correspondent",
+      "noMatchingListings": "Aucune annonce ne correspond à ces filtres.",
       "openListing": "Modifier",
       "createHeading": "Créer une annonce",
       "createIntro": "Le texte anglais que vous saisissez est la source. Les entrées françaises sont mises en file de traduction et marquées en attente jusqu'à leur traduction. L'annonce est enregistrée comme brouillon.",
@@ -798,6 +838,25 @@
       "statusSubmit": "Changer le statut",
       "statusUpdating": "Mise à jour…",
       "statusUpdated": "Statut modifié.",
+      "archiveHeading": "Archiver",
+      "archiveIntro": "Archiver retire l'annonce de la circulation tout en conservant sa fiche, ses photos et son historique. Le motif est enregistré dans le journal d'audit.",
+      "archiveSubmit": "Archiver l'annonce",
+      "archiveSubmitting": "Archivage…",
+      "archiveAlready": "Déjà archivée",
+      "archiveUpdated": "L'annonce a été archivée.",
+      "reasonLabel": "Motif",
+      "reasonHint": "Enregistré sous votre compte dans le journal d'audit. Obligatoire.",
+      "deleteHeading": "Suppression définitive",
+      "deleteIntro": "La suppression définitive retire l'annonce et est irréversible. Elle n'est proposée que là où les règles de conservation le permettent : une annonce comportant des demandes, une soumission de propriétaire, une autorisation ou un document juridique doit être archivée.",
+      "deleteSubmit": "Supprimer définitivement",
+      "deleteSubmitting": "Suppression…",
+      "deleteConfirmTitle": "Supprimer définitivement cette annonce ?",
+      "deleteConfirmBody": "Cette action est irréversible. L'annonce, ses photos, ses adresses localisées et ses statistiques sont supprimées. Son historique d'audit est conservé.",
+      "deleteConfirm": "Oui, supprimer définitivement",
+      "deleteCancel": "Annuler",
+      "deleteUpdated": "L'annonce a été définitivement supprimée.",
+      "deleteReasonLabel": "Motif de la suppression",
+      "deleteReasonHint": "Au moins 10 caractères. Enregistré dans le journal d'audit.",
       "notFoundHeading": "Annonce introuvable",
       "notFoundBody": "Cette annonce n'existe pas, ou votre rôle ne permet pas de la lire.",
       "backToListings": "Retour aux annonces",
@@ -908,6 +967,8 @@
         "duplicate": "Une annonce utilise déjà cet identifiant. Choisissez-en un autre.",
         "write_failed": "La modification n'a pas pu être enregistrée. Réessayez.",
         "unknown_status": "Ce n'est pas un statut qu'une annonce peut avoir.",
+        "reason_required": "Indiquez un motif. La suppression définitive exige au moins 10 caractères.",
+        "retained_history": "Cette annonce comporte des demandes, une soumission de propriétaire, une autorisation ou un document juridique : elle ne peut pas être supprimée définitivement. Archivez-la.",
         "illegal_transition": "Le cycle de vie du bien n'autorise pas ce changement de statut depuis le statut actuel de l'annonce.",
         "submission_not_approved": "L'annonce ne peut pas être publiée tant que la soumission du propriétaire n'a pas été approuvée.",
         "private_details_write_failed": "Les détails privés n'ont pas pu être écrits.",
@@ -2104,7 +2165,9 @@
       "published": "Publié",
       "archived": "Archivé"
     },
-    "galleryLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF."
+    "galleryLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
+    "galleryMultipleHint": "Sélectionnez une ou plusieurs images pour les ajouter à la galerie en une fois.",
+    "galleryImageAddedPartial": "Certaines images ont été ajoutées. Le lot s'est arrêté sur un fichier refusé ; vérifiez le message et réessayez."
   },
   "adminWork": {
     "heading": "Réalisations",
@@ -2188,7 +2251,10 @@
       "upload_failed": "L'image n'a pas pu être téléversée. Réessayez.",
       "update_failed": "La modification n'a pas pu être enregistrée. Réessayez."
     },
-    "mediaLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF."
+    "mediaLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
+    "mediaMultipleHint": "Sélectionnez une ou plusieurs images. Utilisez le rôle Général pour en ajouter plusieurs à la fois.",
+    "mediaSingleHint": "Une image avant/après est unique : sélectionnez un seul fichier pour ce rôle.",
+    "mediaAddedPartial": "Certaines images ont été ajoutées. Le lot s'est arrêté sur un fichier refusé ; vérifiez le message et réessayez."
   },
   "adminSettings": {
     "heading": "Paramètres",

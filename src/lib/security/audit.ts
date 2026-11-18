@@ -32,6 +32,8 @@ export const AUDIT_ACTIONS = [
   "listing_updated",
   "property_approved",
   "property_rejected",
+  "property_archived",
+  "property_deleted",
   "membership_approved",
   "membership_rejected",
   "membership_suspended",

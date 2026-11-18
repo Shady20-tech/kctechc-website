@@ -104,6 +104,18 @@ export function isRealEstateAdminRole(role: AppRole): boolean {
 }
 
 /**
+ * True when `role` is the platform's top tier.
+ *
+ * Reserved for operations the tier model keeps off every other role — permanent
+ * deletion, KYC decisions, publisher verification, role assignment. It mirrors
+ * `is_super_admin()` in `20260101000002_identity_and_roles.sql`; `roles.test.ts`
+ * asserts the two agree.
+ */
+export function isSuperAdminRole(role: AppRole): boolean {
+  return role === "super_admin";
+}
+
+/**
  * Roles that may decide a KYC application.
  *
  * `super_admin` ALONE. This is deliberately narrower than

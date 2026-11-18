@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getAuthState } from "@/lib/auth/session";
-import { isRealEstateAdminRole } from "@/lib/auth/roles";
+import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -400,6 +400,100 @@ export async function reviewListingSubmissionAction(
   }
 
   revalidateListings();
+  return { ok: true };
+}
+
+/**
+ * Archive a listing, recording the operator's reason.
+ *
+ * Archiving is the supported removal: it takes the listing out of circulation
+ * while keeping the row, its media, its inquiries and its history intact. The
+ * reason travels to `archive_listing`, which moves the row to `archived` and lets
+ * the lifecycle trigger validate the transition and the audit trigger record the
+ * change — this action writes no audit row itself, so a listing archived by any
+ * other path is recorded the same way.
+ */
+export async function archiveListingAction(
+  listingId: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const denied = await authorize();
+  if (denied) return { ok: false, error: denied.error };
+
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, error: "reason_required" };
+
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "unconfigured" };
+
+  const { error } = await supabase.rpc("archive_listing", {
+    p_listing_id: listingId,
+    p_reason: trimmed,
+  });
+
+  if (error) {
+    if (error.message.includes("Illegal listing status transition")) {
+      return { ok: false, error: "illegal_transition" };
+    }
+    if (error.message.includes("requires a reason")) {
+      return { ok: false, error: "reason_required" };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  revalidateListings();
+  return { ok: true };
+}
+
+/**
+ * Permanently delete a listing.
+ *
+ * Super-admin only, and gated on retention: `delete_listing_permanently` refuses
+ * when the listing has inquiries, an owner submission, an authorization or a legal
+ * document, so a listing with history can only be archived. The role check here is
+ * a message; the function's own `is_super_admin()` guard and retention gate are the
+ * control, and they hold for a direct PostgREST call too.
+ *
+ * This is irreversible and the confirmation lives in the form. Nothing here
+ * fabricates a soft delete: the row, its children and its translation rows are
+ * gone, which is why the retention gate and the reason requirement exist.
+ */
+export async function deleteListingAction(
+  listingId: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const auth = await getAuthState();
+  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
+  if (auth.status !== "authenticated") {
+    return { ok: false, error: "unauthenticated" };
+  }
+  if (!auth.profile || !isSuperAdminRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length < 10) return { ok: false, error: "reason_required" };
+
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "unconfigured" };
+
+  const { error } = await supabase.rpc("delete_listing_permanently", {
+    p_listing_id: listingId,
+    p_reason: trimmed,
+  });
+
+  if (error) {
+    if (error.message.includes("retained history")) {
+      return { ok: false, error: "retained_history" };
+    }
+    if (error.message.includes("at least 10 characters")) {
+      return { ok: false, error: "reason_required" };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  revalidateListings();
+  revalidatePath("/admin/real-estate/listings");
   return { ok: true };
 }
 

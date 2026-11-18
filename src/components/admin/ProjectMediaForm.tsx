@@ -52,6 +52,11 @@ export function ProjectMediaForm({
     null as ProjectMediaState | null,
   );
   const [fileTooLarge, setFileTooLarge] = useState(false);
+  const [role, setRole] = useState("general");
+  // A unique before/after slot cannot be shared by a batch, so the input accepts
+  // several files only for the general role. The server refuses the combination
+  // regardless; this keeps the control from offering one it would reject.
+  const multipleAllowed = role === "general";
 
   return (
     <div className="space-y-6">
@@ -69,7 +74,11 @@ export function ProjectMediaForm({
         </Notice>
       ) : null}
       {uploadState?.ok ? (
-        <Notice tone="success">{labels.mediaAdded}</Notice>
+        <Notice tone="success">
+          {uploadState.message === "media_added_partial"
+            ? labels.mediaAddedPartial
+            : labels.mediaAdded}
+        </Notice>
       ) : null}
       {fileTooLarge ? (
         <Notice tone="error">
@@ -160,7 +169,8 @@ export function ProjectMediaForm({
           id="role"
           name="role"
           label={labels.roleLabel ?? ""}
-          defaultValue="general"
+          value={role}
+          onChange={(event) => setRole(event.target.value)}
         >
           <option value="general">{labels["role.general"]}</option>
           <option value="before">{labels["role.before"]}</option>
@@ -172,16 +182,20 @@ export function ProjectMediaForm({
           name="image"
           accept="image/jpeg,image/png,image/webp,image/avif"
           required
-          onChange={(event) =>
+          multiple={multipleAllowed}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
             setFileTooLarge(
-              exceedsSizeLimit(
-                event.target.files?.[0],
-                MAX_PROJECT_IMAGE_BYTES,
+              files.some((file) =>
+                exceedsSizeLimit(file, MAX_PROJECT_IMAGE_BYTES),
               ),
-            )
-          }
+            );
+          }}
           className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
         />
+        <p className="text-xs text-muted">
+          {multipleAllowed ? labels.mediaMultipleHint : labels.mediaSingleHint}
+        </p>
         <p className="text-xs text-muted">
           {labels.mediaLimitHint?.replace(
             "{size}",

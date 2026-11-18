@@ -70,7 +70,11 @@ export function InsightGalleryForm({
         </Notice>
       ) : null}
       {uploadState?.ok ? (
-        <Notice tone="success">{labels.galleryImageAdded}</Notice>
+        <Notice tone="success">
+          {uploadState.message === "image_added_partial"
+            ? labels.galleryImageAddedPartial
+            : labels.galleryImageAdded}
+        </Notice>
       ) : null}
       {fileTooLarge ? (
         <Notice tone="error">
@@ -167,16 +171,18 @@ export function InsightGalleryForm({
           name="image"
           accept="image/jpeg,image/png,image/webp,image/avif"
           required
-          onChange={(event) =>
+          multiple
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
             setFileTooLarge(
-              exceedsSizeLimit(
-                event.target.files?.[0],
-                MAX_CONTENT_IMAGE_BYTES,
+              files.some((file) =>
+                exceedsSizeLimit(file, MAX_CONTENT_IMAGE_BYTES),
               ),
-            )
-          }
+            );
+          }}
           className="block text-sm text-body file:mr-3 file:rounded-field file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium"
         />
+        <p className="text-xs text-muted">{labels.galleryMultipleHint}</p>
         <p className="text-xs text-muted">
           {labels.galleryLimitHint?.replace(
             "{size}",

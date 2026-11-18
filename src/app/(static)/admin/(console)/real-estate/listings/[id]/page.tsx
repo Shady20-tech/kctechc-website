@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 
 import { ListingForm } from "@/components/admin/ListingForm";
+import { ListingLifecycleForm } from "@/components/admin/ListingLifecycleForm";
 import { ListingMediaForm } from "@/components/admin/ListingMediaForm";
 import { ListingStatusForm } from "@/components/admin/ListingStatusForm";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
-import { isRealEstateAdminRole } from "@/lib/auth/roles";
+import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
   loadAdminListingById,
@@ -118,6 +119,15 @@ export default async function AdminEditListingPage({
               locale="en"
             />
           </div>
+        </section>
+
+        <section className="border-t border-border pt-10">
+          <ListingLifecycleForm
+            listingId={listing.id}
+            currentStatus={listing.status}
+            canDelete={isSuperAdminRole(state.profile.role)}
+            locale="en"
+          />
         </section>
       </div>
     </>

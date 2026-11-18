@@ -448,7 +448,13 @@
       "publishedNotice": "The product is live on the website.",
       "unpublishedNotice": "The product was returned to draft and is no longer public.",
       "imageLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
-      "goToImage": "Add an image"
+      "goToImage": "Add an image",
+      "updatedHeading": "Product updated",
+      "updatedBody": "Your changes are saved.",
+      "saveChanges": "Save changes",
+      "editHeading": "Edit product",
+      "editIntro": "Update the product details. Images are managed below on the product page.",
+      "deleteHeading": "Permanently delete this product"
     },
     "projectsHeading": "Electrical projects",
     "projectsIntro": "Create and publish project records. A project only becomes public when it is published, and publishing requires a published date.",
@@ -476,7 +482,33 @@
     "publish": "Publish",
     "unpublish": "Move to draft",
     "archive": "Archive",
-    "backToAdmin": "Back to admin"
+    "backToAdmin": "Back to admin",
+    "deleteForm": {
+      "heading": "Permanently delete this {entity}",
+      "intro": "This cannot be undone. The record and its images are removed for good, and the deletion is recorded in the audit trail. To take it out of circulation but keep it, archive it instead.",
+      "reasonLabel": "Reason for deletion",
+      "reasonHint": "At least 10 characters. This is recorded in the audit trail.",
+      "submit": "Delete permanently",
+      "confirmTitle": "Delete this {entity} permanently?",
+      "confirmBody": "This is irreversible. Confirm only if you are sure this {entity} should be removed for good.",
+      "confirm": "Yes, delete permanently",
+      "cancel": "Cancel",
+      "submitting": "Deleting…",
+      "done": "{entity} deleted",
+      "errorHeading": "Could not delete",
+      "errors": {
+        "unauthenticated": "Your session has expired. Sign in again.",
+        "forbidden": "Only a super administrator may permanently delete content.",
+        "unconfigured": "The database is not connected.",
+        "reason_required": "Enter a reason of at least 10 characters.",
+        "not_found": "That record no longer exists.",
+        "retained_history": "This record has retained history and cannot be permanently deleted. Archive it instead.",
+        "write_failed": "The deletion did not complete. Please try again."
+      },
+      "entityProduct": "product",
+      "entityProject": "project",
+      "entityArticle": "article"
+    }
   },
   "realEstate": {
     "metaTitle": "Real Estate in Cameroon",
@@ -779,6 +811,14 @@
       "listingsHeading": "Listings",
       "listingsIntro": "Every listing in the portfolio, whatever its status.",
       "noListings": "No listings yet. Create one, or import a file.",
+      "searchLabel": "Search listings",
+      "searchPlaceholder": "Reference, title or locality",
+      "statusFilterLabel": "Status",
+      "allStatuses": "All statuses",
+      "applyFilters": "Apply",
+      "clearFilters": "Clear",
+      "resultsCount": "{count} listings match",
+      "noMatchingListings": "No listing matches those filters.",
       "openListing": "Edit",
       "createHeading": "Create a listing",
       "createIntro": "The English text you enter is the source. French entries are queued for translation and marked as pending until translated. The listing is saved as a draft.",
@@ -798,6 +838,25 @@
       "statusSubmit": "Change status",
       "statusUpdating": "Updating…",
       "statusUpdated": "Status changed.",
+      "archiveHeading": "Archive",
+      "archiveIntro": "Archiving takes the listing out of circulation and keeps its record, photographs and history. The reason is recorded in the audit trail.",
+      "archiveSubmit": "Archive listing",
+      "archiveSubmitting": "Archiving…",
+      "archiveAlready": "Already archived",
+      "archiveUpdated": "The listing was archived.",
+      "reasonLabel": "Reason",
+      "reasonHint": "Recorded against your account in the audit trail. Required.",
+      "deleteHeading": "Permanent deletion",
+      "deleteIntro": "Permanent deletion removes the listing and cannot be undone. It is offered only where the retention rules allow it: a listing with inquiries, an owner submission, an authorization or a legal document must be archived instead.",
+      "deleteSubmit": "Delete permanently",
+      "deleteSubmitting": "Deleting…",
+      "deleteConfirmTitle": "Delete this listing permanently?",
+      "deleteConfirmBody": "This cannot be undone. The listing, its photographs, its localized addresses and its analytics are removed. Its audit history is kept.",
+      "deleteConfirm": "Yes, delete permanently",
+      "deleteCancel": "Cancel",
+      "deleteUpdated": "The listing was permanently deleted.",
+      "deleteReasonLabel": "Reason for deletion",
+      "deleteReasonHint": "At least 10 characters. Recorded in the audit trail.",
       "notFoundHeading": "Listing not found",
       "notFoundBody": "This listing does not exist, or your role does not allow you to read it.",
       "backToListings": "Back to listings",
@@ -908,6 +967,8 @@
         "duplicate": "A listing already uses that slug. Choose another.",
         "write_failed": "The change could not be saved. Please try again.",
         "unknown_status": "That is not a status a listing can have.",
+        "reason_required": "Provide a reason. Permanent deletion needs at least 10 characters.",
+        "retained_history": "This listing has inquiries, an owner submission, an authorization or a legal document, so it cannot be permanently deleted. Archive it instead.",
         "illegal_transition": "The property lifecycle does not allow that status change from the listing's current status.",
         "submission_not_approved": "The listing cannot be published until its owner submission has been approved.",
         "private_details_write_failed": "The private details could not be written.",
@@ -2104,7 +2165,9 @@
       "published": "Published",
       "archived": "Archived"
     },
-    "galleryLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF."
+    "galleryLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
+    "galleryMultipleHint": "Select one or more images to add them to the gallery at once.",
+    "galleryImageAddedPartial": "Some images were added. The batch stopped at a file that was refused; check the message and retry it."
   },
   "adminWork": {
     "heading": "Work Done",
@@ -2188,7 +2251,10 @@
       "upload_failed": "The image could not be uploaded. Try again.",
       "update_failed": "The change could not be saved. Try again."
     },
-    "mediaLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF."
+    "mediaLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
+    "mediaMultipleHint": "Select one or more images. Use the General role to add several at once.",
+    "mediaSingleHint": "A before/after image is unique, so select one file for this role.",
+    "mediaAddedPartial": "Some images were added. The batch stopped at a file that was refused; check the message and retry it."
   },
   "adminSettings": {
     "heading": "Settings",

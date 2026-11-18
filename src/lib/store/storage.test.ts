@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SOLAR_PACKAGES } from "@/lib/content/solar-packages";
 import {
@@ -40,15 +40,33 @@ describe("productImageSrc", () => {
   });
 
   it("uses the Storage URL for an ordinary product", () => {
-    const src = productImageSrc(
-      { storagePath: "products/abc/photo.jpg" },
-      "KC-LAPTOP-1",
-    );
-    // Storage is unconfigured in tests, so the URL is null rather than broken.
-    expect(src).toBeNull();
-    // And the raw helper agrees it is a Storage path, not a bundled one.
+    const path = "products/abc/photo.jpg";
+    const src = productImageSrc({ storagePath: path }, "KC-LAPTOP-1");
+    // It resolves through Storage, not through the bundled-package table — the
+    // property that matters. Asserting `null` here instead would only be true
+    // while Supabase is unconfigured, so it would fail in any environment that
+    // sets the URL (as this container does) without anything being wrong.
+    expect(src).toBe(storagePublicUrl(path));
     expect(seededImage("KC-LAPTOP-1")).toBeNull();
-    expect(storagePublicUrl("products/abc/photo.jpg")).toBeNull();
+    // A non-package product never gets a bundled public path.
+    expect(src?.startsWith("/") ?? false).toBe(false);
+  });
+
+  it("returns null rather than a broken URL when Storage is unconfigured", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/config/env", () => ({
+      publicEnv: { supabaseUrl: "" },
+      getSupabaseConfig: () => null,
+      isSupabaseConfigured: () => false,
+    }));
+    try {
+      const { storagePublicUrl: unconfigured } =
+        await import("@/lib/store/storage");
+      expect(unconfigured("products/abc/photo.jpg")).toBeNull();
+    } finally {
+      vi.doUnmock("@/lib/config/env");
+      vi.resetModules();
+    }
   });
 
   it("returns a public path verbatim when one is set", () => {

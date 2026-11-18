@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { CoverUploadForm } from "@/components/admin/CoverUploadForm";
+import { DeleteContentForm } from "@/components/admin/DeleteContentForm";
 import { InsightForm } from "@/components/admin/InsightForm";
 import {
   InsightGalleryForm,
@@ -9,8 +10,11 @@ import {
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES } from "@/lib/auth/roles";
-import { updateInsightAction } from "@/lib/content/admin-actions";
+import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  deleteInsightAction,
+  updateInsightAction,
+} from "@/lib/content/admin-actions";
 import {
   getAdminInsight,
   listInsightMedia,
@@ -27,7 +31,10 @@ export default async function AdminInsightEditorPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole([...DEPARTMENT_EDITOR_ROLES], "/admin/content");
+  const profile = await requireRole(
+    [...DEPARTMENT_EDITOR_ROLES],
+    "/admin/content",
+  );
   const { id } = await params;
   const t = createTranslator("en").t;
 
@@ -77,8 +84,10 @@ export default async function AdminInsightEditorPage({
     galleryUpload: t("adminContent.galleryUpload"),
     galleryUploading: t("adminContent.galleryUploading"),
     galleryImageAdded: t("adminContent.galleryImageAdded"),
+    galleryImageAddedPartial: t("adminContent.galleryImageAddedPartial"),
     galleryRemove: t("adminContent.galleryRemove"),
     galleryLimitHint: t("adminContent.galleryLimitHint"),
+    galleryMultipleHint: t("adminContent.galleryMultipleHint"),
     altLabel: t("adminContent.altLabel"),
     altHint: t("adminContent.altHint"),
     captionLabel: t("adminContent.captionLabel"),
@@ -156,6 +165,16 @@ export default async function AdminInsightEditorPage({
           </Card>
         </div>
       </div>
+
+      {isSuperAdminRole(profile.role) ? (
+        <div className="mt-12">
+          <DeleteContentForm
+            entityLabel={t("admin.deleteForm.entityArticle")}
+            action={deleteInsightAction.bind(null, insight.id)}
+            locale="en"
+          />
+        </div>
+      ) : null}
     </>
   );
 }

@@ -3368,6 +3368,28 @@ export type Database = {
       };
     };
     Functions: {
+      archive_listing: {
+        Args: {
+          p_listing_id: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      delete_listing_permanently: {
+        Args: {
+          p_listing_id: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      delete_content_permanently: {
+        Args: {
+          p_entity_type: string;
+          p_entity_id: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
       apply_payment_result: {
         Args: {
           p_failure_reason?: string;

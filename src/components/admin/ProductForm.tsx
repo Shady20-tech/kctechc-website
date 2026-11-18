@@ -8,11 +8,30 @@ import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
   createProductAction,
+  updateProductAction,
   type CreateProductResult,
 } from "@/lib/store/admin-actions";
 
+/** The fields an edit pre-fills, mirroring `AdminProduct` from the loader. */
+export type ProductFormInitial = {
+  id: string;
+  title: string;
+  slug: string;
+  sku: string;
+  categoryId: string;
+  shortDescription: string;
+  description: string;
+  brand: string;
+  gtin: string;
+  priceMinor: number;
+  stock: number;
+  departmentSlug: string;
+  seoTitle: string;
+  seoDescription: string;
+};
+
 /**
- * Product creation form.
+ * Product create/edit form.
  *
  * A Client Component only so the action's result can be rendered inline and the
  * category list can follow the department picker. The action runs on the server,
@@ -29,6 +48,11 @@ import {
  * product is then created in that department and its staff can manage it. A
  * single-department editor sees one department and a pre-filtered list, while a
  * super admin can place a product anywhere.
+ *
+ * One component serves creation and editing: the fields, their rules and their
+ * error messages are identical, and the only difference is which action runs and
+ * which values pre-fill. A separate edit form would be a second place for the two
+ * to drift.
  */
 
 const EMPTY: CreateProductResult = { ok: false, error: "" };
@@ -37,17 +61,21 @@ export function ProductForm({
   categories,
   departments,
   locale,
+  initial,
 }: {
   categories: readonly { id: string; name: string; departmentSlug: string }[];
   departments: readonly { slug: string; name: string }[];
   locale: Locale;
+  /** Present when editing; absent when creating. */
+  initial?: ProductFormInitial;
 }) {
+  const editing = Boolean(initial);
   // Derived from the locale rather than received: a function cannot cross the
   // Server/Client boundary, and the translator is pure and isomorphic.
   const t = createTranslator(locale).t;
   const [state, formAction, pending] = useActionState(
     async (_previous: CreateProductResult, formData: FormData) =>
-      createProductAction(formData),
+      editing ? updateProductAction(formData) : createProductAction(formData),
     EMPTY,
   );
 
@@ -56,7 +84,9 @@ export function ProductForm({
   // are filtered to the chosen department as a UI convenience; the action
   // re-reads the category's department regardless, so the filter is not a control.
   const onlyDepartment = departments.length === 1 ? departments[0]!.slug : "";
-  const [department, setDepartment] = useState(onlyDepartment);
+  const [department, setDepartment] = useState(
+    initial?.departmentSlug ?? onlyDepartment,
+  );
   const visibleCategories = department
     ? categories.filter((category) => category.departmentSlug === department)
     : categories;
@@ -66,17 +96,34 @@ export function ProductForm({
 
   return (
     <form action={formAction} className="max-w-3xl space-y-6">
+      {initial ? (
+        <input type="hidden" name="productId" value={initial.id} />
+      ) : null}
+
       {state.ok ? (
-        <Notice tone="success" title={t("admin.store.createdHeading")}>
-          <p>{t("admin.store.createdBody")}</p>
-          <p className="mt-1">
-            {t("admin.store.translationCount", {
-              count: state.translationKeyCount,
-            })}
+        <Notice
+          tone="success"
+          title={t(
+            editing
+              ? "admin.store.updatedHeading"
+              : "admin.store.createdHeading",
+          )}
+        >
+          <p>
+            {t(editing ? "admin.store.updatedBody" : "admin.store.createdBody")}
           </p>
-          <p className="mt-1">
-            {t("admin.store.syncQueued", { count: state.syncQueued })}
-          </p>
+          {!editing ? (
+            <>
+              <p className="mt-1">
+                {t("admin.store.translationCount", {
+                  count: state.translationKeyCount,
+                })}
+              </p>
+              <p className="mt-1">
+                {t("admin.store.syncQueued", { count: state.syncQueued })}
+              </p>
+            </>
+          ) : null}
           {state.syncWarning ? (
             <p className="mt-2">
               {t("admin.store.syncWarning", { reason: state.syncWarning })}
@@ -111,6 +158,7 @@ export function ProductForm({
 
       <TextField
         id="title"
+        defaultValue={initial?.title ?? ""}
         name="title"
         label={t("admin.store.fieldTitle")}
         hint={t("admin.store.fieldTitleHint")}
@@ -121,6 +169,7 @@ export function ProductForm({
 
       <TextField
         id="slug"
+        defaultValue={initial?.slug ?? ""}
         name="slug"
         label={t("admin.store.fieldSlug")}
         hint={t("admin.store.fieldSlugHint")}
@@ -131,6 +180,7 @@ export function ProductForm({
 
       <TextField
         id="sku"
+        defaultValue={initial?.sku ?? ""}
         name="sku"
         label={t("admin.store.fieldSku")}
         hint={t("admin.store.fieldSkuHint")}
@@ -167,12 +217,12 @@ export function ProductForm({
 
       <SelectField
         id="categoryId"
+        defaultValue={initial?.categoryId ?? ""}
         name="categoryId"
         label={t("admin.store.fieldCategory")}
         required
         requiredLabel={t("common.required")}
         error={fields?.categoryId}
-        defaultValue=""
       >
         <option value="" disabled>
           {t("admin.store.fieldCategoryPlaceholder")}
@@ -186,6 +236,7 @@ export function ProductForm({
 
       <TextAreaField
         id="shortDescription"
+        defaultValue={initial?.shortDescription ?? ""}
         name="shortDescription"
         label={t("admin.store.fieldShortDescription")}
         hint={t("admin.store.fieldShortDescriptionHint")}
@@ -197,6 +248,7 @@ export function ProductForm({
 
       <TextAreaField
         id="description"
+        defaultValue={initial?.description ?? ""}
         name="description"
         label={t("admin.store.fieldDescription")}
         required
@@ -208,12 +260,14 @@ export function ProductForm({
       <div className="grid gap-6 sm:grid-cols-2">
         <TextField
           id="brand"
+          defaultValue={initial?.brand ?? ""}
           name="brand"
           label={t("admin.store.fieldBrand")}
           error={fields?.brand}
         />
         <TextField
           id="gtin"
+          defaultValue={initial?.gtin ?? ""}
           name="gtin"
           label={t("admin.store.fieldGtin")}
           hint={t("admin.store.fieldGtinHint")}
@@ -225,6 +279,7 @@ export function ProductForm({
       <div className="grid gap-6 sm:grid-cols-2">
         <TextField
           id="priceMinor"
+          defaultValue={initial?.priceMinor ?? ""}
           name="priceMinor"
           type="number"
           min={1}
@@ -237,6 +292,7 @@ export function ProductForm({
         />
         <TextField
           id="stock"
+          defaultValue={initial?.stock ?? ""}
           name="stock"
           type="number"
           min={0}
@@ -251,6 +307,7 @@ export function ProductForm({
 
       <TextField
         id="seoTitle"
+        defaultValue={initial?.seoTitle ?? ""}
         name="seoTitle"
         label={t("admin.store.fieldSeoTitle")}
         hint={t("admin.store.fieldSeoTitleHint")}
@@ -259,6 +316,7 @@ export function ProductForm({
 
       <TextAreaField
         id="seoDescription"
+        defaultValue={initial?.seoDescription ?? ""}
         name="seoDescription"
         label={t("admin.store.fieldSeoDescription")}
         rows={3}
@@ -270,7 +328,11 @@ export function ProductForm({
       </Notice>
 
       <Button type="submit" variant="primary" size="lg" disabled={pending}>
-        {pending ? t("common.loading") : t("admin.store.submit")}
+        {pending
+          ? t("common.loading")
+          : editing
+            ? t("admin.store.saveChanges")
+            : t("admin.store.submit")}
       </Button>
     </form>
   );

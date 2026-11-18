@@ -1115,7 +1115,7 @@ function toAdminRecord(
  * writer, including a migration.
  */
 export async function loadAdminListings(
-  options: { status?: ListingStatus; limit?: number } = {},
+  options: { status?: ListingStatus; search?: string; limit?: number } = {},
 ): Promise<AdminListingRecord[]> {
   try {
     const supabase = await createClient();
@@ -1130,6 +1130,17 @@ export async function loadAdminListings(
       .limit(options.limit ?? 100);
 
     if (options.status) query = query.eq("status", options.status);
+
+    // Search across the fields an operator actually identifies a listing by. The
+    // term is stripped of the characters that would break a PostgREST `or`
+    // expression (`,`, `(`, `)`) before it is interpolated, so a crafted query
+    // cannot widen the filter or produce a syntax error.
+    const term = options.search?.replace(/[,()]/g, " ").trim();
+    if (term) {
+      query = query.or(
+        `reference.ilike.%${term}%,title.ilike.%${term}%,locality.ilike.%${term}%`,
+      );
+    }
 
     const { data, error } = await query;
     if (error || !data) return [];

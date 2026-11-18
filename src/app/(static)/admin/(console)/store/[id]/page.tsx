@@ -1,14 +1,21 @@
 import { notFound } from "next/navigation";
 
+import { DeleteContentForm } from "@/components/admin/DeleteContentForm";
+import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductMediaForm } from "@/components/admin/ProductMediaForm";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES } from "@/lib/auth/roles";
-import { departmentsForRole } from "@/lib/content/project-admin-queries";
+import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  departmentsForRole,
+  loadEditableDepartments,
+} from "@/lib/content/project-admin-queries";
 import { createTranslator } from "@/lib/i18n/translator";
+import { deleteProductAction } from "@/lib/store/admin-actions";
 import { loadProductForAdmin } from "@/lib/store/admin-queries";
+import { loadCategoryOptions } from "@/lib/store/loaders";
 import { storagePublicUrl } from "@/lib/store/storage";
 import { primaryImage } from "@/lib/store/types";
 
@@ -43,6 +50,26 @@ export default async function AdminProductPage({
     departmentsForRole(profile.role),
   );
   if (!product) notFound();
+
+  const [categories, editableDepartments] = await Promise.all([
+    loadCategoryOptions(),
+    loadEditableDepartments(profile.role),
+  ]);
+  const allowed = new Set<string>(
+    editableDepartments.map((row) => row.slug),
+  );
+  const offeredCategories = categories
+    .filter((category) => allowed.has(category.departmentSlug))
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      departmentSlug: category.departmentSlug,
+    }));
+  const offeredDepartments = editableDepartments.map((row) => ({
+    slug: row.slug,
+    name: row.name,
+  }));
+  const canDelete = isSuperAdminRole(profile.role);
 
   const image = primaryImage(product.images);
   const published = product.publishState === "published";
@@ -151,6 +178,51 @@ export default async function AdminProductPage({
           />
         </div>
       </div>
+
+      <section className="mt-12" aria-labelledby="product-edit-heading">
+        <h2
+          id="product-edit-heading"
+          className="font-display text-xl font-bold text-ink-900"
+        >
+          {t("admin.store.editHeading")}
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-body">
+          {t("admin.store.editIntro")}
+        </p>
+        <div className="mt-6">
+          <ProductForm
+            categories={offeredCategories}
+            departments={offeredDepartments}
+            locale="en"
+            initial={{
+              id: product.id,
+              title: product.title,
+              slug: product.slug,
+              sku: product.sku,
+              categoryId: product.categoryId,
+              shortDescription: product.shortDescription,
+              description: product.description,
+              brand: product.brand,
+              gtin: product.gtin,
+              priceMinor: product.priceMinor,
+              stock: product.stock,
+              departmentSlug: product.departmentSlug,
+              seoTitle: product.seoTitle,
+              seoDescription: product.seoDescription,
+            }}
+          />
+        </div>
+      </section>
+
+      {canDelete ? (
+        <div className="mt-12">
+          <DeleteContentForm
+            entityLabel={t("admin.deleteForm.entityProduct")}
+            action={deleteProductAction.bind(null, product.id)}
+            locale="en"
+          />
+        </div>
+      ) : null}
     </>
   );
 }

@@ -65,6 +65,19 @@ export const productInputSchema = z.object({
 export type ProductInput = z.infer<typeof productInputSchema>;
 
 /**
+ * Product update input: the same fields plus the product being edited.
+ *
+ * The field rules are shared with creation on purpose — an edit that accepted a
+ * value creation would refuse (or the reverse) is two products that disagree
+ * about what a product is.
+ */
+export const productUpdateSchema = productInputSchema.extend({
+  productId: z.string().uuid(),
+});
+
+export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+
+/**
  * Flatten a Zod error into a field-keyed map for the form.
  *
  * The form shows a message per field rather than one summary, so a user fixing a

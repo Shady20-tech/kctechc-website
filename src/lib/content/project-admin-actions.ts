@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { canAccessDepartment } from "@/lib/auth/roles";
+import { canAccessDepartment, isSuperAdminRole } from "@/lib/auth/roles";
 import { getAuthState, type Profile } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -330,14 +330,21 @@ async function syncServices(
 }
 
 /**
- * Attach an image to a completed work record.
+ * Attach one or more images to a completed work record.
  *
- * The type is determined from the file's leading bytes, not the declared MIME
- * type, and the object path is built from the project id and a content-derived
- * extension, so nothing depends on the uploaded filename. The row is written
+ * The type is determined from each file's leading bytes, not the declared MIME
+ * type, and every object path is built from the project id and a content-derived
+ * extension, so nothing depends on the uploaded filename. The rows are written
  * through the service-role client here because the upload must be recorded in the
- * same operation that stores the object; the department check below is what
+ * same operation that stores the objects; the department check below is what
  * authorizes it, and the project row it targets was itself loaded under RLS.
+ *
+ * A batch is uploaded in order and stops at the first failure. Files already
+ * stored stay stored and are reported as a partial success rather than rolled
+ * back: a rollback would discard work the editor can see and would still leave
+ * them to retry the batch. The `before`/`after` role allows at most one of each
+ * per project, so a batch cannot use it — those two are set from the gallery
+ * after upload, where a duplicate is reported per image.
  */
 export async function uploadProjectMediaAction(
   formData: FormData,
@@ -356,15 +363,14 @@ export async function uploadProjectMediaAction(
     return { ok: false, error: "invalid" };
   }
 
-  const file = formData.get("image");
-  if (!(file instanceof File)) return { ok: false, error: "no_file" };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  // `project-image` matches the `project-media` bucket's configured 5 MiB limit
-  // and its accepted types. Using `property-image` here would admit a 10 MiB file
-  // the bucket then refuses, turning a size check into a generic upload failure.
-  const verdict = validateUpload(bytes, file.type, { kind: "project-image" });
-  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  const files = formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) return { ok: false, error: "no_file" };
+  // A unique before/after slot cannot be shared by a batch.
+  if (files.length > 1 && role !== "general") {
+    return { ok: false, error: "invalid" };
+  }
 
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "unconfigured" };
@@ -386,16 +392,6 @@ export async function uploadProjectMediaAction(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  const objectPath = projectMediaPath(
-    projectId,
-    `${randomUUID()}.${verdict.extension}`,
-  );
-
-  const { error: uploadError } = await admin.storage
-    .from(PROJECT_MEDIA_BUCKET)
-    .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
-  if (uploadError) return { ok: false, error: "upload_failed" };
-
   // Position continues from the current maximum so a later image does not take
   // the first slot from an earlier one.
   const { data: last } = await admin
@@ -406,25 +402,60 @@ export async function uploadProjectMediaAction(
     .limit(1)
     .maybeSingle();
 
-  const { error: rowError } = await admin.from("project_media").insert({
-    project_id: projectId,
-    storage_path: objectPath,
-    alt_text: altText,
-    caption: optionalText(formData.get("caption")) ?? null,
-    credit: optionalText(formData.get("credit")) ?? null,
-    role,
-    position: (last?.position ?? -1) + 1,
-  });
+  let position = (last?.position ?? -1) + 1;
+  let stored = 0;
 
-  if (rowError) {
-    // A row that could not be written must not leave an orphan object behind.
-    await admin.storage.from(PROJECT_MEDIA_BUCKET).remove([objectPath]);
-    // 23505 on the before/after unique index is the honest "one each" message.
-    const code = (rowError as { code?: string }).code;
-    return {
-      ok: false,
-      error: code === "23505" ? "role_taken" : "write_failed",
-    };
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // `project-image` matches the `project-media` bucket's configured 5 MiB limit
+    // and its accepted types. Using `property-image` here would admit a 10 MiB file
+    // the bucket then refuses, turning a size check into a generic upload failure.
+    const verdict = validateUpload(bytes, file.type, { kind: "project-image" });
+    if (!verdict.ok) {
+      return stored > 0
+        ? { ok: true, message: "media_added_partial" }
+        : { ok: false, error: verdict.reason };
+    }
+
+    const objectPath = projectMediaPath(
+      projectId,
+      `${randomUUID()}.${verdict.extension}`,
+    );
+
+    const { error: uploadError } = await admin.storage
+      .from(PROJECT_MEDIA_BUCKET)
+      .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
+    if (uploadError) {
+      return stored > 0
+        ? { ok: true, message: "media_added_partial" }
+        : { ok: false, error: "upload_failed" };
+    }
+
+    const { error: rowError } = await admin.from("project_media").insert({
+      project_id: projectId,
+      storage_path: objectPath,
+      alt_text: altText,
+      caption: optionalText(formData.get("caption")) ?? null,
+      credit: optionalText(formData.get("credit")) ?? null,
+      role,
+      position,
+    });
+
+    if (rowError) {
+      // A row that could not be written must not leave an orphan object behind.
+      await admin.storage.from(PROJECT_MEDIA_BUCKET).remove([objectPath]);
+      // 23505 on the before/after unique index is the honest "one each" message.
+      const code = (rowError as { code?: string }).code;
+      return stored > 0
+        ? { ok: true, message: "media_added_partial" }
+        : {
+            ok: false,
+            error: code === "23505" ? "role_taken" : "write_failed",
+          };
+    }
+
+    position += 1;
+    stored += 1;
   }
 
   await recordAudit({
@@ -432,12 +463,12 @@ export async function uploadProjectMediaAction(
     action: "project_media_uploaded",
     entityType: "electrical_project",
     entityId: projectId,
-    metadata: { role },
+    metadata: { role, count: stored },
   });
 
   revalidateWork(slug);
   revalidatePath(`/admin/work/${projectId}`);
-  return { ok: true, message: "uploaded" };
+  return { ok: true, message: stored > 1 ? "media_added" : "uploaded" };
 }
 
 /** Detach an image, removing the stored object and its row. */
@@ -497,4 +528,67 @@ export async function removeProjectMediaAction(
   revalidateWork(slug);
   revalidatePath(`/admin/work/${media.project_id}`);
   return { ok: true, message: "removed" };
+}
+
+/**
+ * Permanently delete a project. Super-admin only.
+ *
+ * The project's media objects are removed from Storage first, then the row. A
+ * failed object removal does not block the delete: an orphan object is invisible
+ * to the site, whereas a half-deleted project is not. The row delete cascades its
+ * `project_media` and service links; the FK-less translation rows are cleared by
+ * `delete_content_permanently`. The role check is a message; the function's own
+ * `is_super_admin()` guard is the control.
+ */
+export async function deleteProjectAction(
+  projectId: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const auth = await getAuthState();
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
+  if (auth.status !== "authenticated" || !auth.profile) {
+    return { ok: false, error: "unauthenticated" };
+  }
+  if (!isSuperAdminRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length < 10) return { ok: false, error: "reason_required" };
+
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "unconfigured" };
+
+  // Remove stored objects first, while the media rows still exist to name them.
+  const { data: media } = await supabase
+    .from("project_media")
+    .select("storage_path")
+    .eq("project_id", projectId);
+  const paths = (media ?? []).map((row) => row.storage_path);
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+  if (paths.length > 0) {
+    await admin.storage.from(PROJECT_MEDIA_BUCKET).remove(paths);
+  }
+
+  const { error } = await supabase.rpc("delete_content_permanently", {
+    p_entity_type: "electrical_project",
+    p_entity_id: projectId,
+    p_reason: trimmed,
+  });
+
+  if (error) {
+    if (error.message.includes("at least 10 characters")) {
+      return { ok: false, error: "reason_required" };
+    }
+    if (error.message.includes("Unknown electrical_project")) {
+      return { ok: false, error: "not_found" };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  revalidatePath("/admin/work");
+  return { ok: true };
 }

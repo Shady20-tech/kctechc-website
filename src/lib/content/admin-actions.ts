@@ -7,6 +7,7 @@ import { getAuthState } from "@/lib/auth/session";
 import {
   canAccessDepartment,
   isDepartmentEditorRole,
+  isSuperAdminRole,
   type AppRole,
 } from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -387,12 +388,10 @@ export async function uploadInsightImageAction(
   const altText = String(formData.get("altText") ?? "").trim();
   if (altText.length === 0) return { ok: false, error: "alt_required" };
 
-  const file = formData.get("image");
-  if (!(file instanceof File)) return { ok: false, error: "no_file" };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const verdict = validateUpload(bytes, file.type, { kind: "content-image" });
-  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  const files = formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) return { ok: false, error: "no_file" };
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
@@ -407,12 +406,6 @@ export async function uploadInsightImageAction(
     return { ok: false, error: "forbidden" };
   }
 
-  const objectPath = buildObjectPath(id, verdict.extension);
-  const { error: uploadError } = await admin.storage
-    .from(CONTENT_MEDIA_BUCKET)
-    .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
-  if (uploadError) return { ok: false, error: "upload_failed" };
-
   // Position continues from the current maximum so a later image does not take
   // the first slot from an earlier one.
   const { data: last } = await admin
@@ -424,21 +417,53 @@ export async function uploadInsightImageAction(
     .maybeSingle();
 
   const supabase = await createClientOrAdmin();
-  const { error: rowError } = await (supabase ?? admin)
-    .from("insight_media")
-    .insert({
+  const writer = supabase ?? admin;
+  const caption = optionalText(formData.get("caption"));
+  const credit = optionalText(formData.get("credit"));
+
+  let position = (last?.position ?? -1) + 1;
+  let stored = 0;
+
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const verdict = validateUpload(bytes, file.type, { kind: "content-image" });
+    if (!verdict.ok) {
+      // A partly valid batch keeps the files that landed; the editor can see
+      // what arrived and retry only the file the message names.
+      return stored > 0
+        ? { ok: true, id, message: "image_added_partial" }
+        : { ok: false, error: verdict.reason };
+    }
+
+    const objectPath = buildObjectPath(id, verdict.extension);
+    const { error: uploadError } = await admin.storage
+      .from(CONTENT_MEDIA_BUCKET)
+      .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
+    if (uploadError) {
+      return stored > 0
+        ? { ok: true, id, message: "image_added_partial" }
+        : { ok: false, error: "upload_failed" };
+    }
+
+    const { error: rowError } = await writer.from("insight_media").insert({
       insight_id: id,
       storage_path: objectPath,
       alt_text: altText.slice(0, 300),
-      caption: optionalText(formData.get("caption")),
-      credit: optionalText(formData.get("credit")),
-      position: (last?.position ?? -1) + 1,
+      caption,
+      credit,
+      position,
     });
 
-  if (rowError) {
-    // A row that could not be written must not leave an orphan object behind.
-    await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([objectPath]);
-    return { ok: false, error: "write_failed" };
+    if (rowError) {
+      // A row that could not be written must not leave an orphan object behind.
+      await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([objectPath]);
+      return stored > 0
+        ? { ok: true, id, message: "image_added_partial" }
+        : { ok: false, error: "write_failed" };
+    }
+
+    position += 1;
+    stored += 1;
   }
 
   await recordAudit({
@@ -446,11 +471,15 @@ export async function uploadInsightImageAction(
     action: "content_updated",
     entityType: "insight",
     entityId: id,
-    metadata: { field: "gallery_image", bytes: bytes.byteLength },
+    metadata: { field: "gallery_image", count: stored },
   });
 
   revalidatePath(`/admin/content/${id}`);
-  return { ok: true, id, message: "image_added" };
+  return {
+    ok: true,
+    id,
+    message: stored > 1 ? "images_added" : "image_added",
+  };
 }
 
 /** Detach a gallery image, removing the stored object and its row. */
@@ -518,3 +547,76 @@ async function createClientOrAdmin() {
   return createAdminClient();
 }
 
+
+/**
+ * Permanently delete an article. Super-admin only.
+ *
+ * The cover and gallery objects are removed from Storage first, then the row. The
+ * row delete cascades `insight_media`; the FK-less translation rows are cleared by
+ * `delete_content_permanently`. The role check is a message; the function's own
+ * `is_super_admin()` guard is the control.
+ */
+export async function deleteInsightAction(
+  insightId: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const auth = await getAuthState();
+  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
+  if (auth.status !== "authenticated" || !auth.profile) {
+    return { ok: false, error: "unauthenticated" };
+  }
+  if (!isSuperAdminRole(auth.profile.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length < 10) return { ok: false, error: "reason_required" };
+
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "unconfigured" };
+
+  // Remove stored objects first, while the media rows still name them.
+  const [{ data: article }, { data: media }] = await Promise.all([
+    admin.from("insights").select("cover_image_path").eq("id", insightId).maybeSingle(),
+    admin
+      .from("insight_media")
+      .select("storage_path")
+      .eq("insight_id", insightId),
+  ]);
+
+  const paths = [
+    ...(article?.cover_image_path ? [article.cover_image_path] : []),
+    ...(media ?? []).map((row) => row.storage_path),
+  ];
+  if (paths.length > 0) {
+    await admin.storage.from(CONTENT_MEDIA_BUCKET).remove(paths);
+  }
+
+  // The session client, not the service-role one: `delete_content_permanently`
+  // authorizes with `is_super_admin()`, which reads `auth.uid()`. A service-role
+  // call carries no JWT subject, so the guard would refuse every deletion. The
+  // storage removal above still uses the service-role client because the bucket
+  // has no browser write policy.
+  const { createClient } = await import("@/lib/supabase/server");
+  const session = await createClient();
+  if (!session) return { ok: false, error: "unconfigured" };
+
+  const { error } = await session.rpc("delete_content_permanently", {
+    p_entity_type: "insight",
+    p_entity_id: insightId,
+    p_reason: trimmed,
+  });
+
+  if (error) {
+    if (error.message.includes("at least 10 characters")) {
+      return { ok: false, error: "reason_required" };
+    }
+    if (error.message.includes("Unknown insight")) {
+      return { ok: false, error: "not_found" };
+    }
+    return { ok: false, error: "write_failed" };
+  }
+
+  revalidatePath("/admin/content");
+  return { ok: true };
+}

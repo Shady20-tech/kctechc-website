@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 
+import { DeleteContentForm } from "@/components/admin/DeleteContentForm";
 import { ProjectForm } from "@/components/admin/ProjectForm";
 import { ProjectMediaForm } from "@/components/admin/ProjectMediaForm";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES } from "@/lib/auth/roles";
-import { updateProjectAction } from "@/lib/content/project-admin-actions";
+import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  deleteProjectAction,
+  updateProjectAction,
+} from "@/lib/content/project-admin-actions";
 import {
   getAdminProject,
   loadProjectOptions,
@@ -89,6 +93,16 @@ export default async function AdminWorkEditorPage({
           />
         </Card>
       </div>
+
+      {isSuperAdminRole(profile.role) ? (
+        <div className="mt-12">
+          <DeleteContentForm
+            entityLabel={t("admin.deleteForm.entityProject")}
+            action={deleteProjectAction.bind(null, project.id)}
+            locale="en"
+          />
+        </div>
+      ) : null}
     </>
   );
 }
