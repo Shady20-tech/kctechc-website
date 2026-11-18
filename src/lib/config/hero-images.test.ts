@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { DEPARTMENTS } from "@/lib/config/site";
+import { CORPORATE_PAGE_HEROES, DEPARTMENTS } from "@/lib/config/site";
 
 /**
  * Department hero images are referenced by path from `DEPARTMENTS`, and a
@@ -47,6 +47,44 @@ describe("department hero images", () => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
+  // The four corporate pages used to share one backdrop (About and Contact) or
+  // borrow a department's (Gallery used Electrical Services), which made them
+  // read as the same page. Each now has its own photograph.
+  it("gives each corporate page its own image, distinct from every department", () => {
+    const paths = CORPORATE_PAGE_HEROES.map((entry) => entry.image);
+    expect(new Set(paths).size).toBe(paths.length);
+    const departmentPaths = new Set(
+      DEPARTMENTS.map((department) => department.heroImage),
+    );
+    for (const path of paths) {
+      expect(
+        departmentPaths.has(path),
+        `${path} is also a department hero`,
+      ).toBe(false);
+    }
+  });
+
+  // A CC BY image obliges us to credit it. The obligation travels with the
+  // entry so it cannot be dropped by editing a page, and a CC0 file carries no
+  // credit rather than an unnecessary one.
+  it("declares a credit exactly where the licence requires it", () => {
+    const needsCredit = new Set(["services", "gallery", "contact"]);
+    for (const entry of CORPORATE_PAGE_HEROES) {
+      if (needsCredit.has(entry.page)) {
+        expect(entry.credit, `${entry.page} needs a credit`).toBeTruthy();
+        expect(entry.credit?.label).toContain("Wikimedia Commons");
+        expect(entry.credit?.href).toMatch(
+          /^https:\/\/commons\.wikimedia\.org\//,
+        );
+      } else {
+        expect(
+          entry.credit,
+          `${entry.page} is CC0 and carries no credit`,
+        ).toBeUndefined();
+      }
+    }
+  });
+
   // A hero renders full-bleed, so a thumbnail would be stretched across the
   // viewport. The placeholder assets that shipped first were 246x113–275x183 —
   // valid JPEGs that the two structural tests above happily accepted. These
@@ -64,6 +102,7 @@ describe("department hero images", () => {
     const paths = [
       ...DEPARTMENTS.map((department) => department.heroImage),
       "/hero/corporate-v3.jpg",
+      ...CORPORATE_PAGE_HEROES.map((page) => page.image),
     ];
     for (const path of paths) {
       const file = join(PUBLIC_DIR, path);

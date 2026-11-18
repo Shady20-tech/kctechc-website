@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { PageHero } from "@/components/ui/PageHero";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { corporatePageHero, DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -55,6 +55,7 @@ export default async function ServicesPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const hero = corporatePageHero("services");
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
@@ -76,6 +77,8 @@ export default async function ServicesPage({
         intro={t("services.intro")}
         breadcrumbs={breadcrumbs}
         breadcrumbLabel={t("a11y.breadcrumb")}
+        image={hero?.image}
+        credit={hero?.credit}
         meta={[
           {
             term: t("services.heroMeta1Term"),

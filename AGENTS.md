@@ -553,6 +553,13 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   photography (see "Hero image provenance" below): `/hero/corporate-v3.jpg` and
   `/hero/digital-marketing-v3.jpg`. Both measurably raise heading and body contrast over their
   predecessors.
+- The four corporate pages (`/about`, `/services`, `/gallery`, `/contact`) each carry their own
+  backdrop now, declared in `CORPORATE_PAGE_HEROES` and read through `corporatePageHero(page)`. They
+  previously shared `corporate-v3.jpg` (About and Contact) or borrowed a department hero (Gallery
+  used Electrical Services), and Services had no image at all. Three are CC BY and render their
+  credit in the hero; the About backdrop is CC0. All four clear WCAG AA at every breakpoint
+  (worst 5.79:1 at 1024px) and the four pages report Lighthouse accessibility/SEO/best-practices
+  100 in both locales.
 - The Cameroon administrative hierarchy below Region is now seeded from a vetted dataset.
   `20260101000004_geography.sql` seeds only the ten Regions (the brief supplies only those) and
   leaves divisions/subdivisions to the `import_administrative_divisions` path, so on every
@@ -593,9 +600,13 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
 
 ### Hero image provenance
 
-Both new backdrops are Wikimedia Commons files with licences that permit commercial use
-without royalty, chosen so the corporate hero reads as infrastructure/engineering and the
-Digital Marketing hero reads as the department's own commercial subject.
+Every hero backdrop is a Wikimedia Commons file with a licence that permits commercial use
+without royalty, chosen so each surface reads as its own subject rather than reusing one photo.
+
+#### Department backdrops
+
+The corporate hero reads as infrastructure/engineering and the Digital Marketing hero reads as the
+department's own commercial subject.
 
 - `/hero/corporate-v3.jpg` — "Fiber optic cable installation" (Rubin Observatory/NSF/AURA),
   **CC BY 4.0**, requires attribution. Source:
@@ -605,13 +616,37 @@ Digital Marketing hero reads as the department's own commercial subject.
   `https://commons.wikimedia.org/wiki/File:Mini_shopping_cart_placed_on_a_table_next_to_a_laptop_in_a_modern_office_setting.jpg`.
 
 Both files were cropped to 16:9 and resized (corporate 2048×1152, DM 2560×1440) before
-commit. The attribution obligation for the two CC BY files is **not yet rendered in the UI**;
+commit. The attribution obligation for these two CC BY files is **not yet rendered in the UI**;
 surface a credit (or swap to the CC0 alternatives below) before launch.
 
 CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 
 - Corporate: "Data center infrastructure in the United States" (DOE/NREL, public domain).
 - Digital Marketing: "Analytics graphs on a MacBook screen" (Luis Llerena, CC0).
+
+#### Corporate page backdrops (About / Services / Gallery / Contact)
+
+The four corporate pages each own a distinct backdrop, declared in `CORPORATE_PAGE_HEROES`
+(`src/lib/config/site.ts`). Three are CC BY and carry their credit in that config entry, which
+`PageHero` renders under the meta strip; About is CC0 and carries none. All four are cropped to
+16:9 and resized to 2048×1152.
+
+- `/hero/about-v2.jpg` — "Vue aérienne de la ville de Bafoussam" (PENdjeng), **CC0**, no
+  attribution required. Source:
+  `https://commons.wikimedia.org/wiki/File:6._Vue_a%C3%A9rienne_de_la_ville_de_Bafoussam.jpg`.
+  (An earlier pick, a CC0 Mount Cameroon photograph, was replaced after it measured 2.66:1 at
+  1024px — see the gotchas below.)
+- `/hero/services-v1.jpg` — "Office Building Off Old Street" (Francisco Anzola), **CC BY 3.0**.
+  Source:
+  `https://commons.wikimedia.org/wiki/File:Office_Building_Off_Old_Street_(215200145).jpeg`.
+- `/hero/gallery-v1.jpg` — "CCTV Installation" (Support gigates), **CC BY 4.0**. Source:
+  `https://commons.wikimedia.org/wiki/File:CCTV_Installation.jpg`.
+- `/hero/contact-v1.jpg` — "Computer keyboard placed on a black desk in a modern workspace"
+  (Shixart1985), **CC BY 2.0**. Source:
+  `https://commons.wikimedia.org/wiki/File:Computer_keyboard_placed_on_a_black_desk_in_a_modern_workspace.jpg`.
+
+The three CC BY credits render in the hero. The older `corporate-v3.jpg` and
+`digital-marketing-v3.jpg` above still render no credit and remain the outstanding attribution debt.
 
 ### Hero image gotchas worth not rediscovering
 
@@ -2429,6 +2464,47 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
   accent resolves to `--dept-accent-bright`, where white text is ~2:1; the variant pairs
   `bg-dept-accent-bright` with `text-ink-950` instead. Use it for any CTA inside `PageHero`'s
   `on-ink` band rather than `variant="accent"`.
+
+- **Each corporate page owns its own backdrop, and the four are declared in one place.**
+  `CORPORATE_PAGE_HEROES` in `src/lib/config/site.ts` maps `about | services | gallery | contact` to
+  an image, and the pages read it through `corporatePageHero(page)` rather than hardcoding a path.
+  Before this, About and Contact shared `corporate-v3.jpg` and Gallery borrowed
+  `electrical-services-v2.jpg` (a *department* hero), so three pages opened identically. Services had
+  no image at all. `hero-images.test.ts` now asserts the four paths are distinct *and* disjoint from
+  every department hero, so a future "just reuse that one" edit fails the suite.
+- **A CC BY image obliges attribution, and the obligation is data, not a comment.** Three of the four
+  new backdrops are CC BY (3.0/4.0/2.0) and carry a `credit` on their config entry, which `PageHero`
+  renders under the meta strip inside the copy column; the About backdrop is CC0 and carries none.
+  `hero-images.test.ts` pins the split, so a swap to a CC BY file without a credit fails. This
+  discharges the pre-existing debt for the *new* files; the two older CC BY heroes
+  (`corporate-v3.jpg`, `digital-marketing-v3.jpg`) still render no credit and are documented as
+  pending in "Hero image provenance".
+- **The new backdrops were chosen by measured contrast against the real scrim, not by eye.** Each
+  candidate was composited with the exact `.hero-scrim` stops at the hero's real geometry and scored
+  against the *rendered* text runs (the `Range.getClientRects()` boxes, so a full-width block whose
+  text covers a small part of its own box does not dilute the sample). Final worst-case ratios across
+  390/768/1024/1440: about 6.06, services 8.53, gallery 7.49, contact 5.79 — all above AA. A bright
+  image fails this: a sunny solar-panel shot measured 3.32:1 and was rejected despite being the most
+  on-theme candidate, because the copy sits over sunlit panels.
+- **The 1024px breakpoint is the binding one, and only a browser finds it.** The first About pick (a
+  Mount Cameroon photograph, CC0) measured 4.93:1 at 1440 and looked fine, but **2.66:1 at 1024**:
+  between `md` and the `lg` container the copy column is still narrow while the scrim is already the
+  desktop gradient, so the bright sky band lands directly under the copy. Measured against the live
+  pages, the shipped department heroes all clear 5.5:1 at 1024, so this was a new-image problem, not a
+  scrim problem. Always measure 1024, not just 1440 and mobile.
+- **Prefer CC0/public-domain so no new attribution debt is created, and check the licence per file.**
+  Candidates were gathered through the Wikimedia Commons API (`list=search` +
+  `prop=imageinfo&iiprop=extmetadata`), which returns `LicenseShortName`, `Artist` and `Credit` — read
+  those rather than trusting a filename or a search snippet. The About backdrop was swapped a second
+  time to reach a passing contrast *and* stay CC0 (an aerial view of Bafoussam), because the CC0
+  Cameroon images that passed were otherwise mountain/forest scenes rather than the company's own
+  built environment.
+- **Replacing a hero file in place does not change the measurement, because the URL is unchanged.**
+  Overwriting `about-v1.jpg` with a darker image left the 1024px ratio at exactly 2.66:1 — Next's
+  optimizer had cached the old bytes under the same `/_next/image?url=…` key (`max-age=14400`), so the
+  page still served the bright sky. The fix is a **new filename** (`about-v2.jpg`); the same trap is
+  documented for the department heroes. After the rename the ratio moved to 6.06:1, and the two
+  numbers being identical beforehand is what identifies a stale-asset problem rather than a bad image.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

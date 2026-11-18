@@ -7,6 +7,7 @@ import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageHero } from "@/components/ui/PageHero";
 import {
+  corporatePageHero,
   DEPARTMENTS,
   DEPARTMENT_EMAILS,
   isDepartmentSlug,
@@ -72,6 +73,7 @@ export default async function ContactPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const hero = corporatePageHero("contact");
   const site = await getSiteContent();
 
   const defaultDepartment: DepartmentSlug | undefined =
@@ -147,7 +149,8 @@ export default async function ContactPage({
         intro={t("contact.intro")}
         breadcrumbs={breadcrumbs}
         breadcrumbLabel={t("a11y.breadcrumb")}
-        image="/hero/corporate-v3.jpg"
+        image={hero?.image}
+        credit={hero?.credit}
         meta={[
           {
             term: t("footer.phoneLabel"),

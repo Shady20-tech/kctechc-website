@@ -142,6 +142,67 @@ export function getDepartment(
   return DEPARTMENTS.find((department) => department.slug === slug);
 }
 
+/**
+ * Backdrops for the four corporate pages (About, Services, Gallery, Contact).
+ *
+ * Each is a different photograph on purpose: the four pages previously shared
+ * `corporate-v3.jpg` (About and Contact) or borrowed a department's hero
+ * (Gallery used the Electrical Services backdrop), which made them read as one
+ * page. `image` is the public path; `credit` is present only where the licence
+ * requires attribution, so the obligation travels with the image instead of
+ * living in a comment nobody renders. CC0 and public-domain files carry none.
+ *
+ * Every source is a Wikimedia Commons file whose licence permits commercial use.
+ * `hero-images.test.ts` asserts each path resolves to a hero-sized landscape
+ * JPEG and that no two corporate pages share a backdrop.
+ */
+export type CorporatePageHero = {
+  /** The page segment under `/[locale]/`. */
+  page: "about" | "services" | "gallery" | "contact";
+  image: string;
+  /** Rendered in the hero when the licence requires attribution. */
+  credit?: { label: string; href: string };
+};
+
+export const CORPORATE_PAGE_HEROES: readonly CorporatePageHero[] = [
+  {
+    page: "about",
+    // CC0 — no attribution obligation. Aerial view of Bafoussam, Cameroon.
+    image: "/hero/about-v2.jpg",
+  },
+  {
+    page: "services",
+    image: "/hero/services-v1.jpg",
+    credit: {
+      label: "Photo: Francisco Anzola / Wikimedia Commons (CC BY 3.0)",
+      href: "https://commons.wikimedia.org/wiki/File:Office_Building_Off_Old_Street_(215200145).jpeg",
+    },
+  },
+  {
+    page: "gallery",
+    image: "/hero/gallery-v1.jpg",
+    credit: {
+      label: "Photo: Support gigates / Wikimedia Commons (CC BY 4.0)",
+      href: "https://commons.wikimedia.org/wiki/File:CCTV_Installation.jpg",
+    },
+  },
+  {
+    page: "contact",
+    image: "/hero/contact-v1.jpg",
+    credit: {
+      label: "Photo: Shixart1985 / Wikimedia Commons (CC BY 2.0)",
+      href: "https://commons.wikimedia.org/wiki/File:Computer_keyboard_placed_on_a_black_desk_in_a_modern_workspace.jpg",
+    },
+  },
+] as const;
+
+/** The configured hero for a corporate page, if one is declared. */
+export function corporatePageHero(
+  page: CorporatePageHero["page"],
+): CorporatePageHero | undefined {
+  return CORPORATE_PAGE_HEROES.find((entry) => entry.page === page);
+}
+
 /** Primary store currency, per the business brief. */
 export const STORE_CURRENCY = {
   code: "XAF",

@@ -8,7 +8,7 @@ import { type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { PageHero } from "@/components/ui/PageHero";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { corporatePageHero, DEPARTMENTS } from "@/lib/config/site";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -57,6 +57,7 @@ export default async function GalleryPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const hero = corporatePageHero("gallery");
 
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
@@ -78,7 +79,8 @@ export default async function GalleryPage({
         intro={t("gallery.intro")}
         breadcrumbs={breadcrumbs}
         breadcrumbLabel={t("a11y.breadcrumb")}
-        image="/hero/electrical-services-v2.jpg"
+        image={hero?.image}
+        credit={hero?.credit}
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink

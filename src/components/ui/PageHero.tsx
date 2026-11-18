@@ -30,6 +30,7 @@ export function PageHero({
   breadcrumbs,
   breadcrumbLabel,
   image,
+  credit,
   children,
   meta,
 }: {
@@ -41,6 +42,12 @@ export function PageHero({
   breadcrumbLabel?: string;
   /** Decorative backdrop photo. Omit for a composition-only hero. */
   image?: string;
+  /**
+   * Attribution for the backdrop, required by the CC BY licences. Rendered
+   * inside the copy column so it sits over the protected part of the photo,
+   * and only when the image's licence actually demands it.
+   */
+  credit?: { label: string; href: string };
   /** Page-specific content rendered under the lede (CTAs, search, facts). */
   children?: ReactNode;
   /**
@@ -103,6 +110,19 @@ export function PageHero({
               </div>
             ))}
           </dl>
+        ) : null}
+
+        {credit ? (
+          <p className="mt-6 max-w-3xl text-xs text-ink-300">
+            <a
+              href={credit.href}
+              rel="noopener noreferrer nofollow"
+              target="_blank"
+              className="underline decoration-white/30 underline-offset-2 transition-soft hover:text-ink-100"
+            >
+              {credit.label}
+            </a>
+          </p>
         ) : null}
       </div>
     </section>

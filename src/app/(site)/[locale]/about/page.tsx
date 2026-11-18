@@ -11,7 +11,7 @@ import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentIcon } from "@/components/ui/DepartmentIcon";
 import { PageHero } from "@/components/ui/PageHero";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { corporatePageHero, DEPARTMENTS } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -68,6 +68,7 @@ export default async function AboutPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
+  const hero = corporatePageHero("about");
   const site = await getSiteContent();
 
   const breadcrumbs: BreadcrumbItem[] = [
@@ -99,7 +100,8 @@ export default async function AboutPage({
         intro={t("about.intro")}
         breadcrumbs={breadcrumbs}
         breadcrumbLabel={t("a11y.breadcrumb")}
-        image="/hero/corporate-v3.jpg"
+        image={hero?.image}
+        credit={hero?.credit}
         meta={[
           {
             term: t("footer.officeHeading"),
