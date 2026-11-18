@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
 import {
   ListingCard,
   ListingGrid,
+  formatArea,
   listingFactChips,
   listingHref,
   listingStatusTone,
@@ -261,9 +262,43 @@ describe("listingFactChips", () => {
     expect(
       listingFactChips(
         record({ bedrooms: undefined, bathrooms: undefined }),
+        "en",
         t,
       ),
     ).toEqual([]);
+  });
+
+  it("tags each fact with what it describes, so the icon follows the fact", () => {
+    // Bathrooms without a bedroom count is the case that broke the positional
+    // icon: the only fact present is a bathroom, and it must not be a bed.
+    expect(
+      listingFactChips(
+        record({
+          bedrooms: undefined,
+          bathrooms: 2,
+          landAreaSqm: undefined,
+          buildingAreaSqm: 180,
+        }),
+        "en",
+        t,
+      ),
+    ).toEqual([
+      {
+        kind: "bathroom",
+        label: t("realEstate.units.bathrooms", { count: 2 }),
+      },
+      { kind: "area", label: "180 m²" },
+    ]);
+  });
+});
+
+describe("formatArea", () => {
+  it("groups digits for the page's locale", () => {
+    // fr-CM groups with a narrow no-break space, en-CM with a comma; a French
+    // page showing "1,234 m²" is the English convention in French copy.
+    expect(formatArea(1234, "en", t)).toBe("1,234 m²");
+    expect(formatArea(1234, "fr", t)).toBe("1\u202f234 m²");
+    expect(formatArea(undefined, "fr", t)).toBeNull();
   });
 });
 

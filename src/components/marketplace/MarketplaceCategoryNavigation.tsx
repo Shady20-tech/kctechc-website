@@ -7,7 +7,7 @@ import type { MarketplaceCategoryItem } from "./types";
  *
  * Rendered as links, not buttons: each category is a real URL built by the
  * department from its own filter model, so it is shareable, crawlable as
- * `noindex, follow`, and works without JavaScript. The count beside an entry is
+ * `noindex, nofollow`, and works without JavaScript. The count beside an entry is
  * a real count from the same predicate the search uses, so a shortcut reading
  * "12" leads to a result set of 12; an entry with no count shows none rather than
  * a zero, so the navigation never implies inventory that is not there.

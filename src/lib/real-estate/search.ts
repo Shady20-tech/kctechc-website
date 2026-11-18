@@ -629,7 +629,7 @@ export function buildListingQuery(filters: ListingFilters): string {
  * Used to decide whether to offer "clear filters", and — more importantly — to
  * decide whether the page may be indexed. An arbitrary filter combination is a
  * view of the catalogue, not a page with its own content, so a filtered URL is
- * `noindex, follow`. This is the single place that question is answered for both
+ * `noindex, nofollow`. This is the single place that question is answered for both
  * purposes.
  *
  * Sort and page are excluded on purpose: neither changes *which* properties match,

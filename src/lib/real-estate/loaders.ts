@@ -731,7 +731,7 @@ export async function loadListingFacets(): Promise<ListingFacets> {
  *
  * The return value is what decides indexability, and the absence of a row is a
  * meaningful answer rather than a failure: it means the page renders as a filtered
- * view and carries `noindex, follow`. See `20260101000029_geo_landing_content.sql`
+ * view and carries `noindex, nofollow`. See `20260101000029_geo_landing_content.sql`
  * for why indexability is a property of editorial content rather than of a listing
  * count.
  *

@@ -16,7 +16,7 @@ import type { MarketplaceActiveFilterChip } from "./types";
  * it is told, and a store chip can never be built from a listing field.
  *
  * A chip is a link, not a button: the target is a real URL, so it is shareable,
- * crawlable as `noindex, follow`, and works without JavaScript.
+ * crawlable as `noindex, nofollow`, and works without JavaScript.
  *
  * A Server Component — the removal targets are plain URLs.
  */

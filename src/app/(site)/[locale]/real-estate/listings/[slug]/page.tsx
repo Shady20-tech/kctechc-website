@@ -241,13 +241,13 @@ export default async function PropertyListingPage({
               {record.buildingAreaSqm !== undefined ? (
                 <FactRow
                   label={t("realEstate.listing.buildingAreaLabel")}
-                  value={formatArea(record.buildingAreaSqm, t) ?? ""}
+                  value={formatArea(record.buildingAreaSqm, resolved, t) ?? ""}
                 />
               ) : null}
               {record.landAreaSqm !== undefined ? (
                 <FactRow
                   label={t("realEstate.listing.landAreaLabel")}
-                  value={formatArea(record.landAreaSqm, t) ?? ""}
+                  value={formatArea(record.landAreaSqm, resolved, t) ?? ""}
                 />
               ) : null}
               {record.yearBuilt !== undefined ? (

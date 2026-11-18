@@ -62,7 +62,7 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
  *
  * ## Indexability
  *
- * A filtered view is `noindex, follow`. An arbitrary combination of region, price
+ * A filtered view is `noindex, nofollow`. An arbitrary combination of region, price
  * and bedrooms is a view of the catalogue, not a page with content of its own;
  * indexing every combination would flood the index with near-duplicates. The
  * unfiltered browser is indexable, and so is a geographic landing page once an

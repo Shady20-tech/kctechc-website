@@ -580,6 +580,16 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   domain, `email` first in `emails`) against the brief.
 - `SITE_REVISION_DATE` was bumped to `2026-11-05` for the Digital Marketing hero-heading change
   (which is a visible change on a statically-listed page).
+- Phase 9 (design, SEO and accessibility audit of the real-estate marketplace) is implemented. The
+  audit found three defects, all fixed: the property card chose its fact icons by array position, so
+  a listing with bathrooms but no bedroom count showed a bed icon beside "2 bathrooms"
+  (`listingFactChips` now returns `{ kind, label }`); `formatArea` hard-coded `"en-CM"`, so French
+  pages rendered "1,234 m²" instead of "1 234 m²" (it now takes the locale); and five comments
+  described a filtered view as `noindex, follow` while `buildMetadata` has emitted `nofollow` since
+  Phase 1. The rest of the brief was verified rather than changed — see the Phase 9 section above for
+  what was checked and why each item was left alone. 1207 Vitest tests pass, `tsc --noEmit` is clean,
+  ESLint is clean, the production build succeeds (137 static pages), and Lighthouse reports
+  accessibility 100 / SEO 100 / best-practices 100 on every indexable real-estate surface.
 
 ### Hero image provenance
 
@@ -2312,6 +2322,75 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   routes is the pre-existing static-CSP `'unsafe-inline'` flag (identical on the deployed preview
   and on `/admin/login`); accessibility is 100. Do not chase either as a regression from a form
   change.
+
+### Phase 9: design, SEO and accessibility audit of the real-estate marketplace
+
+The marketplace already met the brief on most counts; the audit found and fixed three defects and
+confirmed the rest. What was verified rather than changed is recorded here so a later pass does not
+redo it.
+
+**Design consistency (no change needed).** No component in `src/components/marketplace/` or
+`src/components/real-estate/` hard-codes a colour — every value is a token or the `--dept-accent`
+family. The department accent is set once per subtree by `departmentScopeProps("real-estate")` on
+both the landing page and the results page, and the Real Estate accent (`#1E5631`) is the
+text-safe variant with white text at 8.64:1. Typography is Sora/Inter/JetBrains Mono as elsewhere;
+the logo is untouched. **A new marketplace component must take the accent from the token, never a
+hex, and must sit under a subtree that sets `data-department`.**
+
+**Accessibility (no change needed).** `Modal` carries `role="dialog"` + `aria-modal` + a labelled
+close control, and traps focus, closes on Escape and returns focus to the trigger. The mobile
+filter drawer is that same `Modal` with `placement="side"`, and renders the *same* filter form as
+the desktop column. `FavoriteButton` is `aria-pressed` with a per-listing label and is a sibling of
+the card link, not a descendant, so the whole card can be clickable without swallowing the action.
+`MarketplaceFilterSection` is a native `<details>`, so the disclosure works without JavaScript.
+`MarketplaceSearchableSelect` implements the ARIA combobox pattern (`role="combobox"`,
+`aria-expanded`, `aria-activedescendant`, Home/End/Up/Down/Enter/Escape). Form errors render
+through `Alert`, which is `role="alert"` for error tones. Lighthouse accessibility is 100 on every
+real-estate surface, unfiltered and filtered.
+
+**SEO (no change needed except the comment fix below).** Canonicals are locale-qualified absolute
+URLs; `hreflang` is `en`/`fr`/`x-default` with `x-default` pointing at the gateway; the unfiltered
+browser is `index, follow`; a filtered view is `noindex, nofollow, nocache` with the locale
+alternates dropped and the canonical kept; listing pages take `noindex` from `entity_seo`; the
+sitemap lists published listings with `lastModified` from `record.updatedAt`; `robots.txt` disallows
+`/admin/`, `/auth/` and `/api/`. Admin, KYC, the customer account hub and both dashboards are
+`noindex`, with the admin layout and the dashboard layout each declaring it once so a new child
+route inherits it. KYC data never reaches metadata or structured data.
+
+**Defects fixed in this phase.**
+
+- **A card's fact icons were chosen by array position, not by what the fact is.** `listingFactChips`
+  returned a bare `string[]` and the card picked `BedDouble` for index 0, `Bath` for index 1 and
+  `Ruler` for the rest. Bedrooms and bathrooms are both optional and independent, so a listing with
+  bathrooms but no bedroom count rendered "2 bathrooms" beside a **bed** icon. The function now
+  returns `{ kind, label }` and the icon follows `kind`. `ListingCard.test.tsx` pins the
+  bathrooms-without-bedrooms case, which is the one that broke.
+- **`formatArea` hard-coded `"en-CM"` regardless of locale**, so every French page rendered
+  "1,234 m²" where French groups with a narrow no-break space ("1 234 m²"). It now takes the locale
+  and picks `fr-CM`/`en-CM`, matching `formatListingPrice`. Both call sites (the card and the detail
+  page's fact rows) pass it. **The same trap applies to any new number a French page renders** —
+  `Intl.NumberFormat` with a fixed locale is an English-only rendering.
+- **Five comments described the filtered view as `noindex, follow`, but the code emits
+  `noindex, nofollow`.** `buildMetadata` has set `follow: false` since Phase 1, and
+  `seo.test.ts` asserts it; the comments in `search.ts`, `loaders.ts`, the listings page and two
+  marketplace components had drifted. The comments now match the behaviour. This was a
+  documentation defect only — no crawl directive changed.
+
+**Verified and deliberately left alone.** The landing page's headline already reads "Find the Right
+Property in Cameroon" with a location selector, a keyword input, a search button and category
+shortcuts, all in one GET form so the search is a URL. The sidebar is 272–288px via grid tracks
+(`lg:grid-cols-[17rem_1fr]`), not fixed widths. Price bounds carry the brief's exact wording as
+hints and state the currency; there are **no budget presets**, correctly, because none could be
+computed from real data. Sorting offers all five options the SQL supports (relevance, newest,
+price-asc, price-desc, most-viewed). Multi-image upload already works for products, listings and
+both dashboards (`formData.getAll("image")` with a `multiple` file input), and the super-admin
+verification badge is written by `setPublisherVerificationAction` through the session client so the
+`real_estate_memberships_enforce_verification` trigger is the control.
+
+**A Lighthouse performance number for this page is not trustworthy under default throttling.**
+`/en/real-estate` scored 83 with a simulated LCP of 4.4s under Lantern, and 98 with LCP 1.8s under
+`--throttling-method=devtools`. This is the third time this repo has hit the Lantern overstatement
+on this app; use applied throttling before chasing a simulated-LCP regression.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

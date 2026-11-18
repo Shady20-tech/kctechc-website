@@ -70,40 +70,68 @@ export function listingStatusTone(
   return "neutral";
 }
 
-/** Format an area in square metres, or null when unknown. */
+/** What a card fact describes, so the icon can follow the fact rather than its position. */
+export type ListingFactKind = "bedroom" | "bathroom" | "area";
+
+export type ListingFact = { kind: ListingFactKind; label: string };
+
+/** Format an area in square metres for a locale, or null when unknown. */
 export function formatArea(
   area: number | undefined,
+  locale: Locale,
   t: Translator["t"],
 ): string | null {
   if (area === undefined) return null;
-  return `${new Intl.NumberFormat("en-CM").format(area)} ${t("realEstate.units.sqm")}`;
+  const formatted = new Intl.NumberFormat(
+    locale === "fr" ? "fr-CM" : "en-CM",
+  ).format(area);
+  return `${formatted} ${t("realEstate.units.sqm")}`;
 }
 
-/** The card's key facts, as short labelled chips. */
+/**
+ * The card's key facts, each tagged with what it describes.
+ *
+ * The tag exists because the icon is chosen from it. Deriving the icon from the
+ * array position instead meant a listing with bathrooms but no bedroom count
+ * showed "2 bathrooms" beside a bed icon — the facts are optional and independent,
+ * so a position carries no meaning.
+ */
 export function listingFactChips(
   record: PropertyListingRecord,
+  locale: Locale,
   t: Translator["t"],
-): string[] {
-  const chips: string[] = [];
+): ListingFact[] {
+  const facts: ListingFact[] = [];
   if (record.bedrooms !== undefined) {
-    chips.push(
-      record.bedrooms === 1
-        ? t("realEstate.units.bedroomsOne")
-        : t("realEstate.units.bedrooms", { count: record.bedrooms }),
-    );
+    facts.push({
+      kind: "bedroom",
+      label:
+        record.bedrooms === 1
+          ? t("realEstate.units.bedroomsOne")
+          : t("realEstate.units.bedrooms", { count: record.bedrooms }),
+    });
   }
   if (record.bathrooms !== undefined) {
-    chips.push(
-      record.bathrooms === 1
-        ? t("realEstate.units.bathroomsOne")
-        : t("realEstate.units.bathrooms", { count: record.bathrooms }),
-    );
+    facts.push({
+      kind: "bathroom",
+      label:
+        record.bathrooms === 1
+          ? t("realEstate.units.bathroomsOne")
+          : t("realEstate.units.bathrooms", { count: record.bathrooms }),
+    });
   }
-  const building = formatArea(record.buildingAreaSqm, t);
-  if (building) chips.push(building);
-  const land = formatArea(record.landAreaSqm, t);
-  if (land) chips.push(land);
-  return chips;
+  const building = formatArea(record.buildingAreaSqm, locale, t);
+  if (building) facts.push({ kind: "area", label: building });
+  const land = formatArea(record.landAreaSqm, locale, t);
+  if (land) facts.push({ kind: "area", label: land });
+  return facts;
+}
+
+/** The icon for a fact kind. */
+function FactIcon({ kind }: { kind: ListingFactKind }) {
+  const Icon =
+    kind === "bedroom" ? BedDouble : kind === "bathroom" ? Bath : Ruler;
+  return <Icon aria-hidden="true" className="h-3.5 w-3.5 text-muted" />;
 }
 
 /**
@@ -136,7 +164,7 @@ export function ListingCard({
     record.images.find((entry) => entry.isPrimary) ?? record.images[0];
   const imageUrl = image ? propertyMediaPublicUrl(image.storagePath) : null;
   const href = listingHref(record, locale);
-  const chips = listingFactChips(record, t);
+  const facts = listingFactChips(record, locale, t);
   const location = [record.locality, record.regionName]
     .filter(Boolean)
     .join(", ");
@@ -202,30 +230,15 @@ export function ListingCard({
             <span className="line-clamp-1">{location}</span>
           </p>
 
-          {chips.length > 0 ? (
+          {facts.length > 0 ? (
             <ul className="mt-0.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-body">
-              {chips.map((chip, index) => (
+              {facts.map((fact, index) => (
                 <li
-                  key={`${chip}-${index}`}
+                  key={`${fact.kind}-${fact.label}-${index}`}
                   className="flex items-center gap-1"
                 >
-                  {index === 0 ? (
-                    <BedDouble
-                      aria-hidden="true"
-                      className="h-3.5 w-3.5 text-muted"
-                    />
-                  ) : index === 1 ? (
-                    <Bath
-                      aria-hidden="true"
-                      className="h-3.5 w-3.5 text-muted"
-                    />
-                  ) : (
-                    <Ruler
-                      aria-hidden="true"
-                      className="h-3.5 w-3.5 text-muted"
-                    />
-                  )}
-                  {chip}
+                  <FactIcon kind={fact.kind} />
+                  {fact.label}
                 </li>
               ))}
             </ul>
