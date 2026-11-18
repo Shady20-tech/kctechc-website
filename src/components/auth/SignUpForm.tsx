@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/Form";
+import { SelectField, TextField } from "@/components/ui/Form";
 import { signUpAction } from "@/lib/auth/actions";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -122,43 +122,27 @@ export function SignUpForm({
         error={errorFor("fullName")}
       />
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-ink-900">
-          {t("auth.accountTypeLegend")}
-        </legend>
-        <p className="text-xs text-muted">{t("auth.accountTypeHint")}</p>
-        <div className="mt-1 space-y-2">
-          {ACCOUNT_TYPES.map((type) => (
-            <div key={type} className="flex items-start gap-2.5">
-              <input
-                id={`accountType-${type}`}
-                name="accountType"
-                type="radio"
-                value={type}
-                checked={accountType === type}
-                onChange={() => setAccountType(type)}
-                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong"
-              />
-              <label
-                htmlFor={`accountType-${type}`}
-                className="text-sm text-body"
-              >
-                <span className="font-medium text-ink-900">
-                  {t(`auth.accountType.${type}.label`)}
-                </span>
-                <span className="block text-xs text-muted">
-                  {t(`auth.accountType.${type}.body`)}
-                </span>
-              </label>
-            </div>
-          ))}
-        </div>
-        {errors.accountType ? (
-          <p className="text-xs font-medium text-red-700">
-            {errorFor("accountType")}
-          </p>
-        ) : null}
-      </fieldset>
+      {/* A dropdown, not a radio group: the choice is one declaration, and the
+          date-of-birth hint below changes with it. Each option keeps its own
+          explanation, so collapsing the list loses no guidance. */}
+      <SelectField
+        id="accountType"
+        name="accountType"
+        label={t("auth.accountTypeLegend")}
+        hint={t("auth.accountTypeHint")}
+        required
+        requiredLabel={t("common.required")}
+        value={accountType}
+        onChange={(event) => setAccountType(event.target.value as AccountType)}
+        error={errorFor("accountType")}
+      >
+        {ACCOUNT_TYPES.map((type) => (
+          <option key={type} value={type}>
+            {t(`auth.accountType.${type}.label`)} —{" "}
+            {t(`auth.accountType.${type}.body`)}
+          </option>
+        ))}
+      </SelectField>
 
       <div>
         <TextField
@@ -189,41 +173,24 @@ export function SignUpForm({
         error={errorFor("phone")}
       />
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-ink-900">
-          {t("auth.permanentResidencyLegend")}
-        </legend>
-        <p className="text-xs text-muted">{t("auth.permanentResidencyHint")}</p>
-        <div className="mt-1 space-y-2">
-          {(
-            [
-              ["true", t("auth.permanentResidencyYes")],
-              ["false", t("auth.permanentResidencyNo")],
-            ] as const
-          ).map(([value, label]) => (
-            <div key={value} className="flex items-start gap-2.5">
-              <input
-                id={`permanentResidency-${value}`}
-                name="permanentResidency"
-                type="radio"
-                value={value}
-                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong"
-              />
-              <label
-                htmlFor={`permanentResidency-${value}`}
-                className="text-sm text-body"
-              >
-                {label}
-              </label>
-            </div>
-          ))}
-        </div>
-        {errors.permanentResidency ? (
-          <p className="text-xs font-medium text-red-700">
-            {errorFor("permanentResidency")}
-          </p>
-        ) : null}
-      </fieldset>
+      {/* A dropdown for the same reason as the account type: a single required
+          choice with two options reads better as a select than as two radios. */}
+      <SelectField
+        id="permanentResidency"
+        name="permanentResidency"
+        label={t("auth.permanentResidencyLegend")}
+        hint={t("auth.permanentResidencyHint")}
+        required
+        requiredLabel={t("common.required")}
+        defaultValue=""
+        error={errorFor("permanentResidency")}
+      >
+        <option value="" disabled>
+          {t("auth.permanentResidencyPlaceholder")}
+        </option>
+        <option value="true">{t("auth.permanentResidencyYes")}</option>
+        <option value="false">{t("auth.permanentResidencyNo")}</option>
+      </SelectField>
 
       <TextField
         id="email"

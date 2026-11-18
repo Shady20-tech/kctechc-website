@@ -291,6 +291,7 @@
     "permanentResidencyHint": "This helps us show listings and contacts that are relevant to where you actually live.",
     "permanentResidencyYes": "Yes, I am a permanent resident of my city",
     "permanentResidencyNo": "No, I am not a permanent resident of my city",
+    "permanentResidencyPlaceholder": "Select an answer",
     "errPermanentResidency": "Please tell us whether you are a permanent resident.",
     "accountType": {
       "buyer": {

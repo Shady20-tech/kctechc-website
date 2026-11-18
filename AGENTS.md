@@ -2287,6 +2287,32 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   `queryListings` / geography / facets / favourites in one `Promise.all`. Do not "optimise" by adding
   indexes to the filter columns without measuring first — on this shape they do not help.
 
+### Sign-up: role and residency are dropdowns
+
+- **The role ("I am signing up as") and residency questions are `<select>`s, not radio groups.**
+  Both are single required choices, so collapsing them keeps the form short on a phone. They use the
+  shared `SelectField` primitive, which already wires the label, hint and error text and sets
+  `required` — do not hand-roll a `<select>` here.
+- **The option `value`s are a contract with `signUpSchema`, so the test pins them.** The role options
+  are exactly `ACCOUNT_TYPES` (`buyer`/`landlord`/`agent`) and residency is `""`/`"true"`/`"false"`.
+  `SignUpForm.test.tsx` asserts the value lists and that no radio controls render, because a
+  mismatched option value would submit a string the schema refuses and fail only on POST.
+- **The role select is controlled; residency is uncontrolled with a blank initial option.** The
+  role drives the date-of-birth hint below it (`requiresAdult`), so it must be controlled to re-render
+  that hint. Residency has no dependent field, so it keeps `defaultValue=""`; the blank option is
+  `disabled` and is the initial state, which is how "no answer" stays distinct from a fabricated
+  `false` — the same distinction `signUpSchema` preserves by normalising a blank to `undefined`.
+- **A capability role no longer prints its explanation under a radio; the text moved into the
+  option label** (`"Landlord / Property Owner — List and manage property you own…"`). The one-line
+  explanations still come from `auth.accountType.<type>.body`, so the copy lives in one place and
+  both locales carry it. If the option text is ever truncated on a narrow control, that is a CSS
+  concern, not a reason to drop the explanation from the DOM.
+- **The `noindex` auth routes score SEO 66 in Lighthouse on purpose** — `is-crawlable` reports
+  "blocked from indexing", which is the intended state for `/admin/*`. Best-practices 96 on these
+  routes is the pre-existing static-CSP `'unsafe-inline'` flag (identical on the deployed preview
+  and on `/admin/login`); accessibility is 100. Do not chase either as a regression from a form
+  change.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
