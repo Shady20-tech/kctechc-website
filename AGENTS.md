@@ -473,6 +473,20 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   `phone` and `permanent_residency` from the sign-up metadata, with a `do $$` self-test for the
   round-trip and the escalation guard. The `SignUpForm` gained the phone field and the residency
   radio; `ProfileResidencyForm` stores a stated "no" as an explicit `false`.
+- Geography is now a reference dataset rather than a typed string. Migration
+  `20260101000071_geography_reference_data.sql` applies the 34 accented/hyphenated name
+  corrections from the supplied Cameroon CSVs (rejecting the CSV code scheme, which would violate
+  `regions_code_format` and break every stored reference), adds nullable `division_id` /
+  `subdivision_id` to `electrical_projects`, `agent_profiles`, `inquiries` and `profiles` with
+  composite foreign keys and depth checks, adds a trigger that clears the deeper levels when a
+  region is cleared, and exposes `geography_reference_tree()` — the whole hierarchy in one
+  read — to the browser. `supabase/validate/130_geography_reference_behaviour.sql` proves the
+  rejections and the cascade; `geography-reference-migration.test.ts` (11) pins the shape without a
+  database. See "Geography reference data" above for the decisions and the `MATCH SIMPLE` trap.
+- 1336 Vitest tests pass (102 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+  build succeeds (137/137 static pages). The SQL is verified with `pglast` rather than a live
+  database: no Postgres server and no Docker socket are reachable in this container, so
+  `supabase/validate/*.sql` was not replayed.
 - 1170 Vitest tests run (90 files) with `tsc --noEmit` and ESLint clean. The one failure is
   `src/lib/store/storage.test.ts` ("uses the Storage URL for an ordinary product"), which asserts a
   null URL when Storage is unconfigured; it fails only because the local `.env.local` points at the
@@ -1440,6 +1454,74 @@ undefined`. Message keys with a dot must be nested objects (`state: { draft: ...
   path on disk, checks the JPEG start/end markers, and requires a square, card-sized image (the tile
   media box is 1:1, so a non-square source is cropped and the subject can fall outside the crop). A
   mistyped path otherwise fails silently as an empty box.
+
+### Geography reference data: dropdowns instead of typed locations
+
+- **The supplied CSVs are a name correction to an existing dataset, not a second
+  dataset.** `cameroon_regions.csv` / `_divisions.csv` / `_subdivisions.csv` carry the
+  same 10 / 58 / 360 hierarchy as
+  `20260101000055_cameroon_divisions_and_subdivisions.sql` (verified row-for-row; the
+  per-region `division_count` column sums to 58 and the subdivision column to 360, so
+  the CSV is internally consistent too). Migration
+  `20260101000071_geography_reference_data.sql` adopts only the **34 genuinely
+  corrected names** (`Ngaoundere` -> `Ngaoundéré`, `Ekondo Titi` -> `Ekondo-Titi`,
+  `Upper Bayang` -> `Upper-Bayang`, …) and leaves every `slug` alone, so no filtered
+  or localized URL moves.
+- **The CSV code scheme is deliberately NOT adopted.** CSVs use `CM-AD` / `CM-AD-DJE`
+  / `CM-AD-DJE-01`; production uses `AD` / `CM001001` / `CM001001001`. Re-coding would
+  (a) violate `regions_code_format` (`^[A-Z]{2,4}$` rejects `CM-AD`), and (b) break
+  every row already referencing the hierarchy plus `src/lib/real-estate/import.ts`,
+  which maps by code. The app selects and links by **slug**; a code is an internal
+  key. `geography-reference-migration.test.ts` asserts no `set code =` exists.
+- **Two CSV rows are rejected on purpose, and the test pins the rejection.**
+  `CM-ES-LD` "Lom-et-Djerem" is *unaccented* while the stored `Lom-et-Djérem` is
+  correct — applying it would be a regression. `CM-CE-NS` "Nyong-et-So’o" differs only
+  in apostrophe style (typographic vs ASCII) and this repo stores ASCII. A naive
+  "apply every CSV name" script gets both wrong; check the direction of the
+  correction, not just that the strings differ.
+- **`regions.csv` changes nothing.** Its ten names match; the only differences are the
+  code scheme and `North-West`/`South-West` hyphenation, where the business brief's own
+  wording ("Northwest", "Southwest") matches what is stored. The brief wins over a CSV
+  for a business-facing spelling.
+- **A composite FK is not enforced when any of its columns is NULL.** `MATCH SIMPLE`
+  (the default) skips the check, so a row with `subdivision_id` but no `division_id`
+  would pass a `foreign key (subdivision_id, division_id, region_id)`. Every table that
+  gained the columns also gained a `*_geography_depth` CHECK (`subdivision_id is null
+  or division_id is not null`). Do not add a composite FK without the depth check.
+- **`on delete set null` on the parent silently disables the child's composite FK.**
+  `region_id` is `on delete set null` on `electrical_projects`, `agent_profiles`,
+  `inquiries` and `profiles`. Deleting a region nulls it, which (see above) stops the
+  composite FK being checked — leaving a `division_id` pointing into a region that no
+  longer exists. The `clear_deeper_geography_on_region_clear` trigger (one function,
+  four triggers) nulls the deeper levels whenever the region is cleared. `validate/130`
+  proves it.
+- **The new columns are nullable on purpose.** An existing row written before the
+  migration must stay valid, and a record may legitimately be captured before the
+  deeper level is known. `validate/130` asserts all 8 are `is_nullable = 'YES'`.
+- **`property_listings.locality` stays free text.** A neighbourhood/quarter is not an
+  administrative level in the vetted dataset, and inventing a `neighbourhoods` table
+  would be fabricating geography. Do not "complete" the hierarchy by guessing.
+- **`property_listings` already had `region_id`/`division_id`/`subdivision_id` with
+  composite FKs** (migration 18). Only the four tables that stored *just* a region
+  needed the new columns.
+- **`quote_requests` is not a table.** The audit note refers to the quote-request
+  columns that migration 14 added **to `inquiries`** (`property_type`, `region_id`,
+  `locality`, `contact_method`). Adding a separate table would be a duplicate.
+- **A new function created after migration 41 keeps Supabase's default browser grant.**
+  Migration 71 creates two: `geography_reference_tree` (read-only, `security invoker`,
+  deliberately granted to `anon`/`authenticated` so the public filter can call it) and
+  the trigger function (revoked). `geography_reference_tree` is now on the allow-list
+  in `supabase/validate/30_function_execute_hardening.sql`; add any future function
+  there in the same change.
+- **Use `geography_reference_tree()` rather than three round trips.** It returns the
+  whole Region -> Division -> Subdivision tree in one ordered read, which is what the
+  cascading selectors need; three separate reads are three chances to render a
+  half-built cascade. `listing_geography_counts()` (migration 30) remains the source of
+  **real** per-node listing counts — never invent a count.
+- **Verify SQL with a parser before trusting it.** `pglast` (`pip install pglast`)
+  parses the whole file without a database and caught a real bug here: `'Sa'a'` and
+  `'Ma'an'` are unescaped apostrophes that break the statement. PostgreSQL needs
+  `'Sa''a'`. No TypeScript test and no amount of reading catches that.
 
 ### Migration-time seeding gotchas worth not rediscovering
 

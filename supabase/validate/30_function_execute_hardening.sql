@@ -43,6 +43,7 @@ declare
   v_browser_roles text[] := array['anon', 'authenticated'];
   v_allowed text[] := array[
     'place_order', 'search_property_listings', 'listing_geography_counts',
+    'geography_reference_tree',
     'listing_facets',
     'search_products', 'product_facets',
     'match_region_by_name', 'record_listing_view',
