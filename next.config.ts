@@ -47,12 +47,24 @@ const supabaseIsLoopback =
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
+/**
+ * The origin MapLibre fetches its style and vector tiles from. Derived from the
+ * same `NEXT_PUBLIC_MAP_PROVIDER` the adapter reads, so switching provider
+ * cannot leave CSP pointing at the previous vendor — a mismatch shows up as a
+ * silently unavailable map rather than an error.
+ */
+const mapTileOrigin =
+  process.env.NEXT_PUBLIC_MAP_PROVIDER?.trim() === "mapbox"
+    ? "https://api.mapbox.com"
+    : "https://tiles.openfreemap.org";
+
 const contentSecurityPolicy = buildContentSecurityPolicy({
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || null,
   tolgeeApiUrl:
     process.env.NEXT_PUBLIC_TOLGEE_API_URL?.trim() ||
     "https://app.tolgee.io",
   isDevelopment,
+  mapTileOrigin,
   analyticsEnabled: Boolean(
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim(),
   ),

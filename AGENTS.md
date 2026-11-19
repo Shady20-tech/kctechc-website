@@ -620,10 +620,12 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   marketplace shape (prominent photograph, price and period, title, location, category, facts,
   publisher badge, save control). Listing detail, gallery, favourites, saved searches, pagination,
   map view, localized slugs, breadcrumbs, metadata and JSON-LD all still work. The one defect found
-  was the missing LCP candidate on the results grid — see "The marketplace results grid had no LCP
-  candidate" below. 1356 Vitest tests pass (103 files), `tsc --noEmit` is clean, ESLint is clean, the
-  build succeeds, and Lighthouse is 100 on accessibility, best-practices and SEO for the listings
-  page on desktop and mobile, with performance 86-93 under applied throttling.
+  were two: the results grid had no LCP candidate, and `connect-src` omitted the map tile origin so
+  `?view=map` could never render. Both are fixed and covered — see "CSP blocked the map entirely"
+  and "The marketplace results grid had no LCP candidate" below. 1359 Vitest tests pass (103 files),
+  `tsc --noEmit` is clean, ESLint is clean, the build succeeds, and Lighthouse is 100 on
+  accessibility, best-practices and SEO for the listings page on desktop and mobile, with
+  performance 89-93 under applied throttling.
 
 ### Hero image provenance
 
@@ -2676,6 +2678,37 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
   documented for the department heroes. After the rename the ratio moved to 6.06:1, and the two
   numbers being identical beforehand is what identifies a stale-asset problem rather than a bad image.
 
+### CSP blocked the map entirely, and nothing in the page said so
+
+- **`connect-src` did not include the tile origin, so `?view=map` could never
+  render on any deployment.** `PropertyMap` fetches its MapLibre style from
+  `https://tiles.openfreemap.org`, CSP refused the request, MapLibre never fired
+  `load`, the component's 12s timeout set `unavailable`, and the page printed
+  "The map could not be loaded. The list below shows the same properties." The
+  list is genuinely fine, which is why it read as an empty inventory rather than
+  a blocked request. `buildContentSecurityPolicy` now always includes a map
+  origin (overridable via `mapTileOrigin`, which `next.config.ts` derives from
+  `NEXT_PUBLIC_MAP_PROVIDER` so switching to Mapbox cannot leave CSP pointing at
+  OpenFreeMap).
+- **The failure is invisible to every check that does not execute JavaScript.**
+  The markup contains the canvas, the attribution element and the fallback label
+  in both the working and broken states, so `curl` and any DOM assertion see no
+  difference. It was found by reading the browser's rendered text and noticing
+  the fallback sentence *and* "0 properties with a location" together — then
+  confirming the `connect-src` header. Verify a map fix by checking the
+  attribution links (`OpenFreeMap`, `© OpenMapTiles`, `OpenStreetMap`) appear,
+  which only happens after a successful style load, and by sampling the map
+  region's pixels for colour variety rather than expecting a mostly-flat fill.
+- **MapLibre spawns its worker from a blob URL, so `worker-src` needs `blob:`.**
+  It was `'self'` for the service worker alone. Both are stated explicitly now.
+- **`listing_locations_api` returns nothing when `public_listing_locations` is
+  empty, and the map is then honest about it.** The preview database's listings
+  carry no coordinates (`listing_private_details.exact_location` is null), so
+  "0 properties with a location" was correct, not a second bug. A listing only
+  gets a marker once its private coordinate is set through
+  `set_listing_private_details`; the coarsened public position is derived from
+  it.
+
 ### The marketplace results grid had no LCP candidate
 
 - **Twelve listing cards meant twelve `next/image` tags with no `priority`, so the
@@ -2686,25 +2719,31 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
   which the results page sets to 2 (the first row at `sm`; the third card joins
   it at `xl`, and the two-card default is the conservative choice because an
   over-prioritised image competes with the real LCP).
-- **A prioritised `next/image` emits a `<link rel="preload" as="image">`, not an
-  inline `fetchpriority` attribute.** The rendered HTML therefore shows
-  `loading="lazy"` disappearing from the first two cards and two extra preload
-  links appearing; grepping for `fetchpriority="high"` finds nothing and looks
-  like the fix did not apply. Assert on `loading` in a component test and on the
-  preload links in the served HTML.
+- **A prioritised `next/image` emits a `<link rel="preload" as="image">`, and that
+  link carries `fetchpriority="high"` only if `fetchPriority` is passed
+  explicitly.** `priority` on its own drops `loading="lazy"` but leaves the
+  request at default priority, so `lcp-discovery-insight` still reports
+  `priorityHinted: false` and the fix appears not to have worked. `ListingCard`
+  therefore passes both. Grepping the HTML for `fetchpriority="high"` on the
+  `<img>` finds nothing either way — check the preload `<link>`s, and assert on
+  `loading` / `fetchpriority` in a component test.
 - **`publicEnv` is evaluated once at import time, so a test cannot set
   `NEXT_PUBLIC_SUPABASE_URL` late to make `propertyMediaPublicUrl` return a URL.**
   A card fixture with `images: [...]` still rendered the no-photograph
   placeholder, because the helper returned `null`. `ListingCard.test.tsx` mocks
   `@/lib/real-estate/storage` instead, keeping the real module for everything
   else via `importActual`.
-- **Measured effect: LCP 2.4-2.6s to 1.8-2.2s, performance 86-91 to 86-92
-  desktop.** TBT (320-460ms) is now the largest remaining cost and comes from
-  hydrating the filter sidebar, the drawer, twelve save controls and the toolbar,
-  not from the images. Do not expect the priority fix alone to reach 100; the
-  three target categories (accessibility, best-practices, SEO) are 100 on
-  desktop and mobile, and performance on a 4-core container varies by about 5
-  points run to run.
+- **Measured effect: LCP 2.4-2.6s to 1.9s, `priorityHinted` true, performance
+  86-91 to 89-93 desktop.** TBT (270-400ms) is now the largest remaining cost and
+  comes from hydrating the filter sidebar, the drawer, twelve save controls and
+  the toolbar, not from the images. Do not expect the priority fix alone to reach
+  100; accessibility, best-practices and SEO are 100 on desktop and mobile, and
+  performance on a 4-core container varies by about 5 points run to run.
+- **The map view scores about 73 and that is MapLibre, not the page.** Its chunk
+  costs 2.7s of bootup on the same container, against 1.6s for the results page
+  itself. The map is a deliberate opt-in view, the library is dynamically
+  imported so a list visitor never downloads it, and the list remains the
+  accessible path to every listing.
 
 ### Phase 10 testing gotchas worth not rediscovering
 

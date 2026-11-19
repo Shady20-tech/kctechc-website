@@ -118,14 +118,41 @@ describe("signInSchema", () => {
 });
 
 describe("buildContentSecurityPolicy", () => {
-  it("includes Supabase and Tolgee in connect-src when configured", () => {
+  it("includes Supabase, Tolgee and the map origin in connect-src", () => {
     const csp = buildContentSecurityPolicy({
       supabaseUrl: "https://project.supabase.co",
       tolgeeApiUrl: "https://app.tolgee.io",
       isDevelopment: false,
     });
-    expect(csp).toContain("connect-src 'self' https://project.supabase.co https://app.tolgee.io");
+    expect(csp).toContain(
+      "connect-src 'self' https://project.supabase.co https://app.tolgee.io https://tiles.openfreemap.org",
+    );
     expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  it("admits the map tile origin and its blob worker", () => {
+    // The map is the one surface whose network calls only exist at runtime: a
+    // missing host here is not in the page source and not in any unit test, it
+    // just renders "the map could not be loaded" over a page whose list works.
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+    });
+    expect(csp).toContain("https://tiles.openfreemap.org");
+    // MapLibre spawns its tile worker from a blob URL.
+    expect(csp).toContain("worker-src 'self' blob:");
+  });
+
+  it("lets the caller swap the tile origin with the map provider", () => {
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+      mapTileOrigin: "https://api.mapbox.com",
+    });
+    expect(csp).toContain("https://api.mapbox.com");
+    expect(csp).not.toContain("tiles.openfreemap.org");
   });
 
   it("never allows unsafe-eval in production", () => {

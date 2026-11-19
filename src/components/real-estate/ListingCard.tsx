@@ -203,6 +203,10 @@ export function ListingCard({
               alt={image?.alt ?? record.title}
               fill
               priority={priority}
+              // `priority` alone removes lazy loading but leaves the request at
+              // the browser's default priority. Lighthouse's `lcp-discovery`
+              // checks for an explicit high hint, so the LCP card states it.
+              fetchPriority={priority ? "high" : undefined}
               sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover transition-soft group-hover:scale-[1.03]"
             />

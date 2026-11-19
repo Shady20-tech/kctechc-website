@@ -288,6 +288,39 @@ describe("ListingGrid", () => {
     expect(images[2]).toHaveAttribute("loading", "lazy");
   });
 
+  it("marks the prioritised images with an explicit high fetch priority", () => {
+    // `priority` only drops `loading="lazy"`; the browser still treats the
+    // request as default priority unless `fetchpriority="high"` is stated. The
+    // preload link is what Lighthouse's lcp-discovery audit inspects.
+    const photo = [
+      {
+        id: "img-1",
+        storagePath: "listing/demo-0.jpg",
+        alt: "Front of the villa",
+        isPrimary: true,
+        position: 0,
+      },
+    ];
+    const { container } = render(
+      <ListingGrid
+        listings={[
+          record({ images: photo }),
+          record({
+            id: "22222222-2222-2222-2222-222222222222",
+            slug: "two",
+            images: photo,
+          }),
+        ]}
+        locale="en"
+        t={t}
+        priorityCount={1}
+      />,
+    );
+    const images = Array.from(container.querySelectorAll("img"));
+    expect(images[0]?.getAttribute("fetchpriority")).toBe("high");
+    expect(images[1]?.getAttribute("fetchpriority")).not.toBe("high");
+  });
+
   it("leaves every card lazy when no priority count is given", () => {
     const { container } = render(
       <ListingGrid

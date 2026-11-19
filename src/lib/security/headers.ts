@@ -1,9 +1,19 @@
 /**
  * Content-Security-Policy for the public site.
  *
- * `connect-src` allows Supabase (auth + REST) and Tolgee, which are the only
- * outbound calls the browser makes. `frame-ancestors 'none'` is a stronger
- * clickjacking defence than X-Frame-Options alone.
+ * `connect-src` allows Supabase (auth + REST), Tolgee and the map tile origin,
+ * which are the only outbound calls the browser makes. `frame-ancestors 'none'`
+ * is a stronger clickjacking defence than X-Frame-Options alone.
+ *
+ * The map origin is required, not optional. `PropertyMap` fetches a MapLibre
+ * style and its vector tiles from `tiles.openfreemap.org`; without that host the
+ * style request is refused by CSP, MapLibre never fires `load`, the component's
+ * timeout marks the map unavailable, and the visitor sees "the map could not be
+ * loaded" over a page whose list is fine. Nothing in the page source or in a unit
+ * test shows the cause — the request only exists at runtime.
+ *
+ * MapLibre also spawns its worker from a blob URL, so `worker-src` must admit
+ * `blob:` alongside the service worker's `'self'`.
  *
  * Google Analytics is allowed only when `analyticsEnabled` is set, which the
  * caller derives from `NEXT_PUBLIC_GA_MEASUREMENT_ID`. `src/lib/analytics/track.ts`
@@ -20,10 +30,16 @@ export function buildContentSecurityPolicy(options: {
   isDevelopment: boolean;
   /** True when GA4 is configured; only then are Google's hosts allowed. */
   analyticsEnabled?: boolean;
+  /**
+   * Origin serving MapLibre styles and vector tiles. Defaults to OpenFreeMap,
+   * which is the adapter's default provider.
+   */
+  mapTileOrigin?: string;
 }): string {
   const connectSources = ["'self'"];
   if (options.supabaseUrl) connectSources.push(options.supabaseUrl);
   if (options.tolgeeApiUrl) connectSources.push(options.tolgeeApiUrl);
+  connectSources.push(options.mapTileOrigin ?? "https://tiles.openfreemap.org");
   if (options.isDevelopment) connectSources.push("ws:", "wss:");
 
   const scriptSources = ["'self'", "'unsafe-inline'"];
@@ -51,8 +67,9 @@ export function buildContentSecurityPolicy(options: {
     // back to `child-src` and then `script-src` when absent. Stated explicitly so
     // a future narrowing of `script-src` cannot silently make the site
     // uninstallable — the failure would be a console CSP error and no install
-    // prompt, with nothing else to go on.
-    "worker-src 'self'",
+    // prompt, with nothing else to go on. `blob:` is for MapLibre, which builds
+    // its tile worker from a blob URL.
+    "worker-src 'self' blob:",
     `connect-src ${connectSources.join(" ")}`,
     "manifest-src 'self'",
     "frame-ancestors 'none'",
