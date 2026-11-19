@@ -622,7 +622,7 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   map view, localized slugs, breadcrumbs, metadata and JSON-LD all still work. The one defect found
   were two: the results grid had no LCP candidate, and `connect-src` omitted the map tile origin so
   `?view=map` could never render. Both are fixed and covered — see "CSP blocked the map entirely"
-  and "The marketplace results grid had no LCP candidate" below. 1359 Vitest tests pass (103 files),
+  and "The marketplace results grid had no LCP candidate" below. 1367 Vitest tests pass (104 files),
   `tsc --noEmit` is clean, ESLint is clean, the build succeeds, and Lighthouse is 100 on
   accessibility, best-practices and SEO for the listings page on desktop and mobile, with
   performance 89-93 under applied throttling.
