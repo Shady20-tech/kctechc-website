@@ -1455,6 +1455,43 @@ undefined`. Message keys with a dot must be nested objects (`state: { draft: ...
   media box is 1:1, so a non-square source is cropped and the subject can fall outside the crop). A
   mistyped path otherwise fails silently as an empty box.
 
+### Region and division headquarters
+
+- **The hierarchy stored a name for every level but never the seat of each administration.**
+  `regions` and `divisions` had no `headquarters`, so a selector could offer "Dja-et-Lobo" with no
+  way to say its capital is Sangmélima. Migration
+  `20260101000072_region_and_division_headquarters.sql` adds a nullable `headquarters text` to both
+  and backfills **10/10 regions and 58/58 divisions** from `region_headquarters` /
+  `division_headquarters` in the supplied CSVs. Subdivisions get **no** column: the dataset has no
+  value for them, and a subdivision's seat is the subdivision itself, so any value would duplicate
+  `name` or be invented.
+- **Headquarters is TEXT, not a foreign key, and this is not an oversight.** Pointing it at a
+  subdivision does not work with this dataset: a region's capital is a *city*, while the
+  subdivisions of Mfoundi are `Yaoundé 1er` .. `Yaoundé 7e` — none is named `Yaoundé`. Only 1 of
+  the 10 regional capitals (Buea) is an exact subdivision name, and 16 of the 58 division capitals
+  are not either (`Douala` in Wouri, `Bamenda` in Mezam, …). An FK would fail on most rows or force
+  the capital to be renamed to a subdivision it is not.
+- **`update ... where code = '...'` succeeds while touching zero rows.** A mis-keyed code is
+  therefore silent, and this migration had two chances to hit it: the CSV's region codes are
+  `WE`/`SO` where this schema uses `OU`/`SU`, and the division codes are this schema's own
+  `CM005004` (Wouri) rather than a positional guess. The first draft of the validation script
+  asserted `CM005002` for Wouri — which is **Nkam** — and would have failed the run. Map divisions
+  by folded name *within their region*, never by ordinal position, and assert every code against
+  the seed.
+- **The ten regional capitals were cross-checked against the published list before being written**
+  (Ngaoundéré, Yaoundé, Bertoua, Maroua, Douala, Garoua, Bamenda, Bafoussam, Ebolowa, Buea), not
+  taken on trust from a column heading.
+- **The backfill asserts its own completeness and aborts the transaction otherwise**, including a
+  check that `subdivisions` did *not* gain the column. `headquarters-migration.test.ts` (12) pins
+  the same invariants without a database, and was proven by breaking the migration: swapping `OU`
+  for the CSV's `WE` fails two tests.
+- **The columns are nullable and blank-guarded.** Nullable because a database with the hierarchy
+  but not this dataset must keep working; the `*_headquarters_not_blank` check rejects `'   '`,
+  which would otherwise pass an `is not null` test and render as an empty cell.
+- **`src/lib/content/regions.ts` deliberately does not carry headquarters.** That module is the
+  static fallback for selector labels and quote validation; nothing renders a capital, so adding an
+  unused field would be a second copy of the dataset waiting to drift.
+
 ### Geography reference data: dropdowns instead of typed locations
 
 - **The supplied CSVs are a name correction to an existing dataset, not a second

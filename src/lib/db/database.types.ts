@@ -445,6 +445,7 @@ export type Database = {
         Row: {
           code: string;
           created_at: string;
+          headquarters: string | null;
           id: string;
           name: string;
           name_fr: string | null;
@@ -455,6 +456,7 @@ export type Database = {
         Insert: {
           code: string;
           created_at?: string;
+          headquarters?: string | null;
           id?: string;
           name: string;
           name_fr?: string | null;
@@ -465,6 +467,7 @@ export type Database = {
         Update: {
           code?: string;
           created_at?: string;
+          headquarters?: string | null;
           id?: string;
           name?: string;
           name_fr?: string | null;
@@ -2722,6 +2725,7 @@ export type Database = {
         Row: {
           code: string;
           created_at: string;
+          headquarters: string | null;
           id: string;
           name: string;
           name_fr: string | null;
@@ -2732,6 +2736,7 @@ export type Database = {
         Insert: {
           code: string;
           created_at?: string;
+          headquarters?: string | null;
           id?: string;
           name: string;
           name_fr?: string | null;
@@ -2742,6 +2747,7 @@ export type Database = {
         Update: {
           code?: string;
           created_at?: string;
+          headquarters?: string | null;
           id?: string;
           name?: string;
           name_fr?: string | null;
