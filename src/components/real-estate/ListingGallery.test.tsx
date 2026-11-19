@@ -32,7 +32,6 @@ function image(id: string, position: number, alt = ""): ListingImage {
     id,
     storagePath: `listing/${id}.jpg`,
     alt,
-    caption: null,
     isPrimary: position === 0,
     position,
   };

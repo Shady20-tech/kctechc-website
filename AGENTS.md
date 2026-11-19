@@ -982,6 +982,49 @@ clientWidth` on every department (no horizontal scroll), the trigger reads "Filt
   migrations in filename order, then run each `supabase/validate/*.sql` with the backslash lines
   removed. This is how the EXECUTE defect above was reproduced and fixed.
 
+### Marketplace redesign (Phase 4) gotchas worth not rediscovering
+
+- **A filter the sidebar does not carry in its form is a filter a submit throws away.** The
+  sidebar is a plain GET form, so a filter survives only if the form submits it. `type`
+  (`listingType`: sale/rent/short_term) is chosen from the category shortcuts on the landing page
+  and had no control inside the form, so opening the mobile drawer on `/listings?type=rent` and
+  pressing Apply silently widened a 4-result rent search back to all 12 listings. `region`,
+  `division`, `subdivision`, `currency`, `verified` and `sort` all had hidden inputs; `type` did
+  not. It does now, and `ListingSidebar.test.tsx` asserts every active filter is present in the
+  submitted `FormData`. When adding a filter to `ListingFilters`, add its hidden input in the same
+  change or it only works until the visitor touches another control.
+- **`status` is deliberately URL-only.** It has no public UI control (only the admin KYC queue uses
+  a `?status=` of its own), so it is the one serialized param the sidebar does not submit. That is
+  not the same defect as `type` — do not add a control for it without a reason to expose listing
+  state to visitors.
+- **`page` must never be submitted.** A filter change has to restart at page one; carrying the page
+  number would land a narrowed result set on a page that no longer exists. `buildListingQuery`
+  writes `page` only when set, and the sidebar omits it.
+- **MapLibre really is lazy, and the audit's suspicion was wrong.** `PropertyMap` is a static
+  import in the listings page but the library itself is `await import("maplibre-gl")` inside the
+  effect, so the list view downloads no map code. Confirmed from Lighthouse's network records: no
+  request URL contains `maplibre` on `/listings`. Verify with the request list, not by reading the
+  import graph — a static import of a module whose heavy dependency is dynamically imported is
+  fine.
+- **The listings page's performance score is hydration cost, not a defect to chase.** Measured with
+  `--throttling-method=devtools` on the standalone build: FCP/LCP 1.8s, CLS 0, TBT 380ms, SEO/a11y/
+  best-practices 100. The remaining gap to 100 is framework script evaluation shared with the store
+  page (which scores 95), on a 1056-node DOM with 306 CSS rules and no duplicated sidebar. Images
+  are already right: 2 eager above the fold, 10 `loading="lazy"`. Do not "fix" this by cutting real
+  content.
+- **A filtered URL is `noindex` on purpose, so a Lighthouse run on it reports SEO 69.** That is the
+  duplicate-content rule working (canonical points at the unfiltered base), not a regression.
+  Measure SEO on `/listings`, not on `?type=rent`.
+- **The two-column layout is `lg:grid-cols-[17rem_1fr]` / `xl:[18rem_1fr]`** — 272px and 288px,
+  inside the brief's 250-300px band. Measured at 320/375/768/1024/1280/1440: no horizontal
+  overflow at any width, the `<aside>` is `display:none` below `lg` and the Filter button appears
+  instead. The drawer is 320px wide with `aria-modal`, Apply and Clear, and a live active-filter
+  count on the trigger.
+- **`ListingGallery.test.tsx`'s fixture used `caption: null` while `ListingImage.caption` is
+  `string | undefined`.** The real mapper (`records.ts`, via `asString`) yields `undefined`, so the
+  fixture was both a type error and a misrepresentation of what the loader produces. A test fixture
+  that does not match its mapper hides the difference between "absent" and "explicitly null".
+
 ### Phase 7 gotchas worth not rediscovering
 
 - **A `"use server"` module may only export async functions.** The directive turns every export

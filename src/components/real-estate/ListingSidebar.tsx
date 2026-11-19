@@ -149,6 +149,12 @@ export function ListingSidebar({
       <input type="hidden" name="region" value={regionSlug} />
       <input type="hidden" name="division" value={divisionSlug} />
       <input type="hidden" name="subdivision" value={subdivisionSlug} />
+      {/* The listing type (sale/rent/short term) is only chosen from the category
+          shortcuts, never from a control inside this form, so without this input a
+          submit silently widens a "for rent" search back to every listing. */}
+      {filters.listingType ? (
+        <input type="hidden" name="type" value={filters.listingType} />
+      ) : null}
       {filters.currency ? (
         <input type="hidden" name="currency" value={filters.currency} />
       ) : null}
