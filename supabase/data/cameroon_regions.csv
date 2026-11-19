@@ -1,0 +1,11 @@
+﻿region_code,region_name_en,region_name_fr,region_headquarters,division_count,subdivision_count
+CM-AD,Adamawa,Adamaoua,Ngaoundéré,5,21
+CM-CE,Centre,Centre,Yaoundé,10,70
+CM-ES,East,Est,Bertoua,4,33
+CM-EN,Far North,Extrême-Nord,Maroua,6,47
+CM-LT,Littoral,Littoral,Douala,4,34
+CM-NO,North,Nord,Garoua,4,21
+CM-NW,North-West,Nord-Ouest,Bamenda,7,34
+CM-WE,West,Ouest,Bafoussam,8,40
+CM-SO,South,Sud,Ebolowa,4,29
+CM-SW,South-West,Sud-Ouest,Buea,6,31

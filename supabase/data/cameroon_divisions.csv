@@ -1,0 +1,59 @@
+﻿division_code,division_name,division_headquarters,region_code,region_name_en,region_name_fr,subdivision_count,hierarchy_source_url,headquarters_source_url
+CM-AD-DJE,Djérem,Tibati,CM-AD,Adamawa,Adamaoua,2,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/adamaoua/
+CM-AD-FD,Faro-et-Déo,Tignère,CM-AD,Adamawa,Adamaoua,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/adamaoua/
+CM-AD-MB,Mayo-Banyo,Banyo,CM-AD,Adamawa,Adamaoua,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/adamaoua/
+CM-AD-MBERE,Mbéré,Meiganga,CM-AD,Adamawa,Adamaoua,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/adamaoua/
+CM-AD-VINA,Vina,Ngaoundéré,CM-AD,Adamawa,Adamaoua,8,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/adamaoua/
+CM-CE-HS,Haute-Sanaga,Nanga-Eboko,CM-CE,Centre,Centre,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-LEK,Lekié,Monatélé,CM-CE,Centre,Centre,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-MBI,Mbam-et-Inoubou,Bafia,CM-CE,Centre,Centre,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-MBK,Mbam-et-Kim,Ntui,CM-CE,Centre,Centre,5,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-MFA,Mefou-et-Afamba,Mfou,CM-CE,Centre,Centre,8,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-MAK,Mefou-et-Akono,Ngoumou,CM-CE,Centre,Centre,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-MFO,Mfoundi,Yaoundé,CM-CE,Centre,Centre,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-NK,Nyong-et-Kellé,Eséka,CM-CE,Centre,Centre,10,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-NM,Nyong-et-Mfoumou,Akonolinga,CM-CE,Centre,Centre,5,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-CE-NS,Nyong-et-So’o,Mbalmayo,CM-CE,Centre,Centre,6,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/centre/
+CM-ES-BN,Boumba-et-Ngoko,Yokadouma,CM-ES,East,Est,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/est/
+CM-ES-HN,Haut-Nyong,Abong-Mbang,CM-ES,East,Est,14,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/est/
+CM-ES-KD,Kadey,Batouri,CM-ES,East,Est,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/est/
+CM-ES-LD,Lom-et-Djerem,Bertoua,CM-ES,East,Est,8,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/est/
+CM-EN-DIA,Diamaré,Maroua,CM-EN,Far North,Extrême-Nord,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-EN-LC,Logone-et-Chari,Kousseri,CM-EN,Far North,Extrême-Nord,10,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-EN-MD,Mayo-Danay,Yagoua,CM-EN,Far North,Extrême-Nord,11,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-EN-MK,Mayo-Kani,Kaélé,CM-EN,Far North,Extrême-Nord,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-EN-MS,Mayo-Sava,Mora,CM-EN,Far North,Extrême-Nord,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-EN-MT,Mayo-Tsanaga,Mokolo,CM-EN,Far North,Extrême-Nord,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/extreme-nord/
+CM-LT-MOU,Moungo,Nkongsamba,CM-LT,Littoral,Littoral,13,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/littoral/
+CM-LT-NK,Nkam,Yabassi,CM-LT,Littoral,Littoral,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/littoral/
+CM-LT-SM,Sanaga-Maritime,Edéa,CM-LT,Littoral,Littoral,11,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/littoral/
+CM-LT-WO,Wouri,Douala,CM-LT,Littoral,Littoral,6,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/littoral/
+CM-NO-BE,Bénoué,Garoua,CM-NO,North,Nord,12,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord/
+CM-NO-FA,Faro,Poli,CM-NO,North,Nord,2,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord/
+CM-NO-ML,Mayo-Louti,Guider,CM-NO,North,Nord,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord/
+CM-NO-MR,Mayo-Rey,Tcholliré,CM-NO,North,Nord,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord/
+CM-NW-BO,Boyo,Fundong,CM-NW,North-West,Nord-Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-BU,Bui,Kumbo,CM-NW,North-West,Nord-Ouest,6,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-DM,Donga-Mantung,Nkambe,CM-NW,North-West,Nord-Ouest,5,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-ME,Menchum,Wum,CM-NW,North-West,Nord-Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-MZ,Mezam,Bamenda,CM-NW,North-West,Nord-Ouest,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-MO,Momo,Mbengwi,CM-NW,North-West,Nord-Ouest,5,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-NW-NK,Ngo-Ketunjia,Ndop,CM-NW,North-West,Nord-Ouest,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/nord-ouest/
+CM-WE-BA,Bamboutos,Mbouda,CM-WE,West,Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-HN,Haut-Nkam,Bafang,CM-WE,West,Ouest,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-HP,Hauts-Plateaux,Baham,CM-WE,West,Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-KK,Koung-Khi,Bandjoun,CM-WE,West,Ouest,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-ME,Menoua,Dschang,CM-WE,West,Ouest,6,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-MI,Mifi,Bafoussam,CM-WE,West,Ouest,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-ND,Ndé,Bangangté,CM-WE,West,Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-WE-NO,Noun,Foumban,CM-WE,West,Ouest,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/ouest/
+CM-SO-DL,Dja-et-Lobo,Sangmelima,CM-SO,South,Sud,8,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud/
+CM-SO-MV,Mvila,Ebolowa,CM-SO,South,Sud,8,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud/
+CM-SO-VA,Vallée-du-Ntem,Ambam,CM-SO,South,Sud,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud/
+CM-SO-OC,Océan,Kribi,CM-SO,South,Sud,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud/
+CM-SW-FA,Fako,Limbe,CM-SW,South-West,Sud-Ouest,7,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/
+CM-SW-KM,Kupe-Manenguba,Bangem,CM-SW,South-West,Sud-Ouest,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/
+CM-SW-LE,Lebialem,Menji,CM-SW,South-West,Sud-Ouest,3,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/
+CM-SW-MA,Manyu,Mamfe,CM-SW,South-West,Sud-Ouest,4,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/
+CM-SW-ME,Meme,Kumba,CM-SW,South-West,Sud-Ouest,5,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/
+CM-SW-ND,Ndian,Mundemba,CM-SW,South-West,Sud-Ouest,9,https://github.com/open-admin-data/cameroon-administrative-divisions,https://minat.gov.cm/presentation/carte-des-regions/sud-ouest/

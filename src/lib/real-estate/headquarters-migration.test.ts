@@ -175,3 +175,83 @@ describe("headquarters validation script", () => {
     expect(validate).toMatch(/table_name = 'subdivisions'/);
   });
 });
+
+/**
+ * The CSVs under `supabase/data/` are the input the migrations were derived
+ * from, so a later correction can be diffed rather than retyped. Committing them
+ * is only useful if they still describe what the database holds: an edited CSV
+ * that nobody re-applied is a second, silently divergent source of truth.
+ */
+describe("committed geography dataset", () => {
+  const dataDir = join(process.cwd(), "supabase", "data");
+
+  function readCsv(name: string): string[][] {
+    const text = readFileSync(join(dataDir, name), "utf8").replace(
+      /^\uFEFF/,
+      "",
+    );
+    const [header, ...rows] = text.trim().split(/\r?\n/);
+    const columns = header!.split(",");
+    return rows.map((row) => {
+      // These files contain no quoted commas, so a split is faithful; assert it
+      // rather than assume it, so a future hand-edit with a comma fails loudly.
+      const cells = row.split(",");
+      expect(cells).toHaveLength(columns.length);
+      return cells;
+    });
+  }
+
+  it("holds 10 regions, 58 divisions and 360 subdivisions", () => {
+    expect(readCsv("cameroon_regions.csv")).toHaveLength(10);
+    expect(readCsv("cameroon_divisions.csv")).toHaveLength(58);
+    expect(readCsv("cameroon_subdivisions.csv")).toHaveLength(360);
+  });
+
+  it("supplies a headquarters for every region and division", () => {
+    const regions = readCsv("cameroon_regions.csv");
+    const divisions = readCsv("cameroon_divisions.csv");
+    const regionHq = regions.map((r) => r[3]!.trim());
+    const divisionHq = divisions.map((r) => r[2]!.trim());
+
+    expect(regionHq.filter((v) => v !== "")).toHaveLength(10);
+    expect(divisionHq.filter((v) => v !== "")).toHaveLength(58);
+  });
+
+  it("agrees with the headquarters the migration writes", () => {
+    // Every value in the migration must come from the dataset, or the two have
+    // drifted and the committed CSV is no longer the derivation input.
+    const datasetValues = new Set(
+      [
+        ...readCsv("cameroon_regions.csv").map((r) => r[3]!.trim()),
+        ...readCsv("cameroon_divisions.csv").map((r) => r[2]!.trim()),
+      ].map((v) => v.replace(/'/g, "''")),
+    );
+
+    const migrationValues = [
+      ...sql.matchAll(/set headquarters = '((?:[^']|'')*)'/g),
+    ].map((m) => m[1]!);
+
+    expect(migrationValues).toHaveLength(68);
+    for (const value of migrationValues) {
+      expect(datasetValues).toContain(value);
+    }
+  });
+
+  it("keeps the per-region counts internally consistent", () => {
+    const regions = readCsv("cameroon_regions.csv");
+    const divisions = readCsv("cameroon_divisions.csv");
+    const subdivisions = readCsv("cameroon_subdivisions.csv");
+
+    const declaredDivisions = regions.reduce(
+      (total, row) => total + Number(row[4]),
+      0,
+    );
+    const declaredSubdivisions = regions.reduce(
+      (total, row) => total + Number(row[5]),
+      0,
+    );
+
+    expect(declaredDivisions).toBe(divisions.length);
+    expect(declaredSubdivisions).toBe(subdivisions.length);
+  });
+});
