@@ -611,6 +611,19 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   what was checked and why each item was left alone. 1207 Vitest tests pass, `tsc --noEmit` is clean,
   ESLint is clean, the production build succeeds (137 static pages), and Lighthouse reports
   accessibility 100 / SEO 100 / best-practices 100 on every indexable real-estate surface.
+- Phase 4 (real-estate marketplace redesign) is implemented and verified against the running
+  production build: the department landing carries the hero search (location, keyword, submit,
+  category shortcuts), the results page is the two-column `lg:grid-cols-[17rem_1fr]` shell (272px
+  sidebar, a grid track so it cannot overflow) with collapsible filter sections, cascading geography,
+  a currency-scoped price range, characteristics, a verified-publisher filter, the toolbar, active
+  filter chips and a mobile drawer that reports the active count. Cards were redesigned to the
+  marketplace shape (prominent photograph, price and period, title, location, category, facts,
+  publisher badge, save control). Listing detail, gallery, favourites, saved searches, pagination,
+  map view, localized slugs, breadcrumbs, metadata and JSON-LD all still work. The one defect found
+  was the missing LCP candidate on the results grid — see "The marketplace results grid had no LCP
+  candidate" below. 1356 Vitest tests pass (103 files), `tsc --noEmit` is clean, ESLint is clean, the
+  build succeeds, and Lighthouse is 100 on accessibility, best-practices and SEO for the listings
+  page on desktop and mobile, with performance 86-93 under applied throttling.
 
 ### Hero image provenance
 
@@ -2662,6 +2675,36 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
   page still served the bright sky. The fix is a **new filename** (`about-v2.jpg`); the same trap is
   documented for the department heroes. After the rename the ratio moved to 6.06:1, and the two
   numbers being identical beforehand is what identifies a stale-asset problem rather than a bad image.
+
+### The marketplace results grid had no LCP candidate
+
+- **Twelve listing cards meant twelve `next/image` tags with no `priority`, so the
+  browser had no idea which photograph was the LCP element.** Lighthouse's
+  `lcp-discovery-insight` reported `priorityHinted: false`, and the LCP sat at
+  2.4-2.6s on the results page while a content-only page (`/en/terms`) measured
+  98. `ListingCard` now takes `priority` and `ListingGrid` takes `priorityCount`,
+  which the results page sets to 2 (the first row at `sm`; the third card joins
+  it at `xl`, and the two-card default is the conservative choice because an
+  over-prioritised image competes with the real LCP).
+- **A prioritised `next/image` emits a `<link rel="preload" as="image">`, not an
+  inline `fetchpriority` attribute.** The rendered HTML therefore shows
+  `loading="lazy"` disappearing from the first two cards and two extra preload
+  links appearing; grepping for `fetchpriority="high"` finds nothing and looks
+  like the fix did not apply. Assert on `loading` in a component test and on the
+  preload links in the served HTML.
+- **`publicEnv` is evaluated once at import time, so a test cannot set
+  `NEXT_PUBLIC_SUPABASE_URL` late to make `propertyMediaPublicUrl` return a URL.**
+  A card fixture with `images: [...]` still rendered the no-photograph
+  placeholder, because the helper returned `null`. `ListingCard.test.tsx` mocks
+  `@/lib/real-estate/storage` instead, keeping the real module for everything
+  else via `importActual`.
+- **Measured effect: LCP 2.4-2.6s to 1.8-2.2s, performance 86-91 to 86-92
+  desktop.** TBT (320-460ms) is now the largest remaining cost and comes from
+  hydrating the filter sidebar, the drawer, twelve save controls and the toolbar,
+  not from the images. Do not expect the priority fix alone to reach 100; the
+  three target categories (accessibility, best-practices, SEO) are 100 on
+  desktop and mobile, and performance on a 4-core container varies by about 5
+  points run to run.
 
 ### Phase 10 testing gotchas worth not rediscovering
 

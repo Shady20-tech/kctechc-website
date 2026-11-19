@@ -146,6 +146,7 @@ export function ListingCard({
   locale,
   t,
   isFavorite,
+  priority,
 }: {
   record: PropertyListingRecord;
   locale: Locale;
@@ -159,6 +160,15 @@ export function ListingCard({
    * rather than choosing.
    */
   isFavorite?: boolean;
+  /**
+   * Whether this card's photograph is the page's LCP candidate.
+   *
+   * Only the first cards of a results page qualify. A prioritised image loses
+   * `loading="lazy"` and gains a `<link rel="preload">`, so applying it to a
+   * whole grid makes twelve photographs compete and delays the one the browser
+   * should fetch first. Below-the-fold cards stay lazy, which is the default.
+   */
+  priority?: boolean;
 }) {
   const image =
     record.images.find((entry) => entry.isPrimary) ?? record.images[0];
@@ -192,6 +202,7 @@ export function ListingCard({
               src={imageUrl}
               alt={image?.alt ?? record.title}
               fill
+              priority={priority}
               sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover transition-soft group-hover:scale-[1.03]"
             />
@@ -262,6 +273,7 @@ export function ListingGrid({
   locale,
   t,
   favoriteIds,
+  priorityCount,
   className,
 }: {
   listings: readonly PropertyListingRecord[];
@@ -278,15 +290,25 @@ export function ListingGrid({
    * entirely, which is what the surfaces that are not a browse context do.
    */
   favoriteIds?: ReadonlySet<string>;
+  /**
+   * How many leading cards get `priority` on their photograph.
+   *
+   * The results grid shows three columns at `xl`, two at `sm`, so the first row
+   * is between two and three cards. Callers pass the number of cards that are
+   * above the fold; the rest stay lazy so the LCP image is not competing with
+   * eleven others for bandwidth.
+   */
+  priorityCount?: number;
 }) {
   return (
     <ul className={className ?? "grid gap-5 sm:grid-cols-2 lg:grid-cols-3"}>
-      {listings.map((record) => (
+      {listings.map((record, index) => (
         <ListingCard
           key={record.id}
           record={record}
           locale={locale}
           t={t}
+          priority={priorityCount !== undefined && index < priorityCount}
           isFavorite={favoriteIds ? favoriteIds.has(record.id) : undefined}
         />
       ))}

@@ -414,6 +414,7 @@ export default async function PropertyListingsPage({
                     locale={resolved}
                     t={t}
                     favoriteIds={favoriteIds}
+                    priorityCount={2}
                     className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
                   />
                 </div>

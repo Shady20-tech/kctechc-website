@@ -8,6 +8,20 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/en/real-estate/listings",
 }));
 
+// `publicEnv` is read once at import time, so a test cannot set
+// NEXT_PUBLIC_SUPABASE_URL late. The storage helper is stubbed instead, which
+// is the only thing standing between a fixture image and a rendered <img>.
+vi.mock("@/lib/real-estate/storage", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/real-estate/storage")
+  >("@/lib/real-estate/storage");
+  return {
+    ...actual,
+    propertyMediaPublicUrl: (path: string) =>
+      path ? `https://example.supabase.co/property-media/${path}` : null,
+  };
+});
+
 import {
   ListingCard,
   ListingGrid,
@@ -232,6 +246,69 @@ describe("ListingGrid", () => {
       />,
     );
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
+  });
+
+  it("prioritises only the leading cards so the LCP image is not competing", () => {
+    // `next/image` drops `loading="lazy"` for a prioritised image, which is what
+    // makes the browser fetch it eagerly instead of after layout. The rest of
+    // the grid stays lazy so the LCP image is not racing eleven others.
+    const photo = [
+      {
+        id: "img-1",
+        storagePath: "listing/demo-0.jpg",
+        alt: "Front of the villa",
+        isPrimary: true,
+        position: 0,
+      },
+    ];
+    const { container } = render(
+      <ListingGrid
+        listings={[
+          record({ images: photo }),
+          record({
+            id: "22222222-2222-2222-2222-222222222222",
+            slug: "two",
+            images: photo,
+          }),
+          record({
+            id: "33333333-3333-3333-3333-333333333333",
+            slug: "three",
+            images: photo,
+          }),
+        ]}
+        locale="en"
+        t={t}
+        priorityCount={2}
+      />,
+    );
+    const images = Array.from(container.querySelectorAll("img"));
+    expect(images).toHaveLength(3);
+    expect(images[0]).not.toHaveAttribute("loading", "lazy");
+    expect(images[1]).not.toHaveAttribute("loading", "lazy");
+    expect(images[2]).toHaveAttribute("loading", "lazy");
+  });
+
+  it("leaves every card lazy when no priority count is given", () => {
+    const { container } = render(
+      <ListingGrid
+        listings={[
+          record({
+            images: [
+              {
+                id: "img-1",
+                storagePath: "listing/demo-0.jpg",
+                alt: "Front of the villa",
+                isPrimary: true,
+                position: 0,
+              },
+            ],
+          }),
+        ]}
+        locale="en"
+        t={t}
+      />,
+    );
+    expect(container.querySelector("img")).toHaveAttribute("loading", "lazy");
   });
 });
 
