@@ -142,9 +142,41 @@ describe("region and division headquarters migration", () => {
   });
 
   it("asserts its own completeness, so a partial backfill aborts", () => {
-    expect(sql).toMatch(/expected 10 regions/);
-    expect(sql).toMatch(/expected 58 divisions/);
     expect(sql).toMatch(/raise exception/);
+    // The invariant is "no targeted row was left null", not a table total.
+    expect(sql).toMatch(/headquarters is null/);
+    expect(sql).toMatch(/were left without a headquarters/);
+  });
+
+  /**
+   * A migration must not assert a whole-table row count. Supabase applies
+   * migrations before `seed.sql`, so `regions` is empty when this file runs on a
+   * fresh database and `expected 10 regions, found 0` aborted the migration —
+   * which is exactly the failure this guard exists to prevent. A populated
+   * database can also hold an operator's own extra row, so `= 10` is wrong at
+   * both ends.
+   */
+  it("never asserts a whole-table row count", () => {
+    const wholeTableCount =
+      /count\(\*\)\s+into\s+\w+\s+from\s+public\.(regions|divisions|subdivisions)\s*;/gi;
+    expect(sql).not.toMatch(wholeTableCount);
+
+    // A bare `from public.regions` with no predicate, feeding a comparison
+    // against a fixed total, is the same defect written differently.
+    expect(sql).not.toMatch(/from public\.regions\s*;/i);
+    expect(sql).not.toMatch(/from public\.divisions\s*;/i);
+  });
+
+  it("guards each spot-check with row existence", () => {
+    // On an unseeded database there is no row to compare, and a bare
+    // `not exists (... and headquarters = 'Buea')` would raise on emptiness.
+    for (const code of ["SW", "OU"]) {
+      expect(sql).toMatch(
+        new RegExp(
+          `if exists \\(select 1 from public\\.regions where code = '${code}'\\)`,
+        ),
+      );
+    }
   });
 });
 

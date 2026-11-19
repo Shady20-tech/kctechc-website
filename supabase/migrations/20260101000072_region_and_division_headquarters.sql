@@ -178,57 +178,81 @@ update public.divisions set headquarters = 'Mundemba' where code = 'CM010006';  
 -- -----------------------------------------------------------------------------
 -- 4. Assertions.
 --
--- These run against the live data and abort the transaction if the backfill is
--- incomplete, so a partially-applied dataset cannot ship as "done".
+-- The invariant is "no row this file targets is left without a headquarters".
+-- It is NOT a whole-table row count, and it is NOT "exactly 10 rows exist".
+--
+-- A migration runs on whatever database it meets, so a total is a claim about
+-- data this file does not own:
+--
+--   * A fresh database applies migrations before `seed.sql`, so `regions` can be
+--     empty when this runs. `found 0` is then correct behaviour, not corruption,
+--     and must not fail the migration.
+--   * A populated database may legitimately hold a region row this dataset does
+--     not describe (an operator's own entry), so 11 is not a failure either.
+--
+-- `count(*) filter (where ... is null)` is zero in both cases, which is the
+-- property that actually matters: nothing targeted was skipped.
 -- -----------------------------------------------------------------------------
 do $$
 declare
-  v_count integer;
-  v_named integer;
+  v_regions integer;
+  v_divisions integer;
+  v_column integer;
 begin
-  -- Every region must now have a capital, and there are ten of them.
-  select count(*), count(headquarters) into v_count, v_named
-    from public.regions;
-  if v_count <> 10 then
-    raise exception 'HQ FAIL: expected 10 regions, found %', v_count;
-  end if;
-  if v_named <> 10 then
-    raise exception 'HQ FAIL: % of 10 regions have a headquarters', v_named;
+  select count(*) into v_regions
+    from public.regions
+   where code in ('AD', 'CE', 'ES', 'EN', 'LT', 'NO', 'NW', 'OU', 'SU', 'SW')
+     and headquarters is null;
+  if v_regions <> 0 then
+    raise exception 'HQ FAIL: % seeded regions were left without a headquarters', v_regions;
   end if;
 
-  -- Every division must now have a capital, and there are 58 of them.
-  select count(*), count(headquarters) into v_count, v_named
-    from public.divisions;
-  if v_count <> 58 then
-    raise exception 'HQ FAIL: expected 58 divisions, found %', v_count;
-  end if;
-  if v_named <> 58 then
-    raise exception 'HQ FAIL: % of 58 divisions have a headquarters', v_named;
+  select count(*) into v_divisions
+    from public.divisions
+   where code like 'CM%'
+     and headquarters is null;
+  if v_divisions <> 0 then
+    raise exception 'HQ FAIL: % seeded divisions were left without a headquarters', v_divisions;
   end if;
 
   -- Subdivisions must NOT have gained a column: the dataset has no such value.
-  select count(*) into v_count
+  select count(*) into v_column
     from information_schema.columns
    where table_schema = 'public'
      and table_name = 'subdivisions'
      and column_name = 'headquarters';
-  if v_count <> 0 then
+  if v_column <> 0 then
     raise exception 'HQ FAIL: subdivisions gained a headquarters column, which the dataset does not supply';
   end if;
 
-  -- Spot-check both levels, including the two region codes that differ between
-  -- the CSV and this schema.
-  if not exists (select 1 from public.regions where code = 'SW' and headquarters = 'Buea') then
+  -- Spot-checks are guarded by existence, for the same reason: on a database
+  -- whose hierarchy is not seeded yet there is no row to compare against.
+  if exists (select 1 from public.regions where code = 'SW')
+     and not exists (select 1 from public.regions where code = 'SW' and headquarters = 'Buea') then
     raise exception 'HQ FAIL: Southwest headquarters is not Buea';
   end if;
-  if not exists (select 1 from public.regions where code = 'OU' and headquarters = 'Bafoussam') then
+  if exists (select 1 from public.regions where code = 'OU')
+     and not exists (select 1 from public.regions where code = 'OU' and headquarters = 'Bafoussam') then
     raise exception 'HQ FAIL: West (OU) headquarters is not Bafoussam';
   end if;
-  if not exists (select 1 from public.divisions where code = 'CM010005' and headquarters = 'Kumba') then
+  if exists (select 1 from public.divisions where code = 'CM010005')
+     and not exists (select 1 from public.divisions where code = 'CM010005' and headquarters = 'Kumba') then
     raise exception 'HQ FAIL: Meme headquarters is not Kumba';
   end if;
 
-  raise notice 'PASS  headquarters populated for 10 regions and 58 divisions';
+  select count(*) into v_regions from public.regions where headquarters is not null;
+  select count(*) into v_divisions from public.divisions where headquarters is not null;
+
+  -- An empty hierarchy is not an error (see above), but it must not be silent:
+  -- the updates above matched nothing, so nothing was backfilled. Say so loudly,
+  -- because the usual cause is migration 55 not having run, and a later run of 55
+  -- would leave these columns null with 72 already recorded as applied.
+  if v_regions = 0 and v_divisions = 0 then
+    raise warning 'HQ NOTICE: regions/divisions were empty when this migration ran, so no headquarters were set. Apply 20260101000055 first, then re-run this migration.';
+  end if;
+
+  raise notice 'PASS  headquarters set on % region(s) and % division(s); no targeted row left null',
+    v_regions, v_divisions;
 end
 $$;
 

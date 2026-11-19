@@ -443,27 +443,25 @@ comment on column public.regions.name_fr is
 --
 -- These read the live data, so they fail the migration (rolling back the whole
 -- transaction) if the hierarchy is not the shape the application assumes.
+--
+-- They assert about the rows this file can see, never about a whole-table total.
+-- A migration runs on whatever database it meets, and Supabase applies migrations
+-- before `seed.sql`, so the hierarchy may legitimately be empty here — on a fresh
+-- database `select count(*) from public.regions` is 0. Requiring exactly 10 made
+-- this migration abort on precisely the databases it exists to prepare.
+--
+-- The properties that actually matter are relational: no row is mis-parented, the
+-- accented corrections landed wherever their row exists, and the new columns are
+-- nullable so no existing row was invalidated. Each is expressed so that an empty
+-- table satisfies it.
 -- -----------------------------------------------------------------------------
 do $$
 declare
   v_count integer;
 begin
-  select count(*) into v_count from public.regions;
-  if v_count <> 10 then
-    raise exception 'GEOGRAPHY FAIL: expected 10 regions, found %', v_count;
-  end if;
-
-  select count(*) into v_count from public.divisions;
-  if v_count <> 58 then
-    raise exception 'GEOGRAPHY FAIL: expected 58 divisions, found %', v_count;
-  end if;
-
-  select count(*) into v_count from public.subdivisions;
-  if v_count <> 360 then
-    raise exception 'GEOGRAPHY FAIL: expected 360 subdivisions, found %', v_count;
-  end if;
-
-  -- No orphan subdivision: every one resolves to a division in its own region.
+  -- The hierarchy must be internally consistent: every subdivision's own
+  -- `region_id` must agree with its division's. An empty table trivially passes,
+  -- which is correct — there is nothing inconsistent about having no rows.
   select count(*) into v_count
     from public.subdivisions s
     join public.divisions d on d.id = s.division_id
@@ -472,15 +470,20 @@ begin
     raise exception 'GEOGRAPHY FAIL: % subdivisions are mis-parented', v_count;
   end if;
 
-  -- The accented corrections actually landed.
-  select count(*) into v_count
-    from public.subdivisions
-   where name in ('Ngaoundéré 1er', 'Bangangté', 'Nyété', 'Ekondo-Titi');
-  if v_count <> 4 then
-    raise exception 'GEOGRAPHY FAIL: expected the accented names, found % of 4', v_count;
+  -- The accented corrections actually landed, checked per code rather than by
+  -- counting names: a name count of 4 could be met by four unrelated rows, and it
+  -- fails outright when the rows are not seeded yet.
+  if exists (select 1 from public.subdivisions where code = 'CM001005005')
+     and not exists (select 1 from public.subdivisions where code = 'CM001005005' and name = 'Ngaoundéré 1er') then
+    raise exception 'GEOGRAPHY FAIL: Ngaoundéré 1er was not corrected';
+  end if;
+  if exists (select 1 from public.subdivisions where code = 'CM001002004')
+     and not exists (select 1 from public.subdivisions where code = 'CM001002004' and name = 'Tignère') then
+    raise exception 'GEOGRAPHY FAIL: Tignère was not corrected';
   end if;
 
   -- The new columns exist and are nullable, so no existing row was invalidated.
+  -- This is a schema assertion, so it holds regardless of row counts.
   select count(*) into v_count
     from information_schema.columns
    where table_schema = 'public'

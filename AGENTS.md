@@ -1455,6 +1455,37 @@ undefined`. Message keys with a dot must be nested objects (`state: { draft: ...
   media box is 1:1, so a non-square source is cropped and the subject can fall outside the crop). A
   mistyped path otherwise fails silently as an empty box.
 
+### A migration must not assert a whole-table row count
+
+- **`raise exception 'expected 10 regions, found 0'` was a real bug, not a bad message.** Migrations
+  71 and 72 each opened their assertion block with `select count(*) from public.regions` and aborted
+  unless it was exactly 10 (then 58, then 360). But Supabase applies migrations **before**
+  `seed.sql`, and on a fresh database the hierarchy is seeded by migration 55 — so if 72 runs
+  against a database where 55 has not been applied, or where regions were emptied, the count is
+  legitimately 0 and the migration aborts. It also fails in the other direction: a database holding
+  an operator's own extra region row gives 11, which is not an error either. The assertion was
+  claiming ownership of rows the file does not own.
+- **The fix is to assert the invariant, not the total.** The property that matters is "no row this
+  file targets was left without a headquarters", expressed as
+  `count(*) ... where code in (...) and headquarters is null` = 0. That is true on an empty table, on
+  a fully seeded one, and on one with extra rows. Spot-checks are guarded the same way — `if exists
+  (select 1 ... where code='SW') and not exists (... headquarters='Buea')` — because a bare
+  `not exists` raises on an empty table too.
+- **An empty hierarchy is not an error, but it must not be silent.** When nothing was targeted, the
+  UPDATEs match zero rows and the columns stay null while the migration is recorded as applied —
+  so a later run of 55 would never be followed by a re-run of 72. Migration 72 now `raise warning`s
+  in that case with the instruction to apply 55 first and re-run. `update ... where code = ...`
+  succeeding while touching zero rows is the general hazard; see the headquarters gotcha above.
+- **Reproduced and verified against a real PostgreSQL 18 server** (`embedded-postgres`, since this
+  container has no Postgres and no Docker): the old block fails with exactly
+  `HQ FAIL: expected 10 regions, found 0` on an empty table and passes once rows exist; the new
+  block applies on empty, populated and re-run databases, and the real 55 → 72 sequence yields
+  10/10 regions and 58/58 divisions with correct values (`AD`→Ngaoundéré, `SW`→Buea, `CM001001`
+  Djérem→Tibati, `CM010005` Meme→Kumba). `validate/140` passes against that database.
+- **`headquarters-migration.test.ts` now forbids the pattern**, not just this instance: it asserts
+  no `count(*) into ... from public.regions;` without a predicate, and that each spot-check is
+  existence-guarded. Verified by reintroducing the old count — the test fails.
+
 ### Region and division headquarters
 
 - **The hierarchy stored a name for every level but never the seat of each administration.**
