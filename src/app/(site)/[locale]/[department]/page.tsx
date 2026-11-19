@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ServiceCard } from "@/components/content/ServiceCard";
 import { BrandStrip } from "@/components/content/BrandStrip";
 import { ProductShowcase } from "@/components/content/ProductShowcase";
+import { WorkShowcase } from "@/components/content/WorkShowcase";
 import { RememberDepartment } from "@/components/layout/LastDepartment";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
@@ -130,12 +131,14 @@ export default async function DepartmentPage({
     ? await loadServices(definition.slug, resolved)
     : [];
 
-  // Only Electrical Services carries the equipment showcase and the brand strip
-  // above the shared sections. The shared eyebrows are numbered from the top of
-  // the page, so that extra section advances them by one; deriving the offset
-  // from the same predicate that renders it keeps the sequence contiguous per
-  // department (ES 01-05, DM 02-04) instead of hard-coding a number per block.
-  const sharedSectionOffset = definition.slug === "electrical-services" ? 1 : 0;
+  // Only Electrical Services carries the equipment showcase, the brand strip and
+  // the completed-work gallery above the shared sections. The shared eyebrows are
+  // numbered from the top of the page, and the base numbers already count one
+  // leading section, so three extra sections shift them by two (not three):
+  // services is base 02 and must render as 04. Deriving the offset from the same
+  // predicate that renders the extras keeps the sequence contiguous per
+  // department (ES 04-06, DM 02-04) instead of hard-coding a number per block.
+  const sharedSectionOffset = definition.slug === "electrical-services" ? 2 : 0;
   const sectionNumber = (n: number) =>
     String(n + sharedSectionOffset).padStart(2, "0");
 
@@ -273,6 +276,22 @@ export default async function DepartmentPage({
             headingId="electrical-brands-heading"
           />
         </SectionBand>
+      ) : null}
+
+      {/* Completed work. Follows the brands because it is the evidence for the
+          equipment and the suppliers just named: what was supplied, then what was
+          installed with it. The grid treatment here matches the equipment grid
+          above, while the homepage uses the drifting strip. */}
+      {definition.slug === "electrical-services" ? (
+        <WorkShowcase
+          t={t}
+          variant="grid"
+          eyebrow={`03 — ${t("electricalProducts.work.eyebrow")}`}
+          heading={t("electricalProducts.work.heading")}
+          intro={t("electricalProducts.work.intro")}
+          note={t("electricalProducts.work.note")}
+          headingId="electrical-work-heading"
+        />
       ) : null}
 
       {hasContent ? (

@@ -2420,6 +2420,14 @@
         "spec": "3 kW / 5 kWh à 10 kW / 15 kWh",
         "alt": "La gamme de stockage d'énergie Alpha ESS, de 3 kW et 5 kWh jusqu'à 10 kW et 15 kWh."
       }
+    },
+    "work": {
+      "eyebrow": "Nos réalisations",
+      "heading": "Installations récentes",
+      "intro": "Une sélection d'installations réalisées par le département Services Électriques, fournies par notre propre équipe.",
+      "note": "Photographies de travaux réalisés fournies par le département. Les noms des sites, les détails des équipements et les capacités sont disponibles sur demande.",
+      "alt": "Photographie d'une installation réalisée par le département Services Électriques de KC Technology Corporation.",
+      "cta": "Discuter d'une installation similaire"
     }
   },
   "solarPackages": {

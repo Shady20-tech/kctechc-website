@@ -2420,6 +2420,14 @@
         "spec": "3 kW / 5 kWh to 10 kW / 15 kWh",
         "alt": "The Alpha ESS energy storage range, from 3 kW and 5 kWh up to 10 kW and 15 kWh."
       }
+    },
+    "work": {
+      "eyebrow": "Work we have done",
+      "heading": "Recent installations",
+      "intro": "A selection of installations carried out by the Electrical Services department, supplied by our own team.",
+      "note": "Photographs of completed work supplied by the department. Site names, equipment details and capacities are available on request.",
+      "alt": "Photograph of a completed installation carried out by KC Technology Corporation's Electrical Services department.",
+      "cta": "Discuss a similar installation"
     }
   },
   "solarPackages": {

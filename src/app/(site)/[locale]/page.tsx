@@ -5,6 +5,7 @@ import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SectionBand } from "@/components/layout/PageShell";
 import { ProductShowcase } from "@/components/content/ProductShowcase";
+import { WorkShowcase } from "@/components/content/WorkShowcase";
 import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
 import { CtaBand } from "@/components/ui/Cta";
 import { DepartmentCard } from "@/components/ui/DepartmentCard";
@@ -138,12 +139,14 @@ export default async function LocalizedHomePage({
         </ul>
       </SectionBand>
 
-      {/* Power equipment the Electrical Services department supplies. The strip
-          drifts continuously on the homepage; the department landing page uses a
-          different treatment for the same data. Both are server-rendered. */}
+      {/* Power equipment the Electrical Services department supplies. Kept as a
+          static grid here, and the completed-work strip below carries the drift.
+          Two consecutive drifting strips read as repetition and fetch twice the
+          imagery for the same scroll depth; the photographs are also the stronger
+          thing to animate, because they show what was actually installed. */}
       <ProductShowcase
         t={t}
-        variant="marquee"
+        variant="grid"
         eyebrow={`02 — ${t("electricalProducts.eyebrow")}`}
         heading={t("electricalProducts.heading")}
         intro={t("electricalProducts.intro")}
@@ -151,11 +154,25 @@ export default async function LocalizedHomePage({
         headingId="home-equipment-heading"
       />
 
+      {/* Completed work, and the only drifting strip on the homepage. This is the
+          animation slot the client asked to fill with real photographs: it shows
+          what the department has installed, which is the claim the equipment
+          strip above otherwise only asserts. */}
+      <WorkShowcase
+        t={t}
+        variant="marquee"
+        eyebrow={`03 — ${t("electricalProducts.work.eyebrow")}`}
+        heading={t("electricalProducts.work.heading")}
+        intro={t("electricalProducts.work.intro")}
+        note={t("electricalProducts.work.note")}
+        headingId="home-work-heading"
+      />
+
       <SectionBand tone="alt" labelledBy="home-about-heading">
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <p className="mono-label text-dept-accent">
-              03 — {t("home.aboutHeading")}
+              04 — {t("home.aboutHeading")}
             </p>
             <h2
               id="home-about-heading"

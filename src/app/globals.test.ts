@@ -137,6 +137,33 @@ describe("product showcase motion", () => {
     expect(css).not.toMatch(/(^|\n)\.product-tile-media::after/);
   });
 
+  it("drifts the completed-work strip with the same seamless loop", () => {
+    // The work strip reuses the product drift keyframe, so it must not define a
+    // second one: two keyframes with the same travel would drift apart if either
+    // were retuned.
+    expect(css).toMatch(
+      /\.work-marquee-track\s*\{[\s\S]*?animation:\s*product-drift/,
+    );
+    expect(css).toMatch(
+      /\.work-marquee:hover\s+\.work-marquee-track,[\s\S]*?animation-play-state:\s*paused/,
+    );
+  });
+
+  it("gives the work tiles a portrait box, not the square product one", () => {
+    // The supplied photographs are 3:4. Reusing `product-tile-media` would crop
+    // the top and bottom off the work being shown.
+    expect(css).toMatch(/\.work-tile-media\s*\{[\s\S]*?aspect-ratio:\s*3\s*\/\s*4/);
+  });
+
+  it("neutralises the work strip's motion under reduced motion", () => {
+    expect(reducedMotionBlock).toMatch(
+      /\.work-marquee-track\s*\{[\s\S]*?animation:\s*none/,
+    );
+    expect(reducedMotionBlock).toMatch(
+      /\.work-tile:hover,[\s\S]*?transform:\s*none/,
+    );
+  });
+
   it("selects the stagger delay per breakpoint and only for staggered items", () => {
     // The grid is one, two or three columns, so the delay differs by viewport.
     // The base value must apply to the class alone, and the two media queries

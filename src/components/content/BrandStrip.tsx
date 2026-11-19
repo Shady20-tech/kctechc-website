@@ -1,12 +1,14 @@
+import Image from "next/image";
 import { ELECTRICAL_BRANDS } from "@/lib/content/electrical-brands";
 import type { Translator } from "@/lib/i18n/translator";
 
 /**
  * Electrical Services brand strip.
  *
- * Names the manufacturers the department supplies. Server-rendered and static:
- * the brands, their categories and the heading are all in the HTML before any
- * JavaScript runs, so a crawler and a no-JavaScript visitor get the full content.
+ * Names the manufacturers the department supplies, with each supplier's own
+ * wordmark above the name. Server-rendered and static: the brands, their marks,
+ * their categories and the heading are all in the HTML before any JavaScript
+ * runs, so a crawler and a no-JavaScript visitor get the full content.
  *
  * The brand name is a proper noun and is rendered as given; only the category,
  * the heading and the eyebrow are localized.
@@ -44,7 +46,21 @@ export function BrandStrip({
             key={brand.id}
             className="rounded-card border border-border bg-surface p-6"
           >
-            <p className="font-display text-2xl font-bold tracking-tight text-ink-900">
+            {/* The marks are supplied at very different aspect ratios (SAKO is a
+                long wordmark, DEYE a square monogram), so the box is a fixed
+                height and the image is contained rather than cropped — a
+                `object-cover` box would slice the ends off the SAKO lockup. */}
+            <div className="relative flex h-16 items-center">
+              <Image
+                src={brand.logo}
+                alt=""
+                width={240}
+                height={80}
+                sizes="240px"
+                className="h-full w-auto max-w-[14rem] object-contain object-left"
+              />
+            </div>
+            <p className="mt-5 font-display text-xl font-bold tracking-tight text-ink-900">
               {brand.name}
             </p>
             <p className="mt-1 text-sm font-medium text-dept-accent">

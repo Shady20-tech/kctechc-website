@@ -983,6 +983,82 @@
   flex: none;
 }
 
+/* Completed-work showcase.
+   ---------------------------------------------------------------------------
+   Shares the product treatments (drift on the homepage, staggered rise on the
+   department page) but not the media box: the supplied photographs are portrait
+   3:4, so a square box would crop the top and bottom off the work itself. The
+   rules are deliberately separate rather than a modifier on `.product-tile`, so
+   changing a product tile cannot reshape the work strip. */
+.work-tile {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-sunken);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 420ms var(--ease-out-soft),
+    box-shadow 420ms var(--ease-out-soft),
+    border-color 420ms var(--ease-out-soft);
+}
+
+.work-tile:hover {
+  transform: translateY(-6px);
+  border-color: var(--dept-accent);
+  box-shadow: var(--shadow-lifted);
+}
+
+.work-tile-media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+
+.work-tile-media img {
+  transition: transform 700ms var(--ease-out-soft);
+}
+
+.work-tile:hover .work-tile-media img,
+.work-tile:focus-within .work-tile-media img {
+  transform: scale(1.04);
+}
+
+.work-marquee {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.work-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  padding-inline: 1.5rem;
+  animation: product-drift 72s linear infinite;
+}
+
+.work-marquee:hover .work-marquee-track,
+.work-marquee:focus-within .work-marquee-track {
+  animation-play-state: paused;
+}
+
+.work-set {
+  display: flex;
+  gap: 1.25rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.work-set > li {
+  width: 17rem;
+  max-width: 72vw;
+  flex: none;
+}
+
 /* Department landing grid: a slow accent pulse on the image frame. The pulse is
    a box-shadow ring rather than a colour change, so it never touches the
    product's own colours or its contrast, and it is scoped to the grid variant so
@@ -1149,6 +1225,25 @@
   .product-tile:hover,
   .product-tile:hover .product-tile-media img,
   .product-tile:focus-within .product-tile-media img {
+    transform: none;
+  }
+
+  /* Completed-work showcase. Same fallback as the products: the strip becomes a
+     plain horizontal scroll rather than a frozen track, and the tile lift and
+     image zoom are removed entirely. */
+  .work-marquee-track {
+    animation: none;
+    transform: none;
+  }
+
+  .work-tile,
+  .work-tile-media img {
+    transition: none;
+  }
+
+  .work-tile:hover,
+  .work-tile:hover .work-tile-media img,
+  .work-tile:focus-within .work-tile-media img {
     transform: none;
   }
 
