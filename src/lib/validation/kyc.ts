@@ -50,12 +50,16 @@ export const kycApplicationSchema = z.object({
   idType: z.enum(KYC_ID_TYPES),
   idIssuingCountry: z.string().trim().min(2, "tooShort").max(80, "tooLong"),
   // Optional, and only ever four characters. Empty is allowed; anything else must
-  // be exactly four alphanumerics, matching `kyc_id_number_last4_format`.
+  // be exactly four alphanumerics, matching `kyc_id_number_last4_format`. The
+  // `.optional()` is what makes the documented contract true for any caller: the
+  // form action happens to always send the key, but a caller that omits it must
+  // get an empty string rather than a validation failure.
   idNumberLast4: z
     .string()
     .trim()
     .regex(/^[A-Za-z0-9]{4}$/, "invalidLast4")
     .or(z.literal(""))
+    .optional()
     .transform((value) => value || ""),
 });
 

@@ -2506,6 +2506,41 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
   documented for the department heroes. After the rename the ratio moved to 6.06:1, and the two
   numbers being identical beforehand is what identifies a stale-asset problem rather than a bad image.
 
+### Phase 10 testing gotchas worth not rediscovering
+
+- **A documented "optional" field can still be required.** `kycApplicationSchema.idNumberLast4`
+  was commented "Optional" but was a bare `z.string()...regex(...).or(z.literal(""))` with no
+  `.optional()`, so an omitted key failed validation. It was masked because the form action always
+  coerces the value to `""`; only a test that calls the schema without the key exposed it. The
+  `.or(z.literal(""))` accepts an empty string but not `undefined`, and those are different
+  contracts. When a comment claims "optional", assert it with a parse that omits the key.
+- **Zod v4's `z.string().uuid()` enforces RFC 4122 version and variant bits, not just the
+  `8-4-4-4-12` shape.** A fixture like `11111111-1111-1111-1111-111111111111` is refused with
+  "Invalid UUID" even though it looks like one, so every form-validation test using it fails at the
+  schema step. Use a real v4 UUID (`11111111-1111-4111-8111-111111111111`) in fixtures.
+- **jsdom's `File` has no `arrayBuffer()`, which a Server Action that reads uploaded bytes calls.**
+  A plain object breaks `instanceof File`; instead build a real `File` and attach the method with
+  `Object.defineProperty`. Copy the bytes into a fresh `ArrayBuffer` before `new File([buffer], …)`,
+  or TypeScript rejects the `Uint8Array` as a `BlobPart` (`ArrayBufferLike` is not `ArrayBuffer`).
+- **A standalone-bundle server whose `cwd` is a `(deleted)` directory serves 500 for every static
+  asset.** A later `npm run build` replaces `.next/standalone`, and the already-running
+  `next-server` keeps its old, now-unlinked working directory: HTML still returns 200 but
+  `/_next/static/chunks/*.css`, fonts, `public/` files and `/icons/*.png` all 500, and `next/image`
+  answers 400. The symptom looks like a broken build or a contrast/styling defect. Check
+  `ls -l /proc/<pid>/cwd` for `(deleted)`, then rebuild, re-copy `public` and `.next/static` into
+  `.next/standalone` (the `rm -rf` + `cp -r` dance from the earlier gotcha), and restart. The CSS
+  returning 500 while the file exists on disk is the tell.
+- **The KYC badge and publisher-verification boundaries are proven in `supabase/validate/`, not in
+  Vitest.** `120_publisher_verification_behaviour.sql` shows an approved-but-unverified publisher is
+  NOT verified, that a real-estate administrator is refused the grant (`42501`) while a super admin
+  is accepted, and that the denormalized `publisher_verified` flag follows a grant, a revocation and
+  a suspension onto every listing the poster holds. A `SECURITY DEFINER` trigger is invisible to
+  TypeScript, so a `.test.ts` can only pin the source's shape — the behavioural proof belongs in the
+  harness.
+- **`real_estate_memberships_suspension_requires_reason` needs `suspended_at` *and* a non-blank
+  `suspension_reason`.** A validation fixture that sets only `status = 'suspended'` and a reason is
+  refused; set `suspended_at = now()` too.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
