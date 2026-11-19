@@ -627,26 +627,33 @@ CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 #### Corporate page backdrops (About / Services / Gallery / Contact)
 
 The four corporate pages each own a distinct backdrop, declared in `CORPORATE_PAGE_HEROES`
-(`src/lib/config/site.ts`). Three are CC BY and carry their credit in that config entry, which
-`PageHero` renders under the meta strip; About is CC0 and carries none. All four are cropped to
-16:9 and resized to 2048×1152.
+(`src/lib/config/site.ts`). About is a CC0 Commons photograph and carries no credit. Services,
+Gallery and Contact use the **business-supplied brand artwork** the client provided (an Imgur
+album); no attribution obligation is known for them, so they carry no credit either. All four are
+stored as landscape JPEGs under `public/hero/`.
 
 - `/hero/about-v2.jpg` — "Vue aérienne de la ville de Bafoussam" (PENdjeng), **CC0**, no
   attribution required. Source:
   `https://commons.wikimedia.org/wiki/File:6._Vue_a%C3%A9rienne_de_la_ville_de_Bafoussam.jpg`.
   (An earlier pick, a CC0 Mount Cameroon photograph, was replaced after it measured 2.66:1 at
   1024px — see the gotchas below.)
-- `/hero/services-v1.jpg` — "Office Building Off Old Street" (Francisco Anzola), **CC BY 3.0**.
-  Source:
-  `https://commons.wikimedia.org/wiki/File:Office_Building_Off_Old_Street_(215200145).jpeg`.
-- `/hero/gallery-v1.jpg` — "CCTV Installation" (Support gigates), **CC BY 4.0**. Source:
-  `https://commons.wikimedia.org/wiki/File:CCTV_Installation.jpg`.
-- `/hero/contact-v1.jpg` — "Computer keyboard placed on a black desk in a modern workspace"
-  (Shixart1985), **CC BY 2.0**. Source:
-  `https://commons.wikimedia.org/wiki/File:Computer_keyboard_placed_on_a_black_desk_in_a_modern_workspace.jpg`.
+- `/hero/services-v2.jpg` — the client's technical/scale-drawing artwork (white ground, geometric
+  line work), supplied via `https://imgur.com/a/1BQSLkA`. No attribution obligation known.
+- `/hero/gallery-v2.jpg` — the client's "Success / Strategy / Planing / Idea" graphic, supplied via
+  the same album. No attribution obligation known.
+- `/hero/contact-v2.jpg` — the client's "CONTACT US" artwork, supplied via the same album. No
+  attribution obligation known.
 
-The three CC BY credits render in the hero. The older `corporate-v3.jpg` and
-`digital-marketing-v3.jpg` above still render no credit and remain the outstanding attribution debt.
+**Provenance is unverified for the three client-supplied files.** They arrived as an Imgur album
+with no licence statement and no per-image title, so their copyright status could not be confirmed
+from the source. The client asserts they are the company's own artwork; if that is wrong, replace
+them before launch. The Imgur originals top out at **1024px** wide, so these are the smallest
+corporate backdrops and `next/image` cannot serve a wider variant than the source (the floor in
+`hero-images.test.ts` is 600 for exactly this reason).
+
+The older `corporate-v3.jpg` and `digital-marketing-v3.jpg` above still render no credit and remain
+the outstanding attribution debt. The superseded `services-v1.jpg`, `gallery-v1.jpg` and
+`contact-v1.jpg` (all CC BY Commons files) were removed once nothing referenced them.
 
 ### Hero image gotchas worth not rediscovering
 

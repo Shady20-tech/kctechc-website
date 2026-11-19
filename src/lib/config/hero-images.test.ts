@@ -64,24 +64,17 @@ describe("department hero images", () => {
     }
   });
 
-  // A CC BY image obliges us to credit it. The obligation travels with the
-  // entry so it cannot be dropped by editing a page, and a CC0 file carries no
-  // credit rather than an unnecessary one.
-  it("declares a credit exactly where the licence requires it", () => {
-    const needsCredit = new Set(["services", "gallery", "contact"]);
+  // Attribution travels with the entry so it cannot be dropped by editing a
+  // page. No corporate hero carries an attribution obligation today: About is a
+  // CC0 Commons file, and Services, Gallery and Contact use business-supplied
+  // brand artwork (see AGENTS.md). Adding a CC BY image means adding its credit
+  // here, which is the point — the assertion is what forces that.
+  it("carries a credit only where the licence requires one", () => {
     for (const entry of CORPORATE_PAGE_HEROES) {
-      if (needsCredit.has(entry.page)) {
-        expect(entry.credit, `${entry.page} needs a credit`).toBeTruthy();
-        expect(entry.credit?.label).toContain("Wikimedia Commons");
-        expect(entry.credit?.href).toMatch(
-          /^https:\/\/commons\.wikimedia\.org\//,
-        );
-      } else {
-        expect(
-          entry.credit,
-          `${entry.page} is CC0 and carries no credit`,
-        ).toBeUndefined();
-      }
+      expect(
+        entry.credit,
+        `${entry.page} carries no credit obligation`,
+      ).toBeUndefined();
     }
   });
 

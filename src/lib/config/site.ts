@@ -145,14 +145,16 @@ export function getDepartment(
 /**
  * Backdrops for the four corporate pages (About, Services, Gallery, Contact).
  *
- * Each is a different photograph on purpose: the four pages previously shared
+ * Each is a different image on purpose: the four pages previously shared
  * `corporate-v3.jpg` (About and Contact) or borrowed a department's hero
  * (Gallery used the Electrical Services backdrop), which made them read as one
  * page. `image` is the public path; `credit` is present only where the licence
  * requires attribution, so the obligation travels with the image instead of
- * living in a comment nobody renders. CC0 and public-domain files carry none.
+ * living in a comment nobody renders.
  *
- * Every source is a Wikimedia Commons file whose licence permits commercial use.
+ * About remains a Wikimedia Commons CC0 photograph. Services, Gallery and Contact
+ * use the business-supplied brand artwork (see the AGENTS.md note on their
+ * provenance): no attribution obligation is known, so they carry no credit.
  * `hero-images.test.ts` asserts each path resolves to a hero-sized landscape
  * JPEG and that no two corporate pages share a backdrop.
  */
@@ -172,27 +174,15 @@ export const CORPORATE_PAGE_HEROES: readonly CorporatePageHero[] = [
   },
   {
     page: "services",
-    image: "/hero/services-v1.jpg",
-    credit: {
-      label: "Photo: Francisco Anzola / Wikimedia Commons (CC BY 3.0)",
-      href: "https://commons.wikimedia.org/wiki/File:Office_Building_Off_Old_Street_(215200145).jpeg",
-    },
+    image: "/hero/services-v2.jpg",
   },
   {
     page: "gallery",
-    image: "/hero/gallery-v1.jpg",
-    credit: {
-      label: "Photo: Support gigates / Wikimedia Commons (CC BY 4.0)",
-      href: "https://commons.wikimedia.org/wiki/File:CCTV_Installation.jpg",
-    },
+    image: "/hero/gallery-v2.jpg",
   },
   {
     page: "contact",
-    image: "/hero/contact-v1.jpg",
-    credit: {
-      label: "Photo: Shixart1985 / Wikimedia Commons (CC BY 2.0)",
-      href: "https://commons.wikimedia.org/wiki/File:Computer_keyboard_placed_on_a_black_desk_in_a_modern_workspace.jpg",
-    },
+    image: "/hero/contact-v2.jpg",
   },
 ] as const;
 
