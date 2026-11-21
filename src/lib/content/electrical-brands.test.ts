@@ -66,9 +66,9 @@ describe("electrical brand data", () => {
   });
 
   /**
-   * The two wordmarks shipped swapped once: `sako-power.png` held the HIKVISION
-   * mark and `hikvision.png` held SAKO POWER's. Nothing caught it, because the
-   * checks above only prove each path resolves to a complete PNG with a sane
+   * The two wordmarks shipped swapped once: the SAKO POWER entry pointed at a
+   * file holding the HIKVISION mark and vice versa. Nothing caught it, because
+   * the checks above only prove each path resolves to a complete PNG with a sane
    * shape — properties that are equally true of the wrong file. A swap is
    * invisible to the type checker, to the component tests (which assert the
    * *names*, not the pixels) and to a screenshot review of a stylised wordmark.
@@ -79,24 +79,30 @@ describe("electrical brand data", () => {
    * roughly 6:1. The aspect ratios therefore order the pair, and swapping the
    * files inverts that order. The bounds are wide enough to absorb a re-export at
    * a different size but far too tight to be met by the other mark.
+   *
+   * The paths come from `ELECTRICAL_BRANDS` rather than being written out here,
+   * so the check follows the files when their names are versioned.
    */
   it("ships each wordmark in the file named for it", () => {
+    const pathFor = (id: string) => {
+      const brand = ELECTRICAL_BRANDS.find((entry) => entry.id === id);
+      if (!brand) throw new Error(`no brand ${id}`);
+      return brand.logo;
+    };
     const sako = pngDimensions(
-      readFileSync(join(PUBLIC_DIR, "/brand/partners/sako-power.png")),
+      readFileSync(join(PUBLIC_DIR, pathFor("sakoPower"))),
     );
-    const hik = pngDimensions(
-      readFileSync(join(PUBLIC_DIR, "/brand/partners/hikvision.png")),
-    );
+    const hik = pngDimensions(readFileSync(join(PUBLIC_DIR, pathFor("hikvision"))));
     const sakoAspect = sako.width / sako.height;
     const hikAspect = hik.width / hik.height;
 
     expect(
       sakoAspect,
-      `sako-power.png is ${sako.width}x${sako.height}: a stacked two-line lockup should be under 3:1, so this looks like the HIKVISION file`,
+      `SAKO POWER is ${sako.width}x${sako.height}: a stacked two-line lockup should be under 3:1, so this looks like the HIKVISION file`,
     ).toBeLessThan(3);
     expect(
       hikAspect,
-      `hikvision.png is ${hik.width}x${hik.height}: a single-line wordmark should be over 4:1, so this looks like the SAKO POWER file`,
+      `HIKVISION is ${hik.width}x${hik.height}: a single-line wordmark should be over 4:1, so this looks like the SAKO POWER file`,
     ).toBeGreaterThan(4);
   });
 

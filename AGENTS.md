@@ -2000,15 +2000,25 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   CCTV manufacturer's mark and vice versa. The data mapping was always right
   (`ELECTRICAL_BRANDS` pairs each name with its own path); the bytes under those two filenames were
   the wrong way round. The fix swaps the files back, verified by OCR of the served optimizer
-  output: `sako-power.png` reads "SAKO / SINCE 1997" and `hikvision.png` reads "HIKVISION".
+  output: `sako-power-v2.png` reads "SAKO / SINCE 1997" and `hikvision-v2.png` reads "HIKVISION".
+- **Correcting the bytes in place did not fix what the user saw, and that is the transferable
+  lesson.** The corrected files kept their old paths, so the image URL never changed. Next serves
+  optimized images with `max-age=14400`, and both the optimizer's cache (`X-Nextjs-Cache: HIT`) and
+  the browser key their copy by that URL, so the swapped pair kept painting while every
+  server-side check passed. **An asset fix that keeps the same URL is not shipped.** The files are
+  now `*-v2.png`, the old names are deleted, and the markup points at a URL no cache has seen. The
+  user's screenshot was OCR-ed to confirm the diagnosis: the marks read HIKVISION and SAKO POWER
+  above the labels SAKO POWER and HIKVISION, i.e. exactly the swapped state.
 - **Asset tests that only prove a file exists cannot catch a swap.** `electrical-brands.test.ts`
   checked that each path resolved to a complete PNG with a sane shape, and every one of those
   properties is equally true of the *wrong* file, so the suite stayed green. The component tests
   assert the brand *names*, which were correct, and a stylised wordmark is not reliably readable by
   eye in a screenshot review. The guard now asserts a structural property that survives a rename:
   SAKO POWER is a stacked lockup (name plus a "SINCE 1997" strapline, ~2:1) while HIKVISION is a
-  single line of nine letters (~6:1), so `sako-power.png` must be under 3:1 and `hikvision.png`
-  over 4:1. Reintroducing the swap makes that test fail with a message naming the likely cause —
+  single line of nine letters (~6:1), so the SAKO file must be under 3:1 and the HIKVISION file
+  over 4:1. The paths are read from `ELECTRICAL_BRANDS` rather than written out, so the check
+  follows a version bump instead of pinning a filename that no longer exists. Reintroducing the
+  swap makes that test fail with a message naming the likely cause —
   verified by actually doing it, not by assuming.
 - **OCR is the tool for "is this the right image?", and ASCII-art rendering is not.** Reading the
   letterforms by downsampling to a character grid gave the *opposite* answer for both files, because

@@ -23,6 +23,13 @@ export type ElectricalBrand = {
    * The mark is decorative next to the printed name, so `BrandStrip` renders it
    * with an empty `alt` and lets the name carry the accessible text — a logo
    * whose alt repeats the adjacent heading is noise for a screen reader.
+   *
+   * The filenames carry a `-v2` suffix because these two files were once swapped
+   * in place. Correcting the bytes under the old names was not enough: the URL
+   * stayed identical, and both the image optimizer and the browser hold a
+   * `max-age=14400` copy keyed by that URL, so visitors kept seeing the swapped
+   * pair for hours after the deploy. A new path is the only reliable way to
+   * invalidate it. Bump the suffix rather than editing an image in place.
    */
   logo: string;
 };
@@ -34,19 +41,19 @@ export const ELECTRICAL_BRANDS: readonly ElectricalBrand[] = [
     id: "sakoPower",
     name: "SAKO POWER",
     categoryKey: `${PREFIX}.sakoPower.category`,
-    logo: "/brand/partners/sako-power.png",
+    logo: "/brand/partners/sako-power-v2.png",
   },
   {
     id: "deye",
     name: "DEYE",
     categoryKey: `${PREFIX}.deye.category`,
-    logo: "/brand/partners/deye.png",
+    logo: "/brand/partners/deye-v2.png",
   },
   {
     id: "hikvision",
     name: "HIKVISION",
     categoryKey: `${PREFIX}.hikvision.category`,
-    logo: "/brand/partners/hikvision.png",
+    logo: "/brand/partners/hikvision-v2.png",
   },
 ] as const;
 
