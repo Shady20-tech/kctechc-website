@@ -310,7 +310,8 @@
         "label": "Agent immobilier",
         "body": "Représentez des propriétaires et gérez des annonces en leur nom. Nécessite une vérification d'identité."
       }
-    }
+    },
+    "accountDeleted": "Votre compte a été supprimé. Vous avez été déconnecté."
   },
   "admin": {
     "metaTitle": "Administration",
@@ -2317,7 +2318,31 @@
       "not_found": "Ce compte n'existe plus.",
       "update_failed": "La modification n'a pas pu être enregistrée. Réessayez.",
       "unconfigured": "La base de données n'est pas connectée."
-    }
+    },
+    "delete": {
+      "open": "Supprimer le compte",
+      "confirmBody": "Supprimer définitivement {name} ? Le profil, l'accès, les habilitations, les biens enregistrés et les pièces de vérification sont supprimés. Les commandes et l'historique d'audit sont conservés mais détachés du compte. Les biens publiés sont archivés. Cette action est irréversible.",
+      "reasonLabel": "Motif de la suppression",
+      "reasonPlaceholder": "Au moins 10 caractères, enregistrés dans le journal d'audit",
+      "submit": "Supprimer définitivement",
+      "submitting": "Suppression…",
+      "success": "Compte supprimé.",
+      "errorHeading": "Impossible de supprimer le compte",
+      "selfNote": "Vous ne pouvez pas supprimer votre propre compte ici. Utilisez la commande de suppression sur votre page de compte.",
+      "errors": {
+        "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+        "forbidden": "Seul un super administrateur peut supprimer un compte.",
+        "invalid_request": "Cette demande n'était pas valide.",
+        "reason_too_short": "Indiquez un motif d'au moins 10 caractères.",
+        "self_delete": "Vous ne pouvez pas supprimer votre propre compte ici. Utilisez votre page de compte.",
+        "not_found": "Ce compte n'existe plus.",
+        "last_super_admin": "Le dernier super administrateur ne peut pas être supprimé.",
+        "cleanup_failed": "Le compte n'a pas pu être préparé pour la suppression. Rien n'a été supprimé.",
+        "delete_failed": "Le compte n'a pas pu être supprimé. Rien n'a été supprimé.",
+        "unconfigured": "La base de données n'est pas connectée."
+      }
+    },
+    "colDelete": "Supprimer"
   },
   "email": {
     "inquiry": {
@@ -3074,6 +3099,26 @@
         "agentProfileRequired": "Votre fiche agent n'a pas encore été créée : une annonce ne peut donc pas vous être attribuée. Contactez-nous pour la créer."
       },
       "returnToConsole": "Console d'administration"
+    },
+    "delete": {
+      "heading": "Supprimer votre compte",
+      "intro": "La suppression de votre compte efface définitivement votre profil, vos biens et recherches enregistrés, vos préférences d'alerte et toute vérification d'identité que vous avez soumise. Les commandes déjà passées sont conservées comme pièces comptables, mais ne seront plus liées à vous. Cette action est irréversible.",
+      "listingNote": "Tout bien que vous avez publié sera archivé et retiré du marché. Votre profil d'agent, si vous en avez un, sera supprimé.",
+      "confirmationLabel": "Saisissez {phrase} pour confirmer",
+      "confirmationHint": "Ce mot doit être saisi exactement tel qu'il apparaît, en majuscules.",
+      "submit": "Supprimer définitivement mon compte",
+      "submitting": "Suppression…",
+      "errorHeading": "Votre compte n'a pas été supprimé",
+      "errors": {
+        "confirmation_mismatch": "Saisissez DELETE exactement, en majuscules, pour confirmer.",
+        "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+        "unconfigured": "La base de données n'est pas connectée.",
+        "rate_limited": "Trop de tentatives. Patientez un instant puis réessayez.",
+        "last_super_admin": "Le dernier super administrateur ne peut pas être supprimé. Demandez l'aide d'un autre administrateur.",
+        "forbidden": "Vous n'êtes pas autorisé à supprimer ce compte.",
+        "cleanup_failed": "Vos données n'ont pas pu être préparées pour la suppression. Rien n'a été supprimé ; réessayez.",
+        "delete_failed": "Votre compte n'a pas pu être supprimé. Rien n'a été supprimé ; réessayez."
+      }
     }
   },
   "offline": {

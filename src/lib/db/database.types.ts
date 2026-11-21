@@ -3396,6 +3396,15 @@ export type Database = {
         };
         Returns: undefined;
       };
+      detach_and_archive_user_content: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          object_bucket: string;
+          object_path: string;
+        }[];
+      };
       apply_payment_result: {
         Args: {
           p_failure_reason?: string;

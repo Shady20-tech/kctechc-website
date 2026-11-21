@@ -310,7 +310,8 @@
         "label": "Real Estate Agent",
         "body": "Act for property owners and manage listings on their behalf. Requires identity verification."
       }
-    }
+    },
+    "accountDeleted": "Your account has been deleted. You have been signed out."
   },
   "admin": {
     "metaTitle": "Admin",
@@ -2317,7 +2318,31 @@
       "not_found": "That account no longer exists.",
       "update_failed": "The change could not be saved. Try again.",
       "unconfigured": "The database is not connected."
-    }
+    },
+    "delete": {
+      "open": "Delete account",
+      "confirmBody": "Permanently delete {name}? The profile, sign-in, memberships, saved properties and verification records are removed. Orders and audit history are kept but detached from the account. Listed property is archived. This cannot be undone.",
+      "reasonLabel": "Reason for deletion",
+      "reasonPlaceholder": "At least 10 characters, recorded in the audit log",
+      "submit": "Delete permanently",
+      "submitting": "Deleting…",
+      "success": "Account deleted.",
+      "errorHeading": "Could not delete the account",
+      "selfNote": "You cannot delete your own account here. Use the delete control on your account page.",
+      "errors": {
+        "unauthenticated": "Your session has expired. Sign in again.",
+        "forbidden": "Only a super administrator may delete an account.",
+        "invalid_request": "That request was not valid.",
+        "reason_too_short": "Give a reason of at least 10 characters.",
+        "self_delete": "You cannot delete your own account here. Use your account page.",
+        "not_found": "That account no longer exists.",
+        "last_super_admin": "The last super administrator cannot be deleted.",
+        "cleanup_failed": "The account could not be prepared for deletion. Nothing was removed.",
+        "delete_failed": "The account could not be deleted. Nothing was removed.",
+        "unconfigured": "The database is not connected."
+      }
+    },
+    "colDelete": "Delete"
   },
   "email": {
     "inquiry": {
@@ -3074,6 +3099,26 @@
         "agentProfileRequired": "Your agent record has not been set up yet, so a listing cannot be attributed to you. Contact us to have it created."
       },
       "returnToConsole": "Admin console"
+    },
+    "delete": {
+      "heading": "Delete your account",
+      "intro": "Deleting your account permanently removes your profile, your saved properties and searches, your alert preferences and any identity verification you have submitted. Orders you have already placed are kept as business records, but they will no longer be linked to you. This cannot be undone.",
+      "listingNote": "Any property you have listed will be archived and taken off the market. Your agent profile, if you have one, is removed.",
+      "confirmationLabel": "Type {phrase} to confirm",
+      "confirmationHint": "This word must be typed exactly as shown, in capitals.",
+      "submit": "Permanently delete my account",
+      "submitting": "Deleting…",
+      "errorHeading": "Your account was not deleted",
+      "errors": {
+        "confirmation_mismatch": "Type DELETE exactly, in capitals, to confirm.",
+        "unauthenticated": "Your session has expired. Sign in again.",
+        "unconfigured": "The database is not connected.",
+        "rate_limited": "Too many attempts. Wait a little while and try again.",
+        "last_super_admin": "The last super administrator cannot be deleted. Ask another administrator to help.",
+        "forbidden": "You are not allowed to delete this account.",
+        "cleanup_failed": "Your data could not be prepared for deletion. Nothing was removed; try again.",
+        "delete_failed": "Your account could not be deleted. Nothing was removed; try again."
+      }
     }
   },
   "offline": {

@@ -423,7 +423,25 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   `content_translations` rows, queues the Tolgee jobs, and backfills existing articles. Before it,
   `'insight'` was a valid entity type and the read path merged French, but nothing ever wrote it, so
   `/fr` silently served English. See "Insight article translation" below for what this does _not_ do.
-- 999 Vitest tests pass (76 files), `tsc --noEmit` is clean, ESLint is clean, and the production
+- Account deletion is implemented for both audiences:
+  - Migration `20260101000073_account_deletion.sql` adds `detach_and_archive_user_content(uuid)`
+    (service-role only): it archives the listings the account owns, steps a `pending_review` one back
+    to `draft` first because the direct transition is illegal, removes the account's `agent_profiles`
+    row (which is `on delete set null` and would otherwise survive as a ghost), refuses the last
+    active super administrator, and returns the avatar/KYC storage paths that must be purged.
+  - `src/lib/auth/account-deletion-service.ts` is the single implementation both entry points call:
+    cleanup RPC → `auth.admin.deleteUser` (which cascades the profile and its children) → best-effort
+    object purge. Orders, inquiries and audit rows survive detached by design.
+  - Customer surface: `DeleteAccountForm` on `/[locale]/account` posts to `deleteOwnAccountAction`,
+    which takes the account id from the **session** (never the form), requires the typed
+    `DELETE_ACCOUNT_CONFIRMATION`, rate-limits, audits `profile_deleted` with `self: true`, signs out
+    and redirects to `?reason=deleted`.
+  - Admin surface: `DeleteUserForm` in each `/admin/users` row posts to `deleteUserAccountAction`,
+    super-admin only, requires a recorded reason, refuses self-deletion, and reports an unknown id as
+    `not_found`.
+  - `supabase/validate/150_account_deletion_behaviour.sql` proves the archive scope, the cascade
+    split, the last-super-admin guard and the EXECUTE classification on a fresh database.
+- 1430 Vitest tests pass (113 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (137/137 static pages).
 - KYC verification (Phase 2 of the real-estate work) is implemented:
   - Migration `20260101000060_kyc_verification.sql` creates `real_estate_kyc_applications`,
@@ -2822,6 +2840,84 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
 - **`real_estate_memberships_suspension_requires_reason` needs `suspended_at` *and* a non-blank
   `suspension_reason`.** A validation fixture that sets only `status = 'suspended'` and a reason is
   refused; set `suspended_at = now()` too.
+
+### Account deletion (customer self-service and super-admin)
+
+- **Deleting an account is two different operations, and only one of them is SQL.** Removing the
+  `auth.users` row is the Supabase Admin API's job (`auth.admin.deleteUser`) because the `auth`
+  schema is not ours to write; the migration owns the *content* consequences and the storage paths.
+  `20260101000073_account_deletion.sql` adds `detach_and_archive_user_content(uuid)`, which archives
+  the listings the account owns, removes its `agent_profiles` row, refuses the last active super
+  administrator, and **returns** the storage objects that must be purged.
+- **The order of operations is forced, not stylistic.** `property_listings.owner_id` is
+  `on delete set null` and the KYC tables cascade, so once the auth row is gone there is no longer
+  any way to find the listings to archive or the paths to purge. The paths are therefore read
+  *before* the deletion and the objects removed *after* it. `account-deletion-service.ts` is the one
+  implementation both entry points call, so the two cannot drift.
+- **`pending_review → archived` is not a legal transition, so the archive must step through
+  `draft`.** `listing_status_transition_allowed` admits `pending_review → draft` and
+  `draft → archived` but not the direct jump, so a naive `set status = 'archived'` raises from
+  `enforce_listing_lifecycle` for exactly the listings most likely to exist (a landlord mid-review).
+  The function steps a `pending_review` row back to `draft` first.
+- **`closed_at` is maintained by the trigger, not by the writer.** `property_listings_closed_requires_at`
+  requires it for `sold`/`rented`/`archived`, and `enforce_listing_lifecycle` sets it. That is why
+  `archive_listing` does not set it and neither does the deletion function — do not add it, or two
+  places will be deciding the same timestamp.
+- **An agent record survives an account deletion unless it is removed explicitly.**
+  `agent_profiles.user_id` is `on delete set null`, not cascade, so the row would outlive the account
+  as a ghost the public agent policy still exposes. The cleanup deletes it; listings that pointed at
+  it have `agent_id` nulled by the existing FK.
+- **The last-super-admin guard counts *active* super admins.** An inactive one cannot sign in to
+  restore the role, so counting them would let the guard be defeated. It is a lockout guard, not a
+  privilege one, and it lives in the SQL rather than only in the Server Action — the action's
+  self-deletion refusal is the same rule stated earlier and with a better message.
+- **A `on delete set null` column is how the business records survive, and that is deliberate.**
+  Orders, inquiries and audit rows are kept and detached: an order is a business record that must
+  survive the customer, and an audit trail that vanished with its actor would be worthless. The
+  deletion does not delete the books.
+- **The self-service action takes the account id from the session, never from the form.** A
+  `profileId` field on the customer's delete form would be an unauthenticated request to delete an
+  arbitrary account; `account-deletion-actions.test.ts` asserts a posted `profileId` is ignored and
+  the session id is used.
+- **An audit row written *after* the deletion cannot name the deleted user as its actor.**
+  `audit_logs.actor_id` is a foreign key to `auth.users`, so inserting the just-deleted id fails the
+  constraint — and because `recordAudit` returns a boolean that the caller ignores, the row is
+  dropped in silence and the trail this change exists to leave is missing. `on delete set null` does
+  not help: it rewrites rows that already existed, it cannot rescue an insert that names a gone user.
+  The self-deletion path therefore writes `actorId: null` and carries `deletedUserId` in the
+  metadata. The admin path is unaffected — its actor is the surviving super admin — and that
+  asymmetry is the point. `account-deletion-actions.test.ts` asserts the null actor, and the test
+  was confirmed to fail when the id is put back.
+- **A `boolean`-returning audit helper makes a failed write invisible.** `recordAudit` resolves
+  `false` on any insert error and no caller checks it, so a constraint violation is
+  indistinguishable from success. When a new audit write matters, assert the *arguments* in a test
+  and reason about the FK/constraint the row must satisfy, rather than trusting that a call was
+  made.
+- **`?reason=deleted` reuses the sign-in form's existing notice slot** rather than adding a second
+  acknowledgement mechanism, and the success path `redirect()`s instead of returning state — the
+  session is gone, so leaving the user on the account page would render a page whose data just
+  disappeared. `SignInForm` maps `deleted` to `auth.accountDeleted`.
+- **A validation fixture that inserts listings must clean up its translation rows first.**
+  `sync_listing_translation_index` writes `translation_entries` / `content_translations` /
+  `translation_sync_jobs` with no FK to `property_listings`, so deleting the listing cascades
+  nothing and strands a durable queue of Tolgee work for rows that no longer exist. Delete the
+  entries and translations *before* the listing (afterwards the `entity_id in (select …)` subquery
+  matches nothing).
+- **The fixture's `orders` row needs `idempotency_key` and `access_token`** (both `not null`, with
+  length/format checks) and its reference must match `^KC-ORD-[0-9]{8}-[A-Z0-9]{6}$`. The `inquiries`
+  reference format is different: `^KC-[0-9]{8}-[A-Z0-9]{6}$`.
+- **The shim reads `request.jwt.claim.sub` (singular), not the plural JSON `request.jwt.claims`.**
+  Setting the plural form leaves `auth.uid()` null, which silently turns a "non-admin is refused"
+  assertion into a trusted-context pass. Use `set_config('request.jwt.claim.sub', …, true)`.
+- **`kyc_id_type` members are `national_id_card` / `international_passport` / `other_government_id`.**
+  A fixture written as `'national_id'` fails the enum at insert.
+- **Test the internal role guard separately from the EXECUTE grant.** The revoke makes the function
+  unreachable by a browser key, which would mask a missing `is_super_admin()` check inside it. The
+  validate script therefore calls it as `service_role` with a non-admin JWT subject, which is exactly
+  the shape of a Server Action that forgets to check the role.
+- **A Docker socket or a `psql` is not guaranteed in this container, and `pgserver` has no wheel for
+  it.** Verify a new migration by reading it and by the `*.test.ts` shape assertions; note in the
+  report that the `supabase/validate/*.sql` scripts were not replayed.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
