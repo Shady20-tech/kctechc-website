@@ -103,7 +103,9 @@ export function SignInForm({
       ? t("auth.linkExpired")
       : initialReason === "unconfigured"
         ? t("auth.notConfiguredBody")
-        : null;
+        : initialReason === "deleted"
+          ? t("auth.accountDeleted")
+          : null;
 
   return (
     <form action={formAction} className="space-y-4" noValidate>

@@ -3,6 +3,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { RoleSelectForm } from "@/components/admin/RoleSelectForm";
+import { DeleteUserForm } from "@/components/admin/DeleteUserForm";
 import { requireRole } from "@/lib/auth/guards";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -146,6 +147,20 @@ export default async function AdminUsersPage({
                 <RoleSelectForm
                   profileId={row.id}
                   currentRole={row.role}
+                  isSelf={row.id === auth.id}
+                  locale="en"
+                />
+              ),
+            },
+            {
+              key: "delete",
+              header: t("adminUsers.colDelete"),
+              render: (row) => (
+                <DeleteUserForm
+                  profileId={row.id}
+                  displayName={
+                    row.full_name ?? row.email ?? t("adminUsers.unassigned")
+                  }
                   isSelf={row.id === auth.id}
                   locale="en"
                 />

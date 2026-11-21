@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { AvatarForm } from "@/components/admin/AvatarForm";
 import { resolveAvatarUrl } from "@/components/admin/Avatar";
+import { DeleteAccountForm } from "@/components/account/DeleteAccountForm";
 import { CustomerSignOutForm } from "@/components/auth/CustomerSignOutForm";
 import { MembershipCard } from "@/components/account/MembershipCard";
 import { ProfileResidencyForm } from "@/components/account/ProfileResidencyForm";
@@ -394,6 +395,25 @@ export default async function AccountPage({
             })}
           </ul>
         )}
+      </section>
+
+      <section
+        className="mt-16 border-t border-border-strong pt-10"
+        aria-labelledby="account-delete-heading"
+      >
+        <h2
+          id="account-delete-heading"
+          className="text-xl font-semibold text-ink-900"
+        >
+          {t("account.delete.heading")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-base text-body">
+          {t("account.delete.intro")}
+        </p>
+        <p className="mt-2 max-w-2xl text-base text-body">
+          {t("account.delete.listingNote")}
+        </p>
+        <DeleteAccountForm locale={resolved} />
       </section>
     </SectionBand>
   );

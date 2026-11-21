@@ -15,6 +15,7 @@ export const AUDIT_ACTIONS = [
   "profile_created",
   "profile_updated",
   "profile_deactivated",
+  "profile_deleted",
   "avatar_changed",
   "password_changed",
   "content_published",
