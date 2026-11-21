@@ -52,7 +52,18 @@ import { departmentScopeProps } from "@/lib/theme/department-scope";
  * A category whose localized slug differs from the canonical one is reachable at
  * both under its own locale — the canonical slug still answers, so an inbound
  * link written before the translation existed keeps working.
+ *
+ * `[category]` is the one param `generateStaticParams` cannot enumerate (the
+ * category set is data), so the route renders per request and reads
+ * `searchParams` for its filter state. Awaiting `searchParams` on a route the
+ * router still treats as prerenderable throws `DYNAMIC_SERVER_USAGE`, which is
+ * why this page answered 500 in the production build while rendering fine in
+ * dev. The declaration below states that intent rather than leaving it to
+ * inference; the slug route beside it needs none because it reads no
+ * `searchParams`.
  */
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
   // The category set is read from the database, so no category segments are
   // enumerated; only the department segment is, from the static list.

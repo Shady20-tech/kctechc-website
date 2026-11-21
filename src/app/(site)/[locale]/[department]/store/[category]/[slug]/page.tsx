@@ -5,7 +5,7 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { AddToCartButton } from "@/components/store/AddToCartButton";
 import { AvailabilityBadge } from "@/components/store/ProductCard";
-import { ProductGallery } from "@/components/store/ProductImageFrame";
+import { ProductGallery } from "@/components/store/ProductGallery";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { storePathFor } from "@/lib/config/navigation";

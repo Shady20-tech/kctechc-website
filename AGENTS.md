@@ -481,6 +481,25 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     split, the last-super-admin guard and the EXECUTE classification on a fresh database.
 - 1430 Vitest tests pass (113 files), `tsc --noEmit` is clean, ESLint is clean, and the production
   build succeeds (137/137 static pages).
+- Two defects found while smoke-testing the marketplace against a real local Supabase stack, both
+  fixed:
+  - **The product gallery was a dead control.** `ProductGallery` rendered every uploaded thumbnail
+    and never swapped the main image, so a product's second and later photographs could not be
+    viewed. It is now `src/components/store/ProductGallery.tsx`, a `"use client"` module mirroring
+    `ListingGallery` (`useState` + `aria-current` + active accent border), while
+    `ProductImageFrame.tsx` stays a Server Component so the card does not pull in a client boundary.
+    `ProductGallery.test.tsx` (6 tests) fails when the click handler is removed.
+  - **The store category route answered 500 in the production build.** `[category]` is an uncovered
+    dynamic param (its set is data) and the page awaits `searchParams`, which throws
+    `DYNAMIC_SERVER_USAGE` at request time. Dev served it fine and the build printed `●` with no
+    warning, so it was only visible from the standalone server — Lighthouse surfaced it as
+    `errors-in-console` on the product page, which prefetches its category. Fixed with
+    `export const dynamic = "force-dynamic"` on that route.
+- 1460 Vitest tests pass (116 files). Lighthouse with applied throttling across `/en`, `/fr`,
+  `/en/real-estate/listings`, a listing detail, the store index, a product detail and
+  `/en/electrical-services`: accessibility, best-practices and SEO are **100** on every surface;
+  performance measures 89-97. No horizontal overflow at 320/375/768/1440 on the marketplace, listing
+  detail or product detail.
 - KYC verification (Phase 2 of the real-estate work) is implemented:
   - Migration `20260101000060_kyc_verification.sql` creates `real_estate_kyc_applications`,
     `real_estate_kyc_documents`, `real_estate_kyc_review_events` and `listing_legal_documents`,
@@ -1118,6 +1137,28 @@ clientWidth` on every department (no horizontal scroll), the trigger reads "Filt
 
 ### Phase 4 gotchas worth not rediscovering
 
+- **A gallery that renders thumbnails without a state swap is a dead control, and nothing in the
+  build catches it.** `ProductGallery` shipped every uploaded thumbnail and never changed the main
+  image, so a product's second and later photographs were unreachable — the multi-image upload was
+  accepted and had no visible effect. The listing gallery had always done this correctly
+  (`useState` + `aria-current`), so the defect was an inconsistency between two surfaces that look
+  alike. It now lives in its own `"use client"` module (`src/components/store/ProductGallery.tsx`)
+  and `ProductImageFrame.tsx` stays a Server Component, because the card and other surfaces import
+  the frame directly and must not drag a client boundary in. `ProductGallery.test.tsx` fails if the
+  click handler is neutered, which is the property that was missing.
+- **An uncovered dynamic param plus `await searchParams` is a 500 in the production build only.**
+  `/[locale]/[department]/store/[category]` enumerates only `department` in `generateStaticParams`
+  (the category set is data) *and* awaits `searchParams` for its filter state, which throws
+  `DYNAMIC_SERVER_USAGE` at request time. Dev served it fine and the build printed it as `●` with no
+  warning, so the failure only appeared as a 500 from the standalone server — surfaced by Lighthouse
+  as `errors-in-console` on the *product* page, because that page prefetches its category. The slug
+  route beside it is unaffected: it reads no `searchParams`. The index is unaffected because it is
+  fully covered by `generateStaticParams` and so inferred dynamic. Declaring
+  `export const dynamic = "force-dynamic"` fixes it. Check every route that reads `searchParams`
+  against whether its params are fully enumerated; the build marker is not evidence either way.
+- **Lighthouse's `errors-in-console` can point at a page you did not ask it to measure.** The
+  best-practices failure was a prefetch of the category route, not the product page under test. Read
+  the audit's `sourceLocation.url` before assuming the measured page is at fault.
 - **The store lives under `/digital-marketing/store`, not `/store`.** It is that department's
   commercial surface, so it inherits the department accent scope via `departmentScopeProps`.
 - **Both product URL segments are localized.** `/fr/.../store/ordinateurs/ordinateur-thinkpad-x1`
