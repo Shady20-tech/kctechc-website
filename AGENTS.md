@@ -1996,6 +1996,32 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   (`src/lib/content/electrical-brands.ts`) as `deye` / "Inverters and energy storage", with the
   copy under `electricalProducts.brands.deye.category` in `en.json`/`fr.json`. The `BrandStrip`
   grid is `sm:grid-cols-2 lg:grid-cols-3` so three tiles sit on one row at `lg`.
+- **The SAKO POWER and HIKVISION wordmark files shipped swapped**, so the solar card displayed the
+  CCTV manufacturer's mark and vice versa. The data mapping was always right
+  (`ELECTRICAL_BRANDS` pairs each name with its own path); the bytes under those two filenames were
+  the wrong way round. The fix swaps the files back, verified by OCR of the served optimizer
+  output: `sako-power.png` reads "SAKO / SINCE 1997" and `hikvision.png` reads "HIKVISION".
+- **Asset tests that only prove a file exists cannot catch a swap.** `electrical-brands.test.ts`
+  checked that each path resolved to a complete PNG with a sane shape, and every one of those
+  properties is equally true of the *wrong* file, so the suite stayed green. The component tests
+  assert the brand *names*, which were correct, and a stylised wordmark is not reliably readable by
+  eye in a screenshot review. The guard now asserts a structural property that survives a rename:
+  SAKO POWER is a stacked lockup (name plus a "SINCE 1997" strapline, ~2:1) while HIKVISION is a
+  single line of nine letters (~6:1), so `sako-power.png` must be under 3:1 and `hikvision.png`
+  over 4:1. Reintroducing the swap makes that test fail with a message naming the likely cause —
+  verified by actually doing it, not by assuming.
+- **OCR is the tool for "is this the right image?", and ASCII-art rendering is not.** Reading the
+  letterforms by downsampling to a character grid gave the *opposite* answer for both files, because
+  a stylised wordmark loses its distinguishing strokes at low resolution. `rapidocr-onnxruntime`
+  (pip-installable, no system packages, no root) settled it in one pass; `tesseract` was unavailable
+  because `apt-get` needs root. When a defect is "the content is wrong" rather than "the file is
+  missing", measure the content.
+- **`naturalWidth: 0` in a headless probe usually means below-the-fold lazy loading, not a broken
+  image.** The brand strip sits far down `/en/electrical-services`, so the images had not been
+  requested at the moment of measurement. Both the optimizer URL and the static file returned 200
+  with the right byte counts; the reliable check is to fetch the served bytes and inspect *those*,
+  not to read `naturalWidth` on a page that never scrolled.
+
 - **A property enquiry can now state a "purpose of acquisition".** Migration
   `20260101000052_acquisition_purpose.sql` adds the `acquisition_purpose` enum
   (`residence`/`investment`/`business`/`other`) and a nullable `inquiries.acquisition_purpose`

@@ -65,6 +65,41 @@ describe("electrical brand data", () => {
     }
   });
 
+  /**
+   * The two wordmarks shipped swapped once: `sako-power.png` held the HIKVISION
+   * mark and `hikvision.png` held SAKO POWER's. Nothing caught it, because the
+   * checks above only prove each path resolves to a complete PNG with a sane
+   * shape — properties that are equally true of the wrong file. A swap is
+   * invisible to the type checker, to the component tests (which assert the
+   * *names*, not the pixels) and to a screenshot review of a stylised wordmark.
+   *
+   * The marks differ in one structural way that survives a rename: SAKO POWER is
+   * a stacked lockup — the name on one line, a "SINCE 1997" strapline beneath it —
+   * so it is roughly 2:1. HIKVISION is a single line of nine letters, so it is
+   * roughly 6:1. The aspect ratios therefore order the pair, and swapping the
+   * files inverts that order. The bounds are wide enough to absorb a re-export at
+   * a different size but far too tight to be met by the other mark.
+   */
+  it("ships each wordmark in the file named for it", () => {
+    const sako = pngDimensions(
+      readFileSync(join(PUBLIC_DIR, "/brand/partners/sako-power.png")),
+    );
+    const hik = pngDimensions(
+      readFileSync(join(PUBLIC_DIR, "/brand/partners/hikvision.png")),
+    );
+    const sakoAspect = sako.width / sako.height;
+    const hikAspect = hik.width / hik.height;
+
+    expect(
+      sakoAspect,
+      `sako-power.png is ${sako.width}x${sako.height}: a stacked two-line lockup should be under 3:1, so this looks like the HIKVISION file`,
+    ).toBeLessThan(3);
+    expect(
+      hikAspect,
+      `hikvision.png is ${hik.width}x${hik.height}: a single-line wordmark should be over 4:1, so this looks like the SAKO POWER file`,
+    ).toBeGreaterThan(4);
+  });
+
   it("resolves every category key in both locales", () => {
     for (const locale of LOCALES) {
       const { t } = createTranslator(locale);
