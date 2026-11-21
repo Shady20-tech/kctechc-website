@@ -49,8 +49,11 @@ export const BRAND_COLORS = {
   teal: "#006E6A",
   tealBright: "#4ED9D4",
   digitalMarketing: "#0066CC",
+  digitalMarketingSecondary: "#6D28D9",
   electricalServices: "#B23E0D",
+  electricalServicesSecondary: "#007387",
   realEstate: "#1E5631",
+  realEstateSecondary: "#835D00",
   bodyText: "#414D57",
   mutedText: "#66717B",
 } as const;
@@ -265,6 +268,24 @@ export type DepartmentThemeTokens = {
    * department colour.
    */
   accentBright: string;
+  /**
+   * Secondary accent, the department's second brand colour. It exists to give
+   * each department a two-tone identity — a primary hue for its own subject and a
+   * contrasting one for structure — so a card, badge or gradient can carry both
+   * without a component inventing a colour.
+   *
+   * This is the *text-safe* value: it clears 4.5:1 as text on `canvas` and
+   * `surface`, and as a fill behind white. The requested brand secondaries did not
+   * all do that on their own (Electrical `#007C91` measured 4.48:1 on its cream
+   * canvas (and 4.28:1 on the deeper `surface-alt` band), Real Estate `#986C00`
+   * 3.98:1 on its sage), so they are nudged darker
+   * by the smallest step that passes — the same treatment `#D35400` received when
+   * it became the Electrical primary. `accentSecondaryBright` is the ink-band
+   * counterpart, and neither is ever substituted for the other.
+   */
+  accentSecondary: string;
+  /** Secondary accent for dark ink bands, where `accentSecondary` is unreadable. */
+  accentSecondaryBright: string;
 };
 
 export const DEPARTMENT_THEME_TOKENS: Record<
@@ -291,6 +312,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink600: "#2A2F55",
     accent: "#0066CC",
     accentBright: "#6FA8F5",
+    accentSecondary: "#6D28D9",
+    accentSecondaryBright: "#9360E3",
   },
   "electrical-services": {
     canvas: "#FFF3E7",
@@ -312,6 +335,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink600: "#333333",
     accent: "#B23E0D",
     accentBright: "#F0A94A",
+    accentSecondary: "#007387",
+    accentSecondaryBright: "#1F8C9E",
   },
   "real-estate": {
     canvas: "#E5EFE8",
@@ -333,6 +358,8 @@ export const DEPARTMENT_THEME_TOKENS: Record<
     ink600: "#1A4029",
     accent: "#1E5631",
     accentBright: "#4FD1A5",
+    accentSecondary: "#835D00",
+    accentSecondaryBright: "#A57F21",
   },
 };
 

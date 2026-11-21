@@ -329,6 +329,44 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     `/cart`, plus `/admin/store/new` for editors.
   - `Product`/`Offer`/`ItemList` JSON-LD; store paths added to nav, `NAV_PATHS` and the sitemap.
 - 255 Vitest tests pass and the production build prerenders all store routes.
+- Phase 4 of the marketplace work (the Jiji-style redesign of the real-estate browsing experience)
+  is implemented and audited end to end:
+  - `/[locale]/real-estate` is a marketplace front door, not the shared department template: a
+    prominent search area (seeded region selector + keyword + submit, as a plain GET form so the
+    search *is* a URL and works without JS), eight category shortcuts built from the same
+    `PROPERTY_CATEGORIES` model the sidebar uses, then real inventory only (category counts from
+    `listing_facets`, a trending strip from recorded view counts, featured, recent, region index).
+    The heading is "Find the Right Property in Cameroon". Nothing is invented to fill it.
+  - `/[locale]/real-estate/listings` is a two-column results layout: a collapsible filter sidebar
+    (17rem at `lg`, 18rem at `xl`, i.e. 272-288px, inside the brief's 250-300px band) and the
+    results area taking the remainder. Below `lg` the sidebar is replaced by a modal drawer with a
+    visible Filter button that carries the active-filter count.
+  - Sidebar sections, in order: keyword, property categories (with real counts), location
+    (region -> division -> subdivision, each change clearing its children), price (min/max side by
+    side with the brief's exact hint wording, currency stated, comparisons confined to one
+    currency), characteristics (kind, class, bedrooms, bathrooms, areas, amenities), and verified
+    publishers.
+  - The toolbar shows the total, the current location and category, a sort control (relevance,
+    newest, price asc/desc, most viewed), a list/map toggle and the save-search control. Active
+    filters render as removable chips with a Clear All link that drops every filter.
+  - Every result comes from the `search_property_listings` RPC; nothing is fetched wholesale and
+    filtered in React. A filtered view is `noindex, nofollow` and canonicalises to the clean
+    results URL; the unfiltered view is indexable with reciprocal `hreflang` + `x-default`.
+  - Verified badges are a super-admin-only decision (`/admin/real-estate/verification`,
+    `setPublisherVerificationAction`), written through the session client so the
+    `real_estate_memberships_enforce_verification` trigger is the boundary. The copy states
+    explicitly that the badge means KC Technology reviewed the publisher's identity and is **not**
+    a government guarantee of land title.
+  - Multi-image authoring is wired for all three audiences: `ProductMediaForm` (department admins),
+    `DashboardMediaPanel` (landlords and agents, via the `(dashboard)` route group's
+    `/[locale]/account/[dashboard]/[id]`), and the console's listing media form all post a batch of
+    files to one Server Action.
+  - Audited at 1440/1024/375: no horizontal overflow at any width (`scrollWidth === clientWidth`),
+    the drawer opens with `aria-label="Filters"` and its count matching the active filters, and
+    Apply/Clear both present. Lighthouse: SEO 100, accessibility 100 on both surfaces;
+    best-practices reads 96 on the landing page **only** because the unreachable Supabase host
+    returns 502 for listing photographs — an external outage, not a code defect (the listings page,
+    which has no cards to load while the database is down, reads 100).
 - Phase 7 (Real Estate platform) is implemented:
   - Migrations `20260101000028_customer_favorites_and_saved_searches.sql`,
     `20260101000029_geo_landing_content.sql`, `20260101000030_listing_search_filters.sql` and

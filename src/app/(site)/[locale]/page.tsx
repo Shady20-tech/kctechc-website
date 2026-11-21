@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { SectionBand } from "@/components/layout/PageShell";
+import { DepartmentShowcase } from "@/components/content/DepartmentShowcase";
 import { ProductShowcase } from "@/components/content/ProductShowcase";
 import { WorkShowcase } from "@/components/content/WorkShowcase";
 import { ChairmanMessage } from "@/components/ui/ChairmanMessage";
@@ -13,6 +14,7 @@ import { SiteIndex } from "@/components/ui/SiteIndex";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { HeroMedia } from "@/components/ui/HeroMedia";
 import { DEPARTMENTS, SITE } from "@/lib/config/site";
+import { buildShowcasePanels } from "@/lib/content/department-showcase";
 import { getSiteContent } from "@/lib/config/site-content";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -139,6 +141,20 @@ export default async function LocalizedHomePage({
         </ul>
       </SectionBand>
 
+      {/* What the departments actually deliver, one tab each. The panels come
+          from the same service records and property categories the dedicated
+          pages render, so this section cannot drift from them. */}
+      <SectionBand tone="alt" labelledBy="home-showcase-heading">
+        <DepartmentShowcase
+          panels={buildShowcasePanels(resolved)}
+          eyebrow={`02 — ${t("home.showcase.eyebrow")}`}
+          heading={t("home.showcase.heading")}
+          intro={t("home.showcase.intro")}
+          tabsLabel={t("home.showcase.tabsLabel")}
+          headingId="home-showcase-heading"
+        />
+      </SectionBand>
+
       {/* Power equipment the Electrical Services department supplies. Kept as a
           static grid here, and the completed-work strip below carries the drift.
           Two consecutive drifting strips read as repetition and fetch twice the
@@ -147,7 +163,7 @@ export default async function LocalizedHomePage({
       <ProductShowcase
         t={t}
         variant="grid"
-        eyebrow={`02 — ${t("electricalProducts.eyebrow")}`}
+        eyebrow={`03 — ${t("electricalProducts.eyebrow")}`}
         heading={t("electricalProducts.heading")}
         intro={t("electricalProducts.intro")}
         note={t("electricalProducts.note")}
@@ -161,7 +177,7 @@ export default async function LocalizedHomePage({
       <WorkShowcase
         t={t}
         variant="marquee"
-        eyebrow={`03 — ${t("electricalProducts.work.eyebrow")}`}
+        eyebrow={`04 — ${t("electricalProducts.work.eyebrow")}`}
         heading={t("electricalProducts.work.heading")}
         intro={t("electricalProducts.work.intro")}
         note={t("electricalProducts.work.note")}
@@ -172,7 +188,7 @@ export default async function LocalizedHomePage({
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <p className="mono-label text-dept-accent">
-              04 — {t("home.aboutHeading")}
+              05 — {t("home.aboutHeading")}
             </p>
             <h2
               id="home-about-heading"

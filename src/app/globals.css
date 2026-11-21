@@ -71,10 +71,16 @@
      way. Values mirror `BRAND_COLORS` in `src/lib/config/site.ts`. */
   --color-dept-marketing: #0066cc;
   --color-dept-marketing-bright: #6fa8f5;
+  --color-dept-marketing-secondary: #6d28d9;
+  --color-dept-marketing-secondary-bright: #9360e3;
   --color-dept-electrical: #b23e0d;
   --color-dept-electrical-bright: #f0a94a;
+  --color-dept-electrical-secondary: #007387;
+  --color-dept-electrical-secondary-bright: #1f8c9e;
   --color-dept-realestate: #1e5631;
   --color-dept-realestate-bright: #4fd1a5;
+  --color-dept-realestate-secondary: #835d00;
+  --color-dept-realestate-secondary-bright: #a57f21;
 
   /* Focus colour must clear 3:1 against both the light page and the dark ink
      bands, so it is a deep teal rather than the bright brand highlight. */
@@ -157,27 +163,42 @@
      default; each `html[data-theme]` block below re-points it. */
   --color-accent: var(--color-teal-700);
   --color-accent-bright: var(--color-teal-300);
+  /* Corporate has no second brand colour, so the secondary accent mirrors the
+     primary. It is still declared so every consumer can read the variable
+     unconditionally; a corporate surface therefore renders one tone rather than
+     a broken two-tone pair. */
+  --dept-accent-secondary: var(--color-teal-700);
+  --dept-accent-secondary-bright: var(--color-teal-300);
+  --color-accent-secondary: var(--color-teal-700);
+  --color-accent-secondary-bright: var(--color-teal-300);
 }
 
 [data-department="digital-marketing"] {
   --dept-accent: var(--color-dept-marketing);
   --dept-accent-bright: var(--color-dept-marketing-bright);
+  --dept-accent-secondary: var(--color-dept-marketing-secondary);
+  --dept-accent-secondary-bright: var(--color-dept-marketing-secondary-bright);
 }
 
 [data-department="electrical-services"] {
   --dept-accent: var(--color-dept-electrical);
   --dept-accent-bright: var(--color-dept-electrical-bright);
+  --dept-accent-secondary: var(--color-dept-electrical-secondary);
+  --dept-accent-secondary-bright: var(--color-dept-electrical-secondary-bright);
 }
 
 [data-department="real-estate"] {
   --dept-accent: var(--color-dept-realestate);
   --dept-accent-bright: var(--color-dept-realestate-bright);
+  --dept-accent-secondary: var(--color-dept-realestate-secondary);
+  --dept-accent-secondary-bright: var(--color-dept-realestate-secondary-bright);
 }
 
 /* On the dark ink bands the bright accent takes over. Corporate teal-300 and the
    bright department values all clear 4.5:1 against the ink background. */
 .on-ink {
   --dept-accent: var(--dept-accent-bright);
+  --dept-accent-secondary: var(--dept-accent-secondary-bright);
 }
 
 .text-dept-accent {
@@ -190,6 +211,33 @@
 
 .border-dept-accent {
   border-color: var(--dept-accent);
+}
+
+/* Secondary accent utilities. Same contract as the primary pair: the plain name
+   is text-safe on light surfaces, `-bright` is for ink bands, and `.on-ink`
+   re-binds the plain name so a single class name stays correct on both. */
+.text-dept-accent-secondary {
+  color: var(--dept-accent-secondary);
+}
+
+.bg-dept-accent-secondary {
+  background-color: var(--dept-accent-secondary);
+}
+
+.border-dept-accent-secondary {
+  border-color: var(--dept-accent-secondary);
+}
+
+.text-dept-accent-secondary-bright {
+  color: var(--dept-accent-secondary-bright);
+}
+
+.bg-dept-accent-secondary-bright {
+  background-color: var(--dept-accent-secondary-bright);
+}
+
+.border-dept-accent-secondary-bright {
+  border-color: var(--dept-accent-secondary-bright);
 }
 
 /* Explicit bright counterparts. Needed because `.on-ink` re-binds
@@ -316,6 +364,10 @@
     --color-accent-bright: #6fa8f5;
     --dept-accent: var(--color-accent);
     --dept-accent-bright: var(--color-accent-bright);
+    --color-accent-secondary: #6d28d9;
+    --color-accent-secondary-bright: #9360e3;
+    --dept-accent-secondary: var(--color-accent-secondary);
+    --dept-accent-secondary-bright: var(--color-accent-secondary-bright);
   }
 
   html[data-theme="electrical-services"] {
@@ -340,6 +392,10 @@
     --color-accent-bright: #f0a94a;
     --dept-accent: var(--color-accent);
     --dept-accent-bright: var(--color-accent-bright);
+    --color-accent-secondary: #007387;
+    --color-accent-secondary-bright: #1f8c9e;
+    --dept-accent-secondary: var(--color-accent-secondary);
+    --dept-accent-secondary-bright: var(--color-accent-secondary-bright);
   }
 
   html[data-theme="real-estate"] {
@@ -364,6 +420,10 @@
     --color-accent-bright: #4fd1a5;
     --dept-accent: var(--color-accent);
     --dept-accent-bright: var(--color-accent-bright);
+    --color-accent-secondary: #835d00;
+    --color-accent-secondary-bright: #a57f21;
+    --dept-accent-secondary: var(--color-accent-secondary);
+    --dept-accent-secondary-bright: var(--color-accent-secondary-bright);
   }
 
   /* A theme only ever repaints a light canvas, so form controls and scrollbars
@@ -854,7 +914,16 @@
   inset-inline-start: 0;
   width: 100%;
   height: 3px;
-  background-color: var(--dept-accent);
+  /* Two-tone rail: the department's primary runs into its secondary, so the
+     top edge alone carries both brand colours. A single flat accent made every
+     card read as one colour; the gradient is what makes the second colour
+     visible on a surface that has no room for a second element. */
+  background-image: linear-gradient(
+    90deg,
+    var(--dept-accent) 0%,
+    var(--dept-accent) 58%,
+    var(--dept-accent-secondary) 100%
+  );
   opacity: 0.55;
   transform: scaleX(0.34);
   transform-origin: left;
@@ -871,6 +940,70 @@
 
 .card-arrow {
   transition: transform 260ms var(--ease-out-soft);
+}
+
+/* Two-tone icon plate.
+   The primary accent fills the tile and the secondary arrives as a corner
+   radial, so both brand colours are present in one object. `color-mix` keeps the
+   second tone derived from the token rather than hard-coded, which is what lets
+   the same class serve all three departments. */
+.dept-plate {
+  background-color: var(--dept-accent);
+  background-image: radial-gradient(
+    120% 120% at 100% 0%,
+    color-mix(in srgb, var(--dept-accent-secondary) 92%, transparent) 0%,
+    color-mix(in srgb, var(--dept-accent-secondary) 45%, transparent) 42%,
+    transparent 72%
+  );
+  transition:
+    background-color 320ms var(--ease-out-soft),
+    box-shadow 320ms var(--ease-out-soft);
+}
+
+.group:hover .dept-plate,
+.group:focus-visible .dept-plate {
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--dept-accent-secondary) 22%, transparent);
+}
+
+/* Department showcase tiles.
+   The entrance runs once when a panel becomes visible: the panel is only
+   revealed by the tab control, so a scroll-triggered observer would have nothing
+   to observe for the panels a visitor reaches by clicking. The animation is on
+   `transform` and `opacity` only, so a panel switch cannot reflow the page. */
+.showcase-tile {
+  animation: showcase-tile-in 460ms var(--ease-out-soft) both;
+}
+
+@keyframes showcase-tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.showcase-tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Two-tone rule under a card heading. */
+.dept-rule {
+  display: block;
+  height: 3px;
+  width: 3.5rem;
+  border-radius: var(--radius-pill);
+  background-image: linear-gradient(
+    90deg,
+    var(--dept-accent) 0%,
+    var(--dept-accent) 62%,
+    var(--dept-accent-secondary) 62%,
+    var(--dept-accent-secondary) 100%
+  );
 }
 
 .card-edge:hover .card-arrow,
@@ -1198,8 +1331,17 @@
   }
 
   .card-edge::before,
-  .card-arrow {
+  .card-arrow,
+  .dept-plate {
     transition: none;
+  }
+
+  /* The showcase tiles land in their resting state rather than mid-rise, and a
+     panel switch becomes an instant swap. */
+  .showcase-tile {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 
   /* Product showcase. The marquee becomes a plain horizontal scroll — the

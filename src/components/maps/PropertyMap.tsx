@@ -44,12 +44,24 @@ export type PropertyMapProps = {
 /** How long to wait for the library before giving up on the map. */
 const LOAD_TIMEOUT_MS = 12_000;
 
+/**
+ * Stable empty default for `hrefById`.
+ *
+ * An inline `= {}` default creates a fresh object on every render, so the
+ * effect's dependency list changes identity each time the component re-renders —
+ * and it re-renders as soon as the map reports itself ready. The result was that
+ * the map was torn down and rebuilt immediately after loading, discarding any pan
+ * or zoom the visitor had just made and re-fetching the style. A module-level
+ * constant keeps the identity stable for callers that pass no links.
+ */
+const NO_HREFS: Record<string, string> = {};
+
 export function PropertyMap({
   points,
   styleUrl,
   view,
   cluster = false,
-  hrefById = {},
+  hrefById = NO_HREFS,
   ariaLabel,
   loadingLabel,
   unavailableLabel,
@@ -95,6 +107,12 @@ export function PropertyMap({
       }
 
       try {
+        // Armed before the library fetch so it covers the chunk download *and*
+        // the style/tile load. It is deliberately not cancelled when the
+        // constructor returns: `new Map()` is synchronous but the style and the
+        // first tiles are not, so clearing here would disarm the watchdog before
+        // the thing it is watching for could happen — a blocked style request
+        // then left the surface on "loading" forever instead of degrading.
         timeout = setTimeout(fail, LOAD_TIMEOUT_MS);
         const maplibre = await import("maplibre-gl");
         if (cancelled || !containerRef.current) return;
@@ -110,6 +128,9 @@ export function PropertyMap({
 
         map.on("load", () => {
           if (cancelled || !map) return;
+          // The style loaded, so the watchdog's job is done. Clearing it here —
+          // and only here — is what distinguishes "still loading" from "failed".
+          if (timeout) clearTimeout(timeout);
           setStatus("ready");
 
           map.addSource("properties", {
@@ -206,12 +227,24 @@ export function PropertyMap({
           });
         });
 
-        map.on("error", fail);
+        map.on("error", (event) => {
+          // MapLibre reports a *tile* failure through the same channel as a
+          // style or WebGL failure, and a single unreachable tile is not a reason
+          // to replace a working map with a fallback notice. Only an error with
+          // no source behind it is treated as fatal; a tile error is left to the
+          // watchdog, which will give up if nothing ever loads.
+          const sourceId = (
+            event as { sourceId?: string } | undefined
+          )?.sourceId;
+          if (sourceId) return;
+          fail();
+        });
       } catch {
         fail();
-      } finally {
-        if (timeout) clearTimeout(timeout);
       }
+      // No `finally` clearing the watchdog: it is cleared on `load`, on a fatal
+      // error, and on unmount. Clearing it as soon as construction returned is
+      // the defect that left a stalled map reporting "loading" indefinitely.
     }
 
     void start();

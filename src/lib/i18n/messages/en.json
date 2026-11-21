@@ -98,7 +98,15 @@
     "messageCta": "Read the full message",
     "indexEyebrow": "Explore the site",
     "indexHeading": "Everything on this site",
-    "indexIntro": "Every public page in one place: departments, services, the store, property listings, insights and contact."
+    "indexIntro": "Every public page in one place: departments, services, the store, property listings, insights and contact.",
+    "showcase": {
+      "eyebrow": "What we do",
+      "heading": "Three departments, one accountable partner",
+      "intro": "Each department is a specialist practice. Choose one to see the full catalogue of work it delivers.",
+      "digitalMarketingIntro": "Campaigns, content and platforms for businesses that need to be found and chosen.",
+      "electricalServicesIntro": "Power, solar and security installation for homes, businesses and institutions.",
+      "tabsLabel": "Choose a department"
+    }
   },
   "about": {
     "metaTitle": "About the company",
@@ -667,7 +675,8 @@
       "verifiedHeading": "Verified landlords and agents",
       "verifiedIntro": "Only publishers whose identity KC Technology has reviewed carry the verified badge.",
       "postCta": "List your property",
-      "postCtaIntro": "Owners and agents can publish a property with photographs and manage it from their account."
+      "postCtaIntro": "Owners and agents can publish a property with photographs and manage it from their account.",
+      "browseAll": "Browse all listings"
     },
     "categories": {
       "all": "All properties",
@@ -1057,6 +1066,15 @@
       "investment": "An investment",
       "business": "Business premises",
       "other": "Something else"
+    },
+    "showcase": {
+      "intro": "Browse published property across Cameroon, filtered by what you actually need.",
+      "forSaleSummary": "Houses, apartments and villas offered for outright purchase.",
+      "forRentSummary": "Residential property available on a tenancy.",
+      "landSaleSummary": "Plots and parcels of land offered for purchase.",
+      "shortTermSummary": "Furnished accommodation for a stay rather than a tenancy.",
+      "commercialSummary": "Offices, shops, warehouses and other business premises.",
+      "apartmentSummary": "Apartments and flats, for sale or to rent."
     }
   },
   "seo": {

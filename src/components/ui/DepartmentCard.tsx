@@ -59,15 +59,19 @@ export function DepartmentCard({
         className="card-edge card-lift group flex h-full flex-col rounded-card border border-border bg-surface p-7 shadow-card transition-soft hover:border-border-strong sm:p-8"
       >
         <div className="flex items-start justify-between gap-4">
+          {/* Two-tone icon plate: the primary accent fills the plate and the
+              secondary bleeds in from the corner as a soft radial, so the tile
+              carries both brand colours at once rather than one. It reads as a
+              single object, not as two stacked squares. */}
           <span
             aria-hidden="true"
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-control bg-ink-950 text-white transition-soft group-hover:bg-dept-accent"
+            className="dept-plate relative flex h-14 w-14 shrink-0 items-center justify-center rounded-control text-white"
           >
             <DepartmentIcon slug={department.icon} className="h-7 w-7" />
           </span>
           <span
             aria-hidden="true"
-            className="mono-label pt-1 text-ink-300 transition-soft group-hover:text-dept-accent"
+            className="mono-label pt-1 text-ink-300 transition-soft group-hover:text-dept-accent-secondary"
           >
             {String(index).padStart(2, "0")}
           </span>
@@ -76,6 +80,10 @@ export function DepartmentCard({
         <h3 className="mt-6 font-display text-xl font-bold tracking-tight text-ink-900">
           {label}
         </h3>
+        {/* A two-tone rule under the heading: the primary runs most of the width
+            and the secondary closes it, which is the cheapest way to put both
+            brand colours on a card without adding a decorative block. */}
+        <span aria-hidden="true" className="dept-rule mt-3" />
         <p className="mt-3 flex-1 text-sm leading-relaxed text-body">
           {summary}
         </p>
@@ -86,7 +94,7 @@ export function DepartmentCard({
           </span>
           <span
             aria-hidden="true"
-            className="card-arrow flex h-8 w-8 items-center justify-center rounded-pill border border-border-strong text-ink-900 transition-soft group-hover:border-dept-accent group-hover:bg-dept-accent group-hover:text-white"
+            className="card-arrow flex h-8 w-8 items-center justify-center rounded-pill border border-border-strong text-ink-900 transition-soft group-hover:border-dept-accent-secondary group-hover:bg-dept-accent-secondary group-hover:text-white"
           >
             <ArrowUpRight className="h-4 w-4" />
           </span>

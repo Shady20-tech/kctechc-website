@@ -80,6 +80,12 @@ const BRAND_KEY: Record<DepartmentSlug, string> = {
   "real-estate": BRAND_COLORS.realEstate,
 };
 
+const BRAND_SECONDARY_KEY: Record<DepartmentSlug, string> = {
+  "digital-marketing": BRAND_COLORS.digitalMarketingSecondary,
+  "electrical-services": BRAND_COLORS.electricalServicesSecondary,
+  "real-estate": BRAND_COLORS.realEstateSecondary,
+};
+
 describe("department theme palettes", () => {
   for (const slug of DEPARTMENT_SLUGS) {
     const theme = DEPARTMENT_THEME_TOKENS[slug];
@@ -177,6 +183,51 @@ describe("department theme palettes", () => {
       it("mirrors the brand accent colour", () => {
         expect(theme.accent.toLowerCase()).toBe(BRAND_KEY[slug].toLowerCase());
       });
+
+      it("keeps the secondary accent legible as text and behind white", () => {
+        // The secondary is a brand colour like the primary, so it carries the
+        // same obligation: readable as an eyebrow on the canvas and on cards, and
+        // readable as a fill under white text. Two of the three requested brand
+        // secondaries failed one of these before being nudged darker.
+        for (const band of [theme.surface, theme.canvas, theme.surfaceAlt]) {
+          expect(
+            contrastRatio(theme.accentSecondary, band),
+            `${slug} secondary on ${band}`,
+          ).toBeGreaterThanOrEqual(AA_TEXT);
+        }
+        expect(
+          contrastRatio("#ffffff", theme.accentSecondary),
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+
+      it("keeps the secondary accent above AA on the dark band", () => {
+        // `.on-ink` re-binds `--dept-accent-secondary` to this value, so a
+        // secondary badge or rail on an ink band renders in it. It must clear AA
+        // there or the two-tone treatment fails contrast exactly where it is most
+        // visible (the hero and CTA bands).
+        expect(
+          contrastRatio(theme.accentSecondaryBright, theme.ink950),
+        ).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+
+      it("keeps the secondary distinct from the primary", () => {
+        // A second accent that is visually the same colour is not a second
+        // accent; the two-tone treatment would collapse into one tone and the
+        // redesign would read as unchanged. Luminance difference is a cheap proxy
+        // for "these are two different colours".
+        expect(
+          Math.abs(
+            relativeLuminance(theme.accentSecondary) -
+              relativeLuminance(theme.accent),
+          ),
+        ).toBeGreaterThan(0.01);
+      });
+
+      it("mirrors the brand secondary colour", () => {
+        expect(theme.accentSecondary.toLowerCase()).toBe(
+          BRAND_SECONDARY_KEY[slug].toLowerCase(),
+        );
+      });
     });
   }
 });
@@ -204,6 +255,21 @@ describe("globals.css theme blocks", () => {
       expect(declarations["--dept-accent"]).toBe("var(--color-accent)");
       expect(declarations["--dept-accent-bright"]).toBe(
         "var(--color-accent-bright)",
+      );
+    }
+  });
+
+  it("re-derives the secondary accent from the theme secondary", () => {
+    // The secondary pair has to be wired the same way as the primary or
+    // `text-dept-accent-secondary` resolves to nothing on a themed page and the
+    // two-tone treatment silently disappears on the department micro-sites.
+    for (const slug of DEPARTMENT_SLUGS) {
+      const declarations = cssThemeBlock(slug);
+      expect(declarations["--dept-accent-secondary"]).toBe(
+        "var(--color-accent-secondary)",
+      );
+      expect(declarations["--dept-accent-secondary-bright"]).toBe(
+        "var(--color-accent-secondary-bright)",
       );
     }
   });

@@ -98,7 +98,15 @@
     "messageCta": "Lire le message complet",
     "indexEyebrow": "Explorer le site",
     "indexHeading": "Tout le site",
-    "indexIntro": "Toutes les pages publiques au même endroit : départements, services, boutique, annonces immobilières, actualités et contact."
+    "indexIntro": "Toutes les pages publiques au même endroit : départements, services, boutique, annonces immobilières, actualités et contact.",
+    "showcase": {
+      "eyebrow": "Nos activités",
+      "heading": "Trois départements, un partenaire responsable",
+      "intro": "Chaque département est une pratique spécialisée. Choisissez-en un pour voir le catalogue complet de ses prestations.",
+      "digitalMarketingIntro": "Campagnes, contenus et plateformes pour les entreprises qui doivent être trouvées et choisies.",
+      "electricalServicesIntro": "Énergie, solaire et sécurité pour les habitations, les entreprises et les institutions.",
+      "tabsLabel": "Choisir un département"
+    }
   },
   "about": {
     "metaTitle": "À propos de l'entreprise",
@@ -667,7 +675,8 @@
       "verifiedHeading": "Propriétaires et agents vérifiés",
       "verifiedIntro": "Seuls les publieurs dont l'identité a été vérifiée par KC Technology portent le badge vérifié.",
       "postCta": "Publiez votre bien",
-      "postCtaIntro": "Propriétaires et agents peuvent publier un bien avec photos et le gérer depuis leur compte."
+      "postCtaIntro": "Propriétaires et agents peuvent publier un bien avec photos et le gérer depuis leur compte.",
+      "browseAll": "Voir toutes les annonces"
     },
     "categories": {
       "all": "Tous les biens",
@@ -1057,6 +1066,15 @@
       "investment": "Un investissement",
       "business": "Des locaux professionnels",
       "other": "Autre chose"
+    },
+    "showcase": {
+      "intro": "Parcourez les biens publiés au Cameroun, filtrés selon vos besoins réels.",
+      "forSaleSummary": "Maisons, appartements et villas proposés à l'achat.",
+      "forRentSummary": "Biens résidentiels disponibles à la location.",
+      "landSaleSummary": "Terrains et parcelles proposés à l'achat.",
+      "shortTermSummary": "Hébergement meublé pour un séjour plutôt qu'une location.",
+      "commercialSummary": "Bureaux, boutiques, entrepôts et autres locaux professionnels.",
+      "apartmentSummary": "Appartements et studios, à vendre ou à louer."
     }
   },
   "seo": {
