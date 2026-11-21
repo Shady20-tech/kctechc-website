@@ -701,6 +701,30 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
   `tsc --noEmit` is clean, ESLint is clean, the build succeeds, and Lighthouse is 100 on
   accessibility, best-practices and SEO for the listings page on desktop and mobile, with
   performance 89-93 under applied throttling.
+- The store cart and product detail surface were polished, and two real defects were found by
+  measuring the running build rather than by reading the code:
+  - `CartLines` was rewritten as a marketplace line item (thumbnail, title link, unit price, a
+    quantity stepper clamped to stock, a remove control) and the cart page became a two-column
+    `lg:grid-cols-[minmax(0,1fr)_22rem]` shell with a sticky order summary and a real empty state.
+  - **The summary column lacked `min-w-0`**, so its 315px min-content forced a 320px viewport into
+    15px of horizontal page scroll while every desktop width measured 0. Fixed; the same class is
+    now on both grid items.
+  - **The quantity and remove controls were 28-36px**, below the 44px touch guideline. They are now
+    `h-11 w-11`; `CartLines.test.tsx` (5) asserts the classes, and the assertion was proven by
+    reverting the size and watching it fail.
+  - `cartErrorMessage(code, t)` in `src/lib/store/cart-error-messages.ts` replaces the single
+    generic "something went wrong" with a per-code message, so `unconfigured` no longer tells a
+    visitor to retry an action that cannot succeed. `cart-error-messages.test.ts` (7) pins it.
+  - `descriptionBlocks` in `src/lib/store/description.ts` renders a plain-text description as
+    paragraphs plus bullet lists (the editors' "Includes: …" convention) without ever interpreting
+    HTML; `description.test.ts` (9) covers it.
+  - Multi-image upload was verified end to end against the running build: two photographs were
+    uploaded to a real product through `/admin/store/<id>` and the image rows went 3 to 5. The
+    test rows were then deleted. The input is already `multiple`.
+  - 1481 Vitest tests pass (119 files), `tsc --noEmit` is clean, ESLint is clean, the build
+    succeeds, and Lighthouse reports accessibility 100 / best-practices 100 / SEO 100 on the
+    product page, the store index, `/en/real-estate/listings` and `/en`. The cart reports SEO 66
+    from the single `is-crawlable` audit, which is its deliberate `noindex`.
 
 ### Hero image provenance
 
@@ -3033,6 +3057,43 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
 - **A Docker socket or a `psql` is not guaranteed in this container, and `pgserver` has no wheel for
   it.** Verify a new migration by reading it and by the `*.test.ts` shape assertions; note in the
   report that the `supabase/validate/*.sql` scripts were not replayed.
+
+### Store cart gotchas worth not rediscovering
+
+- **`npm run build` deletes `.next/standalone` wholesale, including any `.env` you copied into it.**
+  The standalone bundle is regenerated from scratch, so `cp .env.local .next/standalone/.env` must be
+  repeated after every build, before restarting `server.js`. The symptom is the previous session's
+  bug coming back: without `SUPABASE_SERVICE_ROLE_KEY` the cart action returns `unconfigured` and
+  every "Add to cart" fails, on a build whose code is correct. Re-copy the env, then restart — do not
+  go looking for a code regression.
+- **A `"use server"` module may only export async functions, so a shared error mapper lives beside
+  it, not in it.** `src/lib/store/cart-error-messages.ts` has no directive and is imported by both
+  `AddToCartButton` and `PackageCartControls`; putting `cartErrorMessage` in `cart-actions.ts` would
+  fail the production build with "Server Actions must be async functions" while passing `tsc` and
+  every unit test. Same rule as `normalizeSearchQuery` in `search.ts`.
+- **Mapping every cart failure to one generic sentence is a lie for the faults retrying cannot fix.**
+  `unconfigured` (no service-role key), `no_cart` (cookie gone) and `unavailable` are all permanent
+  for that click, so "please try again" sends the visitor into a loop that can never succeed. The
+  mapper gives each code its own honest message and reserves retry advice for the unknown case.
+  `cart-error-messages.test.ts` asserts `unconfigured` does NOT contain "try again".
+- **A grid item defaults to `min-width: auto`, so a long unbreakable child forces the track wider
+  than the container.** The cart's two-column grid had `min-w-0` on the results column but not on the
+  `aside`; the summary's min-content (315px) exceeded the 280px content box at a 320px viewport and
+  produced 15px of horizontal page scroll. Both columns need `min-w-0` whenever either contains text
+  that can refuse to wrap. Measure `document.documentElement.scrollWidth - window.innerWidth` at 320,
+  390, 768, 1024 and 1440 — a single desktop check passes while the phone overflows.
+- **`h-9 w-9` is a 36px target and reads as fine on desktop.** The quantity stepper and the remove
+  control were 28-36px tall; the touch guideline is 44px. They are now `h-11 w-11`. `CartLines.test.tsx`
+  asserts the classes, because jsdom does not lay out so a computed-size assertion would pass
+  vacuously.
+- **The cart route is deliberately `noindex`, so Lighthouse SEO reports 66 with exactly one failing
+  audit: `is-crawlable`.** That is the correct state for a private per-visitor page, not a
+  regression — do not "fix" it by removing the `noindex`. Audit a public page (product, store index,
+  listings) when you need an SEO score that means something.
+- **A product description is plain text, so a contents list renders as one dense paragraph unless
+  the renderer recognises bullets.** `descriptionBlocks` (`src/lib/store/description.ts`) splits
+  blank-line paragraphs and consecutive `-`/`*`/`•` runs into `<ul>`s; it never interprets HTML, so a
+  `<script>` in a description stays visible characters.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

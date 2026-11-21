@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { storePathFor } from "@/lib/config/navigation";
 import { addToCartAction } from "@/lib/store/cart-actions";
+import { cartErrorMessage } from "@/lib/store/cart-error-messages";
 
 /**
  * Add-to-cart and request-info controls for one solar package.
@@ -40,7 +41,7 @@ export function PackageCartControls({
   const t = createTranslator(locale).t;
   const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const cartHref = `/${locale}${storePathFor("electrical-services")}/cart`;
 
@@ -53,7 +54,7 @@ export function PackageCartControls({
           size="lg"
           disabled={pending}
           onClick={() => {
-            setError(false);
+            setError(null);
             startTransition(async () => {
               const result = await addToCartAction({
                 productId,
@@ -63,7 +64,7 @@ export function PackageCartControls({
               if (result.ok) {
                 setAdded(true);
                 setCartSummary({ itemCount: result.itemCount });
-              } else setError(true);
+              } else setError(cartErrorMessage(result.error, t));
             });
           }}
         >
@@ -110,7 +111,7 @@ export function PackageCartControls({
 
       {error ? (
         <p role="alert" className="w-full text-sm text-red-800">
-          {t("errors.generic")}
+          {error}
         </p>
       ) : null}
     </div>

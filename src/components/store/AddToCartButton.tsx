@@ -7,6 +7,7 @@ import { setCartSummary } from "@/lib/hooks/use-cart-summary";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { addToCartAction } from "@/lib/store/cart-actions";
+import { cartErrorMessage } from "@/lib/store/cart-error-messages";
 
 /**
  * Add-to-cart control.
@@ -65,11 +66,7 @@ export function AddToCartButton({
               // before this item was added and no navigation follows.
               setCartSummary({ itemCount: result.itemCount });
             } else {
-              setError(
-                result.error === "out_of_stock"
-                  ? t("store.availability.out_of_stock")
-                  : t("errors.generic"),
-              );
+              setError(cartErrorMessage(result.error, t));
             }
           });
         }}
