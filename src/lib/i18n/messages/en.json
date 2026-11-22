@@ -2000,15 +2000,16 @@
     "invalidTransition": "That change is not allowed from the order's current state. Reload the page and try again.",
     "forbidden": "You do not have permission to change orders.",
     "actionError": "The change could not be saved. Please try again.",
-    "manualHeading": "Record a bank transfer",
-    "manualIntro": "Use this only after the transfer has cleared in the business account. It marks the order paid and records a manual payment; the money is not verified by the payment provider.",
-    "manualCaution": "This order is awaiting a bank transfer. Confirm the money has arrived before recording it.",
-    "manualNoteLabel": "Transfer reference or note",
-    "manualNoteHint": "For example the bank reference on the statement.",
-    "manualSubmit": "Confirm the transfer arrived",
+    "manualHeading": "Record a received payment",
+    "manualIntro": "Use this only after the money has actually reached the business. It marks the order paid and records a manual payment; the amount is not verified by any payment provider.",
+    "manualCaution": "This order is awaiting payment. Confirm the money has arrived before recording it.",
+    "manualNoteLabel": "Payment reference or note",
+    "manualNoteHint": "For example the bank reference, or the mobile money transaction ID.",
+    "manualSubmit": "Confirm the payment arrived",
     "manualRecorded": "The payment was recorded and the order is now paid.",
     "manualNotApplicable": "This order cannot be confirmed by hand — it has already been paid or it was not set up as a bank transfer.",
-    "requestedPayment": "Requested payment method"
+    "requestedPayment": "Requested payment method",
+    "manualMethodLabel": "Method the customer chose:"
   },
   "adminNav": {
     "consoleName": "KCTech Console",

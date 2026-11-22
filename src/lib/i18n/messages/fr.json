@@ -2000,15 +2000,16 @@
     "invalidTransition": "Ce changement n'est pas autorisé depuis l'état actuel de la commande. Rechargez la page et réessayez.",
     "forbidden": "Vous n'êtes pas autorisé à modifier les commandes.",
     "actionError": "Le changement n'a pas pu être enregistré. Veuillez réessayer.",
-    "manualHeading": "Enregistrer un virement bancaire",
-    "manualIntro": "À utiliser uniquement après que le virement a été crédité sur le compte de l'entreprise. Cela marque la commande payée et enregistre un paiement manuel ; les fonds ne sont pas vérifiés par le prestataire de paiement.",
-    "manualCaution": "Cette commande attend un virement bancaire. Confirmez que les fonds sont arrivés avant de l'enregistrer.",
-    "manualNoteLabel": "Référence ou note du virement",
-    "manualNoteHint": "Par exemple la référence bancaire figurant sur le relevé.",
-    "manualSubmit": "Confirmer que le virement est arrivé",
+    "manualHeading": "Enregistrer un paiement reçu",
+    "manualIntro": "À utiliser uniquement après que les fonds ont réellement été reçus par l'entreprise. Cela marque la commande payée et enregistre un paiement manuel ; le montant n'est vérifié par aucun prestataire de paiement.",
+    "manualCaution": "Cette commande attend un paiement. Confirmez que les fonds sont arrivés avant de l'enregistrer.",
+    "manualNoteLabel": "Référence ou note du paiement",
+    "manualNoteHint": "Par exemple la référence bancaire, ou l'identifiant de transaction Mobile Money.",
+    "manualSubmit": "Confirmer que le paiement est arrivé",
     "manualRecorded": "Le paiement a été enregistré et la commande est désormais payée.",
     "manualNotApplicable": "Cette commande ne peut pas être confirmée manuellement — elle est déjà payée ou n'a pas été configurée comme virement bancaire.",
-    "requestedPayment": "Moyen de paiement demandé"
+    "requestedPayment": "Moyen de paiement demandé",
+    "manualMethodLabel": "Moyen choisi par le client :"
   },
   "adminNav": {
     "consoleName": "Console KCTech",
