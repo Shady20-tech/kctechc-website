@@ -1011,7 +1011,16 @@
       "altPlaceholder": "Three-bedroom house with a red roof, front view",
       "altHint": "Describe the image for screen readers and search engines. Required.",
       "imagesLimitHint": "Images up to {size} MB, in JPEG, PNG, WebP or AVIF.",
-      "goToImages": "Add property images"
+      "goToImages": "Add property images",
+      "fieldBedroomsHint": "Leave empty if the property has no bedrooms, for example a plot or a shop.",
+      "fieldBathroomsHint": "Leave empty if the property has no bathrooms.",
+      "fieldBuildingAreaHint": "Covered floor space. Leave empty for land, or if the size is not known.",
+      "fieldLandAreaHint": "The plot size. Leave empty if the size is not known.",
+      "fieldYearBuiltHint": "Leave empty if the year is not known.",
+      "fieldLatitudeHint": "Optional. Leave empty if the exact position is not known or should only be shared after a viewing.",
+      "fieldLongitudeHint": "Optional. Leave empty if the exact position is not known or should only be shared after a viewing.",
+      "fieldsOptionalNote": "Only the fields that apply to this property type are shown. Everything else can be left empty.",
+      "optionalLabel": "Optional"
     },
     "favorites": {
       "add": "Save {title}",

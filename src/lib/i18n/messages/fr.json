@@ -1011,7 +1011,16 @@
       "altPlaceholder": "Maison de trois chambres au toit rouge, vue de face",
       "altHint": "Décrivez l'image pour les lecteurs d'écran et les moteurs de recherche. Obligatoire.",
       "imagesLimitHint": "Images jusqu’à {size} Mo, au format JPEG, PNG, WebP ou AVIF.",
-      "goToImages": "Ajouter des photos du bien"
+      "goToImages": "Ajouter des photos du bien",
+      "fieldBedroomsHint": "Laissez vide si le bien n'a pas de chambres, par exemple un terrain ou un magasin.",
+      "fieldBathroomsHint": "Laissez vide si le bien n'a pas de salles de bain.",
+      "fieldBuildingAreaHint": "Surface couverte. Laissez vide pour un terrain, ou si la superficie n'est pas connue.",
+      "fieldLandAreaHint": "La superficie de la parcelle. Laissez vide si elle n'est pas connue.",
+      "fieldYearBuiltHint": "Laissez vide si l'annee n'est pas connue.",
+      "fieldLatitudeHint": "Facultatif. Laissez vide si la position exacte n'est pas connue ou ne doit etre communiquee qu'apres une visite.",
+      "fieldLongitudeHint": "Facultatif. Laissez vide si la position exacte n'est pas connue ou ne doit etre communiquee qu'apres une visite.",
+      "fieldsOptionalNote": "Seuls les champs qui s'appliquent a ce type de bien sont affiches. Les autres peuvent rester vides.",
+      "optionalLabel": "Facultatif"
     },
     "favorites": {
       "add": "Enregistrer {title}",
