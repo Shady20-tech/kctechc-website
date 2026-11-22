@@ -2053,6 +2053,24 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   `appinstalled` listeners) — the same pattern the repo already uses for `localStorage` and
   `matchMedia`. It also gives a defined server snapshot (`null`), so the server and first client
   render agree.
+- **A `fixed` overlay in the `(site)` layout also lands on the auth screens, and it can swallow the
+  submit button.** The install banner is `fixed inset-x-3 bottom-3 z-40` and the `(site)` group
+  renders `/admin/login`, `/admin/sign-up`, `/admin/forgot-password` and `/admin/reset-password`.
+  At 375x667 the 190px-tall card covered the sign-in button (banner 465-655, button 489-529), so
+  `elementFromPoint` at the button's centre returned the banner and the click never reached the
+  form — signing in was simply impossible on a small phone, with no error and no POST. The auth
+  routes now opt out of the overlay entirely, and the banner is compact below `sm` (body copy
+  hidden). `InstallPrompt.test.tsx` pins both. Diagnose this shape with `elementFromPoint` on the
+  control's own centre rather than by clicking: a Puppeteer `click()` on a covered element and a
+  `form.requestSubmit()` both "work" and hide the bug, and a `page.click` that lands on the overlay
+  produces no request and no console error at all.
+- **A stale `next-server` from an earlier session holds the preview port and serves the OLD build.**
+  `pkill -f "node server.js"` and a `ps | grep server.js` both miss it, because a running Next
+  standalone renames its process to `next-server` — and its `cwd` reads as `(deleted)` after a
+  rebuild. Every route still answers 200 from the previous build, so a fix appears not to work and
+  a login failure looks like an auth defect. Match `next-server` in `/proc/*/cmdline` and confirm
+  the cwd is this repo before killing, so the Supabase Studio container (also `next-server`, cwd
+  `/app/apps/studio`) is left alone. Verify a restart by checking the version line in the log.
 
 ### DEYE brand and the acquisition-purpose field
 
