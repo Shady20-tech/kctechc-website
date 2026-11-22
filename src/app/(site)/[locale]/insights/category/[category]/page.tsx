@@ -133,12 +133,13 @@ export default async function InsightCategoryPage({
           </div>
         ) : (
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
+            {articles.map((article, index) => (
               <li key={article.slug} className="h-full">
                 <InsightCard
                   article={article}
                   locale={resolved}
                   t={t}
+                  priority={index === 0}
                 />
               </li>
             ))}

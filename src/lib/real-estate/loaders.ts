@@ -453,6 +453,7 @@ export async function queryListings(
         p_region_id: geo.regionId,
         p_division_id: geo.divisionId,
         p_subdivision_id: geo.subdivisionId,
+        p_locality: params.locality?.trim() || undefined,
         p_listing_type: params.listingType ?? undefined,
         p_property_kind: params.propertyKind ?? undefined,
         p_property_type: params.propertyType ?? undefined,
