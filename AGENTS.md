@@ -2389,6 +2389,42 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   unused client bundle. `force-dynamic` is on the group layout because the shell reads the session
   cookie.
 
+### Cart quantity display and the shared checkout rate-limit bucket
+
+- **A `defaultValue` input stops tracking state the moment the customer types
+  into it, so a stepper beside it updates the cart and not the screen.** React
+  writes to an uncontrolled input only until its first edit; after that the DOM
+  value belongs to the user. `CartLines` sent the correct quantity to the server
+  on every `+`/`-` press, the row's quantity advanced in the database, and the
+  field kept showing the number the customer had typed — `1`, type `2`, press
+  `+`, database says `3`, screen says `2`. Reproduced against the running build
+  by comparing `input.value` with `cart_items.quantity`; it is invisible to a
+  test that only presses the buttons. The field is now controlled by a local
+  draft that re-syncs from the row when the server quantity changes (during
+  render, not in an effect, because `react-hooks/set-state-in-effect` rejects
+  the effect form and the render-time reset cannot flash a stale value).
+  `CartLines.test.tsx` covers type-then-click in both directions.
+- **A rate-limit key of `scope:unknown` is one shared bucket for every visitor.**
+  `clientKeyFrom` fell back to the literal `"unknown"` when `x-forwarded-for` was
+  absent, and this preview proxy sends no such header, so all visitors spent the
+  same 10-per-10-minutes checkout budget: the tenth person to order in ten
+  minutes was told "too many attempts" for no reason of their own. The failure
+  looks like a broken form because it only appears once traffic exists, and it
+  is invisible in a single-visitor test. `submissionKeyFrom` now prefers the
+  forwarded IP and otherwise keys on the visitor's own cart token, so two
+  browsers never share a budget. The cart token is read *before* the rate check
+  for exactly this reason.
+- **A confirmation page must not claim an email was sent when the mail
+  integration is off.** `/…/store/orders/[reference]` rendered "Our team has
+  received your order by email" unconditionally, while `isEmailConfigured()` was
+  false and `send.ts` had returned `{ ok: false, error: "unconfigured" }` — so
+  the order was stored, the team was never told, and the customer was waiting for
+  a reply that could not come. The page now branches on `isEmailConfigured()` and
+  renders the phone numbers and inbox to contact instead. This is the same rule as
+  the inquiry and quote paths: an unconfigured external service is reported, never
+  simulated. Setting `RESEND_API_KEY` and `EMAIL_FROM` restores the original copy
+  with no code change.
+
 ### The self-publish hole: a column default is not a security boundary
 
 - **`listing_source` defaults to `admin`, and the review gate keyed only on

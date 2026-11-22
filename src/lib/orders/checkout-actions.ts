@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { STORE_PATH } from "@/lib/config/navigation";
 import { getAuthState } from "@/lib/auth/session";
-import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
+import { checkRateLimit, submissionKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -93,8 +93,14 @@ export async function submitCheckout(
   const input = parsed.data;
   const requestHeaders = await headers();
 
+  // The cart comes from the token cookie, never from the request body. That is
+  // what makes the line items and their prices trustworthy. It is read before
+  // the rate limit because the token is also what keeps one visitor's retries
+  // from spending another visitor's budget when the proxy sends no client IP.
+  const token = await readCartToken();
+
   const rate = checkRateLimit(
-    clientKeyFrom(requestHeaders, "checkout"),
+    submissionKeyFrom(requestHeaders, "checkout", token),
     RATE_LIMIT,
   );
   if (!rate.allowed) return { status: "rate_limited" };
@@ -102,9 +108,6 @@ export async function submitCheckout(
   const admin = createAdminClient();
   if (!admin) return { status: "unconfigured" };
 
-  // The cart comes from the token cookie, never from the request body. That is
-  // what makes the line items and their prices trustworthy.
-  const token = await readCartToken();
   if (!token) return { status: "empty_cart" };
 
   const cart = await getCartByToken(token);

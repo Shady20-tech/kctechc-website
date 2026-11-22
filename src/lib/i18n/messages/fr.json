@@ -1754,7 +1754,8 @@
     "metaDescription": "Le statut de votre commande KC Technology Corporation, y compris le paiement et la livraison.",
     "awaitingHeading": "Commande envoyée — en attente de confirmation",
     "contactNoticeHeading": "Et maintenant ?",
-    "contactNoticeBody": "Notre équipe a reçu votre commande par e-mail et vous contactera avec les coordonnées que vous avez fournies pour confirmer le stock, la livraison et le paiement. Rien n'est débité sur ce site."
+    "contactNoticeBody": "Notre équipe a reçu votre commande par e-mail et vous contactera avec les coordonnées que vous avez fournies pour confirmer le stock, la livraison et le paiement. Rien n'est débité sur ce site.",
+    "contactNoticeBodyUnsent": "Votre commande a été enregistrée et sa référence figure ci-dessus. L'envoi d'e-mails n'est pas encore activé sur ce site ; merci de nous joindre également au {phones} ou à {email} en indiquant votre référence afin que l'équipe confirme le stock, la livraison et le paiement. Rien n'est débité sur ce site."
   },
   "paymentStatus": {
     "pending": "En attente de paiement",

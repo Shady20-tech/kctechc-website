@@ -1754,7 +1754,8 @@
     "metaDescription": "The status of your KC Technology Corporation order, including payment and delivery.",
     "awaitingHeading": "Order sent — awaiting confirmation",
     "contactNoticeHeading": "What happens next",
-    "contactNoticeBody": "Our team has received your order by email and will contact you using the details you provided to confirm stock, delivery and payment. Nothing is charged on this website."
+    "contactNoticeBody": "Our team has received your order by email and will contact you using the details you provided to confirm stock, delivery and payment. Nothing is charged on this website.",
+    "contactNoticeBodyUnsent": "Your order has been saved and its reference is above. Email delivery is not switched on for this site yet, so please also reach us on {phones} or at {email} and quote your reference so the team can confirm stock, delivery and payment. Nothing is charged on this website."
   },
   "paymentStatus": {
     "pending": "Awaiting payment",

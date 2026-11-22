@@ -1,12 +1,15 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CartLines } from "./CartLines";
 import type { Cart } from "@/lib/store/cart";
+import { updateCartItemAction } from "@/lib/store/cart-actions";
 
 vi.mock("@/lib/store/cart-actions", () => ({
   removeCartItemAction: vi.fn(),
   updateCartItemAction: vi.fn(),
 }));
+
+const updateQuantity = vi.mocked(updateCartItemAction);
 
 const cart: Cart = {
   id: "cart-1",
@@ -96,5 +99,86 @@ describe("CartLines", () => {
         name: "Retirer HP EliteBook 840 G9 de votre panier",
       }),
     ).toBeTruthy();
+  });
+});
+
+describe("CartLines quantity control after editing the field", () => {
+  // The field used to be `defaultValue`. React stops writing to an input once the
+  // customer has typed into it, so pressing +/- afterwards sent the correct
+  // quantity to the server but left the field showing the previous number: the
+  // cart changed and the screen did not. Typing then clicking is the ordinary
+  // way to order two of something, so this is the regression that matters.
+  beforeEach(() => {
+    updateQuantity.mockReset();
+  });
+
+  it("shows the incremented value after the field was typed into", async () => {
+    render(<CartLines cart={cart} locale="en" />);
+    const input = screen.getByLabelText("Quantity") as HTMLInputElement;
+    const increase = screen.getByRole("button", {
+      name: "Increase quantity for HP EliteBook 840 G9",
+    });
+
+    fireEvent.change(input, { target: { value: "3" } });
+    expect(input.value).toBe("3");
+
+    // The control is disabled while the Server Action is in flight, so wait for
+    // it to settle before pressing it.
+    await waitFor(() => expect(increase.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(increase);
+    expect(input.value).toBe("4");
+  });
+
+  it("shows the decremented value after the field was typed into", async () => {
+    render(<CartLines cart={cart} locale="en" />);
+    const input = screen.getByLabelText("Quantity") as HTMLInputElement;
+    const decrease = screen.getByRole("button", {
+      name: "Decrease quantity for HP EliteBook 840 G9",
+    });
+
+    fireEvent.change(input, { target: { value: "4" } });
+    await waitFor(() => expect(decrease.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(decrease);
+    expect(input.value).toBe("3");
+  });
+
+  it("sends the quantity the button press produced, not the typed one", async () => {
+    render(<CartLines cart={cart} locale="en" />);
+    const input = screen.getByLabelText("Quantity") as HTMLInputElement;
+    const increase = screen.getByRole("button", {
+      name: "Increase quantity for HP EliteBook 840 G9",
+    });
+
+    fireEvent.change(input, { target: { value: "2" } });
+    await waitFor(() => expect(increase.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(increase);
+    // 2 typed -> 3 on screen -> the action is told 3.
+    expect(updateQuantity).toHaveBeenLastCalledWith(
+      expect.objectContaining({ itemId: "line-1", quantity: 3 }),
+    );
+  });
+
+  it("restores the cart quantity when the field is left blank", () => {
+    render(<CartLines cart={cart} locale="en" />);
+    const input = screen.getByLabelText("Quantity") as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+    expect(input.value).toBe("2");
+  });
+
+  it("adopts a quantity that arrives from the server", () => {
+    const { rerender } = render(<CartLines cart={cart} locale="en" />);
+    const input = screen.getByLabelText("Quantity") as HTMLInputElement;
+    expect(input.value).toBe("2");
+
+    const updated: Cart = {
+      ...cart,
+      lines: [{ ...cart.lines[0]!, quantity: 4 }],
+    };
+    rerender(<CartLines cart={updated} locale="en" />);
+    expect(
+      (screen.getByLabelText("Quantity") as HTMLInputElement).value,
+    ).toBe("4");
   });
 });

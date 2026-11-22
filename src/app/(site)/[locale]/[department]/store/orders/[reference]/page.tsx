@@ -9,7 +9,8 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { storePathFor } from "@/lib/config/navigation";
-import { DEPARTMENTS } from "@/lib/config/site";
+import { DEPARTMENTS, SITE } from "@/lib/config/site";
+import { isEmailConfigured } from "@/lib/config/server-env";
 import { getAuthState } from "@/lib/auth/session";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -131,7 +132,11 @@ export default async function OrderPage({
             />
           ) : null}
 
-          {renderStatusNotice({ status: order.status, t })}
+          {renderStatusNotice({
+            status: order.status,
+            t,
+            emailConfigured: isEmailConfigured(),
+          })}
 
           <section aria-labelledby="order-items-heading">
             <h3 id="order-items-heading" className="text-lg font-semibold text-ink-900">
@@ -293,13 +298,22 @@ function statusTone(status: OrderStatus): "success" | "info" | "warning" | "dang
 function renderStatusNotice(input: {
   status: OrderStatus;
   t: ReturnType<typeof createTranslator>["t"];
+  emailConfigured: boolean;
 }) {
-  const { status, t } = input;
+  const { status, t, emailConfigured } = input;
 
   if (status === "pending_payment") {
+    // The order is stored either way, but the notice must not claim an email
+    // reached the team when the mail integration is switched off. That claim
+    // would leave the customer waiting for a reply that was never going to come.
     return (
       <Alert tone="info" title={t("order.contactNoticeHeading")}>
-        {t("order.contactNoticeBody")}
+        {emailConfigured
+          ? t("order.contactNoticeBody")
+          : t("order.contactNoticeBodyUnsent", {
+              phones: SITE.phones.join(" / "),
+              email: SITE.email,
+            })}
       </Alert>
     );
   }
