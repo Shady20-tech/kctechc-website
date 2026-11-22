@@ -1555,6 +1555,25 @@ undefined`. Message keys with a dot must be nested objects (`state: { draft: ...
   throws into the request that triggered the notification. `send.test.ts` pins both, plus HTML
   escaping of visitor input.
 
+### Admin order actions: one predicate, three call sites
+
+- **A pending order's status select legitimately offers only `cancelled`.** `staffTransitions`
+  withholds `paid` because money is recorded, not picked. That is correct on its own, and it is
+  what made the console look broken: the step that *does* reach `paid` lives in a separate form.
+- **That form was gated to `paymentMethod === "bank_transfer"` while the Server Action accepted
+  four methods.** Since the site takes no payment itself, cash on confirmation, MTN, Orange and
+  bank transfer are all reconciled by a person — so three of the four showed a one-option select
+  and no way to record money at all. The action would have accepted the request the UI never
+  offered.
+- **`canRecordManualPayment(method, status)` in `src/lib/orders/types.ts` is now the single
+  predicate** for the form, the order page's caution notice and the action's guard. Only the
+  retired `card` value and a non-`pending_payment` status are refused. `types.test.ts` asserts
+  the predicate's allowed set equals `PAYMENT_METHODS`, so the UI and the guard cannot drift
+  again — which is precisely how this broke.
+- **Copy must follow the method.** "Record a bank transfer" on a cash order tells an operator to
+  confirm something that never happened; it is now "Record a received payment" with the chosen
+  method shown, in both locales.
+
 ### Solar packages, multi-email contacts and the provider-less payment flow
 
 - **The site takes no payment and no longer integrates a provider.** Fapshi was removed
