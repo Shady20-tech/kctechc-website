@@ -14,6 +14,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { recordAudit } from "@/lib/security/audit";
 import { CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
 import { buildObjectPath, validateUpload } from "@/lib/uploads/validation";
+import { INSIGHTS_PATH } from "@/lib/config/navigation";
+import { LOCALES } from "@/lib/i18n/locales";
 
 /**
  * Insight (blog article) authoring.
@@ -321,7 +323,7 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
   // read that RLS might already have narrowed.
   const { data: owned } = await admin
     .from("insights")
-    .select("department_id, cover_image_path")
+    .select("department_id, cover_image_path, slug")
     .eq("id", id)
     .maybeSingle();
   if (!owned) return { ok: false, error: "not_found" };
@@ -361,6 +363,14 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
 
   revalidatePath("/admin/content");
   revalidatePath(`/admin/content/${id}`);
+  // The cover is the article's public hero and its card thumbnail, so the public
+  // pages must be revalidated too. Without this the console shows the new image
+  // while the article keeps serving the old one — the pages are prerendered and
+  // nothing else invalidates them.
+  for (const locale of LOCALES) {
+    revalidatePath(`/${locale}${INSIGHTS_PATH}/${owned.slug}`);
+    revalidatePath(`/${locale}${INSIGHTS_PATH}`);
+  }
   return { ok: true, id, message: "cover_updated" };
 }
 

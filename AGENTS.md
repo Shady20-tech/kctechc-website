@@ -495,11 +495,19 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     warning, so it was only visible from the standalone server — Lighthouse surfaced it as
     `errors-in-console` on the product page, which prefetches its category. Fixed with
     `export const dynamic = "force-dynamic"` on that route.
-- 1460 Vitest tests pass (116 files). Lighthouse with applied throttling across `/en`, `/fr`,
+- 1546 Vitest tests pass (126 files). Lighthouse with applied throttling across `/en`, `/fr`,
   `/en/real-estate/listings`, a listing detail, the store index, a product detail and
   `/en/electrical-services`: accessibility, best-practices and SEO are **100** on every surface;
   performance measures 89-97. No horizontal overflow at 320/375/768/1440 on the marketplace, listing
   detail or product detail.
+- An insight article's uploaded cover now renders as the public hero and as the index/category card
+  image. The upload path already existed and was correctly gated; the stored
+  `cover_image_path` was only ever read by `articleJsonLd`, so the photograph fed structured data
+  and never appeared on the page. `InsightCard` is now the single card renderer for
+  `/[locale]/insights` and `/[locale]/insights/category/[category]`, and the article hero uses
+  `HeroMedia` with a dedicated `.hero-scrim-article` (an arbitrary upload can be pure white, where
+  the shared scrim left the byline at 1.65:1). Cover uploads revalidate the public article and
+  index paths for both locales. See "Article cover images" below.
 - KYC verification (Phase 2 of the real-estate work) is implemented:
   - Migration `20260101000060_kyc_verification.sql` creates `real_estate_kyc_applications`,
     `real_estate_kyc_documents`, `real_estate_kyc_review_events` and `listing_legal_documents`,
@@ -2160,6 +2168,39 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   `ListingInquiryForm` and only ever set for a `property_inquiry`/`viewing_request` source; every
   other inquiry leaves it null. Do not add it to the corporate contact form or the quote form —
   neither has an acquisition to speak of.
+
+### Article cover images: upload existed, rendering did not
+
+- **Staff and department admins could already upload an article cover, and it was
+  invisible.** `uploadInsightCoverAction` + `CoverUploadForm` + the `cover_image_path` column
+  were all in place, gated by `isDepartmentEditorRole` with the department boundary in RLS. But
+  the only consumer of `cover_image_path` was `articleJsonLd` — so the value fed structured data
+  and Open Graph, and the article page rendered a plain ink band with no photograph. Before
+  adding an upload path for an entity, grep for who *reads* the stored path; an upload with no
+  reader looks complete in the console and ships nothing.
+- **The hero uses `HeroMedia`, but with `scrim="article"`.** The shared `.hero-scrim` stops are
+  tuned for curated hero photography whose brightness range is known. An article cover is an
+  arbitrary upload and can be pure white, and the article's copy column (`max-w-3xl`, ~62% of the
+  container) runs well past where that scrim has thinned to 0.30. Measured against a white cover,
+  the byline landed at **1.65:1** — an invisible byline, not a cosmetic problem.
+  `.hero-scrim-article` holds 0.84–0.90 across the copy column and only then tapers; the worst
+  pair inside the column is 5.06:1. `src/app/article-hero-scrim.test.ts` computes that from the
+  stylesheet and fails on the old stops (verified by reverting them: 4.45:1).
+- **`.bg-glow` is a later sibling of `HeroMedia`, so it composites *over* the scrim.** Computing
+  the contrast with the glow underneath gives a wrong answer in the safe direction — the real
+  background is lighter, because the teal glow sits on top. Order matters when reasoning about
+  stacked hero layers; read the markup order, not the intent.
+- **The cover is decorative in the hero and on the card (`alt=""`, inside `aria-hidden`).** The
+  heading already names the article, so alt text would repeat it. On the card the media is also
+  wrapped in its own `aria-hidden` link with `tabIndex={-1}`, so the image does not become a
+  second tab stop for the same destination.
+- **A card with no cover renders no media box at all.** An article published without a photograph
+  is normal; a placeholder rectangle reads as a broken image. The `flex-1` summary absorbs the
+  height difference, so the grid keeps its rhythm either way.
+- **Uploading a cover must revalidate the public paths, not just `/admin/content`.** The article
+  and index pages are prerendered, so the console showed the new image while the site kept the
+  old one. The action now revalidates `/{locale}/insights/{slug}` and `/{locale}/insights` for
+  both locales, which is why it reads the article's `slug` in the same ownership query.
 
 ### Insight article translation (the missing write path)
 

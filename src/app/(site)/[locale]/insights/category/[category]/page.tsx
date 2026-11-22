@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
+import { InsightCard } from "@/components/content/InsightCard";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { INSIGHTS_PATH } from "@/lib/config/navigation";
 import { allCategories, localizeCategory } from "@/lib/content/defaults";
-import { formatDate } from "@/lib/content/format";
 import { loadInsights } from "@/lib/content/loaders";
 import { isLocale, LOCALES, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -136,24 +135,11 @@ export default async function InsightCategoryPage({
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
               <li key={article.slug} className="h-full">
-                <article className="flex h-full flex-col rounded-card border border-border bg-surface p-6 shadow-card">
-                  <h3 className="text-base font-semibold text-ink-900">
-                    <Link
-                      href={`/${resolved}${INSIGHTS_PATH}/${article.slug}`}
-                      className="transition-soft hover:text-dept-accent"
-                    >
-                      {article.title}
-                    </Link>
-                  </h3>
-                  <p className="mt-2 flex-1 text-sm text-body">
-                    {article.summary}
-                  </p>
-                  <p className="mt-4 text-xs text-muted">
-                    {t("insights.publishedOn", {
-                      date: formatDate(article.publishedAt, resolved),
-                    })}
-                  </p>
-                </article>
+                <InsightCard
+                  article={article}
+                  locale={resolved}
+                  t={t}
+                />
               </li>
             ))}
           </ul>

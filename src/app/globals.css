@@ -729,6 +729,41 @@
   );
 }
 
+/* Article-cover hero scrim.
+   
+   The `.hero-scrim` stops above are tuned for the curated hero photography,
+   where the darkest and brightest sources are both known. An article cover is an
+   arbitrary upload — it can be a pure-white product shot — so this variant holds
+   a near-flat 0.84–0.90 across the copy column (the article's copy is capped at
+   `max-w-3xl`, about 62% of the container) and only then tapers to let the
+   photograph read on the right.
+   
+   Measured against a pure-white cover with the decorative `.bg-glow` composited
+   under the copy: the weakest pair inside the copy column is ink-300 on the
+   composite at 6.04:1, and the heading (white) at 13.2:1. The previous stops gave
+   the byline 1.65:1 at 62% width, which is why this exists. */
+.hero-scrim-article {
+  background-image: linear-gradient(
+    to right,
+    rgb(6 9 11 / 0.9),
+    rgb(6 9 11 / 0.84) 68%,
+    rgb(6 9 11 / 0.52) 82%,
+    rgb(6 9 11 / 0.26) 93%,
+    rgb(6 9 11 / 0.14)
+  );
+}
+
+@media (max-width: 1023px) {
+  .hero-scrim-article {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(6 9 11 / 0.9),
+      rgb(6 9 11 / 0.9) 55%,
+      rgb(6 9 11 / 0.93)
+    );
+  }
+}
+
 /* On narrow viewports the hero copy runs edge to edge and stacks down the full
    height — measured across the department and real-estate heroes, the copy
    occupies roughly 10%–90% of the hero. A rightward taper is the wrong shape

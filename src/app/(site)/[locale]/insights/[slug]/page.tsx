@@ -6,6 +6,7 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { CtaBand } from "@/components/ui/Cta";
+import { HeroMedia } from "@/components/ui/HeroMedia";
 import { INSIGHTS_PATH } from "@/lib/config/navigation";
 import { allCategories, findAuthor, localizeCategory } from "@/lib/content/defaults";
 import { formatDate } from "@/lib/content/format";
@@ -15,6 +16,7 @@ import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/structured-data";
 import { departmentScopeProps } from "@/lib/theme/department-scope";
+import { contentMediaUrl } from "@/lib/uploads/media";
 
 /**
  * Insight article page.
@@ -54,6 +56,7 @@ export async function generateMetadata({
     publishedTime: article.publishedAt,
     modifiedTime: article.updatedAt,
     noindex: article.seo.noindex ?? false,
+    imageUrl: contentMediaUrl(article.coverImagePath) ?? undefined,
   });
 }
 
@@ -74,6 +77,7 @@ export default async function InsightArticlePage({
   const author = article.authorSlug ? findAuthor(article.authorSlug) : undefined;
   const authorName = author?.displayName ?? t("common.brand");
   const articlePath = `/${resolved}${INSIGHTS_PATH}/${article.slug}`;
+  const heroImage = contentMediaUrl(article.coverImagePath);
 
   const category = article.categorySlug
     ? allCategories()
@@ -116,6 +120,7 @@ export default async function InsightArticlePage({
       />
 
       <section className="on-ink relative overflow-hidden bg-ink-950">
+        {heroImage ? <HeroMedia src={heroImage} scrim="article" /> : null}
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
         <div className="relative container-page py-16 sm:py-20">
