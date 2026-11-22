@@ -62,22 +62,32 @@ export function ServiceWorkerRegistration() {
  * step across a client-side language switch, which a prop captured at render
  * would not.
  */
+/** Routes where a floating overlay must never appear over the page's own form. */
+const AUTH_PATH_PATTERN = /^\/admin\/(login|sign-up|forgot-password|reset-password)$/;
+
 export function InstallPrompt() {
   const pathname = usePathname();
-  const locale: Locale =
-    stripLocaleFromPath(pathname ?? "/").locale ?? DEFAULT_LOCALE;
+  const { locale: pathLocale, pathWithoutLocale } = stripLocaleFromPath(
+    pathname ?? "/",
+  );
+  const locale: Locale = pathLocale ?? DEFAULT_LOCALE;
   const t = createTranslator(locale).t;
   const { canInstall, promptInstall, dismiss } = useInstallPrompt();
   const [busy, setBusy] = useState(false);
 
-  if (!canInstall) return null;
+  // An install prompt is never more important than the task on the page. On a
+  // 667px-tall phone the banner sat over the sign-in button and made it
+  // untappable, so the auth screens opt out entirely.
+  if (!canInstall || AUTH_PATH_PATTERN.test(pathWithoutLocale)) return null;
 
+  // Compact below `sm`: the body copy is the part that can go without making
+  // the banner meaningless, and it halves the footprint on a small screen.
   return (
     <aside
       // A complementary landmark rather than a dialog: it is not modal, it does
       // not trap focus, and it must not interrupt what the visitor is reading.
       aria-labelledby="pwa-install-title"
-      className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-md rounded-card border border-border-strong bg-surface p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4"
+      className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-md rounded-card border border-border-strong bg-surface p-3 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:p-4"
     >
       <div className="flex items-start gap-3">
         <span
@@ -94,7 +104,9 @@ export function InstallPrompt() {
           >
             {t("pwa.installTitle")}
           </p>
-          <p className="mt-1 text-xs text-body">{t("pwa.installBody")}</p>
+          <p className="mt-1 hidden text-xs text-body sm:block">
+            {t("pwa.installBody")}
+          </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
