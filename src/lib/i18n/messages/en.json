@@ -2021,6 +2021,7 @@
     "sectionOverview": "Overview",
     "sectionOperations": "Operations",
     "sectionRealEstate": "Real Estate",
+    "sectionDepartments": "Departments",
     "sectionContent": "Content",
     "sectionSystem": "System",
     "dashboard": "Dashboard",
@@ -2042,12 +2043,16 @@
     "memberships": "Memberships",
     "kyc": "KYC review",
     "verification": "Publisher verification",
-    "viewSite": "View main site"
+    "viewSite": "View main site",
+    "digitalMarketing": "Digital Marketing",
+    "electricalServices": "Electrical Services",
+    "realEstate": "Real Estate"
   },
   "roleName": {
     "super_admin": "Super administrator",
     "real_estate_admin": "Real estate administrator",
     "real_estate_agent": "Real estate agent",
+    "real_estate_staff": "Real estate staff",
     "digital_marketing_admin": "Digital marketing administrator",
     "digital_marketing_staff": "Digital marketing staff",
     "electrical_admin": "Electrical administrator",
@@ -3263,5 +3268,22 @@
     "saving": "Saving…",
     "saved": "Verification updated.",
     "empty": "No approved memberships are available to verify yet."
+  },
+  "adminDepartments": {
+    "digitalMarketingHeading": "Digital Marketing",
+    "digitalMarketingIntro": "Manage the Digital Marketing store catalogue, finished work and published content.",
+    "electricalServicesHeading": "Electrical Services",
+    "electricalServicesIntro": "Manage the solar and electrical catalogue, installed work and brand partners.",
+    "countProducts": "Products",
+    "countPublished": "Published",
+    "countDrafts": "Drafts",
+    "countProjects": "Finished projects",
+    "storeBody": "Add a product, attach its photographs and publish it to the store. A product needs at least one image before it can be published.",
+    "addProduct": "Add a product",
+    "projectsBody": "Record a completed installation so it appears on the department's Work Done page.",
+    "addProject": "Add finished work",
+    "scopeHeading": "What this console covers",
+    "scopeBody": "This console is scoped to {department}. You can author that department's products, work and content, and nothing outside it.",
+    "roleNote": "Your role is {role}."
   }
 }

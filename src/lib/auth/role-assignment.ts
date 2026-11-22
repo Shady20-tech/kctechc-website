@@ -18,6 +18,7 @@ import { z } from "zod";
 export const ASSIGNABLE_ROLES = [
   "customer",
   "real_estate_agent",
+  "real_estate_staff",
   "real_estate_admin",
   "digital_marketing_staff",
   "digital_marketing_admin",

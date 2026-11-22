@@ -9,6 +9,7 @@ import {
   isDepartmentEditorRole,
   isElevatedRole,
   isRealEstateAdminRole,
+  isRealEstateStaffRole,
   ADMIN_ROLES,
   APP_ROLES,
   DEPARTMENT_EDITOR_ROLES,
@@ -17,6 +18,7 @@ import {
   REAL_ESTATE_ADMIN_ROLES,
   isKycReviewerRole,
 } from "@/lib/auth/roles";
+import { ASSIGNABLE_ROLES } from "@/lib/auth/role-assignment";
 
 describe("isAppRole", () => {
   it("accepts every declared role", () => {
@@ -107,6 +109,13 @@ describe("isRealEstateAdminRole", () => {
     expect(isRealEstateAdminRole("real_estate_agent")).toBe(false);
   });
 
+  it("does NOT grant it to the staff tier, which is the narrower grant", () => {
+    // The whole point of adding `real_estate_staff` is that working the queue is
+    // not the same permission as managing every listing. If this ever passes, the
+    // tier has been erased and a staff member can edit the whole portfolio.
+    expect(isRealEstateAdminRole("real_estate_staff")).toBe(false);
+  });
+
   it("is not implied by elevation in another department", () => {
     // A store or electrical admin is elevated for their own remit, which does not
     // make them an administrator of the property portfolio.
@@ -114,6 +123,50 @@ describe("isRealEstateAdminRole", () => {
     expect(isRealEstateAdminRole("digital_marketing_admin")).toBe(false);
     expect(isElevatedRole("electrical_admin")).toBe(true);
     expect(isRealEstateAdminRole("electrical_admin")).toBe(false);
+  });
+});
+
+describe("real_estate_staff is a staff tier, not an administrator", () => {
+  it("opens the real-estate console", () => {
+    expect(isRealEstateStaffRole("real_estate_staff")).toBe(true);
+    expect(isRealEstateStaffRole("real_estate_admin")).toBe(true);
+    expect(isRealEstateStaffRole("department_staff")).toBe(true);
+    expect(isRealEstateStaffRole("super_admin")).toBe(true);
+  });
+
+  it("does not open it for an agent, a customer or another department", () => {
+    expect(isRealEstateStaffRole("real_estate_agent")).toBe(false);
+    expect(isRealEstateStaffRole("customer")).toBe(false);
+    expect(isRealEstateStaffRole("digital_marketing_staff")).toBe(false);
+    expect(isRealEstateStaffRole("electrical_admin")).toBe(false);
+  });
+
+  it("may author real-estate content, since it is a department editor there", () => {
+    expect(canAccessDepartment("real_estate_staff", "real-estate")).toBe(true);
+    expect(isDepartmentEditorRole("real_estate_staff")).toBe(true);
+    // ...and only there.
+    expect(canAccessDepartment("real_estate_staff", "digital-marketing")).toBe(false);
+    expect(canAccessDepartment("real_estate_staff", "electrical-services")).toBe(false);
+  });
+
+  it("is narrower than the administrator, which is the reason it exists", () => {
+    // A property held by both sets must not exist beyond the shared tiers: staff
+    // is a strict subset of admin capability, never a peer.
+    expect(isRealEstateAdminRole("real_estate_staff")).toBe(false);
+    expect(isRealEstateStaffRole("real_estate_staff")).toBe(true);
+  });
+
+  it("is assignable by a super admin and has a label in both locales", () => {
+    expect(ASSIGNABLE_ROLES).toContain("real_estate_staff");
+    for (const locale of ["en", "fr"]) {
+      const messages = JSON.parse(
+        readFileSync(
+          join(process.cwd(), "src", "lib", "i18n", "messages", `${locale}.json`),
+          "utf8",
+        ),
+      ) as { roleName?: Record<string, string> };
+      expect(messages.roleName?.real_estate_staff).toBeTruthy();
+    }
   });
 });
 
@@ -176,10 +229,15 @@ describe("role model matches the database", () => {
     // a role list out of the SQL. A role added to the function and forgotten here
     // (or the reverse) fails this, which is the drift that matters: the nav link,
     // the action's guard and the RLS policy must all name the same roles.
-    const fn = allSql.match(
-      /create or replace function public\.is_department_editor\([\s\S]*?\$\$;/i,
-    );
-    const body = fn?.[0];
+    // The LAST definition wins: `create or replace` means an earlier migration's
+    // version is dead code the moment a later one replaces it, so scraping the
+    // first match asserts agreement with a function the database no longer has.
+    const matches = [
+      ...allSql.matchAll(
+        /create or replace function public\.is_department_editor\([\s\S]*?\$\$;/gi,
+      ),
+    ];
+    const body = matches.at(-1)?.[0];
     expect(body, "is_department_editor() not found").toBeDefined();
 
     const roles: string[] = [];

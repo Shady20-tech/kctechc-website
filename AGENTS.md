@@ -3188,3 +3188,59 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+### Department consoles, the real-estate staff tier, and stock concurrency
+
+- **`real_estate_staff` is a staff tier, not a second administrator.** Real estate had
+  `real_estate_agent` (works their own listings) and `real_estate_admin` (runs the queue and
+  everyone's listings) but nothing between, so queue staff were handed the administrator role.
+  Migration `20260101000075_real_estate_staff_role.sql` adds the value and `is_real_estate_staff()`
+  (console access), and deliberately does **not** add it to `is_real_estate_admin()` (portfolio
+  management). `roles.test.ts` asserts both directions, and the migration's own `do $$` block
+  raises if a later edit folds staff into the admin predicate.
+- **`real_estate_staff` was also added to `is_department_editor('real-estate')`**, because real
+  estate gained a Work Done surface and its staff author that content like the other departments'
+  staff author theirs. It is still scoped to `real-estate` only.
+- **A new enum value cannot be *used* in the transaction that adds it.** PostgreSQL raises
+  `unsafe use of new value` — a migration file is one transaction, so the functions in migration 75
+  compare `current_user_role()::text` against string literals. Do the same for any future role.
+- **`create or replace function` means only the LAST definition counts, and a test that scrapes the
+  FIRST one asserts agreement with dead code.** `roles.test.ts` matched `is_department_editor` with a
+  single `match()` and so read the pre-migration version; it now collects every definition with
+  `matchAll` and takes `.at(-1)`. Any test that parses a function out of the migrations has this
+  hazard.
+- **Each department has a console front door at `/admin/{department}`.** Digital Marketing and
+  Electrical Services gained one so their staff are not left with the cross-department Operations
+  list; real estate already had `/admin/real-estate` and its guard moved to
+  `isRealEstateStaffRole`. The *listing* routes under it keep `isRealEstateAdminRole` — the console
+  is the staff tier's, the portfolio manager is not. `nav-role-scope.test.ts` pins the whole matrix.
+- **`ADMIN_NAV` requires a distinct `iconKey` per href** (`navigation.test.ts`). Adding a
+  destination with an existing key fails even though the icon renders fine.
+- **Stock is written by the ledger, not by the order functions.** `place_order` and
+  `release_order_inventory` each updated `products.stock` *and* inserted an `inventory_movements`
+  row whose `BEFORE INSERT` trigger applies the same delta again, so ordering one unit removed two.
+  Migration `20260101000074_single_writer_stock.sql` makes the trigger the single writer and repairs
+  the drift. **Never `update products.stock` from application or migration code** — insert a
+  movement. The repair loop at the end of that migration is a one-off, not a pattern.
+- **Proving concurrency needs two real connections and `select … for update`.** Two threads, one
+  unit, `for update` on the product row: exactly one commits and the other sees stock 0 and halts.
+  A single-connection test cannot fail this way. The losing shopper's halt surfaces through
+  `checkout-actions.ts` as `out_of_stock`.
+- **A concurrency probe leaves debris, and `products` is not the only table to clear.** The
+  `RACE-TEST-*` products created while probing were *published*, so they appeared on the public
+  storefront. Deleting the product cascades nothing to `translation_entries`,
+  `content_translations` or `translation_sync_jobs` (none has an FK to `products`), so the probe
+  also stranded 24 index rows and 48 translations. Clean up by id across all four tables, and
+  remember `entity_id` is `uuid` — a `text[]` parameter raises
+  `operator does not exist: uuid = text`.
+- **The Phase 4 marketplace UI was already built and wired**: `MarketplaceSearchLayout` (two-column),
+  `ListingSidebar`, `MarketplaceMobileFilterDrawer`, `ResultsToolbar`, `ActiveFilterChips`,
+  `ListingCard`, `VerifiedBadge`. Filtering runs through the `search_property_listings` RPC, never
+  in React. All six screenshots' requirements are met on `/en/real-estate/listings`, which measures
+  **100 SEO / 100 accessibility / 100 best-practices** under `--throttling-method=devtools`.
+- **The verified badge is deliberately not universal.** It renders only for a publisher whose
+  `real_estate_memberships.verified_at` is set, and the card carries the disclaimer that KC
+  Technology reviewed identity and this is *not* a government guarantee of land title. Granting it
+  is `super_admin`-only (`setPublisherVerificationAction`), with the membership trigger as backstop.
+  On the seeded data five listings show it and two do not — which is the property that proves the
+  badge means something.

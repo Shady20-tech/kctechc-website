@@ -2021,6 +2021,7 @@
     "sectionOverview": "Aperçu",
     "sectionOperations": "Opérations",
     "sectionRealEstate": "Immobilier",
+    "sectionDepartments": "Départements",
     "sectionContent": "Contenu",
     "sectionSystem": "Système",
     "dashboard": "Tableau de bord",
@@ -2042,12 +2043,16 @@
     "memberships": "Habilitations",
     "kyc": "Examen KYC",
     "verification": "Verification des publieurs",
-    "viewSite": "Voir le site principal"
+    "viewSite": "Voir le site principal",
+    "digitalMarketing": "Marketing numérique",
+    "electricalServices": "Services électriques",
+    "realEstate": "Immobilier"
   },
   "roleName": {
     "super_admin": "Super administrateur",
     "real_estate_admin": "Administrateur immobilier",
     "real_estate_agent": "Agent immobilier",
+    "real_estate_staff": "Personnel immobilier",
     "digital_marketing_admin": "Administrateur marketing numérique",
     "digital_marketing_staff": "Personnel marketing numérique",
     "electrical_admin": "Administrateur électricité",
@@ -3263,5 +3268,22 @@
     "saving": "Enregistrement…",
     "saved": "Verification mise a jour.",
     "empty": "Aucune adhesion approuvee a verifier pour le moment."
+  },
+  "adminDepartments": {
+    "digitalMarketingHeading": "Marketing numérique",
+    "digitalMarketingIntro": "Gérez le catalogue de la boutique Marketing numérique, les réalisations et le contenu publié.",
+    "electricalServicesHeading": "Services électriques",
+    "electricalServicesIntro": "Gérez le catalogue solaire et électrique, les installations réalisées et les partenaires de marque.",
+    "countProducts": "Produits",
+    "countPublished": "Publiés",
+    "countDrafts": "Brouillons",
+    "countProjects": "Projets terminés",
+    "storeBody": "Ajoutez un produit, joignez ses photos et publiez-le dans la boutique. Un produit doit avoir au moins une image avant publication.",
+    "addProduct": "Ajouter un produit",
+    "projectsBody": "Enregistrez une installation terminée pour qu'elle apparaisse sur la page Réalisations du département.",
+    "addProject": "Ajouter une réalisation",
+    "scopeHeading": "Portée de cette console",
+    "scopeBody": "Cette console est limitée à {department}. Vous pouvez gérer les produits, les réalisations et le contenu de ce département, et rien d'autre.",
+    "roleNote": "Votre rôle est {role}."
   }
 }

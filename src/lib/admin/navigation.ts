@@ -15,8 +15,10 @@ import {
 
 import {
   isAdminRole,
+  canAccessDepartment,
   isDepartmentEditorRole,
   isRealEstateAdminRole,
+  isRealEstateStaffRole,
   type AppRole,
 } from "@/lib/auth/roles";
 
@@ -74,6 +76,9 @@ export const ADMIN_NAV_ICON_KEYS = [
   "users",
   "logs",
   "settings",
+  "digitalMarketing",
+  "electricalServices",
+  "realEstateConsole",
 ] as const;
 
 export type AdminNavIconKey = (typeof ADMIN_NAV_ICON_KEYS)[number];
@@ -106,6 +111,7 @@ export type AdminNavSectionClient = {
 
 const anyAdmin = (role: AppRole) => isAdminRole(role);
 const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
+const realEstateStaff = (role: AppRole) => isRealEstateStaffRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
 const departmentEditor = (role: AppRole) => isDepartmentEditorRole(role);
 
@@ -159,6 +165,39 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "work",
         icon: Briefcase,
         canSee: departmentEditor,
+      },
+    ],
+  },
+  {
+    headingKey: "sectionDepartments",
+    items: [
+      {
+        // Each department's own console. Real estate already has one at
+        // `/admin/real-estate`; these give the other two the same front door so a
+        // department's staff are not left with only the cross-department
+        // Operations entries, which mix in other departments' work.
+        href: "/admin/digital-marketing",
+        labelKey: "digitalMarketing",
+        iconKey: "digitalMarketing",
+        icon: Package,
+        canSee: (role) => canAccessDepartment(role, "digital-marketing"),
+      },
+      {
+        href: "/admin/electrical-services",
+        labelKey: "electricalServices",
+        iconKey: "electricalServices",
+        icon: Briefcase,
+        canSee: (role) => canAccessDepartment(role, "electrical-services"),
+      },
+      {
+        href: "/admin/real-estate",
+        labelKey: "realEstate",
+        iconKey: "realEstateConsole",
+        icon: Building2,
+        // The console front door, not the portfolio manager: the staff tier works
+        // the queue here, while the individual listing routes below stay
+        // administrator-only.
+        canSee: realEstateStaff,
       },
     ],
   },

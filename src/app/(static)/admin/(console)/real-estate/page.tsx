@@ -7,7 +7,7 @@ import { Card, CardHeading } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { Notice } from "@/components/ui/Notice";
 import { getAuthState } from "@/lib/auth/session";
-import { isRealEstateAdminRole } from "@/lib/auth/roles";
+import { isRealEstateStaffRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
   loadAdminListings,
@@ -38,7 +38,10 @@ export default async function AdminRealEstatePage() {
   if (state.status !== "authenticated") {
     redirect("/admin/login?next=%2Fadmin%2Freal-estate");
   }
-  if (!state.profile || !isRealEstateAdminRole(state.profile.role)) {
+  // The staff tier opens the console front door; the individual listing routes
+  // below keep `isRealEstateAdminRole`, because working the queue is not the same
+  // grant as managing every listing in the portfolio.
+  if (!state.profile || !isRealEstateStaffRole(state.profile.role)) {
     redirect("/admin/unauthorized");
   }
 

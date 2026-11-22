@@ -4061,7 +4061,8 @@ export type Database = {
         | "electrical_admin"
         | "department_staff"
         | "super_admin"
-        | "real_estate_admin";
+        | "real_estate_admin"
+        | "real_estate_staff";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -4412,6 +4413,7 @@ export const Constants = {
         "department_staff",
         "super_admin",
         "real_estate_admin",
+        "real_estate_staff",
       ],
     },
   },
