@@ -747,6 +747,17 @@ Both files were cropped to 16:9 and resized (corporate 2048×1152, DM 2560×1440
 commit. The attribution obligation for these two CC BY files is **not yet rendered in the UI**;
 surface a credit (or swap to the CC0 alternatives below) before launch.
 
+- `/hero/real-estate-v3.jpg` — "Modern residential facade" (Samuel Zeller, via Unsplash),
+  **CC0**, no attribution obligation. Source:
+  `https://commons.wikimedia.org/wiki/File:Modern_residential_facade_(Unsplash).jpg`.
+  Cropped 16:9 and resized to 2048x1152, then brightness-matched to the asset it replaced so
+  the hero scrim's measured contrast carries over. It supersedes `real-estate-v2.jpg`, which was
+  **626x417** — the only department hero under 1024px, and the LCP element of the real-estate
+  page. `next/image` never upscales, so the `w=2048` request returned the 626px source and every
+  visitor saw it stretched. The hero test now holds full-bleed department heroes to 1600px
+  (corporate page heroes, which sit behind a narrower band and top out at 1024, keep a 1000px
+  floor) so this cannot recur.
+
 CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 
 - Corporate: "Data center infrastructure in the United States" (DOE/NREL, public domain).
