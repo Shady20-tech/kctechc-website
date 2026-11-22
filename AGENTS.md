@@ -2531,12 +2531,39 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   category drops. The canonical `/…/listings` is `index, follow` and scores 100.
   Do not "fix" this by making filtered views indexable.
 
+### Marketplace search is deployed in two parts, on purpose
+
+The performance fix is two migrations so the risky-looking half can be applied
+alone:
+
+1. `20260101000076_listing_search_indexes.sql` - six partial indexes. **Additive
+   and idempotent.** No table, column, constraint or function is touched and no
+   row is written, so it changes no behaviour: the old query simply has better
+   indexes available. Reverting is `drop index` on the six names.
+2. `20260101000077_listing_search_statement_build.sql` - `create or replace` of
+   `search_property_listings` with an identical 22-parameter signature, so it
+   cannot create an overload and no caller changes.
+
+Part 2 depends on part 1 for its speed but not for correctness; applied alone it
+still returns the same rows, just without the indexes to exploit.
+
+**A separate Postgres schema cannot do this job, and the request to put it in one
+should be declined with reasons rather than silently "satisfied".** Two hard
+constraints: an index is owned by its table and cannot live in another schema (the
+syntax must name `on public.property_listings`), and the app calls
+`supabase.rpc("search_property_listings")` unqualified through PostgREST, which
+only exposes `public`/`graphql_public` (`supabase/config.toml`). A function in
+another schema would be invisible to the site, leaving a second unused function
+and the original still slow. Both halves are non-destructive DDL, which is the
+property that actually addresses the "do not take production down" concern.
+
 ### Marketplace search at 40,000 rows: five causes, not one
 
 `search_property_listings` measured 232 ms for a plain browse and 515-766 ms for a
 keyword on a 40,000-listing portfolio, with p95 at 6.7 s under 25 concurrent
-requests. Migration `20260101000076_search_index_alignment.sql` fixed it to 9 ms
-browse / 15-31 ms keyword. **Five independent causes, each of which alone was
+requests. Migrations `20260101000076_listing_search_indexes.sql` (indexes) and
+`20260101000077_listing_search_statement_build.sql` (the function) fixed it to
+9 ms browse / 15-31 ms keyword. **Five independent causes, each of which alone was
 enough to force a full scan.** Fixing one and re-measuring would have shown a
 small gain and hidden the rest, so treat "the query is slow" as a list to check
 off, not a single bug.

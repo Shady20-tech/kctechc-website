@@ -1,16 +1,15 @@
 -- =============================================================================
--- Search at scale: make `search_property_listings` use its indexes at 40,000 rows.
+-- Listing search, part 2 of 2: build the statement per call.
 --
--- Measured on a seeded portfolio of 40,000 public listings (status in the
--- four-value visibility set). Before this migration every path that was not
--- already filtered to a handful of rows re-scanned the whole table:
+-- This replaces `search_property_listings` with a version that lets the planner
+-- use the indexes created in part 1. It is `create or replace` with an identical
+-- 22-parameter signature, so it cannot introduce an overload and no caller
+-- changes. Results are unchanged (equivalence evidence below).
 --
---   browse (no filters)        232 ms      seq scan of all 40,000
---   price sort                 215 ms      seq scan + sort of all 40,000
---   keyword 'villa'            515 ms      seq scan of all 40,000
---   keyword 'spacious house'   766 ms      seq scan of all 40,000
+-- Deploy part 1 first. This file is safe on its own - it simply will not be as
+-- fast, because the planner will have no matching index to choose.
 --
--- There are five distinct causes, each reproduced and measured separately.
+-- Three causes are fixed here; the index causes are described in part 1.
 --
 -- 1. `SECURITY DEFINER` prevents inlining, so a `case when p_sort = ...` ORDER BY
 --    is an opaque expression to the planner and no index can answer it. Fixed by
@@ -24,22 +23,7 @@
 --    only when a query was given, so the browse body never mentions it and the
 --    keyword body is a plain single-table OR. Measured 470 ms -> 30 ms.
 --
--- 3. The four `*_visible_*` partial indexes were predicated on
---    `status = 'published'` while the function filters the four-value public
---    visibility set. A partial index is only usable when the query predicate
---    *implies* the index predicate, and `status = any(4 values)` does not imply
---    `status = 'published'`, so the indexes could never be chosen. They are
---    recreated over the real visibility set.
---
--- 4. Those indexes were also declared `published_at desc` (default NULLS FIRST)
---    while every ORDER BY is `published_at desc nulls last`. Postgres will not use
---    an index whose sort direction/null placement differs from the requested
---    order, so even with the predicate fixed the planner fell back to a sort. Each
---    index now carries the exact ORDER BY tail the query uses. Measured 54 ms ->
---    9 ms for the browse. `property_listings_visible_price_desc_idx` is separate
---    because a `price_minor desc` sort cannot read a `price_minor asc` index.
---
--- 5. The `regions` lookup was an inner join, which is a hash join over every
+-- 3. The `regions` lookup was an inner join, which is a hash join over every
 --    matched row: the whole set was materialised before the LIMIT, destroying the
 --    index order. It is now a correlated scalar subquery evaluated for the 24
 --    returned rows only. `region_id` is NOT NULL with a foreign key, so the
@@ -48,11 +32,13 @@
 -- The visibility predicate stays in every branch: it is the security control, and
 -- a caller may narrow within it (`p_statuses`) but never widen it.
 --
--- Result equivalence was verified against the previous definition over 32
--- parameter combinations - every sort with and without a keyword, each filter in
--- isolation, paging, French locale, upper-case and whitespace-only queries - by
--- comparing the full ordered row set *and* the row count as text. All 32 were
--- byte-identical, including `total_count` and the `rank` column.
+-- Result equivalence was verified against the previous definition (migration 70)
+-- over 32 parameter combinations - every sort with and without a keyword, each
+-- filter in isolation, paging, French locale, upper-case and whitespace-only
+-- queries - by comparing the full ordered row set *and* the row count as text.
+-- All 32 were byte-identical, including `total_count` and the `rank` column. All
+-- 18 filter predicates and every sort order were also confirmed present against
+-- the migration 70 definition.
 --
 -- Final timings on the same 40,000-row portfolio:
 --
@@ -61,73 +47,6 @@
 --   'spacious house' 219 ms (5,714 rows match, so the relevance sort dominates;
 --   this is a 3.5x improvement and is inherent to ranking that many rows)
 -- =============================================================================
-
--- The visibility set as a single reusable predicate would be nicer, but a partial
--- index predicate must be immutable, so it is spelled out in each index.
---
--- `_published_idx` answers `p_sort => 'relevance'` with no keyword. `rank` is 0.0
--- on every row in that case, so the original ORDER BY reduced to exactly
--- `published_at, reference`; without this index that sort fell back to a scan.
-create index if not exists property_listings_visible_recent_idx
-  on public.property_listings (
-    is_featured desc nulls last,
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
-
-create index if not exists property_listings_visible_price_idx
-  on public.property_listings (
-    currency asc,
-    price_minor asc nulls last,
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
-
-create index if not exists property_listings_visible_price_desc_idx
-  on public.property_listings (
-    currency asc,
-    price_minor desc nulls last,
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
-
-create index if not exists property_listings_visible_viewed_idx
-  on public.property_listings (
-    view_count desc nulls last,
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
-
-create index if not exists property_listings_visible_published_idx
-  on public.property_listings (
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
-
-create index if not exists property_listings_visible_region_idx
-  on public.property_listings (
-    region_id,
-    published_at desc nulls last,
-    reference asc
-  )
-  where status = any (
-    array['published', 'under_offer', 'sold', 'rented']::public.listing_status[]
-  );
 
 create or replace function public.search_property_listings(
   p_query text default null,
