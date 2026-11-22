@@ -152,7 +152,7 @@ export default async function RealEstatePage({
       {listJsonLd ? <JsonLdScript data={listJsonLd} /> : null}
 
       <section className="on-ink relative overflow-hidden bg-ink-950">
-        <HeroMedia src="/hero/real-estate-v2.jpg" />
+        <HeroMedia src="/hero/real-estate-v3.jpg" />
         <div aria-hidden="true" className="absolute inset-0 bg-grid" />
         <div aria-hidden="true" className="absolute inset-0 bg-glow" />
         <div aria-hidden="true" className="absolute inset-0 dept-glow" />

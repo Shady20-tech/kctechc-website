@@ -36,7 +36,7 @@ export const SITE = {
  * so the honest value is the last revision of the content those routes render.
  * Bump this when a change to any statically-listed page ships.
  */
-export const SITE_REVISION_DATE = "2026-11-16";
+export const SITE_REVISION_DATE = "2026-11-17";
 
 /**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal
@@ -127,7 +127,7 @@ export const DEPARTMENTS: readonly DepartmentDefinition[] = [
     descriptionKey: "departments.realEstate.description",
     summaryKey: "departments.realEstate.summary",
     icon: "real-estate",
-    heroImage: "/hero/real-estate-v2.jpg",
+    heroImage: "/hero/real-estate-v3.jpg",
   },
 ] as const;
 

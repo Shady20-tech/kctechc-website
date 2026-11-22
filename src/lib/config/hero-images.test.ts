@@ -83,12 +83,11 @@ describe("department hero images", () => {
   // valid JPEGs that the two structural tests above happily accepted. These
   // bounds catch a regression to a placeholder-sized asset.
   //
-  // The floor is deliberately 600 rather than 1920: `next/image` never upscales,
-  // so the widest variant a browser can receive is capped at the source width.
-  // Three of the four hero sources top out below 1920 (626–1749), and asking
-  // for a bigger file than exists simply returns the smaller one — silently.
-  // Raising this floor above 626 would fail real-estate, whose upstream asset
-  // has no larger version to fetch.
+  // `next/image` never upscales, so the widest variant a browser can receive is
+  // capped at the source width, and asking for a bigger file than exists simply
+  // returns the smaller one — silently. The department heroes are the
+  // full-bleed LCP element of their page and are held to 1600; the smaller
+  // corporate page heroes sit behind a narrower band and only need 1000.
   it("ships hero-sized, landscape images", () => {
     // The corporate backdrop is referenced by path from two pages rather than
     // from DEPARTMENTS, so it is checked explicitly instead of being missed.
@@ -104,11 +103,25 @@ describe("department hero images", () => {
       expect(
         width,
         `${path}: ${width}x${height} is too small for a full-bleed hero`,
-      ).toBeGreaterThanOrEqual(600);
+      ).toBeGreaterThanOrEqual(1000);
       expect(
         width,
         `${path}: ${width}x${height} is not landscape`,
       ).toBeGreaterThan(height);
+    }
+  });
+
+  it("ships full-bleed department heroes at a usable resolution", () => {
+    // These fill the viewport behind the page's copy, so a source below 1600 is
+    // visibly soft on a laptop. `real-estate-v2.jpg` shipped at 626px for this
+    // exact reason: the check above passed, and every visitor saw it stretched.
+    for (const department of DEPARTMENTS) {
+      const file = join(PUBLIC_DIR, department.heroImage);
+      const { width, height } = jpegDimensions(readFileSync(file));
+      expect(
+        width,
+        `${department.slug}: ${width}x${height} is too small for a full-bleed hero`,
+      ).toBeGreaterThanOrEqual(1600);
     }
   });
 });
