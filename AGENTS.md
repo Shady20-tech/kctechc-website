@@ -2500,6 +2500,108 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   simulated. Setting `RESEND_API_KEY` and `EMAIL_FROM` restores the original copy
   with no code change.
 
+### Marketplace search: two filters that looked wired but were not
+
+- **`locality` was parsed, carried in the URL, listed as an active filter — and
+  never sent to the RPC.** `parseListingFilters` read `?locality=`, the page put
+  it in `ListingQueryParams`, and `searchListingPage` simply never passed it:
+  `search_property_listings` has a `p_locality` parameter (an `ilike '%…%'`
+  match) that no caller set. The symptom is subtle because it looks like a
+  working filter: `?locality=Bonapriso` returned the unfiltered 50 rather than an
+  error or zero, and only comparing it against `?q=Bonapriso` (which did narrow,
+  via full-text search) showed the difference. When a filter is "supported" by
+  the RPC, grep the loader for the `p_<name>` key before trusting the UI.
+- **Amenities are matched with array containment (`p_amenities <@ p.amenities`),
+  so the stored values must be lowercase.** The seeded listings carried title
+  case (`"Air conditioning"`) while `parseAmenities` lowercases the query, so
+  every amenity filter returned zero. `ListingFilters.amenities` lowercases on
+  the way in; the *column* is what has to agree. Store amenities lowercase, or
+  normalise both sides in the RPC — do not lowercase only one end.
+- **`priority` on a card image is a CLS/LCP decision, not decoration.** The
+  insights grid rendered 40 covers with no `priority`, so the LCP image was
+  lazy-loaded and Lighthouse measured a 2.2s *load delay* on 7 images totalling
+  151 KB — the bytes were never the problem. `InsightCard` now takes
+  `priority`, and both the index and the category archive pass
+  `priority={index === 0}`. The listings grid already did this via
+  `priorityCount`. A large image count is not the same thing as a large payload;
+  check `network-requests` before optimising images that are already small.
+- **A filtered listings URL scores SEO 69 in Lighthouse and that is correct.**
+  `?type=sale&region=littoral` is served `noindex, nofollow, nocache` because
+  filter permutations are duplicate content, so `is-crawlable` fails and the
+  category drops. The canonical `/…/listings` is `index, follow` and scores 100.
+  Do not "fix" this by making filtered views indexable.
+
+### Marketplace search at 40,000 rows: five causes, not one
+
+`search_property_listings` measured 232 ms for a plain browse and 515-766 ms for a
+keyword on a 40,000-listing portfolio, with p95 at 6.7 s under 25 concurrent
+requests. Migration `20260101000076_search_index_alignment.sql` fixed it to 9 ms
+browse / 15-31 ms keyword. **Five independent causes, each of which alone was
+enough to force a full scan.** Fixing one and re-measuring would have shown a
+small gain and hidden the rest, so treat "the query is slow" as a list to check
+off, not a single bug.
+
+- **`SECURITY DEFINER` blocks inlining, so a `case when p_sort = ...` ORDER BY can
+  never use an index.** The planner sees an opaque expression, not a sort key, so
+  every sort materialises the whole result set. A `language sql` function cannot
+  avoid this; the body must be `plpgsql` assembling a statement per call so each
+  branch carries a *literal* ORDER BY. This is the only fix that works without
+  duplicating the whole function per sort.
+- **`cross join params` makes a predicate a Join Filter.** The keyword clause
+  `(params.q is null or ... or p.title %> $1)` references the CTE row, so it
+  cannot be pushed into an index scan: the table is scanned and the OR re-tested
+  per row. The `q is null or ...` guard is itself the problem — a static body
+  cannot avoid it, so the clause must be *absent* when no query was given.
+  Measured 470 ms -> 30 ms on its own.
+- **A partial index is only usable when the query predicate *implies* the index
+  predicate.** All four `*_visible_*` indexes were predicated on
+  `status = 'published'` while the function filters
+  `status = any('{published,under_offer,sold,rented}')`. That `any` does not
+  imply the single value, so the indexes existed and could never be chosen. The
+  same ORDER BY with `status = 'published'` used an index in 0.22 ms; with the
+  four-value set it seq-scanned in 28 ms. When adding a partial index, copy the
+  predicate from the query, not from the column's "usual" value.
+- **`desc` in an index means NULLS FIRST, but the queries ask for NULLS LAST.**
+  Postgres will not use an index whose null placement differs from the requested
+  order, so even with the predicate fixed the planner sorted. Every index now
+  spells out the exact ORDER BY tail (`published_at desc nulls last, reference
+  asc`). This one alone was 54 ms -> 9 ms. A `price_minor desc` sort likewise
+  cannot read a `price_minor asc` index, so descending price needs its own index
+  rather than relying on a backward scan.
+- **An inner join for a lookup column destroys index order.** `join public.regions
+  r on r.id = v.region_id` became a hash join over *every* matched row, so the
+  whole set was materialised before the LIMIT and the sort index was useless. A
+  correlated scalar subquery `(select r.slug from public.regions r where r.id =
+  v.region_id)` is evaluated for the 24 returned rows only. Safe here because
+  `region_id` is NOT NULL with a foreign key, so it returns exactly the join's row
+  — check that before applying the pattern.
+
+Verification method that made this trustworthy: keep the previous definition
+under a second name (`_ref_search_property_listings`) and compare the *full
+ordered row set and the row count as text* across a matrix of parameter
+combinations. 32 cases - every sort with and without a keyword, each filter in
+isolation, paging, French locale, upper-case and whitespace-only queries - all
+byte-identical. Comparing only `count(*)` would have missed the two real
+regressions this caught: a dropped `rank` tiebreaker on query paths, and
+`relevance` with no query falling through to the `newest` branch (which adds
+`is_featured` as a leading key the original did not have).
+
+- **`set_config('pg_trgm.word_similarity_threshold', ...)` in the body, not a
+  declarative `SET` clause.** A `SET` clause on the function fails with
+  "permission denied to set parameter" unless `pg_trgm` is already loaded in the
+  session; `set_config(..., true)` works inside a read-only transaction and is
+  scoped to the call.
+- **The residual cost is relevance ranking over a broad match, and it is
+  inherent.** `'spacious house'` matches 5,714 rows, so the 219 ms is sorting
+  them by `ts_rank` + `word_similarity`, not scanning. Narrow keywords are 15-31
+  ms. Hoisting the repeated `word_similarity` calls or replacing the score with a
+  boolean did not help (333-382 ms) — the per-row function calls are the cost.
+  Do not "optimise" this by dropping the rank from the sort; it changes the order.
+- **`rank` is 0.0 on every row when there is no keyword**, so `p_sort =>
+  'relevance'` must reduce to exactly the original `published_at, reference`
+  order — not to `newest`, which leads with `is_featured` and would reorder
+  featured listings to the top. This was a real parity bug caught by the harness.
+
 ### The self-publish hole: a column default is not a security boundary
 
 - **`listing_source` defaults to `admin`, and the review gate keyed only on
