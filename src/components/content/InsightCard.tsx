@@ -26,11 +26,18 @@ export function InsightCard({
   locale,
   t,
   categoryName,
+  priority = false,
 }: {
   article: LocalizedInsight;
   locale: Locale;
   t: Translator["t"];
   categoryName?: string;
+  /**
+   * Set on the first card of a listing. Its cover is the largest element above
+   * the fold, so lazy-loading it delays LCP until the browser has laid the grid
+   * out; every later card stays lazy.
+   */
+  priority?: boolean;
 }) {
   const href = `/${locale}${INSIGHTS_PATH}/${article.slug}`;
   const cover = contentMediaUrl(article.coverImagePath);
@@ -48,6 +55,7 @@ export function InsightCard({
             src={cover}
             alt=""
             fill
+            priority={priority}
             sizes="(min-width: 1024px) 26rem, (min-width: 640px) 45vw, 100vw"
             className="object-cover transition-soft hover:scale-[1.02]"
           />

@@ -336,13 +336,14 @@ export async function loadInsight(
   slug: string,
   locale: Locale,
 ): Promise<LocalizedInsight | null> {
-  const records = await loadInsightRecords({});
-  const record = records.find((entry) => entry.slug === slug);
+  const records = await loadInsightRecords({ slug });
+  const record = records[0];
   return record ? localizeInsight(record, locale) : null;
 }
 
 async function loadInsightRecords(options: {
   department?: DepartmentSlug;
+  slug?: string;
   limit?: number;
 }): Promise<readonly InsightRecord[]> {
   try {
@@ -369,6 +370,10 @@ async function loadInsightRecords(options: {
       .order("published_at", { ascending: false });
 
     if (departmentId) query = query.eq("department_id", departmentId);
+    // A detail lookup filters by slug in the database. Selecting the whole
+    // published set and searching it in TypeScript both reads every article body
+    // and silently misses anything past PostgREST's 1,000-row response cap.
+    if (options.slug) query = query.eq("slug", options.slug).limit(1);
     if (options.limit) query = query.limit(options.limit);
 
     const { data: rows, error } = await query;
