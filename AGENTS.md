@@ -2303,6 +2303,40 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
 
 ### Landlord and agent dashboards (Phase 3)
 
+- **A characteristic field is shown only when the property kind supports it, and a
+  field that already holds a value is always shown.** `src/lib/real-estate/field-relevance.ts`
+  is the single rule (`fieldRelevanceFor`, `shouldRenderField`, `asListingPropertyKind`),
+  read by both `DashboardListingForm` and the console's `ListingForm` so the two cannot
+  drift. Land and farm drop bedrooms, bathrooms, building area and year built; a
+  warehouse drops rooms; year built applies only to structures. The second half of the
+  rule is the one that is easy to omit: `shouldRenderField(relevant, existingValue)`
+  keeps a hidden field visible when it is populated, because otherwise switching a house
+  to land would hide the bedrooms the owner typed and the next save would drop them.
+- **None of these columns was ever required; the form implied they were.** Every one is
+  nullable, `listingInputSchema` accepts it blank, and the CHECK constraints only bound
+  the value when present. A land listing with no bedrooms, no building area and no
+  coordinates validated and inserted before this change. Verified against the live
+  database: the seeded land row has no bedrooms or building area, and all seven listings
+  had no coordinates. So this was presentation, not validation -- and a field that
+  *looks* mandatory on a plot invites an owner to invent a number to get past it.
+- **Coordinates are never hidden for any kind.** A surveyed plot may carry them and an
+  unsurveyed one legitimately may not, so the fields stay for every kind and are marked
+  optional with a hint instead. Do not "tidy" them into the land branch: that would
+  remove the only way to record a position for the properties that do have one.
+- **`DashboardListing.propertyKind` is typed `string`, not the enum**, so seeding form
+  state from it needs `asListingPropertyKind` rather than a cast. It maps an
+  unrecognised value to `""`, which `fieldRelevanceFor` treats as "show everything";
+  a cast would have let an unknown kind fall through to no branch and hide fields the
+  operator needs.
+- **The relevance rule is presentation, so the form is controlled on `propertyKind`.**
+  `useState` + `onChange` means the fields adapt the moment the owner picks "Land"
+  rather than only after a save. `DashboardListingForm.test.tsx` asserts the fields
+  actually disappear and reappear, because the failure mode is a form that computes
+  relevance and then renders every field anyway.
+- **There is no `furnished` column.** The brief lists furnished/unfurnished as a
+  possible characteristic "if the schema supports it"; it does not, so it was left out
+  rather than added. Do not add the field without the column.
+
 - **A dashboard is a _capability_ surface, not a role surface.** `/account/landlord` and
   `/account/agent` open for an approved `real_estate_memberships` row, never for a role and never
   for the `declared_account_type` a user picked at signup. `accessibleDashboards()` is the single
