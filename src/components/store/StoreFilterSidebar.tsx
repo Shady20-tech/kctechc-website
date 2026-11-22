@@ -182,7 +182,7 @@ export function StoreFilterSidebar({
       ) : null}
 
       <MarketplaceFilterSection title={t("store.filterAvailabilityHeading")}>
-        <label className="inline-flex items-start gap-2 text-sm text-body">
+        <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm text-body">
           <input
             type="checkbox"
             checked={filters.inStock === true}
@@ -191,7 +191,7 @@ export function StoreFilterSidebar({
                 inStock: event.currentTarget.checked || undefined,
               })
             }
-            className="mt-0.5 h-4 w-4 rounded border-border"
+            className="mt-0.5 h-6 w-6 shrink-0 rounded border-border"
           />
           <span>
             <span className="font-medium text-ink-900">

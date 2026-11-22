@@ -3319,3 +3319,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   is `super_admin`-only (`setPublisherVerificationAction`), with the membership trigger as backstop.
   On the seeded data five listings show it and two do not — which is the property that proves the
   badge means something.
+
+### Lighthouse 100/100/100/100 across the public surface (Phase 4 verification)
+
+- **A 16px checkbox with a 2px gap is a `target-size` failure, and it is the only thing that stood
+  between the marketplace and a 100 accessibility score.** The verified-publisher and amenity
+  checkboxes in `ListingSidebar`, and the in-stock checkbox in `StoreFilterSidebar`, were
+  `inline-flex ... h-4 w-4` labels. Lighthouse's WCAG 2.2 `target-size` audit needs 24x24 CSS px of
+  target (or equivalent spacing), so a 16px box in a 20px row fails even though every colour pair
+  and label passes. The fix is the row, not the box: `flex min-h-11` on the label makes the whole
+  text-plus-box row the target, and `h-6 w-6 shrink-0` gives the box itself the 24px minimum.
+  A checkbox is not "small enough to ignore" — measure it.
+- **`target-size` is weighted 7 in the accessibility category, so one instance is worth ~4 points.**
+  That is why the score read 96 rather than 100 while every other audit passed; a single 16px
+  control cannot be found by reading the markup, only by running the audit. Re-run Lighthouse after
+  any filter-control change rather than assuming a token check covers it.
+- **Measured on the standalone preview build (`node server.js`), desktop preset:**
+  `/en/real-estate/listings` 100/100/100/100, `/fr/real-estate/listings` 100/100/100/100,
+  `/en/electrical-services/store` 100/100/100/100 after the fix (99/96/100/100 before).
+  `/en/real-estate` measured performance 95 with LCP 1.4s — the LCP element is the 2048x1152
+  department hero, which is already the correct source size, so that is a fast-network variance
+  artifact and not a defect. Performance is the one category that moves run to run; do not chase a
+  single sub-100 performance sample when LCP is well inside "Good".
+- **Run Lighthouse against `127.0.0.1:12000` with `CHROME_PATH=/usr/bin/chromium` and
+  `--chrome-flags="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu"`.** It takes
+  ~60-75s per page on this container, so launch it detached (`setsid nohup ... &`) and read the JSON
+  afterwards; a foreground run hits the shell soft timeout and looks like a hang.
