@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { SectionBand } from "@/components/layout/PageShell";
 import { CartLines } from "@/components/store/CartLines";
 import { ButtonLink } from "@/components/ui/Button";
@@ -89,49 +90,113 @@ export default async function CartPage({
       </h2>
 
       {!cart || cart.lines.length === 0 ? (
-        <div className="mt-10 max-w-2xl">
-          <h3 className="text-xl font-semibold text-ink-900">
+        <div className="mt-10 rounded-panel border border-border bg-surface p-8 text-center shadow-card sm:p-14">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-control bg-surface-sunken text-muted">
+            <ShoppingBag aria-hidden="true" className="h-6 w-6" />
+          </span>
+          <h3 className="mt-5 text-xl font-semibold text-ink-900">
             {t("store.cart.emptyHeading")}
           </h3>
-          <p className="mt-3 text-base text-body">
+          <p className="mx-auto mt-3 max-w-md text-base text-body">
             {t("store.cart.emptyBody")}
           </p>
-          <p className="mt-6">
-            <ButtonLink href={`/${resolved}${storePath}`} variant="secondary">
+          <p className="mt-7">
+            <ButtonLink href={`/${resolved}${storePath}`} variant="primary">
               {t("store.cart.continueShopping")}
             </ButtonLink>
           </p>
+          <div className="mx-auto mt-10 max-w-md border-t border-border pt-6 text-left">
+            <h4 className="text-sm font-semibold text-ink-900">
+              {t("store.cart.browseHeading")}
+            </h4>
+            <p className="mt-1 text-sm text-body">
+              {t("store.cart.browseBody")}
+            </p>
+          </div>
         </div>
       ) : (
-        <div className="mt-10 grid gap-10 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
+          <div className="min-w-0">
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <h2 className="text-base font-semibold text-ink-900">
+                {t("store.cart.itemsLabel")}
+              </h2>
+              <p className="text-sm text-muted">
+                {cart.itemCount === 1
+                  ? t("store.cart.itemCountOne")
+                  : t("store.cart.itemCount", { count: cart.itemCount })}
+              </p>
+            </div>
             <CartLines cart={cart} locale={resolved} />
           </div>
 
           <aside
             aria-labelledby="cart-summary-heading"
-            className="lg:col-span-1"
+            className="min-w-0 lg:sticky lg:top-24"
           >
-            <div className="rounded-card border border-border bg-surface-alt p-6">
-              <h3
+            <div className="rounded-panel border border-border bg-surface p-6 shadow-card">
+              <h2
                 id="cart-summary-heading"
                 className="text-base font-semibold text-ink-900"
               >
-                {t("store.cart.subtotalLabel")}
-              </h3>
-              <p className="mt-3 font-display text-2xl font-bold text-ink-900">
-                {formatPrice(cart.subtotalMinor, cart.currency, resolved)}
-              </p>
-              <p className="mt-5">
+                {t("store.cart.summaryHeading")}
+              </h2>
+
+              <dl className="mt-5 space-y-3 border-b border-border pb-5 text-sm">
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-body">{t("store.cart.itemsLabel")}</dt>
+                  <dd className="font-medium text-ink-900">
+                    {cart.itemCount === 1
+                      ? t("store.cart.itemCountOne")
+                      : t("store.cart.itemCount", { count: cart.itemCount })}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-body">{t("store.cart.subtotalLabel")}</dt>
+                  <dd className="font-medium text-ink-900">
+                    {formatPrice(cart.subtotalMinor, cart.currency, resolved)}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-5 flex items-baseline justify-between gap-3">
+                <p className="text-base font-semibold text-ink-900">
+                  {t("store.cart.subtotalLabel")}
+                </p>
+                <p className="font-display text-2xl font-bold text-ink-900">
+                  {formatPrice(cart.subtotalMinor, cart.currency, resolved)}
+                </p>
+              </div>
+
+              <p className="mt-6">
                 <ButtonLink
                   href={`/${resolved}${storePath}/checkout`}
                   variant="primary"
+                  size="lg"
                   className="w-full"
                 >
                   {t("store.cart.checkout")}
                 </ButtonLink>
               </p>
-              <p className="mt-3 text-sm text-muted">
+
+              <ul className="mt-6 space-y-3 border-t border-border pt-5 text-sm text-body">
+                <li className="flex gap-2.5">
+                  <Truck
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-dept-accent"
+                  />
+                  <span>{t("store.cart.deliveryNote")}</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <ShieldCheck
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-dept-accent"
+                  />
+                  <span>{t("store.cart.secureNote")}</span>
+                </li>
+              </ul>
+
+              <p className="mt-5 text-xs leading-relaxed text-muted">
                 {t("store.cart.totalNote")}
               </p>
             </div>

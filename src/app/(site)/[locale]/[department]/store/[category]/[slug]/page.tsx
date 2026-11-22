@@ -5,7 +5,7 @@ import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { AddToCartButton } from "@/components/store/AddToCartButton";
 import { AvailabilityBadge } from "@/components/store/ProductCard";
-import { ProductGallery } from "@/components/store/ProductImageFrame";
+import { ProductGallery } from "@/components/store/ProductGallery";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { storePathFor } from "@/lib/config/navigation";
@@ -15,6 +15,7 @@ import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo/structured-data";
 import { localizeCategory } from "@/lib/store/defaults";
+import { descriptionBlocks } from "@/lib/store/description";
 import {
   loadCategoryRecord,
   loadProductBySlug,
@@ -285,13 +286,26 @@ export default async function ProductDetailPage({
             >
               {t("store.product.overviewHeading")}
             </h2>
-            {/* Plain text, rendered as paragraphs. The column is plain text in
-                the database, so rendering it as markup would be an injection
-                surface; whitespace is preserved without interpreting HTML. */}
+            {/* Plain text, rendered as paragraphs and bullet lists. The column is
+                plain text in the database, so rendering it as markup would be an
+                injection surface; the only structure recognised is a line that
+                starts with a dash or a list, and every item is escaped and
+                rendered as an element either way. */}
             <div className="mt-4 space-y-4 text-base leading-relaxed text-body">
-              {product.description.split(/\n{2,}/).map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
+              {descriptionBlocks(product.description).map((block, index) =>
+                block.kind === "list" ? (
+                  <ul
+                    key={index}
+                    className="list-disc space-y-1.5 pl-5 marker:text-dept-accent"
+                  >
+                    {block.items.map((item, itemIndex) => (
+                      <li key={itemIndex}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p key={index}>{block.text}</p>
+                ),
+              )}
             </div>
           </div>
         </SectionBand>

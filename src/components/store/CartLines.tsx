@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useTransition } from "react";
-import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -23,9 +23,12 @@ import { formatPrice } from "@/lib/store/types";
  * and the cart's ownership are decided on the server; this component only sends
  * an item id and a quantity.
  *
- * The quantity control is a plain number input inside a form. A stepper built
- * from buttons would need its own keyboard handling to be usable; the native
- * input already works with a keyboard, a screen reader and a numeric keypad.
+ * The quantity control is a native number input flanked by decrement/increment
+ * buttons. The input stays because it is what a screen reader, a keyboard and a
+ * numeric keypad already understand; the buttons are a convenience on top of it,
+ * not a replacement. Each button's accessible name includes the product, so a
+ * screen-reader user walking a list of identical "+" icons knows which line each
+ * one changes.
  *
  * When the recorded unit price differs from the product's current price, the
  * change is shown rather than applied silently: the customer was shown one price
@@ -50,104 +53,145 @@ export function CartLines({ cart, locale }: { cart: Cart; locale: Locale }) {
   };
 
   return (
-    <ul
-      aria-label={t("a11y.cartContents")}
-      className="divide-y divide-border border-y border-border"
-    >
+    <ul aria-label={t("a11y.cartContents")} className="space-y-4">
       {cart.lines.map((line) => {
         const src = line.imagePath;
         const priceChanged =
           line.currentPriceMinor !== null &&
           line.currentPriceMinor !== line.unitPriceMinor;
+        const maxQuantity = Math.max(1, Math.min(line.stock, 999));
 
         return (
           <li
             key={line.id}
-            className="grid gap-4 py-6 sm:grid-cols-[7rem_1fr_auto] sm:items-start"
+            className="rounded-card border border-border bg-surface p-4 shadow-card transition-soft hover:border-border-strong sm:p-5"
           >
-            <div className="overflow-hidden rounded-card border border-border bg-surface-sunken">
-              {src ? (
-                <Image
-                  src={src}
-                  alt=""
-                  width={200}
-                  height={200}
-                  sizes="112px"
-                  className="aspect-square w-full object-cover"
-                />
-              ) : (
-                <div aria-hidden="true" className="aspect-square w-full" />
-              )}
-            </div>
-
-            <div>
-              <Link
-                href={productPath(locale, line)}
-                className="text-base font-semibold text-ink-900 transition-soft hover:text-dept-accent"
-              >
-                {line.title}
-              </Link>
-              <p className="mt-1 text-sm text-muted">
-                {t("store.cart.unitPrice", {
-                  price: formatPrice(
-                    line.unitPriceMinor,
-                    line.currency,
-                    locale,
-                  ),
-                })}
-              </p>
-
-              {priceChanged && line.currentPriceMinor !== null ? (
-                <p className="mt-2 text-sm font-medium text-teal-700">
-                  {t("store.cart.lineTotal")}:{" "}
-                  {formatPrice(line.currentPriceMinor, line.currency, locale)}
-                </p>
-              ) : null}
-
-              <div className="mt-3 flex items-center gap-3">
-                <label
-                  htmlFor={`quantity-${line.id}`}
-                  className="text-sm text-body"
-                >
-                  {t("store.cart.quantityLabel")}
-                </label>
-                <input
-                  id={`quantity-${line.id}`}
-                  type="number"
-                  min={1}
-                  max={Math.max(1, Math.min(line.stock, 999))}
-                  defaultValue={line.quantity}
-                  disabled={pending}
-                  onChange={(event) => {
-                    const next = Number(event.currentTarget.value);
-                    if (Number.isFinite(next) && next >= 1) {
-                      onQuantityChange(line.id, next);
-                    }
-                  }}
-                  className="w-20 rounded-field border border-border-strong bg-surface px-3 py-1.5 text-sm text-ink-900 focus-visible:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col items-start gap-3 sm:items-end">
-              <p className="font-display text-base font-bold text-ink-900">
-                {formatPrice(
-                  line.unitPriceMinor * line.quantity,
-                  line.currency,
-                  locale,
+            <div className="flex gap-4">
+              <div className="shrink-0 overflow-hidden rounded-control border border-border bg-surface-sunken">
+                {src ? (
+                  <Image
+                    src={src}
+                    alt=""
+                    width={200}
+                    height={200}
+                    sizes="(max-width: 640px) 88px, 112px"
+                    className="aspect-square w-20 object-cover sm:w-28"
+                  />
+                ) : (
+                  <span className="flex aspect-square w-20 items-center justify-center text-muted sm:w-28">
+                    <ShoppingBag aria-hidden="true" className="h-6 w-6" />
+                  </span>
                 )}
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={pending}
-                aria-label={t("store.cart.removeLabel", { name: line.title })}
-                onClick={() => onRemove(line.id)}
-              >
-                <Trash2 aria-hidden="true" className="h-4 w-4" />
-                {t("store.cart.remove")}
-              </Button>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link
+                      href={productPath(locale, line)}
+                      className="block text-base font-semibold leading-snug text-ink-900 transition-soft hover:text-dept-accent"
+                    >
+                      {line.title}
+                    </Link>
+                    <p className="mt-1 text-sm text-muted">
+                      {t("store.cart.unitPrice", {
+                        price: formatPrice(
+                          line.unitPriceMinor,
+                          line.currency,
+                          locale,
+                        ),
+                      })}
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={pending}
+                    aria-label={t("store.cart.removeLabel", {
+                      name: line.title,
+                    })}
+                    onClick={() => onRemove(line.id)}
+                    className="h-11 w-11 shrink-0 text-muted hover:text-red-800"
+                  >
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {priceChanged && line.currentPriceMinor !== null ? (
+                  <p className="mt-2 inline-block rounded-field bg-surface-sunken px-2 py-1 text-xs font-medium text-teal-700">
+                    {t("store.cart.lineTotal")}:{" "}
+                    {formatPrice(line.currentPriceMinor, line.currency, locale)}
+                  </p>
+                ) : null}
+
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <label
+                      htmlFor={`quantity-${line.id}`}
+                      className="block text-xs font-medium uppercase tracking-wide text-muted"
+                    >
+                      {t("store.cart.quantityLabel")}
+                    </label>
+                    <div className="mt-1 inline-flex items-center rounded-control border border-border-strong bg-surface">
+                      <button
+                        type="button"
+                        disabled={pending || line.quantity <= 1}
+                        aria-label={t("store.cart.decreaseLabel", {
+                          name: line.title,
+                        })}
+                        onClick={() =>
+                          onQuantityChange(line.id, line.quantity - 1)
+                        }
+                        className="flex h-11 w-11 items-center justify-center rounded-l-control text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Minus aria-hidden="true" className="h-3.5 w-3.5" />
+                      </button>
+                      <input
+                        id={`quantity-${line.id}`}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={maxQuantity}
+                        defaultValue={line.quantity}
+                        disabled={pending}
+                        onChange={(event) => {
+                          const next = Number(event.currentTarget.value);
+                          if (Number.isFinite(next) && next >= 1) {
+                            onQuantityChange(
+                              line.id,
+                              Math.min(next, maxQuantity),
+                            );
+                          }
+                        }}
+                        className="h-11 w-12 border-x border-border-strong bg-transparent text-center text-base font-medium text-ink-900 focus-visible:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        disabled={pending || line.quantity >= maxQuantity}
+                        aria-label={t("store.cart.increaseLabel", {
+                          name: line.title,
+                        })}
+                        onClick={() =>
+                          onQuantityChange(line.id, line.quantity + 1)
+                        }
+                        className="flex h-11 w-11 items-center justify-center rounded-r-control text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="font-display text-lg font-bold text-ink-900">
+                    {formatPrice(
+                      line.unitPriceMinor * line.quantity,
+                      line.currency,
+                      locale,
+                    )}
+                  </p>
+                </div>
+              </div>
             </div>
           </li>
         );
