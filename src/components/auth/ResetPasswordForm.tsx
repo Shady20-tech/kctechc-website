@@ -9,10 +9,8 @@ import { TextField } from "@/components/ui/Form";
 import { resetPasswordAction } from "@/lib/auth/actions";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
-import {
-  RESET_PASSWORD_ERROR_KEYS,
-  type ResetPasswordState,
-} from "@/lib/validation/auth";
+import { RESET_PASSWORD_ERROR_KEYS } from "@/lib/validation/auth-error-keys";
+import type { ResetPasswordState } from "@/lib/validation/auth";
 
 const INITIAL_STATE: ResetPasswordState = { status: "idle" };
 

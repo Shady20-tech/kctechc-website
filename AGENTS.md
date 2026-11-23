@@ -3510,3 +3510,93 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   terminal, so the request appears to succeed. Confirm the port is free (`ss -ltn | grep 12000`) and
   read the server's log for `EADDRINUSE` before trusting a measurement. Bind the preview with
   `HOSTNAME=127.0.0.1`, or it listens on the container hostname and `localhost` connects to nothing.
+
+### Hero images on mobile, and the gallery/contact backdrops
+
+- **The mobile hero scrim was hiding every hero photograph.** Below `1024px` `.hero-scrim` was a
+  flat `0.88` ink overlay, so only **12%** of the photo reached the screen and each hero read as a
+  near-black band with text on it. The scrim exists to protect copy, but at that opacity it made the
+  image decorative-only. It is now `0.82 / 0.78 / 0.78 / 0.84`, which transmits **22%** — 1.83x more
+  — and still holds AA against a *pure-white* photo, the worst case a hero can carry. Measured on the
+  lightest stop: the `ink-300` meta label is the weakest pair at **4.83:1**, heading 6.97:1, body
+  7.05:1, eyebrow 6.14:1. **0.76 is the floor** — the meta label drops to 4.47:1 and fails.
+  `src/app/hero-scrim.test.ts` pins both halves (light enough to see, dark enough to read) and was
+  verified to fail when the old `0.88` was restored.
+- **One scrim change covers every hero**, because the corporate pages, the three departments and
+  real-estate all render their backdrop through `HeroMedia`. There is no per-page scrim to chase.
+- **Verify mobile hero visibility by measuring the band, not by looking at it.** Screenshot the hero
+  with the text elements set to `visibility: hidden` and assert the grayscale **stddev** and distinct
+  tone count: a blank band is flat (stddev near 0). All six heroes measured 12–104 stddev after the
+  change. A screenshot alone cannot distinguish "deliberately dark design" from "image not visible".
+- **Measure contrast from background pixels, not from glyphs.** Sampling inside a text element's own
+  rect catches anti-aliased edges and reports ~1:1 for everything. Hide the text first, then sample
+  the same rects. The live check across all six heroes gave a worst pair of **5.66:1** (electrical
+  services eyebrow/body), every other pair 6.7–12:1.
+- **The gallery and contact backdrops are business-supplied imgur images** (`upgJS6C` → gallery,
+  `yZ8xX50` → contact; the `TnNsOwC` alternative was rejected — it is a 2.81:1 banner with roughly a
+  third of the sharpness). **Both sources are only ~735px wide**, which is the documented
+  "736px thumbnail stretched full-bleed" trap: `next/image` never upscales, so a `w=3840` request
+  silently returns 735px and the hero looks soft. No larger original exists (`.png`, `_h`/`_l`
+  variants and the OG endpoint all resolve to the same 735px), so they are shipped as
+  `public/hero/gallery-v3.jpg` (1536×867) and `contact-v3.jpg` (1536×837), Lanczos-upscaled to clear
+  the 1000px floor `hero-images.test.ts` enforces. Replace them with genuinely larger originals
+  before launch; the upscale is a floor-clearing measure, not extra detail.
+- **Ship a new filename when swapping a hero.** `gallery-v2`/`contact-v2` were deleted and the config
+  points at `-v3`, so the image optimiser's `max-age` cannot serve the old bytes.
+
+### Zod in a Client Component trips the CSP eval check (`inspector-issues`)
+
+- **`/en/admin/sign-up` scored Best Practices 96 while sign-in scored 100, and the difference was an
+  import.** `SignUpForm` imported the runtime value `SIGN_UP_ERROR_KEYS` from
+  `src/lib/validation/auth.ts`, which imports `zod` for its schemas. `SignInForm` imported only
+  *types* from the same module, and types are erased, so no Zod reached its bundle.
+- **Zod 4 probes for JIT support with `Function("")` in a try/catch.** Under the site CSP
+  (`script-src 'self' 'unsafe-inline'`, deliberately no `unsafe-eval`) Chrome logs that as a
+  `ContentSecurityPolicyIssue` with violation type `kEvalViolation`, which Lighthouse reports through
+  `inspector-issues` with an **empty sub-item list** — the audit detail names nothing, so the console
+  and the report both look blank. Read the real cause from the DevTools `Audits` CDP domain
+  (`Audits.issueAdded`), not from the Lighthouse detail blob.
+- **The fix is the repo's existing leaf-module pattern.** The field→message-key maps moved to
+  `src/lib/validation/auth-error-keys.ts`, a module with **no imports of its own** — the same reason
+  `src/lib/uploads/limits.ts` exists. `validation/auth.ts` re-exports them so server-side importers
+  are unchanged; the three client forms import from the leaf. Verified by asserting the Zod chunk is
+  no longer requested on sign-up (it is not) rather than by grepping the chunk directory, since the
+  chunk still exists for other routes.
+- **`autocomplete="bday"` is rejected by Chrome on `<input type="date">`.** `bday` is the WHATWG token
+  for a complete birth date, but Chrome's audit wants the granular `bday-day` / `bday-month` /
+  `bday-year` tokens, which are wrong on a control capturing a whole date. It emitted
+  `FormInputHasWrongButWellIntendedAutocompleteValueError`, a second `inspector-issues` entry. The
+  attribute is now omitted (`type="date"` already gives the native picker), which is honest: it does
+  not claim a token the browser treats as invalid. Bisected by rendering candidate inputs on a blank
+  page and counting `Audits.issueAdded` events — `date+bday` = 2 issues, `date` alone = 0,
+  `date+bday-year` = 0.
+- **Both of these pre-existed the OAuth work.** Verified by stashing the branch, rebuilding from a
+  clean tree and reproducing the identical two issues on sign-up with **zero** OAuth buttons in the
+  markup — so they were not introduced by the social sign-in change, but they did block the "100%
+  everywhere" goal and are now fixed.
+
+### Auth-page Lighthouse scores: SEO 66 is correct
+
+- `/en/admin/login`, `/en/admin/sign-up` and `/en/account/*` are `noindex` by design, so Lighthouse
+  reports SEO **66** from the `is-crawlable` audit. That is the intended outcome for a private
+  surface, not a defect. Accessibility and Best Practices are 100.
+- **Best Practices on `/en/real-estate` is 96 in this container and it is environmental.** The
+  `errors-in-console` audit fails on `/_next/image?...127.0.0.1:54321/storage/...` 500s because no
+  local Supabase is running to serve the listing photography. The page itself returns 200 and the
+  listing data renders; only the images fail. Reproduce with the local stack up before treating it
+  as a code defect.
+- **Performance under default Lantern throttling is not trustworthy on this app.** The same pages
+  measured 78–93 with Lantern but **97–98** with `--throttling-method=devtools`. Use applied
+  throttling before chasing a simulated-LCP regression; this repo has hit it three times now.
+
+### A glob delete can take tracked config files with it
+
+- **`rm -f *.mjs` deleted `eslint.config.mjs` and `postcss.config.mjs`**, because the repo's
+  ESLint and PostCSS configs are `.mjs` files. They were restored with
+  `git checkout -- eslint.config.mjs postcss.config.mjs`, but the lesson is to name the scratch
+  files explicitly (`rm -f csp-probe.mjs ac-probe.mjs …`) or `git clean -n` first. A deletion
+  shows up as ` D` in `git status`, and a build run against the damaged tree fails ESLint and
+  PostCSS resolution — but a build *before* noticing reports success if the files were only needed
+  by the lint step.
+- **Never widen a cleanup glob in a repo whose configs share the scratch file's extension.** Check
+  `git ls-files '*.mjs'` before deleting by pattern.

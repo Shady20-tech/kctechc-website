@@ -2,6 +2,19 @@ import { z } from "zod";
 import { ACCOUNT_TYPES, accountTypeRequiresKyc, isOldEnoughToApply } from "@/lib/real-estate/kyc";
 import { emailSchema, safeRedirectPathSchema } from "./common";
 
+// The field-to-message-key maps live in a dependency-free module because the
+// auth forms are Client Components; importing them from here would pull Zod
+// into the browser bundle, where Zod's JIT probe (`Function("")`) trips the
+// CSP eval check. Re-exported so server-side importers keep their path.
+export {
+  OAUTH_ONBOARDING_ERROR_KEYS,
+  RESET_PASSWORD_ERROR_KEYS,
+  SIGN_UP_ERROR_KEYS,
+  type OAuthOnboardingFieldErrors,
+  type ResetPasswordFieldErrors,
+  type SignUpFieldErrors,
+} from "./auth-error-keys";
+
 /** Credentials accepted by the sign-in Server Action. */
 export const signInSchema = z.object({
   email: emailSchema,
@@ -143,25 +156,48 @@ export type SignUpState =
   | { status: "unconfigured" };
 
 /**
- * Maps a sign-up field to its message key. Kept beside the schema so a new field
- * cannot be added without a decision about how to explain it.
+ * The declarations an OAuth account still owes us.
+ *
+ * A social sign-in creates the account without asking anything: Supabase's
+ * `signInWithOAuth` accepts no metadata payload, so `handle_new_user` provisions
+ * the profile with `declared_account_type` null. This schema collects the two
+ * facts the password form already collects — the role the person is signing up as
+ * and their residency — so both paths end in the same place.
+ *
+ * Nothing here is an authorization input. The declaration is stored on the
+ * profile; only an approved KYC application grants a capability, exactly as for a
+ * password sign-up. There is deliberately no `role` field to post.
+ *
+ * `permanentResidency` is required here, unlike on the password form. The form
+ * asks it as an explicit yes/no and the onboarding step exists precisely to
+ * collect these answers, so "not stated" would mean the step did nothing.
  */
-export const SIGN_UP_ERROR_KEYS = {
-  fullName: "errFullName",
-  email: "errEmail",
-  password: "errPassword",
-  confirmPassword: "errConfirmPassword",
-  accountType: "errAccountType",
-  dateOfBirth: "errDateOfBirth",
-  phone: "errPhone",
-  permanentResidency: "errPermanentResidency",
-  acceptPrivacy: "errPrivacy",
-  form: "errorBody",
-} as const satisfies Record<string, string>;
+export const oauthOnboardingSchema = z.object({
+  accountType: z.enum(ACCOUNT_TYPES, { message: "invalidAccountType" }),
+  permanentResidency: z.enum(["true", "false"], {
+    message: "residencyRequired",
+  }),
+  // Optional because a social provider may not supply one, and the account page
+  // already collects it later. A blank string is "not given", not an error.
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || /^[0-9+ ()./-]{5,32}$/.test(value),
+      "invalidPhone",
+    )
+    .optional(),
+});
 
-export type SignUpFieldErrors = Partial<
-  Record<keyof typeof SIGN_UP_ERROR_KEYS, string>
->;
+export type OAuthOnboardingInput = z.infer<typeof oauthOnboardingSchema>;
+
+/** Outcome of completing the OAuth declarations. */
+export type OAuthOnboardingState =
+  | { status: "idle" }
+  | { status: "error"; errors: Record<string, string> }
+  | { status: "rate_limited" }
+  | { status: "unauthenticated" }
+  | { status: "unconfigured" };
 
 /** Forgot-password outcome. `sent` is returned whether or not the account exists. */
 export type ForgotPasswordState =
@@ -179,12 +215,3 @@ export type ResetPasswordState =
   | { status: "rate_limited" }
   | { status: "unconfigured" };
 
-export const RESET_PASSWORD_ERROR_KEYS = {
-  password: "errPassword",
-  confirmPassword: "errConfirmPassword",
-  form: "errorBody",
-} as const satisfies Record<string, string>;
-
-export type ResetPasswordFieldErrors = Partial<
-  Record<keyof typeof RESET_PASSWORD_ERROR_KEYS, string>
->;

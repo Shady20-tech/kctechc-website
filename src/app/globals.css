@@ -769,14 +769,26 @@
    occupies roughly 10%–90% of the hero. A rightward taper is the wrong shape
    for that: it leaves the ends of the wrapped lines over open photo. Layer the
    protection top-to-bottom instead, dead flat across the width, so it holds
-   wherever a line wraps. */
+   wherever a line wraps.
+
+   The flat alpha is a legibility *and* visibility decision. At 0.88 the photo
+   transmitted only 12%, so every hero read as a near-black band on a phone and
+   the image was effectively invisible. 0.78 transmits 22% — nearly double —
+   while still holding AA against a pure-white photo, the worst case a hero can
+   carry: the weakest pair (the `ink-300` meta label) measures 4.83:1, and the
+   heading 6.97:1, body 7.05:1, eyebrow 6.14:1. Do not go below 0.78 without
+   re-measuring: at 0.76 the meta label drops to 4.47:1 and fails.
+
+   The top stop stays slightly heavier than the middle because the breadcrumb
+   and eyebrow sit there at the smallest type sizes. */
 @media (max-width: 1023px) {
   .hero-scrim {
     background-image: linear-gradient(
       to bottom,
-      rgb(6 9 11 / 0.88),
-      rgb(6 9 11 / 0.88) 55%,
-      rgb(6 9 11 / 0.92)
+      rgb(6 9 11 / 0.82),
+      rgb(6 9 11 / 0.78) 40%,
+      rgb(6 9 11 / 0.78) 72%,
+      rgb(6 9 11 / 0.84)
     );
   }
 }
