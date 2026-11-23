@@ -52,14 +52,3 @@ export type ResetPasswordFieldErrors = Partial<
   Record<keyof typeof RESET_PASSWORD_ERROR_KEYS, string>
 >;
 
-/** Maps an OAuth onboarding field to its message key. */
-export const OAUTH_ONBOARDING_ERROR_KEYS = {
-  accountType: "errAccountType",
-  permanentResidency: "errPermanentResidency",
-  phone: "errPhone",
-  form: "errorBody",
-} as const satisfies Record<string, string>;
-
-export type OAuthOnboardingFieldErrors = Partial<
-  Record<keyof typeof OAUTH_ONBOARDING_ERROR_KEYS, string>
->;

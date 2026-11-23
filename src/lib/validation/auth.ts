@@ -7,10 +7,8 @@ import { emailSchema, safeRedirectPathSchema } from "./common";
 // into the browser bundle, where Zod's JIT probe (`Function("")`) trips the
 // CSP eval check. Re-exported so server-side importers keep their path.
 export {
-  OAUTH_ONBOARDING_ERROR_KEYS,
   RESET_PASSWORD_ERROR_KEYS,
   SIGN_UP_ERROR_KEYS,
-  type OAuthOnboardingFieldErrors,
   type ResetPasswordFieldErrors,
   type SignUpFieldErrors,
 } from "./auth-error-keys";
@@ -153,50 +151,6 @@ export type SignUpState =
   | { status: "check_email" }
   | { status: "created" }
   | { status: "rate_limited" }
-  | { status: "unconfigured" };
-
-/**
- * The declarations an OAuth account still owes us.
- *
- * A social sign-in creates the account without asking anything: Supabase's
- * `signInWithOAuth` accepts no metadata payload, so `handle_new_user` provisions
- * the profile with `declared_account_type` null. This schema collects the two
- * facts the password form already collects — the role the person is signing up as
- * and their residency — so both paths end in the same place.
- *
- * Nothing here is an authorization input. The declaration is stored on the
- * profile; only an approved KYC application grants a capability, exactly as for a
- * password sign-up. There is deliberately no `role` field to post.
- *
- * `permanentResidency` is required here, unlike on the password form. The form
- * asks it as an explicit yes/no and the onboarding step exists precisely to
- * collect these answers, so "not stated" would mean the step did nothing.
- */
-export const oauthOnboardingSchema = z.object({
-  accountType: z.enum(ACCOUNT_TYPES, { message: "invalidAccountType" }),
-  permanentResidency: z.enum(["true", "false"], {
-    message: "residencyRequired",
-  }),
-  // Optional because a social provider may not supply one, and the account page
-  // already collects it later. A blank string is "not given", not an error.
-  phone: z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === "" || /^[0-9+ ()./-]{5,32}$/.test(value),
-      "invalidPhone",
-    )
-    .optional(),
-});
-
-export type OAuthOnboardingInput = z.infer<typeof oauthOnboardingSchema>;
-
-/** Outcome of completing the OAuth declarations. */
-export type OAuthOnboardingState =
-  | { status: "idle" }
-  | { status: "error"; errors: Record<string, string> }
-  | { status: "rate_limited" }
-  | { status: "unauthenticated" }
   | { status: "unconfigured" };
 
 /** Forgot-password outcome. `sent` is returned whether or not the account exists. */

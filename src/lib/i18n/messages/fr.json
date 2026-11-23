@@ -321,21 +321,6 @@
       }
     },
     "accountDeleted": "Votre compte a été supprimé. Vous avez été déconnecté.",
-    "oauth": {
-      "google": "Google",
-      "facebook": "Facebook",
-      "apple": "Apple"
-    },
-    "oauthDivider": "ou utilisez votre adresse e-mail",
-    "oauthUnavailable": "Cette méthode de connexion n'est pas disponible pour le moment. Veuillez utiliser votre adresse e-mail.",
-    "oauthFailed": "Nous n'avons pas pu terminer cette connexion. Veuillez réessayer ou utiliser votre adresse e-mail.",
-    "onboardingEyebrow": "Dernière étape",
-    "onboardingHeading": "Dites-nous comment vous allez utiliser la plateforme",
-    "onboardingDescription": "Vous êtes connecté. Deux réponses rapides suffisent pour finaliser votre compte.",
-    "onboardingSubmit": "Terminer la configuration",
-    "onboardingSaving": "Enregistrement…",
-    "onboardingKycNote": "Les propriétaires et les agents doivent vérifier leur identité avant de publier un bien. Cela prend quelques minutes.",
-    "onboardingSessionMissing": "Votre session a expiré. Veuillez vous reconnecter pour finaliser votre compte.",
     "phoneOptionalHint": "Facultatif. Indiquez l'indicatif du pays, par exemple +237 679-202-265.",
     "invalidAccountType": "Choisissez un type de compte.",
     "residencyRequired": "Veuillez indiquer si vous êtes résident permanent de votre ville.",

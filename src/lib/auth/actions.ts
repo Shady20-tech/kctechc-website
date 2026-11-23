@@ -5,11 +5,6 @@ import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
 import { postSignInPathFor, recoveryRedirectUrlFor } from "@/lib/auth/redirects";
-import {
-  enabledOAuthProviders,
-  isOAuthProvider,
-  oauthCallbackUrl,
-} from "@/lib/auth/oauth";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
@@ -19,12 +14,10 @@ import {
   signUpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  oauthOnboardingSchema,
   type SignInState,
   type SignUpState,
   type ForgotPasswordState,
   type ResetPasswordState,
-  type OAuthOnboardingState,
 } from "@/lib/validation/auth";
 
 export type SignInActionState = SignInState;
@@ -409,158 +402,4 @@ export async function resetPasswordAction(
   });
 
   return { status: "updated" };
-}
-
-/**
- * Start a social sign-in.
- *
- * The provider is validated against the closed `OAUTH_PROVIDERS` list *and*
- * against the set this deployment has actually enabled. Both checks matter: the
- * first stops an arbitrary provider name reaching Supabase, the second stops a
- * button for an unconfigured provider being reachable by a crafted POST even
- * though it is not rendered.
- *
- * A Server Action rather than a client call to `supabase.auth.signInWithOAuth`,
- * because the allow-list decision must not live in the browser. `signInWithOAuth`
- * returns an authorization URL instead of navigating, so the redirect is issued
- * here and the browser follows it.
- *
- * The redirect carries the locale, so a French visitor comes back to French, and
- * lands on `/auth/callback`, which decides the destination once it can see
- * whether the account still owes us its declarations.
- */
-export async function signInWithOAuthProviderAction(
-  formData: FormData,
-): Promise<void> {
-  const requested = formData.get("provider");
-  const localeValue = formData.get("locale");
-
-  // Resolve the locale first: every failure below redirects back to the sign-in
-  // page, and a French visitor should not be bounced into the English one.
-  const safeLocale = localeValue === "fr" ? "fr" : "en";
-  const signInHref = `/${safeLocale}/admin/login`;
-
-  if (!isSupabaseConfigured()) {
-    redirect(`${signInHref}?reason=unconfigured`);
-  }
-
-  if (
-    !isOAuthProvider(requested) ||
-    !enabledOAuthProviders().includes(requested)
-  ) {
-    redirect(`${signInHref}?reason=oauth_unavailable`);
-  }
-
-  const requestHeaders = await headers();
-  const limit = checkRateLimit(clientKeyFrom(requestHeaders, "oauth"), {
-    limit: 20,
-    windowSeconds: 300,
-  });
-  if (!limit.allowed) {
-    redirect(`${signInHref}?reason=rate_limited`);
-  }
-
-  const supabase = await createClient();
-  if (!supabase) {
-    redirect(`${signInHref}?reason=unconfigured`);
-  }
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: requested,
-    options: {
-      redirectTo: oauthCallbackUrl(getSiteUrl(), safeLocale),
-      // Apple in particular only returns the person's name on the very first
-      // authorization, so the profile relies on Supabase storing it rather than
-      // asking again later.
-      skipBrowserRedirect: true,
-    },
-  });
-
-  if (error || !data.url) {
-    redirect(`${signInHref}?reason=oauth_failed`);
-  }
-
-  redirect(data.url);
-}
-
-/**
- * Complete the declarations an OAuth account still owes us.
- *
- * A social sign-in never asks for a role or a residency, because
- * `signInWithOAuth` accepts no metadata payload — `handle_new_user` provisions
- * the profile as `customer` with `declared_account_type` null. This writes those
- * two facts afterwards, so an OAuth account ends up indistinguishable from a
- * password account that answered the same questions.
- *
- * The write goes through the **session** client, so `profiles_update_own` is the
- * control: it pins `role` to its stored value, which is what keeps this from
- * becoming a privilege-escalation path. `declared_account_type` is a declaration
- * and no policy reads it as a permission; a landlord or agent still has to pass
- * KYC before publishing anything.
- *
- * A profile that has already declared is not overwritten: the redirect to the
- * account hub happens first, so a second submission cannot rewrite a declaration
- * a person made earlier.
- */
-export async function completeOAuthOnboardingAction(
-  _previous: OAuthOnboardingState,
-  formData: FormData,
-): Promise<OAuthOnboardingState> {
-  if (!isSupabaseConfigured()) return { status: "unconfigured" };
-
-  const requestHeaders = await headers();
-  const limit = checkRateLimit(clientKeyFrom(requestHeaders, "onboarding"), {
-    limit: 10,
-    windowSeconds: 900,
-  });
-  if (!limit.allowed) return { status: "rate_limited" };
-
-  const supabase = await createClient();
-  if (!supabase) return { status: "unconfigured" };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { status: "unauthenticated" };
-
-  const parsed = oauthOnboardingSchema.safeParse({
-    accountType: formData.get("accountType"),
-    permanentResidency: formData.get("permanentResidency"),
-    phone: formData.get("phone") ?? undefined,
-  });
-
-  if (!parsed.success) {
-    const errors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = (issue.path[0] as string) ?? "form";
-      if (!errors[key]) errors[key] = issue.message;
-    }
-    return { status: "error", errors };
-  }
-
-  const phone = parsed.data.phone?.trim() ? parsed.data.phone.trim() : null;
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      declared_account_type: parsed.data.accountType,
-      permanent_residency: parsed.data.permanentResidency === "true",
-      ...(phone ? { phone } : {}),
-    })
-    .eq("id", user.id);
-
-  if (error) {
-    return { status: "error", errors: { form: "write_failed" } };
-  }
-
-  await recordAudit({
-    actorId: user.id,
-    action: "profile_updated",
-    entityType: "auth",
-    entityId: user.id,
-    metadata: { source: "oauth_onboarding" },
-  });
-
-  const localeCookie = (await cookies()).get("kc_locale")?.value;
-  redirect(`/${localeCookie === "fr" ? "fr" : "en"}/account`);
 }
