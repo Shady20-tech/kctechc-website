@@ -9,6 +9,7 @@ import {
   formatArea,
 } from "@/components/real-estate/ListingCard";
 import { ListingGallery } from "@/components/real-estate/ListingGallery";
+import { VerifiedBadge } from "@/components/real-estate/VerifiedBadge";
 import { ListingInquiryForm } from "@/components/real-estate/ListingInquiryForm";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -192,6 +193,11 @@ export default async function PropertyListingPage({
               {record.regionName}
               {record.locality ? ` · ${record.locality}` : ""}
             </p>
+            {record.publisherVerified ? (
+              <div className="mt-3">
+                <VerifiedBadge t={t} />
+              </div>
+            ) : null}
             <h1
               id="listing-heading"
               className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { NAV_PATHS, buildPrimaryNav } from "@/lib/config/navigation";
+import {
+  FOOTER_PATHS,
+  LEGAL_PATHS,
+  NAV_PATHS,
+  buildPrimaryNav,
+} from "@/lib/config/navigation";
 import { createTranslator } from "@/lib/i18n/translator";
 import { DEPARTMENTS } from "@/lib/config/site";
 
@@ -89,6 +94,36 @@ describe("buildPrimaryNav", () => {
         expect(entry.label).not.toMatch(/^nav\./);
         expect(entry.label.length).toBeGreaterThan(0);
       }
+    }
+  });
+});
+
+describe("sitemap path constants", () => {
+  const SITEMAP_PATHS = new Set<string>([
+    ...NAV_PATHS,
+    ...LEGAL_PATHS,
+    ...FOOTER_PATHS,
+  ]);
+
+  it("lists every footer-linked path in the sitemap set", () => {
+    // `/reviews` shipped indexable but orphaned: nothing linked it and the sitemap
+    // did not list it, so a crawler could only reach it by guessing the URL. A
+    // footer-linked page has to be in one of these lists.
+    expect(SITEMAP_PATHS.has("/reviews")).toBe(true);
+  });
+
+  it("does not duplicate a path across the lists", () => {
+    const all = [...NAV_PATHS, ...LEGAL_PATHS, ...FOOTER_PATHS];
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it("keeps every footer path a locale-relative public path", () => {
+    for (const path of FOOTER_PATHS) {
+      // A locale prefix here would be listed once per locale by the sitemap and
+      // would never resolve on a language switch.
+      expect(path.startsWith("/")).toBe(true);
+      expect(path.startsWith("/en")).toBe(false);
+      expect(path.startsWith("/fr")).toBe(false);
     }
   });
 });

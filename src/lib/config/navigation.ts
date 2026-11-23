@@ -72,6 +72,16 @@ export const NAV_PATHS = [
 export const LEGAL_PATHS = ["/terms", "/privacy"] as const;
 
 /**
+ * Footer-linked public pages that are not legal documents.
+ *
+ * Customer reviews are a trust surface rather than a primary destination, so they
+ * sit in the footer's company column instead of the primary bar. Like the legal
+ * pages they are still public and indexable, so the sitemap lists them from here:
+ * a page is either linked and listed, or neither.
+ */
+export const FOOTER_PATHS = ["/reviews"] as const;
+
+/**
  * Translation key for the articles section label.
  *
  * Phase 2 rendered this entry as "Blog" at `/blog`; Phase 3 names the section
