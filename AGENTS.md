@@ -3600,3 +3600,61 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   by the lint step.
 - **Never widen a cleanup glob in a repo whose configs share the scratch file's extension.** Check
   `git ls-files '*.mjs'` before deleting by pattern.
+
+### The searchable taxonomy: a category word is not in the search vector
+
+- **`property_listings.search_vector` was generated from `title`, `description`,
+  `locality` and `highlights` only.** The three columns that *classify* a listing -
+  `property_kind`, `listing_type`, `property_type` - were in no search path at all:
+  not the vector, not the trigram arms (title and locality only), not
+  `locality ilike`. So the taxonomy was unfilterable by keyword, and a visitor who
+  typed "land" was told "No properties match your filters" while browsing listed
+  land. A listing titled "Titled plot in Buea" with `property_kind = 'land'` was
+  unreachable by a search for "land" - the advert's *wording* was searchable and
+  its *category* was not.
+- **A marketplace search is used in nouns, not in column values.** Nobody types
+  `property_kind = 'land'`; they type "land", "plot", "terrain", "parcel". A
+  full-text search built only over prose silently requires the visitor to guess the
+  wording of the advert. When a filter exists as a column, ask whether the same
+  word reaches it through search - the two are separate code paths and only one of
+  them is usually tested.
+- **Migration `20260101000080_searchable_taxonomy.sql` fixes it in two additive
+  ways**, and both are needed:
+  1. the generated vector now includes the three taxonomy columns, with
+     `replace(col::text, '_', ' ')` so `short_term` is searchable as "short term"
+     (a vector holding `short_term` does not match
+     `websearch_to_tsquery('english', 'short term')`);
+  2. a synonym arm for the words that are not the stored enum value - "plot",
+     "parcel", "terrain", "parcelle" for land, "maison" for house, "flat" for
+     apartment, "for rent"/"a louer" for the listing type. French is carried
+     explicitly because `property_kind` is an enum with no translation overlay to
+     search, and `lower()` does not strip accents, so accented forms are listed
+     separately rather than depending on `unaccent` (an optional extension whose
+     absence would break the function).
+- **The synonym lookup is two scalar subqueries on `params`, never a
+  `cross join`.** Migration 77 measured a `cross join params` in the keyword
+  predicate at 470 ms vs 30 ms, because it turns the keyword OR into an
+  un-indexable Join Filter and defeats the FTS and trigram indexes on the exact
+  path they exist for. A joined CTE is the natural way to write this and the wrong
+  one.
+- **Whole-phrase comparison, not substring.** `lower(btrim($1))` is compared with
+  `=`, so "land" resolves and "island" does not, and a multi-word query like
+  "land buea" keeps its text search instead of silently becoming a category filter
+  that ignores "buea". A substring match here would make every search containing a
+  category word *as a substring* return that whole category.
+- **`drop column search_vector` cascades to `property_listings_search_idx`.** A
+  generated column cannot be altered in place, so the migration drops and re-adds
+  it - and must recreate the GIN index, or every keyword search becomes a scan.
+  Check `pg_index`/`pg_constraint` for dependents before dropping a generated
+  column; here no view, constraint or other index referenced it.
+- **The synonym list is inline in the function, not a table or a helper
+  function.** It is product vocabulary that must be reviewable in a diff, it needs
+  no index, and a new helper function would have to be classified in the Phase 12
+  EXECUTE allow-list (`30_function_execute_hardening.sql` asserts the subset
+  property, so an unclassified function fails the harness).
+- **`src/lib/real-estate/searchable-taxonomy.test.ts` asserts the migration's
+  shape; `supabase/validate/160_searchable_taxonomy_behaviour.sql` asserts the
+  behaviour** by calling the RPC as `anon` against a real database - including that
+  a draft of the same kind stays invisible, and that a description-only word still
+  matches. Both are needed: the text test cannot execute SQL, and the harness
+  cannot run in CI without a database.
