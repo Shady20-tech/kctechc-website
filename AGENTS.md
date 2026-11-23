@@ -3474,3 +3474,39 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `--chrome-flags="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu"`.** It takes
   ~60-75s per page on this container, so launch it detached (`setsid nohup ... &`) and read the JSON
   afterwards; a foreground run hits the shell soft timeout and looks like a hang.
+
+### An unreachable database cost 7s per page, and it was supabase-js retrying
+
+- **`supabase-js` retries a failed request three times with 1s/2s/4s exponential backoff, and that
+  backoff — not a hung connection — is what made every database-backed page slow.** Measured on the
+  standalone preview with the local Supabase stack down: `/en/real-estate/listings` TTFB 7.06s and
+  `/en/digital-marketing/store` 14.05s. Both numbers are the backoff, not the query: a page doing one
+  round trip pays 1+2+4 = 7s, a page doing two pays it twice. A bare `fetch` to the same host fails in
+  38ms with `ECONNREFUSED`, which is why "the database is unreachable" looked like it should be fast.
+- **`db: { retry: false }` is the fix; an `AbortSignal` alone does not help.** Each retry attempt
+  fails instantly on `ECONNREFUSED`, so nothing ever reaches a timeout — the time is spent sleeping
+  between attempts. Reproduced in isolation: one query took **7033ms with `db.retry` on and 1ms with
+  it off**. A signal is still worth having for the *other* failure mode (a blackholed IP or stalled
+  TLS handshake, which hangs rather than refusing), so both live in
+  `SUPABASE_CLIENT_OPTIONS` in `src/lib/supabase/fetch-options.ts` and are spread into the public,
+  cookie-bound and service-role clients.
+- **The option is `global.fetch`, not a top-level `fetch`.** A top-level `fetch` key typechecks and
+  is silently ignored by `createClient`, so the bound looked wired while doing nothing. This is why
+  `public.test.ts` asserts the *behaviour* — attempt count is 1 and elapsed is under a second against
+  a dead port — rather than the presence of an option.
+- **Fail-fast is correct here only because every caller already degrades.** The content and
+  real-estate loaders return a bundled fallback or an empty list, the listings page renders its
+  honest "no properties published yet" state, and Server Actions surface a retryable error. Verify
+  that before disabling retries on a client whose caller assumes success: with the stack down the
+  listings page still returns 200 with the filter sidebar, canonical, breadcrumbs and empty state
+  intact, rather than a 500.
+- **The symptom was invisible to the test suite, because tests mock the database.** Nothing in
+  Vitest exercises a real socket. It only appears when a page is requested against a dead or
+  partitioned database, which is exactly the production incident this guards against. Timing a page
+  with the database stopped is the check; do it before blaming the framework or the query.
+- **A `next-server` process survives `pkill -f server.js`, and a stale one silently serves the old
+  build.** Several measurements during this investigation were of a previous build because the port
+  was still held; the server also logs `EADDRINUSE` into its own log file rather than to the
+  terminal, so the request appears to succeed. Confirm the port is free (`ss -ltn | grep 12000`) and
+  read the server's log for `EADDRINUSE` before trusting a measurement. Bind the preview with
+  `HOSTNAME=127.0.0.1`, or it listens on the container hostname and `localhost` connects to nothing.

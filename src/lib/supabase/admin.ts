@@ -3,6 +3,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/config/env";
 import { serverEnv } from "@/lib/config/server-env";
+import { SUPABASE_CLIENT_OPTIONS } from "@/lib/supabase/fetch-options";
 import type { Database } from "@/lib/db/database.types";
 
 /**
@@ -17,6 +18,9 @@ export function createAdminClient() {
   return createSupabaseClient<Database>(
     config.url,
     serverEnv.supabaseServiceRoleKey,
-    { auth: { persistSession: false, autoRefreshToken: false } },
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      ...SUPABASE_CLIENT_OPTIONS,
+    },
   );
 }

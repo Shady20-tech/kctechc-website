@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/config/env";
+import { SUPABASE_CLIENT_OPTIONS } from "@/lib/supabase/fetch-options";
 import type { Database } from "@/lib/db/database.types";
 
 /**
@@ -22,11 +23,13 @@ import type { Database } from "@/lib/db/database.types";
  * Callers that genuinely need the signed-in user's identity — auth guards,
  * admin-only reads — must keep using `server.ts`.
  */
+
 export function createPublicClient() {
   const config = getSupabaseConfig();
   if (!config) return null;
 
   return createSupabaseClient<Database>(config.url, config.key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    ...SUPABASE_CLIENT_OPTIONS,
   });
 }
