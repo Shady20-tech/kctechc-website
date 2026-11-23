@@ -192,7 +192,6 @@ export default async function ProductDetailPage({
           locale: resolved,
           sku: product.sku,
           brand: product.brand,
-          gtin: product.gtin,
           priceMinor: product.priceMinor,
           currency: product.currency,
           availability: product.availability,
@@ -364,16 +363,14 @@ export default async function ProductDetailPage({
                 </dd>
               </div>
             ) : null}
-            {product.gtin ? (
-              <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-ink-900">
-                  {t("store.product.gtinLabel")}
-                </dt>
-                <dd className="text-sm text-body sm:col-span-2">
-                  {product.gtin}
-                </dd>
-              </div>
-            ) : null}
+            <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+              <dt className="text-sm font-medium text-ink-900">
+                {t("store.product.referenceLabel")}
+              </dt>
+              <dd className="font-mono text-sm text-body sm:col-span-2">
+                {product.productReference}
+              </dd>
+            </div>
             <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
               <dt className="text-sm font-medium text-ink-900">
                 {t("store.product.conditionLabel")}

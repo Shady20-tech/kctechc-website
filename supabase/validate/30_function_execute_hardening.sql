@@ -50,9 +50,9 @@ declare
     'is_admin', 'is_super_admin', 'is_real_estate_admin', 'is_inquiry_manager',
     'current_user_role', 'current_agent_id', 'can_access_department',
     'is_department_editor',
-    'current_user_has_membership',
+    'current_user_has_membership', 'is_review_moderator',
     'inquiry_is_for_agent_listing',
-    'gtin_is_valid', 'generate_listing_reference', 'publish_state_is_consistent',
+    'generate_listing_reference', 'publish_state_is_consistent',
     'immutable_array_to_string',
     'set_listing_private_details', 'set_listing_localized_slug',
     'review_listing_submission',
@@ -151,8 +151,11 @@ begin
     if not has_function_privilege(v_role, 'public.is_admin()', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute is_admin (RLS policies would fail)', v_role;
     end if;
-    if not has_function_privilege(v_role, 'public.gtin_is_valid(text)', 'EXECUTE') then
-      raise exception 'VALIDATION FAIL: % cannot execute gtin_is_valid (product writes would fail the CHECK)', v_role;
+    -- Products are written with the service-role client, so the reference
+    -- default never runs as a browser key. The generator must therefore NOT be
+    -- reachable by one.
+    if has_function_privilege(v_role, 'public.generate_product_reference()', 'EXECUTE') then
+      raise exception 'VALIDATION FAIL: % can execute generate_product_reference (should be service-role only)', v_role;
     end if;
     if not has_function_privilege(v_role, 'public.generate_listing_reference()', 'EXECUTE') then
       raise exception 'VALIDATION FAIL: % cannot execute generate_listing_reference (property writes would fail the default)', v_role;

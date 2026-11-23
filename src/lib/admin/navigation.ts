@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingCart,
+  Star,
   Users,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ import {
   isRealEstateStaffRole,
   type AppRole,
 } from "@/lib/auth/roles";
+import { REVIEW_MODERATOR_ROLES } from "@/lib/reviews/types";
 
 /**
  * The admin navigation model.
@@ -73,6 +75,7 @@ export const ADMIN_NAV_ICON_KEYS = [
   "kyc",
   "import",
   "content",
+  "reviews",
   "users",
   "logs",
   "settings",
@@ -114,6 +117,8 @@ const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
 const realEstateStaff = (role: AppRole) => isRealEstateStaffRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
 const departmentEditor = (role: AppRole) => isDepartmentEditorRole(role);
+const reviewModerator = (role: AppRole) =>
+  REVIEW_MODERATOR_ROLES.includes(role as never);
 
 export const ADMIN_NAV: readonly AdminNavSection[] = [
   {
@@ -266,6 +271,13 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "content",
         icon: FileText,
         canSee: departmentEditor,
+      },
+      {
+        href: "/admin/reviews",
+        labelKey: "reviews",
+        iconKey: "reviews",
+        icon: Star,
+        canSee: reviewModerator,
       },
       { href: "/admin/users", labelKey: "users", iconKey: "users", icon: Users, canSee: superOnly },
     ],

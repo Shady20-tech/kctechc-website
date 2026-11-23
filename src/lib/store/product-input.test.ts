@@ -12,7 +12,6 @@ const VALID = {
   shortDescription: "A lightweight business laptop for the field.",
   description: "A full description of the machine and its warranty terms.",
   brand: "Lenovo",
-  gtin: "1234567890123",
   priceMinor: 850000,
   stock: 4,
   seoTitle: "",
@@ -90,38 +89,15 @@ describe("productInputSchema", () => {
     }
   });
 
-  it("accepts the GTIN lengths the standard allows", () => {
-    for (const gtin of [
-      "12345678",
-      "123456789012",
-      "1234567890123",
-      "12345678901234",
-    ]) {
-      expect(
-        productInputSchema.safeParse({ ...VALID, gtin }).success,
-        gtin,
-      ).toBe(true);
-    }
-  });
-
-  it("rejects a GTIN of the wrong length", () => {
-    for (const gtin of ["1234", "123456789", "123456789012345"]) {
-      expect(
-        productInputSchema.safeParse({ ...VALID, gtin }).success,
-        gtin,
-      ).toBe(false);
-    }
-  });
-
-  it("rejects a GTIN containing letters", () => {
-    expect(
-      productInputSchema.safeParse({ ...VALID, gtin: "1234567890ABC" }).success,
-    ).toBe(false);
-  });
-
-  it("treats an empty GTIN as absent", () => {
-    const result = productInputSchema.safeParse({ ...VALID, gtin: "" });
+  it("ignores a GTIN sent by an old form", () => {
+    // The field is gone from the schema and the column is dropped, so a cached
+    // form that still posts one must not fail validation or reach the database.
+    const result = productInputSchema.safeParse({
+      ...VALID,
+      gtin: "1234567890123",
+    });
     expect(result.success).toBe(true);
+    expect(result.success && "gtin" in result.data).toBe(false);
   });
 
   it("trims whitespace around text fields", () => {

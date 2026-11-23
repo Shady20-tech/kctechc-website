@@ -2083,9 +2083,9 @@ export type Database = {
           created_at: string;
           currency: string;
           description: string;
-          gtin: string | null;
           id: string;
           price_minor: number;
+          product_reference: string;
           publish_state: Database["public"]["Enums"]["publish_state"];
           published_at: string | null;
           short_description: string;
@@ -2107,9 +2107,9 @@ export type Database = {
           created_at?: string;
           currency?: string;
           description: string;
-          gtin?: string | null;
           id?: string;
           price_minor: number;
+          product_reference?: string;
           publish_state?: Database["public"]["Enums"]["publish_state"];
           published_at?: string | null;
           short_description: string;
@@ -2131,9 +2131,9 @@ export type Database = {
           created_at?: string;
           currency?: string;
           description?: string;
-          gtin?: string | null;
           id?: string;
           price_minor?: number;
+          product_reference?: string;
           publish_state?: Database["public"]["Enums"]["publish_state"];
           published_at?: string | null;
           short_description?: string;
@@ -2473,6 +2473,63 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      reviews: {
+        Row: {
+          author_id: string | null;
+          author_name: string;
+          author_role_label: string | null;
+          body: string;
+          created_at: string;
+          department_slug: string | null;
+          id: string;
+          publish_consent: boolean;
+          rating: number;
+          review_notes: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          source_hash: string | null;
+          status: Database["public"]["Enums"]["submission_status"];
+          title: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          author_id?: string | null;
+          author_name: string;
+          author_role_label?: string | null;
+          body: string;
+          created_at?: string;
+          department_slug?: string | null;
+          id?: string;
+          publish_consent?: boolean;
+          rating: number;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_hash?: string | null;
+          status?: Database["public"]["Enums"]["submission_status"];
+          title?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          author_id?: string | null;
+          author_name?: string;
+          author_role_label?: string | null;
+          body?: string;
+          created_at?: string;
+          department_slug?: string | null;
+          id?: string;
+          publish_consent?: boolean;
+          rating?: number;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_hash?: string | null;
+          status?: Database["public"]["Enums"]["submission_status"];
+          title?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       real_estate_memberships: {
         Row: {
@@ -3556,7 +3613,14 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
-      gtin_is_valid: { Args: { value: string }; Returns: boolean };
+      is_review_moderator: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      generate_product_reference: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
       immutable_array_to_string: { Args: { arr: string[] }; Returns: string };
       import_administrative_divisions: {
         Args: { p_divisions: Json; p_region_code: string };

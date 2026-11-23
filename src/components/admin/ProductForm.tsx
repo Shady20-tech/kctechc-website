@@ -22,7 +22,8 @@ export type ProductFormInitial = {
   shortDescription: string;
   description: string;
   brand: string;
-  gtin: string;
+  /** Database-issued, read-only. Present only when editing an existing row. */
+  productReference?: string;
   priceMinor: number;
   stock: number;
   departmentSlug: string;
@@ -265,16 +266,21 @@ export function ProductForm({
           label={t("admin.store.fieldBrand")}
           error={fields?.brand}
         />
-        <TextField
-          id="gtin"
-          defaultValue={initial?.gtin ?? ""}
-          name="gtin"
-          label={t("admin.store.fieldGtin")}
-          hint={t("admin.store.fieldGtinHint")}
-          inputMode="numeric"
-          error={fields?.gtin}
-        />
       </div>
+
+      {initial?.productReference ? (
+        <div className="rounded-field border border-border bg-surface-alt px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("admin.store.fieldProductReference")}
+          </p>
+          <p className="mt-1 font-mono text-sm text-ink-900">
+            {initial.productReference}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            {t("admin.store.fieldProductReferenceHint")}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2">
         <TextField

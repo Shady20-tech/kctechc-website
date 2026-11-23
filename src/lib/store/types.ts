@@ -73,8 +73,9 @@ export type ProductRecord = {
   /** Canonical (source-locale) slug. */
   slug: string;
   sku: string;
+  /** Database-issued public reference (KC-PR-000042). Never editor-entered. */
+  productReference: string;
   brand?: string;
-  gtin?: string;
 
   title: string;
   shortDescription: string;
@@ -105,8 +106,8 @@ export type LocalizedProduct = {
   departmentSlug: string;
   slug: string;
   sku: string;
+  productReference: string;
   brand?: string;
-  gtin?: string;
   title: string;
   shortDescription: string;
   description: string;

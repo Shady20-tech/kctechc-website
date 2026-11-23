@@ -25,44 +25,61 @@ from public.departments where slug = 'digital-marketing'
 on conflict (slug) do nothing;
 
 -- -----------------------------------------------------------------------------
--- 1. GTIN validation: a valid GTIN-13 is accepted, an invalid check digit is not.
+-- 1. The product reference is issued by the database, never typed.
 -- -----------------------------------------------------------------------------
 do $$
+declare
+  v_ref text;
 begin
-  if not public.gtin_is_valid('4006381333931') then
-    raise exception 'VALIDATION FAIL: a correct GTIN-13 was rejected';
+  v_ref := public.generate_product_reference();
+  if v_ref !~ '^KC-PR-[0-9]{6}$' then
+    raise exception 'VALIDATION FAIL: product reference has the wrong shape (%)', v_ref;
   end if;
-  if public.gtin_is_valid('4006381333932') then
-    raise exception 'VALIDATION FAIL: a bad GTIN check digit was accepted';
-  end if;
-  if public.gtin_is_valid('12345') then
-    raise exception 'VALIDATION FAIL: an over-short GTIN was accepted';
-  end if;
-  if not public.gtin_is_valid(null) then
-    raise exception 'VALIDATION FAIL: a null GTIN must be allowed';
-  end if;
-  raise notice 'PASS  gtin_is_valid';
+  raise notice 'PASS  generate_product_reference';
 end
 $$;
 
 -- -----------------------------------------------------------------------------
--- 2. A product cannot be created with a malformed GTIN.
+-- 2. A product inserted without a reference gets one, and the column is NOT NULL.
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  v_ref text;
+begin
+  insert into public.products (
+    category_id, slug, sku, title, short_description, description, price_minor
+  )
+  select id, 'ref-auto-product', 'SKU-REF-AUTO', 'Ref product', 'short', 'long', 1000
+  from public.product_categories where slug = 'laptops'
+  returning product_reference into v_ref;
+
+  if v_ref is null or v_ref !~ '^KC-PR-[0-9]{6}$' then
+    raise exception 'VALIDATION FAIL: no reference was generated on insert (got %)', v_ref;
+  end if;
+  raise notice 'PASS  reference generated on insert';
+
+  delete from public.products where slug = 'ref-auto-product';
+end
+$$;
+
+-- -----------------------------------------------------------------------------
+-- 2b. The GTIN path is gone.
 -- -----------------------------------------------------------------------------
 do $$
 begin
-  begin
-    insert into public.products (
-      category_id, slug, sku, title, short_description, description,
-      price_minor, gtin
-    )
-    select id, 'bad-gtin-product', 'SKU-BADGTIN', 'Bad GTIN', 'short', 'long', 1000,
-           '4006381333932'
-    from public.product_categories where slug = 'laptops';
-    raise exception 'VALIDATION FAIL: a malformed GTIN was stored';
-  exception
-    when check_violation then
-      raise notice 'PASS  malformed GTIN rejected';
-  end;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'products' and column_name = 'gtin'
+  ) then
+    raise exception 'VALIDATION FAIL: gtin column still exists';
+  end if;
+  if exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'gtin_is_valid'
+  ) then
+    raise exception 'VALIDATION FAIL: gtin_is_valid still exists';
+  end if;
+  raise notice 'PASS  gtin removed';
 end
 $$;
 

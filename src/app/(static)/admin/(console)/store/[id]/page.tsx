@@ -203,7 +203,7 @@ export default async function AdminProductPage({
               shortDescription: product.shortDescription,
               description: product.description,
               brand: product.brand,
-              gtin: product.gtin,
+              productReference: product.productReference,
               priceMinor: product.priceMinor,
               stock: product.stock,
               departmentSlug: product.departmentSlug,
