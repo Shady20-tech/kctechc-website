@@ -320,7 +320,26 @@
         "body": "Act for property owners and manage listings on their behalf. Requires identity verification."
       }
     },
-    "accountDeleted": "Your account has been deleted. You have been signed out."
+    "accountDeleted": "Your account has been deleted. You have been signed out.",
+    "oauth": {
+      "google": "Google",
+      "facebook": "Facebook",
+      "apple": "Apple"
+    },
+    "oauthDivider": "or use your email",
+    "oauthUnavailable": "That sign-in method is not available right now. Please use your email address.",
+    "oauthFailed": "We could not complete that sign-in. Please try again, or use your email address.",
+    "onboardingEyebrow": "One last step",
+    "onboardingHeading": "Tell us how you will use the marketplace",
+    "onboardingDescription": "You are signed in. Two quick answers finish setting up your account.",
+    "onboardingSubmit": "Finish setting up",
+    "onboardingSaving": "Saving…",
+    "onboardingKycNote": "Landlords and agents must complete identity verification before publishing a property. This takes a few minutes.",
+    "onboardingSessionMissing": "Your session has ended. Please sign in again to finish setting up your account.",
+    "phoneOptionalHint": "Optional. Include the country code, for example +237 679-202-265.",
+    "invalidAccountType": "Choose an account type.",
+    "residencyRequired": "Please tell us whether you are a permanent resident.",
+    "write_failed": "We could not save your answers. Please try again."
   },
   "admin": {
     "metaTitle": "Admin",

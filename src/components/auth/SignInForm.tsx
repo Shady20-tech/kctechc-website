@@ -98,6 +98,9 @@ export function SignInForm({
   const t = createTranslator(locale).t;
   const [state, formAction] = useActionState(signInAction, INITIAL_STATE);
 
+  // A reason the callback or an OAuth attempt put on the URL. Each maps to an
+  // explanation of what happened and what the visitor can do instead; an unknown
+  // value renders nothing rather than an empty notice.
   const reasonNotice =
     initialReason === "link_expired"
       ? t("auth.linkExpired")
@@ -105,7 +108,11 @@ export function SignInForm({
         ? t("auth.notConfiguredBody")
         : initialReason === "deleted"
           ? t("auth.accountDeleted")
-          : null;
+          : initialReason === "oauth_unavailable"
+            ? t("auth.oauthUnavailable")
+            : initialReason === "oauth_failed"
+              ? t("auth.oauthFailed")
+              : null;
 
   return (
     <form action={formAction} className="space-y-4" noValidate>

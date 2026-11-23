@@ -181,11 +181,11 @@ export const CORPORATE_PAGE_HEROES: readonly CorporatePageHero[] = [
   },
   {
     page: "gallery",
-    image: "/hero/gallery-v2.jpg",
+    image: "/hero/gallery-v3.jpg",
   },
   {
     page: "contact",
-    image: "/hero/contact-v2.jpg",
+    image: "/hero/contact-v3.jpg",
   },
 ] as const;
 
