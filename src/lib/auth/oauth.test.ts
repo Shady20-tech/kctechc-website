@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,6 +9,10 @@ import {
   isOAuthProvider,
   oauthCallbackUrl,
 } from "@/lib/auth/oauth";
+
+function readEnvTemplate(): string {
+  return readFileSync(join(process.cwd(), ".env.example"), "utf8");
+}
 
 describe("oauth provider allow-list", () => {
   it("supports exactly the three providers the sign-in pages offer", () => {
@@ -65,5 +72,31 @@ describe("oauth callback url", () => {
     // `new URL` with a leading slash replaces the base path, which is what the
     // callback route expects.
     expect(url).toBe("https://example.com/auth/callback?locale=en");
+  });
+});
+
+describe("the env template documents how to turn social sign-in on", () => {
+  it("names the flag, because an undocumented flag is an invisible feature", () => {
+    // The buttons are gated on NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS, so an operator
+    // who never learns the flag exists sees a sign-in page with no social
+    // buttons and no clue that anything is missing. That is exactly how this
+    // feature shipped invisible once.
+    const template = readEnvTemplate();
+    expect(template).toContain("NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS");
+  });
+
+  it("documents every provider the code can offer", () => {
+    const template = readEnvTemplate();
+    for (const provider of OAUTH_PROVIDERS) {
+      expect(template).toContain(provider);
+    }
+    // And the redirect URL, which Supabase refuses the flow without.
+    expect(template).toContain("/auth/callback");
+  });
+
+  it("keeps the template's default empty, so nothing is offered unconfigured", () => {
+    const template = readEnvTemplate();
+    expect(template).toMatch(/NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS=""\s*$/m);
+    expect(enabledOAuthProviders("")).toEqual([]);
   });
 });
