@@ -14,8 +14,10 @@ import {
   isServerOAuthProvider,
   oauthCallbackUrl,
 } from "@/lib/auth/oauth";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
+import { getAuthState } from "@/lib/auth/session";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
-import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
 import { safeRedirectPathSchema } from "@/lib/validation/common";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
@@ -448,9 +450,9 @@ export async function signInWithOAuthProviderAction(
     redirect(`${signInHref}?reason=unconfigured`);
   }
 
-  // Both Google and Facebook use Supabase's server-side OAuth redirect. The
-  // provider list is the single `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS` gate; the
-  // provider client IDs and secrets live in the Supabase dashboard.
+  // Google normally uses Google Identity Services in the browser. It reaches
+  // this action only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is absent, where the UI
+  // falls back to the server redirect rather than hiding the button.
   if (
     !isServerOAuthProvider(requested) ||
     !enabledOAuthProviders().includes(requested)
@@ -489,11 +491,63 @@ export async function signInWithOAuthProviderAction(
   redirect(data.url);
 }
 
+export type OAuthCompletionState =
+  | { status: "redirect"; path: string }
+  | { status: "error"; messageKey: string };
+
+/**
+ * Resolve where a Google ID-token sign-in should land.
+ *
+ * `signInWithIdToken` runs in the browser and writes the session cookies there;
+ * this action then reads the session server-side so the destination is decided by
+ * the same rule `/auth/callback` uses. It returns a path instead of calling
+ * `redirect()` because the caller has just finished a popup flow and needs to
+ * show a failure inline if anything is wrong.
+ *
+ * The `next` path is validated against the open-redirect allowlist here, not in
+ * the browser. An unauthenticated call is an error, not a redirect, so the
+ * action cannot be used to probe destinations.
+ */
+export async function completeOAuthSignInAction(input: {
+  locale?: string | null;
+  next?: string | null;
+}): Promise<OAuthCompletionState> {
+  const state = await getAuthState();
+
+  if (state.status === "unconfigured") {
+    return { status: "error", messageKey: "auth.notConfigured" };
+  }
+  if (state.status !== "authenticated") {
+    return { status: "error", messageKey: "auth.oauthFailed" };
+  }
+
+  const locale =
+    typeof input.locale === "string" && isLocale(input.locale)
+      ? input.locale
+      : DEFAULT_LOCALE;
+  const nextParsed = safeRedirectPathSchema.safeParse(input.next);
+  if (nextParsed.success) {
+    return { status: "redirect", path: nextParsed.data };
+  }
+
+  const profile = state.profile
+    ? {
+        role: state.profile.role,
+        declaredAccountType: state.profile.declaredAccountType,
+      }
+    : null;
+
+  return {
+    status: "redirect",
+    path: resolvePostAuthPath(locale, profile),
+  };
+}
+
 /**
  * Complete the declarations an OAuth account still owes us.
  *
- * A social sign-in never asks for a role or a residency, because
- * `signInWithOAuth` accepts no metadata payload —
+ * A social sign-in never asks for a role or a residency, because neither
+ * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload —
  * `handle_new_user` provisions the profile as `customer` with
  * `declared_account_type` null. This writes those two facts afterwards, so an
  * OAuth account ends up indistinguishable from a password account that answered

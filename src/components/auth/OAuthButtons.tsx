@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { signInWithOAuthProviderAction } from "@/lib/auth/actions";
-import { enabledOAuthProviders, type OAuthProvider } from "@/lib/auth/oauth";
+import { enabledOAuthProviders } from "@/lib/auth/oauth";
+import { publicEnv } from "@/lib/config/env";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
+
+import { GoogleSignInButton } from "./GoogleSignInButton";
 
 /**
  * Facebook's brand mark.
@@ -31,7 +32,13 @@ function FacebookMark() {
   );
 }
 
-/** Google's brand mark for the sign-in button. */
+/**
+ * Google's brand mark for the server-redirect fallback.
+ *
+ * The GIS button supplies its own official mark. This one is only used when
+ * `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent and the form falls back to Supabase's
+ * OAuth redirect, so the Google option still appears.
+ */
 function GoogleMark() {
   return (
     <svg
@@ -61,70 +68,44 @@ function GoogleMark() {
 }
 
 /**
- * One provider button.
- *
- * Both providers use the same Supabase server-side OAuth redirect, so the only
- * difference is the mark, the label and the provider value. A real `<form>`
- * means the control degrades to a normal submission without JavaScript.
- */
-function ProviderButton({
-  provider,
-  label,
-  mark,
-  locale,
-  nextPath,
-  disabled,
-}: {
-  provider: OAuthProvider;
-  label: string;
-  mark: ReactNode;
-  locale: Locale;
-  nextPath?: string;
-  disabled: boolean;
-}) {
-  return (
-    <form action={signInWithOAuthProviderAction}>
-      <input type="hidden" name="provider" value={provider} />
-      <input type="hidden" name="locale" value={locale} />
-      {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
-      <button
-        type="submit"
-        disabled={disabled}
-        className="cta-lift flex h-full min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {mark}
-        <span>{label}</span>
-      </button>
-    </form>
-  );
-}
-
-/**
  * Social sign-in buttons.
  *
- * Google and Facebook both use Supabase's server-side OAuth redirect. The
- * provider client IDs and secrets live in the Supabase dashboard; this app only
- * decides which providers to offer through `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS`.
- * The two controls sit in the same grid so the layout stays balanced, and the
- * surrounding forms reserve the same height so a provider that loads a little
- * later does not shift the page.
+ * Google renders the official Google Identity Services button when
+ * `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is configured, which returns an ID token to the
+ * browser for `signInWithIdToken`. When the client id is absent it falls back to
+ * the Supabase server-side OAuth redirect, so the Google option is never silently
+ * removed. Facebook always uses the redirect. The two controls sit in the same
+ * grid so the layout stays balanced, and the surrounding forms reserve the same
+ * height so a provider that loads a little later does not shift the page.
  *
- * A provider that is disabled (Supabase unconfigured) still renders its button,
- * disabled, so the page does not look as if a provider had been removed.
+ * The Facebook and fallback Google controls are real `<form>`s posting to a
+ * Server Action, so the allow-list is enforced server-side and they degrade to a
+ * normal submission without JavaScript. The GIS Google control needs JavaScript
+ * by definition.
  */
 export function OAuthButtons({
   locale,
   disabled,
+  mode = "signin",
   nextPath,
 }: {
   locale: Locale;
   disabled: boolean;
+  mode?: "signin" | "signup";
   nextPath?: string;
 }) {
   const t = createTranslator(locale).t;
   const providers = enabledOAuthProviders();
-  const googleVisible = providers.includes("google");
-  const facebookVisible = providers.includes("facebook");
+  const googleEnabled = providers.includes("google");
+  const facebookEnabled = providers.includes("facebook");
+  const googleConfigured = Boolean(publicEnv.googleClientId);
+
+  // Google is always visible when it is enabled: the GIS button when it can
+  // work, otherwise the server-redirect form (disabled if the form is
+  // unavailable). Hiding it in the disabled state made an unconfigured preview
+  // look as if Google had been removed.
+  const googleVisible = googleEnabled;
+  const facebookVisible = facebookEnabled;
 
   if (!googleVisible && !facebookVisible) {
     return null;
@@ -138,24 +119,48 @@ export function OAuthButtons({
         }`}
       >
         {googleVisible ? (
-          <ProviderButton
-            provider="google"
-            label={t("auth.oauth.google")}
-            mark={<GoogleMark />}
-            locale={locale}
-            nextPath={nextPath}
-            disabled={disabled}
-          />
+          googleConfigured && !disabled ? (
+            <GoogleSignInButton
+              locale={locale}
+              mode={mode}
+              nextPath={nextPath}
+              disabled={disabled}
+            />
+          ) : (
+            <form action={signInWithOAuthProviderAction}>
+              <input type="hidden" name="provider" value="google" />
+              <input type="hidden" name="locale" value={locale} />
+              {nextPath ? (
+                <input type="hidden" name="next" value={nextPath} />
+              ) : null}
+              <button
+                type="submit"
+                disabled={disabled}
+                className="cta-lift flex h-full min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GoogleMark />
+                <span>{t("auth.oauth.google")}</span>
+              </button>
+            </form>
+          )
         ) : null}
+
         {facebookVisible ? (
-          <ProviderButton
-            provider="facebook"
-            label={t("auth.oauth.facebook")}
-            mark={<FacebookMark />}
-            locale={locale}
-            nextPath={nextPath}
-            disabled={disabled}
-          />
+          <form action={signInWithOAuthProviderAction}>
+            <input type="hidden" name="provider" value="facebook" />
+            <input type="hidden" name="locale" value={locale} />
+            {nextPath ? (
+              <input type="hidden" name="next" value={nextPath} />
+            ) : null}
+            <button
+              type="submit"
+              disabled={disabled}
+              className="cta-lift flex h-full min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FacebookMark />
+              <span>{t("auth.oauth.facebook")}</span>
+            </button>
+          </form>
         ) : null}
       </div>
 

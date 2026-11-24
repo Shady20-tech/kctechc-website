@@ -36,7 +36,7 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 /**
  * The declarations a social sign-in did not collect.
  *
- * A social sign-in (`signInWithOAuth`) accepts no
+ * A social sign-in (`signInWithOAuth` or `signInWithIdToken`) accepts no
  * metadata payload, so the account is created before we can ask anything:
  * `handle_new_user` provisions it as `customer` with `declared_account_type`
  * null. This form asks the same two questions the password form asks, so both

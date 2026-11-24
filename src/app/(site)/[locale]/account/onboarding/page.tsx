@@ -12,8 +12,8 @@ import { buildMetadata } from "@/lib/seo/metadata";
 /**
  * Complete a social sign-up.
  *
- * A social sign-in carries no metadata payload (`signInWithOAuth`), so an
- * account created through Google or Facebook reaches
+ * A social sign-in carries no metadata payload (neither `signInWithOAuth` nor
+ * `signInWithIdToken`), so an account created through Google or Facebook reaches
  * us with no role declaration and no residency answer — `handle_new_user`
  * provisions it as `customer` with `declared_account_type` null. `/auth/callback`
  * sends such an account here; this page collects the two facts the password form

@@ -6,8 +6,8 @@ import type { Locale } from "@/lib/i18n/locales";
  * The two profile facts that decide where a freshly authenticated account goes.
  *
  * Kept as a plain shape rather than the full `Profile` so the callback route
- * (which reads the columns directly) can keep the rule without importing the
- * full session type.
+ * (which reads the columns directly) and the ID-token completion action (which
+ * uses `getAuthState`) can share one rule without importing each other's types.
  */
 export type PostAuthProfile = {
   role: string | null;
@@ -22,8 +22,8 @@ export type PostAuthProfile = {
  * owes the onboarding step. An account that has already declared goes to the
  * usual role-based landing: the console for staff, the account hub for customers.
  *
- * Pure so `/auth/callback` (email links and both social providers) can use it
- * without duplicating the rule.
+ * Pure so `/auth/callback` (email links and Facebook) and
+ * `completeOAuthSignInAction` (Google Identity Services) cannot drift.
  */
 export function resolvePostAuthPath(
   locale: Locale,
