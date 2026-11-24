@@ -91,9 +91,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     });
   }
 
-  // Otherwise land on the role-based destination. Every flow that reaches here
-  // passed no explicit `next`, so the profile's role is the only thing that
-  // decides where the visitor belongs.
+  // Otherwise decide from the profile. A social sign-in creates the account
+  // without asking anything — `signInWithOAuth` carries no metadata, so
+  // `handle_new_user` leaves `declared_account_type` null — and that is the
+  // signal that the account still owes us its role and residency declarations.
+  // An account that already declared goes to the usual role-based landing.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -101,18 +103,29 @@ export async function GET(request: Request): Promise<NextResponse> {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("role")
+        .select("declared_account_type, role")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
 
+  // The locale is carried on the redirect for exactly this branch: a French
+  // visitor must land on the French onboarding page. The query parameter is what
+  // the OAuth action set; the cookie is the fallback for a flow that did not.
   const destinationLocale =
+    asLocale(url.searchParams.get("locale")) ??
     asLocale(locale) ??
     asLocale(resolveLocaleFromAcceptLanguage(acceptLanguage)) ??
     "en";
 
+  if (!profile || profile.declared_account_type === null) {
+    return NextResponse.redirect(
+      new URL(`/${destinationLocale}/account/onboarding`, url.origin),
+      { status: 303 },
+    );
+  }
+
   const role =
-    profile?.role && isAppRole(profile.role) ? profile.role : DEFAULT_ROLE;
+    profile.role && isAppRole(profile.role) ? profile.role : DEFAULT_ROLE;
   return NextResponse.redirect(
     new URL(postSignInPathFor(role, destinationLocale), url.origin),
     { status: 303 },

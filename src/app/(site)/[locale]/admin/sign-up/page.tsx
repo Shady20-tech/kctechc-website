@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { Notice } from "@/components/ui/Notice";
@@ -79,6 +80,8 @@ export default async function SignUpPage({
               <p>{t("auth.notConfiguredBody")}</p>
             </Notice>
           ) : null}
+
+          <OAuthButtons locale={resolved} disabled={!configured} />
 
           <SignUpForm locale={resolved} disabled={!configured} />
         </div>
