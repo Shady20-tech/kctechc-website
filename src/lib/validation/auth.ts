@@ -158,11 +158,12 @@ export type SignUpState =
 /**
  * The declarations an OAuth account still owes us.
  *
- * A social sign-in creates the account without asking anything: Supabase's
- * `signInWithOAuth` accepts no metadata payload, so `handle_new_user` provisions
- * the profile with `declared_account_type` null. This schema collects the two
- * facts the password form already collects — the role the person is signing up as
- * and their residency — so both paths end in the same place.
+ * A social sign-in creates the account without asking anything: neither
+ * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload, so
+ * `handle_new_user` provisions the profile with `declared_account_type` null.
+ * This schema collects the two facts the password form already collects — the
+ * role the person is signing up as and their residency — so both paths end in
+ * the same place.
  *
  * Nothing here is an authorization input. The declaration is stored on the
  * profile; only an approved KYC application grants a capability, exactly as for a

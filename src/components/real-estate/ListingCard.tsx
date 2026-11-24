@@ -2,7 +2,7 @@ import { BedDouble, Bath, MapPin, Ruler } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { FavoriteButton } from "@/components/real-estate/FavoriteButton";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { VerifiedBadge } from "@/components/real-estate/VerifiedBadge";
 import { Badge } from "@/components/ui/Badge";
 import type { Locale } from "@/lib/i18n/locales";
@@ -181,17 +181,16 @@ export function ListingCard({
 
   return (
     <li className="group relative flex">
-      {isFavorite !== undefined ? (
-        <div className="absolute right-2.5 top-2.5 z-10">
-          <FavoriteButton
-            locale={locale}
-            listingId={record.id}
-            isFavorite={isFavorite}
-            returnPath={href}
-            title={record.title}
-          />
-        </div>
-      ) : null}
+      <div className="absolute right-2.5 top-2.5 z-10">
+        <FavoriteButton
+          locale={locale}
+          entityType="listing"
+          entityId={record.id}
+          defaultSaved={isFavorite ?? false}
+          returnPath={href}
+          title={record.title}
+        />
+      </div>
       <Link
         href={href}
         className="flex w-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong"

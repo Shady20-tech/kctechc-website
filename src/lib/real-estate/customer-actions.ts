@@ -7,86 +7,26 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeSearchQuery } from "@/lib/real-estate/search";
 
 /**
- * Registered-customer writes for the real-estate platform: favourites, saved
- * searches and their alert preferences.
+ * Registered-customer writes for the real-estate platform: saved searches and
+ * their alert preferences. Favourites (properties, products and articles) live in
+ * `src/lib/favorites/actions.ts`, because the same heart is shared with the store.
  *
  * Every one of these writes with the session client, not the service-role client.
- * That is the whole point of the feature: the three tables carry policies that
- * restrict each row to `auth.uid() = user_id`, so the database refuses a write
- * that targets another customer's data even if this module were wrong about who
- * the caller is. Using the admin client here would have moved that decision into
- * TypeScript and made the policies decorative.
+ * That is the whole point of the feature: the tables carry policies that restrict
+ * each row to `auth.uid() = user_id`, so the database refuses a write that targets
+ * another customer's data even if this module were wrong about who the caller is.
+ * Using the admin client here would have moved that decision into TypeScript and
+ * made the policies decorative.
  *
  * A missing session is reported as `unauthenticated` rather than as an error or,
  * worse, as success. The cards are rendered for signed-out visitors too, and the
  * button turns that status into a sign-in link with the current page as the
  * return target — which is only possible because the status is distinguishable.
  *
- * `revalidatePath` is called on the surfaces that read the same rows. The
- * favourites page and the saved-searches page are both server-rendered from these
- * tables, so without it a customer could save a property and then visit the
- * favourites page to find it missing until the cache expired.
+ * `revalidatePath` is called on the saved-searches page, which is server-rendered
+ * from these tables. Without it a customer could save a search and then visit the
+ * page to find it missing until the cache expired.
  */
-
-export type FavoriteActionResult =
-  | { status: "ok"; saved: boolean }
-  | { status: "unauthenticated" }
-  | { status: "unconfigured" }
-  | { status: "error" };
-
-/**
- * Add or remove a listing from the signed-in customer's favourites.
- *
- * A toggle rather than separate add and remove actions, because the control is a
- * single button whose meaning depends on the current state. The state is read from
- * the database inside the action rather than trusted from the caller: a stale page
- * could submit "remove" for a row that is already gone, and deriving the operation
- * from what is actually stored makes the result correct regardless.
- *
- * The unique constraint on `(user_id, listing_id)` is what makes a double-submit
- * safe — the insert is a no-op rather than a duplicate — and the `on conflict` is
- * omitted deliberately so that a genuine race surfaces as an error the caller can
- * retry rather than as a silent partial write.
- */
-export async function toggleListingFavoriteAction(
-  listingId: string,
-): Promise<FavoriteActionResult> {
-  const auth = await getAuthState();
-  if (auth.status === "unconfigured") return { status: "unconfigured" };
-  if (auth.status !== "authenticated") return { status: "unauthenticated" };
-
-  const supabase = await createClient();
-  if (!supabase) return { status: "unconfigured" };
-
-  const { data: existing } = await supabase
-    .from("listing_favorites")
-    .select("id")
-    .eq("listing_id", listingId)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from("listing_favorites")
-      .delete()
-      .eq("id", existing.id);
-    if (error) return { status: "error" };
-    revalidateFavoriteSurfaces();
-    return { status: "ok", saved: false };
-  }
-
-  const { error } = await supabase
-    .from("listing_favorites")
-    .insert({ listing_id: listingId, user_id: auth.userId });
-  if (error) return { status: "error" };
-
-  revalidateFavoriteSurfaces();
-  return { status: "ok", saved: true };
-}
-
-function revalidateFavoriteSurfaces() {
-  revalidatePath("/[locale]/real-estate/listings", "page");
-  revalidatePath("/[locale]/real-estate/favorites", "page");
-}
 
 export type SavedSearchActionResult =
   | { status: "ok"; id: string }

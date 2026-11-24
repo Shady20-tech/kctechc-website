@@ -11,11 +11,14 @@ import {
 } from "@/lib/auth/redirects";
 import {
   enabledOAuthProviders,
-  isOAuthProvider,
+  isServerOAuthProvider,
   oauthCallbackUrl,
 } from "@/lib/auth/oauth";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
+import { getAuthState } from "@/lib/auth/session";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
-import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
+import { safeRedirectPathSchema } from "@/lib/validation/common";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import {
@@ -413,26 +416,30 @@ export async function resetPasswordAction(
 /**
  * Start a social sign-in.
  *
- * The provider is validated against the closed `OAUTH_PROVIDERS` list *and*
- * against the set this deployment has actually enabled. Both checks matter: the
- * first stops an arbitrary provider name reaching Supabase, the second stops a
- * button for an unconfigured provider being reachable by a crafted POST even
- * though it is not rendered.
+ * Only a provider that still uses the server-side redirect may reach this
+ * action: `isServerOAuthProvider` narrows to Facebook, and the enabled list is
+ * checked as well. Both matter: the first stops an arbitrary provider name (or a
+ * Google redirect the UI no longer offers) reaching Supabase, and the second
+ * stops a button for an unconfigured provider being reachable by a crafted POST
+ * even though it is not rendered.
  *
  * A Server Action rather than a client call to `supabase.auth.signInWithOAuth`,
  * because the allow-list decision must not live in the browser. `signInWithOAuth`
  * returns an authorization URL instead of navigating, so the redirect is issued
  * here and the browser follows it.
  *
- * The redirect carries the locale, so a French visitor comes back to French, and
- * lands on `/auth/callback`, which decides the destination once it can see
- * whether the account still owes us its declarations.
+ * The redirect carries the locale and an optional validated `next`, so a French
+ * visitor comes back to French and a visitor who was heading somewhere specific
+ * is not dropped on the account hub. `/auth/callback` decides the destination
+ * once it can see whether the account still owes us its declarations.
  */
 export async function signInWithOAuthProviderAction(
   formData: FormData,
 ): Promise<void> {
   const requested = formData.get("provider");
   const localeValue = formData.get("locale");
+  const nextParsed = safeRedirectPathSchema.safeParse(formData.get("next"));
+  const next = nextParsed.success ? nextParsed.data : undefined;
 
   // Resolve the locale first: every failure below redirects back to the sign-in
   // page, and a French visitor should not be bounced into the English one.
@@ -443,8 +450,10 @@ export async function signInWithOAuthProviderAction(
     redirect(`${signInHref}?reason=unconfigured`);
   }
 
+  // Google is not on this list: it uses Google Identity Services in the
+  // browser. Only Facebook still starts a server-side OAuth redirect.
   if (
-    !isOAuthProvider(requested) ||
+    !isServerOAuthProvider(requested) ||
     !enabledOAuthProviders().includes(requested)
   ) {
     redirect(`${signInHref}?reason=oauth_unavailable`);
@@ -467,7 +476,7 @@ export async function signInWithOAuthProviderAction(
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: requested,
     options: {
-      redirectTo: oauthCallbackUrl(getSiteUrl(), safeLocale),
+      redirectTo: oauthCallbackUrl(getSiteUrl(), safeLocale, next),
       // The action runs on the server, so it returns the provider URL and lets
       // Next.js perform the redirect instead of the browser client.
       skipBrowserRedirect: true,
@@ -481,14 +490,67 @@ export async function signInWithOAuthProviderAction(
   redirect(data.url);
 }
 
+export type OAuthCompletionState =
+  | { status: "redirect"; path: string }
+  | { status: "error"; messageKey: string };
+
+/**
+ * Resolve where a Google ID-token sign-in should land.
+ *
+ * `signInWithIdToken` runs in the browser and writes the session cookies there;
+ * this action then reads the session server-side so the destination is decided by
+ * the same rule `/auth/callback` uses. It returns a path instead of calling
+ * `redirect()` because the caller has just finished a popup flow and needs to
+ * show a failure inline if anything is wrong.
+ *
+ * The `next` path is validated against the open-redirect allowlist here, not in
+ * the browser. An unauthenticated call is an error, not a redirect, so the
+ * action cannot be used to probe destinations.
+ */
+export async function completeOAuthSignInAction(input: {
+  locale?: string | null;
+  next?: string | null;
+}): Promise<OAuthCompletionState> {
+  const state = await getAuthState();
+
+  if (state.status === "unconfigured") {
+    return { status: "error", messageKey: "auth.notConfigured" };
+  }
+  if (state.status !== "authenticated") {
+    return { status: "error", messageKey: "auth.oauthFailed" };
+  }
+
+  const locale =
+    typeof input.locale === "string" && isLocale(input.locale)
+      ? input.locale
+      : DEFAULT_LOCALE;
+  const nextParsed = safeRedirectPathSchema.safeParse(input.next);
+  if (nextParsed.success) {
+    return { status: "redirect", path: nextParsed.data };
+  }
+
+  const profile = state.profile
+    ? {
+        role: state.profile.role,
+        declaredAccountType: state.profile.declaredAccountType,
+      }
+    : null;
+
+  return {
+    status: "redirect",
+    path: resolvePostAuthPath(locale, profile),
+  };
+}
+
 /**
  * Complete the declarations an OAuth account still owes us.
  *
- * A social sign-in never asks for a role or a residency, because
- * `signInWithOAuth` accepts no metadata payload — `handle_new_user` provisions
- * the profile as `customer` with `declared_account_type` null. This writes those
- * two facts afterwards, so an OAuth account ends up indistinguishable from a
- * password account that answered the same questions.
+ * A social sign-in never asks for a role or a residency, because neither
+ * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload —
+ * `handle_new_user` provisions the profile as `customer` with
+ * `declared_account_type` null. This writes those two facts afterwards, so an
+ * OAuth account ends up indistinguishable from a password account that answered
+ * the same questions.
  *
  * The write goes through the **session** client, so `profiles_update_own` is the
  * control: it pins `role` to its stored value, which is what keeps this from

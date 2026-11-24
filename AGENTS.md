@@ -3695,3 +3695,96 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   links all land on `/auth/callback` (with a `next` for recovery), so the Supabase allow-list still
   needs `https://your-domain/auth/callback` (or `.../auth/callback**` to cover `?locale=`). The
   provider consoles still point at `https://<project-ref>.supabase.co/auth/v1/callback`.
+
+### Google sign-in uses Google Identity Services, not the Supabase OAuth redirect
+
+- **Google now uses `signInWithIdToken`, and the consent screen belongs to the site.** The old
+  `signInWithOAuth({ provider: "google" })` flow sent the browser through
+  `<project-ref>.supabase.co/auth/v1/callback`, which is why Google named the Supabase host.
+  `GoogleSignInButton` (`src/components/auth/GoogleSignInButton.tsx`) loads
+  `https://accounts.google.com/gsi/client` with `next/script`, renders the official button with
+  `google.accounts.id.renderButton`, and exchanges the returned `response.credential` with
+  `supabase.auth.signInWithIdToken({ provider: "google", token, nonce })`. The browser never visits
+  Supabase's auth host, so the consent screen shows the Google Cloud project's app name and verified
+  domain.
+- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the public client id and must equal the client id in
+  Supabase's Google provider.** It is inlined at build time, so adding or changing it requires a
+  redeploy. The client secret stays in Supabase. `publicEnv.googleClientId` is the only reader; the
+  Google button is replaced by a visible notice when the variable is missing, rather than rendering
+  a control that cannot work. For a self-hosted standalone server it must also be present in the
+  runtime `.env`: the server-rendered button and the CSP are evaluated at startup, so a build-only
+  value leaves the SSR HTML on the unconfigured path even though the client bundle has it.
+- **The GIS button is an iframe, so CSP needs `frame-src`, not just `script-src`.**
+  `buildContentSecurityPolicy` adds `https://accounts.google.com` to `script-src`, `connect-src` and
+  `frame-src`, plus `https://www.googleapis.com` to `connect-src`, only when
+  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set. A missing `frame-src` blocks the button with no page-level
+  error; the only clue is a console CSP violation.
+- **The nonce is generated once per mount and passed to both GIS and Supabase.**
+  `google.accounts.id.initialize({ nonce })` puts it in the ID token, and
+  `signInWithIdToken({ nonce })` verifies it. Re-initializing the button on resize reuses the same
+  nonce; a new mount gets a new one.
+- **The post-login destination is shared with `/auth/callback`.** `resolvePostAuthPath`
+  (`src/lib/auth/post-auth.ts`) sends an undeclared social account to
+  `/{locale}/account/onboarding`, staff to `/admin`, and a declared customer to `/{locale}/account`.
+  `completeOAuthSignInAction` reads the session the browser client just wrote and returns that path;
+  `GoogleSignInButton` pushes it. Do not duplicate the rule in the client.
+- **Only Facebook remains on the server-side `signInWithOAuth` redirect.** `SERVER_OAUTH_PROVIDERS`
+  in `src/lib/auth/oauth.ts` is `["facebook"]`, and `signInWithOAuthProviderAction` validates against
+  it, so a crafted POST cannot start a Google redirect the UI no longer offers. The action also
+  carries a validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page
+  return target.
+- **Google Cloud Console setup is part of the feature.** The OAuth client is a Web application; add
+  every site origin (`https://kctechc.com`, `https://www.kctechc.com`, preview domains,
+  `http://localhost:3000`) to Authorized JavaScript origins. Keep
+  `https://<project-ref>.supabase.co/auth/v1/callback` in Authorized redirect URIs for the Supabase
+  provider config and the legacy flow. The consent screen's app name ("KC Technology Corporation")
+  and authorized domain (`kctechc.com`) are what the visitor sees. A missing client id, or a
+  different one between Vercel and Supabase, makes `signInWithIdToken` fail; the button reports the
+  generic OAuth error.
+
+### General customer favorites and the Customer account type
+
+- **The heart is one control for properties, products and articles.** `FavoriteButton`
+  (`src/components/favorites/FavoriteButton.tsx`) posts to `toggleFavoriteAction`
+  (`src/lib/favorites/actions.ts`) with an `entityType` of `listing`, `product` or `insight` and the
+  entity id. Each type has its own table (`listing_favorites` from migration 28,
+  `product_favorites` and `insight_favorites` from migration
+  `20260101000081_general_favorites.sql`) so every row carries a real cascade foreign key. The action
+  uses the **session** client, never the service-role client, so each table's own-row
+  `auth.uid() = user_id` policy is the control.
+- **The heart renders on every card and detail surface.** `ListingCard`, `ProductCard`,
+  `InsightCard` and the solar `PackageCard` carry it, as do the property, product and article detail
+  pages. The package heart uses `entityType="product"` and the package's seeded product id; a package
+  with no product row (an unseeded deployment) renders no heart rather than one that would fail.
+- **A statically rendered page cannot read the session, so hearts fill from a client store.**
+  `useFavoriteIds` (`src/lib/hooks/use-favorite-ids.ts`) fetches `GET /api/favorites/summary` once
+  per page and returns the id sets. The endpoint returns `{ listing, product, insight }` id arrays
+  only, never titles or another account's data, and a signed-out visitor gets empty arrays. The
+  server renders each heart in its default state, so the HTML is complete without JavaScript; the
+  store fills saved hearts after hydration. A toggle calls `requestFavoriteSummary(true)` and
+  `router.refresh()` so a server-rendered favourites page reflects the write.
+- **A signed-out click is a sign-in link, not a silent failure.** The action returns
+  `unauthenticated`; the button sends the browser to `/login?next=<current path>`, the same pattern
+  as the existing save controls. `unconfigured` and `error` render their own status message and the
+  optimistic fill rolls back.
+- **`/[locale]/favorites` is the single customer favourites page.** It is `force-dynamic` and
+  `noindex`, redirects a signed-out visitor to sign in with itself as the return target, and renders
+  saved properties, products and articles in sections using the same `ListingGrid`, `ProductGrid`
+  and `InsightCard` as the public surfaces. The account hub's favourites tile links here and counts
+  all three tables (`loadFavoriteTotal`). The old `/real-estate/favorites` page remains as the
+  real-estate-only view.
+- **"Customer" is the visible label for the `buyer` account type.** `auth.accountType.buyer.label`
+  is now "Customer" in both locales; the stored `account_type` value remains `buyer`, so no
+  migration or policy changes. The admin role dropdown already had a `customer` role; this change is
+  the sign-up account-type picker, which now reads Customer / Landlord / Agent. The role stays a
+  declaration: only an approved `real_estate_memberships` row grants a capability.
+- **The migration is additive and function-free.** `20260101000081_general_favorites.sql` creates
+  two tables, their indexes, enables RLS and adds select/insert/delete own-row policies. It creates
+  no function, so the Phase 12 EXECUTE allow-list is untouched. The migration parses cleanly with
+  `pglast` (16 statements); the local Postgres harness was unavailable in this container, so the
+  behavioural validate scripts were not replayed. Apply the migration before expecting the hearts to
+  persist.
+- 1671 Vitest tests pass (140 files), `tsc --noEmit` and ESLint are clean, and the production build
+  succeeds. Preview smoke on the standalone server: `/en/favorites` redirects a signed-out visitor
+  to login, `/api/favorites/summary` returns the empty id sets, and the public pages and CSS return
+  200.

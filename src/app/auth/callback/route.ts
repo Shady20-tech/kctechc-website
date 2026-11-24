@@ -3,8 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isLocale, resolveLocaleFromAcceptLanguage } from "@/lib/i18n/locales";
 import { safeRedirectPathSchema } from "@/lib/validation/common";
-import { postSignInPathFor } from "@/lib/auth/redirects";
-import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
 
 /**
  * Auth callback.
@@ -92,7 +91,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   // Otherwise decide from the profile. A social sign-in creates the account
-  // without asking anything — `signInWithOAuth` carries no metadata, so
+  // without asking anything — neither OAuth flow carries metadata, so
   // `handle_new_user` leaves `declared_account_type` null — and that is the
   // signal that the account still owes us its role and residency declarations.
   // An account that already declared goes to the usual role-based landing.
@@ -117,17 +116,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     asLocale(resolveLocaleFromAcceptLanguage(acceptLanguage)) ??
     "en";
 
-  if (!profile || profile.declared_account_type === null) {
-    return NextResponse.redirect(
-      new URL(`/${destinationLocale}/account/onboarding`, url.origin),
-      { status: 303 },
-    );
-  }
-
-  const role =
-    profile.role && isAppRole(profile.role) ? profile.role : DEFAULT_ROLE;
-  return NextResponse.redirect(
-    new URL(postSignInPathFor(role, destinationLocale), url.origin),
-    { status: 303 },
+  const postAuthPath = resolvePostAuthPath(
+    destinationLocale,
+    profile
+      ? {
+          role: profile.role,
+          declaredAccountType: profile.declared_account_type,
+        }
+      : null,
   );
+  return NextResponse.redirect(new URL(postAuthPath, url.origin), {
+    status: 303,
+  });
 }

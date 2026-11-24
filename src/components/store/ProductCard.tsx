@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductImageFrame } from "./ProductImageFrame";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { storePathFor } from "@/lib/config/navigation";
 import type { Locale } from "@/lib/i18n/locales";
@@ -48,10 +49,12 @@ export function ProductCard({
   product,
   locale,
   t,
+  isFavorite,
 }: {
   product: LocalizedProduct;
   locale: Locale;
   t: Translator["t"];
+  isFavorite?: boolean;
 }) {
   const image = primaryImage(product.images);
   // The department store, not the Digital Marketing one: a product's detail route
@@ -61,7 +64,17 @@ export function ProductCard({
   const href = `/${locale}${storePathFor(product.departmentSlug)}/${product.categorySlug}/${product.slug}`;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
+    <article className="group relative flex h-full flex-col overflow-hidden card-lift rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
+      <div className="absolute right-2.5 top-2.5 z-10">
+        <FavoriteButton
+          locale={locale}
+          entityType="product"
+          entityId={product.id}
+          defaultSaved={isFavorite ?? false}
+          returnPath={href}
+          title={product.title}
+        />
+      </div>
       <Link
         href={href}
         className="flex h-full flex-col focus-visible:outline-none"
@@ -116,16 +129,23 @@ export function ProductGrid({
   products,
   locale,
   t,
+  favoriteProductIds,
 }: {
   products: readonly LocalizedProduct[];
   locale: Locale;
   t: Translator["t"];
+  favoriteProductIds?: ReadonlySet<string>;
 }) {
   return (
     <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {products.map((product) => (
         <li key={product.id} className="h-full">
-          <ProductCard product={product} locale={locale} t={t} />
+          <ProductCard
+            product={product}
+            locale={locale}
+            t={t}
+            isFavorite={favoriteProductIds?.has(product.id)}
+          />
         </li>
       ))}
     </ul>

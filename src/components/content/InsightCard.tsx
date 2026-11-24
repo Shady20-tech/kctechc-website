@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { formatDate } from "@/lib/content/format";
 import type { LocalizedInsight } from "@/lib/content/types";
 import type { Locale } from "@/lib/i18n/locales";
@@ -27,6 +28,7 @@ export function InsightCard({
   t,
   categoryName,
   priority = false,
+  isFavorite,
 }: {
   article: LocalizedInsight;
   locale: Locale;
@@ -38,12 +40,25 @@ export function InsightCard({
    * out; every later card stays lazy.
    */
   priority?: boolean;
+  isFavorite?: boolean;
 }) {
   const href = `/${locale}${INSIGHTS_PATH}/${article.slug}`;
   const cover = contentMediaUrl(article.coverImagePath);
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
+    <article className="relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition-soft hover:border-border-strong">
+      {article.id ? (
+        <div className="absolute right-2.5 top-2.5 z-10">
+          <FavoriteButton
+            locale={locale}
+            entityType="insight"
+            entityId={article.id}
+            defaultSaved={isFavorite ?? false}
+            returnPath={href}
+            title={article.title}
+          />
+        </div>
+      ) : null}
       {cover ? (
         <Link
           href={href}

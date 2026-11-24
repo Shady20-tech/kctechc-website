@@ -1,47 +1,22 @@
 "use client";
 
 import { signInWithOAuthProviderAction } from "@/lib/auth/actions";
-import { enabledOAuthProviders, type OAuthProvider } from "@/lib/auth/oauth";
+import { enabledOAuthProviders } from "@/lib/auth/oauth";
+import { publicEnv } from "@/lib/config/env";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 
+import { GoogleSignInButton } from "./GoogleSignInButton";
+
 /**
- * Brand marks for the two providers.
+ * Facebook's brand mark.
  *
  * Inline SVG rather than an icon package: Lucide ships no brand logos (its
- * authors removed them deliberately), and these marks are prescribed by the
- * providers' own sign-in guidelines. Each is decorative — the button's visible
- * text is the provider name — so `aria-hidden` keeps the accessible name clean.
+ * authors removed them deliberately), and this mark is prescribed by the
+ * provider's own sign-in guidelines. It is decorative — the button's visible
+ * text names the provider — so `aria-hidden` keeps the accessible name clean.
  */
-function ProviderMark({ provider }: { provider: OAuthProvider }) {
-  if (provider === "google") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-        className="h-5 w-5"
-      >
-        <path
-          fill="#4285F4"
-          d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.63h6.2a5.3 5.3 0 0 1-2.3 3.48v2.9h3.72c2.18-2 3.44-4.96 3.44-8.56Z"
-        />
-        <path
-          fill="#34A853"
-          d="M12 23.5c3.11 0 5.71-1.03 7.62-2.79l-3.72-2.89c-1.03.69-2.35 1.1-3.9 1.1-3 0-5.54-2.03-6.45-4.75H1.7v2.98A11.5 11.5 0 0 0 12 23.5Z"
-        />
-        <path
-          fill="#FBBC05"
-          d="M5.55 14.17a6.9 6.9 0 0 1 0-4.34V6.85H1.7a11.5 11.5 0 0 0 0 10.3l3.85-2.98Z"
-        />
-        <path
-          fill="#EA4335"
-          d="M12 4.75c1.69 0 3.21.58 4.4 1.72l3.3-3.3C17.7 1.27 15.1.5 12 .5A11.5 11.5 0 0 0 1.7 6.85l3.85 2.98C6.46 7.1 9 4.75 12 4.75Z"
-        />
-      </svg>
-    );
-  }
-
+function FacebookMark() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -57,60 +32,89 @@ function ProviderMark({ provider }: { provider: OAuthProvider }) {
   );
 }
 
-/** Message key for a provider's button label. */
-function providerLabelKey(
-  provider: OAuthProvider,
-): `auth.oauth.${OAuthProvider}` {
-  return `auth.oauth.${provider}`;
-}
-
 /**
  * Social sign-in buttons.
  *
- * Rendered above the email form, separated by a labelled divider, on both the
- * sign-in and sign-up pages: with OAuth there is no meaningful difference between
- * the two, because the provider creates the account on first use. What the
- * account still owes us — a role declaration and residency — is collected on
- * `/account/onboarding` immediately afterwards, because `signInWithOAuth` accepts
- * no metadata payload.
+ * Google renders the official Google Identity Services button, which returns an
+ * ID token to the browser for `signInWithIdToken`. Facebook keeps the
+ * server-side OAuth redirect. The two controls sit in the same grid so the
+ * layout stays balanced, and the surrounding forms reserve the same height so a
+ * provider that loads a little later does not shift the page.
  *
- * Each button is its own `<form>` posting to a Server Action, so the provider
- * allow-list is enforced server-side and the control degrades to a normal form
- * submission without JavaScript. `min-h-11` keeps the target above the 44px
- * touch minimum, and the label is real text rather than an icon alone.
+ * The Facebook control is a real `<form>` posting to a Server Action, so the
+ * allow-list is enforced server-side and it degrades to a normal submission
+ * without JavaScript. The Google control needs JavaScript by definition; when
+ * the client ID is missing it is replaced by a plain notice rather than a button
+ * that cannot work.
  */
 export function OAuthButtons({
   locale,
   disabled,
+  mode = "signin",
+  nextPath,
 }: {
   locale: Locale;
   disabled: boolean;
+  mode?: "signin" | "signup";
+  nextPath?: string;
 }) {
   const t = createTranslator(locale).t;
   const providers = enabledOAuthProviders();
+  const googleEnabled = providers.includes("google");
+  const facebookEnabled = providers.includes("facebook");
+  const googleConfigured = Boolean(publicEnv.googleClientId);
 
-  // An explicit opt-out renders nothing: an inert button is worse than no
-  // button. Google and Facebook are the default, so an unconfigured deployment
-  // still shows them.
-  if (providers.length === 0) return null;
+  const googleVisible = googleEnabled && googleConfigured && !disabled;
+  const facebookVisible = facebookEnabled;
+
+  if (!googleVisible && !facebookVisible) {
+    if (googleEnabled && !googleConfigured) {
+      return (
+        <p className="text-sm text-muted">{t("auth.oauthGoogleUnavailable")}</p>
+      );
+    }
+    return null;
+  }
 
   return (
     <div>
-      <div className="grid gap-2.5 sm:grid-cols-3">
-        {providers.map((provider) => (
-          <form key={provider} action={signInWithOAuthProviderAction}>
-            <input type="hidden" name="provider" value={provider} />
+      {googleEnabled && !googleConfigured ? (
+        <p className="mb-2.5 text-sm text-muted">
+          {t("auth.oauthGoogleUnavailable")}
+        </p>
+      ) : null}
+
+      <div
+        className={`grid gap-2.5 ${
+          googleVisible && facebookVisible ? "sm:grid-cols-2" : "sm:grid-cols-1"
+        }`}
+      >
+        {googleVisible ? (
+          <GoogleSignInButton
+            locale={locale}
+            mode={mode}
+            nextPath={nextPath}
+            disabled={disabled}
+          />
+        ) : null}
+
+        {facebookVisible ? (
+          <form action={signInWithOAuthProviderAction}>
+            <input type="hidden" name="provider" value="facebook" />
             <input type="hidden" name="locale" value={locale} />
+            {nextPath ? (
+              <input type="hidden" name="next" value={nextPath} />
+            ) : null}
             <button
               type="submit"
               disabled={disabled}
-              className="cta-lift flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cta-lift flex h-full min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <ProviderMark provider={provider} />
-              <span>{t(providerLabelKey(provider))}</span>
+              <FacebookMark />
+              <span>{t("auth.oauth.facebook")}</span>
             </button>
           </form>
-        ))}
+        ) : null}
       </div>
 
       <div className="mt-6 flex items-center gap-3" aria-hidden="true">

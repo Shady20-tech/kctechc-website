@@ -36,10 +36,11 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 /**
  * The declarations a social sign-in did not collect.
  *
- * Supabase's `signInWithOAuth` accepts no metadata payload, so the account is
- * created before we can ask anything: `handle_new_user` provisions it as
- * `customer` with `declared_account_type` null. This form asks the same two
- * questions the password form asks, so both routes end in the same state.
+ * A social sign-in (`signInWithOAuth` or `signInWithIdToken`) accepts no
+ * metadata payload, so the account is created before we can ask anything:
+ * `handle_new_user` provisions it as `customer` with `declared_account_type`
+ * null. This form asks the same two questions the password form asks, so both
+ * routes end in the same state.
  *
  * Nothing chosen here grants a capability. A landlord or agent declaration is
  * stored on the profile and the account page then offers the KYC application;

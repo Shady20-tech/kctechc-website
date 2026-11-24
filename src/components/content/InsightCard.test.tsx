@@ -1,6 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
+
+vi.mock("@/lib/hooks/use-favorite-ids", () => ({
+  useFavoriteIds: () => null,
+  requestFavoriteSummary: vi.fn(),
+}));
+
 // `publicEnv` is read once at import time, so a test cannot set
 // NEXT_PUBLIC_SUPABASE_URL late. The helper that turns a stored object path into
 // a public URL is stubbed instead — it is the only thing between a fixture cover
@@ -25,6 +34,7 @@ const t = createTranslator("en").t;
 
 function article(overrides: Partial<LocalizedInsight> = {}): LocalizedInsight {
   return {
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "land-title",
     title: "How to verify a land title",
     summary: "What to check before you pay.",
@@ -77,5 +87,15 @@ describe("InsightCard", () => {
     const image = document.querySelector("img");
     expect(image?.getAttribute("alt")).toBe("");
     expect(image?.closest("[aria-hidden='true']")).not.toBeNull();
+  });
+
+  it("renders an independent save control for a published article", () => {
+    render(<InsightCard article={article()} locale="en" t={t} />);
+
+    expect(
+      screen.getByRole("button", {
+        name: t("favorites.add", { title: "How to verify a land title" }),
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 });

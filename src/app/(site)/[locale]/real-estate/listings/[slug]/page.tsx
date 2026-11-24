@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SectionBand } from "@/components/layout/PageShell";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { PropertyMap } from "@/components/maps/PropertyMap";
 import {
   FactRow,
@@ -198,12 +199,21 @@ export default async function PropertyListingPage({
                 <VerifiedBadge t={t} />
               </div>
             ) : null}
-            <h1
-              id="listing-heading"
-              className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"
-            >
-              {record.title}
-            </h1>
+            <div className="mt-3 flex items-start justify-between gap-4">
+              <h1
+                id="listing-heading"
+                className="display-tight font-display text-3xl font-bold text-ink-900"
+              >
+                {record.title}
+              </h1>
+              <FavoriteButton
+                locale={resolved}
+                entityType="listing"
+                entityId={record.id}
+                returnPath={`/${resolved}${REAL_ESTATE_PATH}/listings/${record.slug}`}
+                title={record.title}
+              />
+            </div>
             <p className="mt-4 font-display text-2xl font-semibold text-ink-900">
               {price}
             </p>

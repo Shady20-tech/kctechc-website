@@ -308,8 +308,8 @@
     "errPermanentResidency": "Veuillez nous indiquer si vous êtes résident permanent.",
     "accountType": {
       "buyer": {
-        "label": "Acheteur / Chercheur de bien",
-        "body": "Recherchez des annonces, enregistrez vos favoris et contactez-nous au sujet d'un bien."
+        "label": "Client",
+        "body": "Achetez des produits, enregistrez vos favoris et renseignez-vous sur un bien — aucune annonce ni vérification d'identité requise."
       },
       "landlord": {
         "label": "Propriétaire / Bailleur",
@@ -326,7 +326,9 @@
       "facebook": "Facebook"
     },
     "oauthDivider": "ou utilisez votre adresse e-mail",
+    "oauthSigningIn": "Connexion en cours…",
     "oauthUnavailable": "Cette méthode de connexion n'est pas disponible pour le moment. Veuillez utiliser votre adresse e-mail.",
+    "oauthGoogleUnavailable": "La connexion Google n'est pas configurée pour ce site. Veuillez utiliser votre adresse e-mail.",
     "oauthFailed": "Nous n'avons pas pu terminer cette connexion. Veuillez réessayer ou utiliser votre adresse e-mail.",
     "onboardingEyebrow": "Dernière étape",
     "onboardingHeading": "Dites-nous comment vous allez utiliser la plateforme",
@@ -541,6 +543,24 @@
       "entityProduct": "produit",
       "entityProject": "projet",
       "entityArticle": "article"
+    }
+  },
+  "favorites": {
+    "eyebrow": "Votre compte",
+    "heading": "Vos favoris",
+    "intro": "Tout ce que vous avez enregistré dans la boutique, l'immobilier et les actualités, au même endroit.",
+    "metaTitle": "Vos favoris",
+    "metaDescription": "Les produits, biens et articles que vous avez enregistrés.",
+    "emptyBody": "Vous n'avez encore rien enregistré. Utilisez le cœur sur un produit, un bien ou un article pour le retrouver ici.",
+    "emptyCta": "Parcourir les départements",
+    "propertiesHeading": "Biens enregistrés",
+    "productsHeading": "Produits enregistrés",
+    "articlesHeading": "Articles enregistrés",
+    "add": "Enregistrer {title} dans vos favoris",
+    "remove": "Retirer {title} de vos favoris",
+    "errors": {
+      "unconfigured": "Les favoris ne sont pas disponibles pour le moment. Veuillez réessayer plus tard.",
+      "error": "Nous n'avons pas pu mettre à jour vos favoris. Veuillez réessayer."
     }
   },
   "realEstate": {
@@ -2705,9 +2725,9 @@
     "ordersTitle": "Vos commandes",
     "ordersBody": "Les commandes que vous avez passées auprès de n'importe quel département, et leur statut actuel.",
     "ordersCta": "Voir vos commandes",
-    "favoritesTitle": "Biens enregistrés",
-    "favoritesBody": "Les annonces que vous avez enregistrées depuis le département Immobilier.",
-    "favoritesCta": "Voir les biens enregistrés",
+    "favoritesTitle": "Vos favoris",
+    "favoritesBody": "Les produits, biens et articles que vous avez enregistrés.",
+    "favoritesCta": "Voir les favoris",
     "savedSearchesTitle": "Recherches enregistrées",
     "savedSearchesBody": "Les recherches que vous avez enregistrées pour rouvrir la même vue d'annonces.",
     "savedSearchesCta": "Voir les recherches enregistrées",

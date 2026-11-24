@@ -1,15 +1,16 @@
 /**
  * Social sign-in providers.
  *
- * Which providers are offered is decided here and nowhere else. The list is
- * closed on purpose: `signInWithOAuthProviderAction` validates the submitted
- * provider against {@link OAUTH_PROVIDERS}, so a crafted POST cannot ask Supabase
- * to start a flow for a provider this deployment has not configured.
+ * Which providers are offered is decided here and nowhere else. Google uses
+ * Google Identity Services in the browser and exchanges the ID token with
+ * `signInWithIdToken`; Facebook still uses Supabase's server-side OAuth
+ * redirect. The two paths are kept as separate lists so the Server Action cannot
+ * start a Google redirect the UI no longer offers.
  *
  * A provider is *offered* only when the deployment says it is enabled. Supabase
- * keeps the client ids and secrets; nothing secret reaches this module or the
- * browser. Enabling a provider is therefore dashboard configuration, not a code
- * change.
+ * keeps the provider secrets; the Google client ID is public and is read from
+ * `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Enabling a provider is therefore dashboard
+ * configuration plus, for Google, one public environment variable.
  *
  * Google and Facebook are offered by default. The env flag exists so a
  * deployment can narrow the set, and it is still the honest gate for an
@@ -23,6 +24,28 @@
 export const OAUTH_PROVIDERS = ["google", "facebook"] as const;
 
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
+
+/**
+ * Providers that still use the server-side `signInWithOAuth` redirect.
+ *
+ * Google moved to Google Identity Services: the browser gets an ID token from
+ * Google and exchanges it with `signInWithIdToken`. Facebook still needs the
+ * redirect. The Server Action validates against this list, so a crafted POST
+ * cannot start a Google OAuth redirect that the UI no longer offers.
+ */
+export const SERVER_OAUTH_PROVIDERS = ["facebook"] as const;
+
+export type ServerOAuthProvider = (typeof SERVER_OAUTH_PROVIDERS)[number];
+
+/** Narrow an arbitrary string to a provider the server action may start. */
+export function isServerOAuthProvider(
+  value: unknown,
+): value is ServerOAuthProvider {
+  return (
+    typeof value === "string" &&
+    (SERVER_OAUTH_PROVIDERS as readonly string[]).includes(value)
+  );
+}
 
 /** Providers offered when `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS` is not set at all. */
 const DEFAULT_ENABLED_PROVIDERS: readonly OAuthProvider[] = [
@@ -62,15 +85,21 @@ export function enabledOAuthProviders(
 }
 
 /**
- * Where Supabase sends the browser back to.
+ * Where Supabase sends the browser back to for a server-side OAuth provider.
  *
  * Must be listed in the project's allowed redirect URLs, or Supabase refuses the
  * flow. The locale rides along so the visitor returns to their own language
  * rather than to the default one, and `/auth/callback` decides the destination
- * once it can see whether the account still needs to declare a role.
+ * once it can see whether the account still needs to declare a role. `next` is
+ * optional and is validated by the caller before it reaches this builder.
  */
-export function oauthCallbackUrl(siteUrl: URL, locale: string): string {
+export function oauthCallbackUrl(
+  siteUrl: URL,
+  locale: string,
+  next?: string | null,
+): string {
   const url = new URL("/auth/callback", siteUrl);
   url.searchParams.set("locale", locale);
+  if (next) url.searchParams.set("next", next);
   return url.toString();
 }

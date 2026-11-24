@@ -16,6 +16,7 @@ import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { STORE_PATH, storePathFor } from "@/lib/config/navigation";
 import { getAuthState } from "@/lib/auth/session";
+import { loadFavoriteTotal } from "@/lib/favorites/loaders";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
@@ -93,6 +94,7 @@ export default async function AccountPage({
     orders.map((o) => o.id),
   );
   const savedSearches = await loadSavedSearches();
+  const favoriteTotal = await loadFavoriteTotal();
   const memberships = await loadMyMembershipSummary();
   const regions = await loadCameroonRegions(resolved);
 
@@ -239,7 +241,8 @@ export default async function AccountPage({
     })),
     {
       key: "favorites",
-      href: `/${resolved}/real-estate/favorites`,
+      href: `/${resolved}/favorites`,
+      count: favoriteTotal,
       title: t("account.favoritesTitle"),
       body: t("account.favoritesBody"),
       cta: t("account.favoritesCta"),

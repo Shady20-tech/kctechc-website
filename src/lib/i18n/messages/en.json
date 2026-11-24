@@ -308,8 +308,8 @@
     "errPermanentResidency": "Please tell us whether you are a permanent resident.",
     "accountType": {
       "buyer": {
-        "label": "Buyer / Property Seeker",
-        "body": "Search listings, save favourites and contact us about a property."
+        "label": "Customer",
+        "body": "Shop products, save favourites and enquire about property — no listing or identity verification needed."
       },
       "landlord": {
         "label": "Landlord / Property Owner",
@@ -326,7 +326,9 @@
       "facebook": "Facebook"
     },
     "oauthDivider": "or use your email",
+    "oauthSigningIn": "Signing you in…",
     "oauthUnavailable": "That sign-in method is not available right now. Please use your email address.",
+    "oauthGoogleUnavailable": "Google sign-in is not configured for this site. Please use your email address.",
     "oauthFailed": "We could not complete that sign-in. Please try again, or use your email address.",
     "onboardingEyebrow": "One last step",
     "onboardingHeading": "Tell us how you will use the marketplace",
@@ -541,6 +543,24 @@
       "entityProduct": "product",
       "entityProject": "project",
       "entityArticle": "article"
+    }
+  },
+  "favorites": {
+    "eyebrow": "Your account",
+    "heading": "Your favorites",
+    "intro": "Everything you have saved across the store, Real Estate and Insights, in one place.",
+    "metaTitle": "Your favorites",
+    "metaDescription": "The products, properties and articles you have saved.",
+    "emptyBody": "You have not saved anything yet. Use the heart on a product, property or article to keep it here.",
+    "emptyCta": "Browse departments",
+    "propertiesHeading": "Saved properties",
+    "productsHeading": "Saved products",
+    "articlesHeading": "Saved articles",
+    "add": "Save {title} to your favorites",
+    "remove": "Remove {title} from your favorites",
+    "errors": {
+      "unconfigured": "Favorites are not available right now. Please try again later.",
+      "error": "We could not update your favorites. Please try again."
     }
   },
   "realEstate": {
@@ -2705,9 +2725,9 @@
     "ordersTitle": "Your orders",
     "ordersBody": "Orders you have placed with any department, and their current status.",
     "ordersCta": "View your orders",
-    "favoritesTitle": "Saved properties",
-    "favoritesBody": "Listings you have saved from the Real Estate department.",
-    "favoritesCta": "View saved properties",
+    "favoritesTitle": "Your favorites",
+    "favoritesBody": "Products, properties and articles you have saved.",
+    "favoritesCta": "View favorites",
     "savedSearchesTitle": "Saved searches",
     "savedSearchesBody": "Searches you saved so you can reopen the same listings view.",
     "savedSearchesCta": "View saved searches",

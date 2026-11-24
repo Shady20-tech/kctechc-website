@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RichText } from "@/components/content/RichText";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -148,6 +149,17 @@ export default async function InsightArticlePage({
                 date: formatDate(article.publishedAt, resolved),
               })}
             </p>
+            {article.id ? (
+              <div className="mt-6">
+                <FavoriteButton
+                  locale={resolved}
+                  entityType="insight"
+                  entityId={article.id}
+                  returnPath={articlePath}
+                  title={article.title}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

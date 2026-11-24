@@ -5,8 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   OAUTH_PROVIDERS,
+  SERVER_OAUTH_PROVIDERS,
   enabledOAuthProviders,
   isOAuthProvider,
+  isServerOAuthProvider,
   oauthCallbackUrl,
 } from "@/lib/auth/oauth";
 
@@ -94,6 +96,23 @@ describe("oauth callback url", () => {
     // callback route expects.
     expect(url).toBe("https://example.com/auth/callback?locale=en");
   });
+
+  it("carries a validated next path when one is supplied", () => {
+    const url = new URL(
+      oauthCallbackUrl(new URL("https://example.com"), "en", "/en/account"),
+    );
+    expect(url.searchParams.get("next")).toBe("/en/account");
+  });
+});
+
+describe("server-side oauth providers", () => {
+  it("keeps Google off the server redirect because it uses GIS", () => {
+    expect(SERVER_OAUTH_PROVIDERS).toEqual(["facebook"]);
+    expect(isServerOAuthProvider("facebook")).toBe(true);
+    for (const value of ["google", "apple", "", null, undefined, 1]) {
+      expect(isServerOAuthProvider(value)).toBe(false);
+    }
+  });
 });
 
 describe("the env template documents how to turn social sign-in on", () => {
@@ -113,6 +132,12 @@ describe("the env template documents how to turn social sign-in on", () => {
     }
     // And the redirect URL, which Supabase refuses the flow without.
     expect(template).toContain("/auth/callback");
+  });
+
+  it("documents the Google Identity Services client id", () => {
+    // GIS needs the public client id in the browser; without it the Google
+    // button cannot render and the operator has no clue which variable to set.
+    expect(readEnvTemplate()).toContain("NEXT_PUBLIC_GOOGLE_CLIENT_ID");
   });
 
   it("does not advertise the removed Apple provider", () => {
