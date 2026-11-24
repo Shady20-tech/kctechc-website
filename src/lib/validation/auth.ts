@@ -158,8 +158,8 @@ export type SignUpState =
 /**
  * The declarations an OAuth account still owes us.
  *
- * A social sign-in creates the account without asking anything: neither
- * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload, so
+ * A social sign-in creates the account without asking anything:
+ * `signInWithOAuth` accepts no metadata payload, so
  * `handle_new_user` provisions the profile with `declared_account_type` null.
  * This schema collects the two facts the password form already collects — the
  * role the person is signing up as and their residency — so both paths end in

@@ -1,16 +1,14 @@
 /**
  * Social sign-in providers.
  *
- * Which providers are offered is decided here and nowhere else. Google uses
- * Google Identity Services in the browser and exchanges the ID token with
- * `signInWithIdToken` when the public client id is configured; without it the
- * UI falls back to Supabase's server-side OAuth redirect, so the Google button
- * is never silently removed. Facebook always uses the redirect.
+ * Which providers are offered is decided here and nowhere else. Google and
+ * Facebook both use Supabase's server-side OAuth redirect; the provider client
+ * IDs and secrets live in the Supabase dashboard, and this app only decides
+ * which providers to offer through `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS`.
  *
  * A provider is *offered* only when the deployment says it is enabled. Supabase
- * keeps the provider secrets; the Google client ID is public and is read from
- * `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Enabling a provider is therefore dashboard
- * configuration plus, for Google, one public environment variable.
+ * keeps the provider secrets; enabling a provider is therefore dashboard
+ * configuration plus the public provider list.
  *
  * Google and Facebook are offered by default. The env flag exists so a
  * deployment can narrow the set, and it is still the honest gate for an
@@ -28,11 +26,9 @@ export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 /**
  * Providers that use the server-side `signInWithOAuth` redirect.
  *
- * Google uses Google Identity Services when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is
- * set, because that path shows the site's verified domain on the consent
- * screen. When the client id is absent the UI falls back to this redirect
- * rather than hiding Google, so the button is always available. Facebook
- * always uses the redirect.
+ * Both Google and Facebook use it. The action validates against this list and
+ * `enabledOAuthProviders()`, so a crafted POST cannot start a provider the UI
+ * does not offer.
  */
 export const SERVER_OAUTH_PROVIDERS = ["google", "facebook"] as const;
 

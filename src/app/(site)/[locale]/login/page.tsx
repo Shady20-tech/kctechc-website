@@ -93,7 +93,6 @@ export default async function SignInPage({
           <OAuthButtons
             locale={resolved}
             disabled={!configured}
-            mode="signin"
             nextPath={next}
           />
 

@@ -81,11 +81,7 @@ export default async function SignUpPage({
             </Notice>
           ) : null}
 
-          <OAuthButtons
-            locale={resolved}
-            disabled={!configured}
-            mode="signup"
-          />
+          <OAuthButtons locale={resolved} disabled={!configured} />
 
           <SignUpForm locale={resolved} disabled={!configured} />
         </div>

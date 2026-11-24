@@ -326,7 +326,6 @@
       "facebook": "Facebook"
     },
     "oauthDivider": "or use your email",
-    "oauthSigningIn": "Signing you in…",
     "oauthUnavailable": "That sign-in method is not available right now. Please use your email address.",
     "oauthFailed": "We could not complete that sign-in. Please try again, or use your email address.",
     "onboardingEyebrow": "One last step",

@@ -201,30 +201,6 @@ describe("buildContentSecurityPolicy", () => {
     expect(withAnalytics).toContain("https://www.google-analytics.com");
     expect(withAnalytics).toContain("https://*.analytics.google.com");
   });
-
-  it("allows Google Identity Services only when it is configured", () => {
-    const without = buildContentSecurityPolicy({
-      supabaseUrl: null,
-      tolgeeApiUrl: "https://app.tolgee.io",
-      isDevelopment: false,
-    });
-    expect(without).not.toContain("accounts.google.com");
-    expect(without).toContain("frame-src 'self'");
-
-    const withGoogle = buildContentSecurityPolicy({
-      supabaseUrl: null,
-      tolgeeApiUrl: "https://app.tolgee.io",
-      isDevelopment: false,
-      googleIdentityEnabled: true,
-    });
-    expect(withGoogle).toContain(
-      "script-src 'self' 'unsafe-inline' https://accounts.google.com",
-    );
-    expect(withGoogle).toContain("https://www.googleapis.com");
-    expect(withGoogle).toContain(
-      "frame-src 'self' https://accounts.google.com",
-    );
-  });
 });
 
 describe("translator", () => {

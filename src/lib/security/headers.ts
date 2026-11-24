@@ -23,12 +23,6 @@
  * nothing — the script tag is added at runtime, so the failure never appears in
  * the page source or in any unit test. Gating on the flag keeps a deployment with
  * no measurement id from carrying the allowance at all.
- *
- * Google Identity Services follows the same rule. Its client script and the
- * official button iframe are allowed only when `googleIdentityEnabled` is set,
- * which the caller derives from `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. `frame-src` is
- * required as well as `script-src`: the button is an iframe, and without the
- * directive it is blocked with no page-level error.
  */
 export function buildContentSecurityPolicy(options: {
   supabaseUrl: string | null;
@@ -36,13 +30,6 @@ export function buildContentSecurityPolicy(options: {
   isDevelopment: boolean;
   /** True when GA4 is configured; only then are Google's hosts allowed. */
   analyticsEnabled?: boolean;
-  /**
-   * True when Google Identity Services is configured. Only then are Google's
-   * script, frame and connection origins allowed. The GIS button is an iframe
-   * from `accounts.google.com`, so `frame-src` is required as well as
-   * `script-src`; without it the button silently never renders.
-   */
-  googleIdentityEnabled?: boolean;
   /**
    * Origin serving MapLibre styles and vector tiles. Defaults to OpenFreeMap,
    * which is the adapter's default provider.
@@ -71,18 +58,6 @@ export function buildContentSecurityPolicy(options: {
   }
 
   const frameSources = ["'self'"];
-  if (options.googleIdentityEnabled) {
-    // GIS loads its client from accounts.google.com and renders the official
-    // button in an iframe on the same host. `www.googleapis.com` is the other
-    // origin the client may contact. Keep these gated on the client id, the
-    // same way the analytics hosts are gated on the measurement id.
-    scriptSources.push("https://accounts.google.com");
-    connectSources.push(
-      "https://accounts.google.com",
-      "https://www.googleapis.com",
-    );
-    frameSources.push("https://accounts.google.com");
-  }
 
   return [
     "default-src 'self'",

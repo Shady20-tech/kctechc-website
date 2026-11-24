@@ -91,7 +91,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   // Otherwise decide from the profile. A social sign-in creates the account
-  // without asking anything — neither OAuth flow carries metadata, so
+  // without asking anything — the OAuth flow carries no metadata, so
   // `handle_new_user` leaves `declared_account_type` null — and that is the
   // signal that the account still owes us its role and residency declarations.
   // An account that already declared goes to the usual role-based landing.

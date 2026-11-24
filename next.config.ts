@@ -65,12 +65,7 @@ const contentSecurityPolicy = buildContentSecurityPolicy({
     "https://app.tolgee.io",
   isDevelopment,
   mapTileOrigin,
-  analyticsEnabled: Boolean(
-    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim(),
-  ),
-  googleIdentityEnabled: Boolean(
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim(),
-  ),
+  analyticsEnabled: Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()),
 });
 
 const nextConfig: NextConfig = {

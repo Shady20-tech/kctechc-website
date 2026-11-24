@@ -106,7 +106,7 @@ describe("oauth callback url", () => {
 });
 
 describe("server-side oauth providers", () => {
-  it("keeps Google and Facebook available for the server redirect fallback", () => {
+  it("uses the server redirect for both Google and Facebook", () => {
     expect(SERVER_OAUTH_PROVIDERS).toEqual(["google", "facebook"]);
     expect(isServerOAuthProvider("google")).toBe(true);
     expect(isServerOAuthProvider("facebook")).toBe(true);
@@ -135,10 +135,11 @@ describe("the env template documents how to turn social sign-in on", () => {
     expect(template).toContain("/auth/callback");
   });
 
-  it("documents the Google Identity Services client id", () => {
-    // GIS needs the public client id in the browser; without it the Google
-    // button cannot render and the operator has no clue which variable to set.
-    expect(readEnvTemplate()).toContain("NEXT_PUBLIC_GOOGLE_CLIENT_ID");
+  it("does not require a separate Google client id", () => {
+    // Google uses the same Supabase provider configuration as Facebook, so the
+    // single provider flag is the whole setup. A separate GIS client id would be
+    // a second source of truth.
+    expect(readEnvTemplate()).not.toContain("NEXT_PUBLIC_GOOGLE_CLIENT_ID");
   });
 
   it("does not advertise the removed Apple provider", () => {

@@ -3696,59 +3696,26 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   needs `https://your-domain/auth/callback` (or `.../auth/callback**` to cover `?locale=`). The
   provider consoles still point at `https://<project-ref>.supabase.co/auth/v1/callback`.
 
-### Google sign-in uses Google Identity Services, not the Supabase OAuth redirect
+### Social sign-in uses one provider list and Supabase's OAuth redirect
 
-- **Google now uses `signInWithIdToken`, and the consent screen belongs to the site.** The old
-  `signInWithOAuth({ provider: "google" })` flow sent the browser through
-  `<project-ref>.supabase.co/auth/v1/callback`, which is why Google named the Supabase host.
-  `GoogleSignInButton` (`src/components/auth/GoogleSignInButton.tsx`) loads
-  `https://accounts.google.com/gsi/client` with `next/script`, renders the official button with
-  `google.accounts.id.renderButton`, and exchanges the returned `response.credential` with
-  `supabase.auth.signInWithIdToken({ provider: "google", token, nonce })`. The browser never visits
-  Supabase's auth host, so the consent screen shows the Google Cloud project's app name and verified
-  domain.
-- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the public client id and must equal the client id in
-  Supabase's Google provider.** It is inlined at build time, so adding or changing it requires a
-  redeploy. The client secret stays in Supabase. `publicEnv.googleClientId` is the only reader. When
-  it is missing, `OAuthButtons` falls back to the Supabase Google OAuth redirect rather than hiding
-  Google, so the button is always visible; the GIS path is preferred because it shows the verified
-  domain. A build-only value still leaves the CSP without the Google origins, so set it before
-  building.
-- **A missing GIS client id must not hide Google.** The first GIS revision returned `null` from
-  `GoogleSignInButton` and rendered an "unavailable" notice in `OAuthButtons` when the client id was
-  absent, so an unconfigured deployment showed no Google button at all. `OAuthButtons` now renders a
-  Google form posting to `signInWithOAuthProviderAction` in that case; the GIS button is used only
-  when the client id is present. The fallback needs no Google script or iframe, so the CSP can keep
-  adding the Google origins only for the GIS path.
-- **The GIS button is an iframe, so CSP needs `frame-src`, not just `script-src`.**
-  `buildContentSecurityPolicy` adds `https://accounts.google.com` to `script-src`, `connect-src` and
-  `frame-src`, plus `https://www.googleapis.com` to `connect-src`, only when
-  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set. A missing `frame-src` blocks the button with no page-level
-  error; the only clue is a console CSP violation.
-- **The nonce is generated once per mount and passed to both GIS and Supabase.**
-  `google.accounts.id.initialize({ nonce })` puts it in the ID token, and
-  `signInWithIdToken({ nonce })` verifies it. Re-initializing the button on resize reuses the same
-  nonce; a new mount gets a new one.
-- **The post-login destination is shared with `/auth/callback`.** `resolvePostAuthPath`
-  (`src/lib/auth/post-auth.ts`) sends an undeclared social account to
-  `/{locale}/account/onboarding`, staff to `/admin`, and a declared customer to `/{locale}/account`.
-  `completeOAuthSignInAction` reads the session the browser client just wrote and returns that path;
-  `GoogleSignInButton` pushes it. Do not duplicate the rule in the client.
-- **Google and Facebook can both use the server-side `signInWithOAuth` redirect.** `SERVER_OAUTH_PROVIDERS`
-  in `src/lib/auth/oauth.ts` is `["google", "facebook"]`; Google uses it only as the fallback when
-  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent, and Facebook always uses it.
-  `signInWithOAuthProviderAction` validates against the list and against `enabledOAuthProviders()`,
-  so a crafted POST cannot start a provider the UI does not offer. The action also carries a
-  validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page return
-  target.
-- **Google Cloud Console setup is part of the feature.** The OAuth client is a Web application; add
-  every site origin (`https://kctechc.com`, `https://www.kctechc.com`, preview domains,
-  `http://localhost:3000`) to Authorized JavaScript origins. Keep
-  `https://<project-ref>.supabase.co/auth/v1/callback` in Authorized redirect URIs for the Supabase
-  provider config and the legacy flow. The consent screen's app name ("KC Technology Corporation")
-  and authorized domain (`kctechc.com`) are what the visitor sees. A missing client id, or a
-  different one between Vercel and Supabase, makes `signInWithIdToken` fail; the button reports the
-  generic OAuth error.
+- **`NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS` is the only social sign-in environment variable.** It is a
+  comma-separated list (`google,facebook` by default; `none` hides both). The provider client IDs and
+  secrets live in the Supabase dashboard (Authentication -> Providers), never in this app.
+- **Google and Facebook both use `signInWithOAuthProviderAction`.** The action validates the posted
+  provider against `OAUTH_PROVIDERS` and `enabledOAuthProviders()`, then calls
+  `supabase.auth.signInWithOAuth({ provider, options: { redirectTo: oauthCallbackUrl(...),
+  skipBrowserRedirect: true } })`; `/auth/callback` exchanges the code and `resolvePostAuthPath`
+  decides the landing. There is no separate Google client ID, no GIS script or iframe, and no Google
+  CSP origins.
+- **The sign-in buttons are real forms**, so they degrade without JavaScript. Both render disabled
+  when Supabase is unconfigured, rather than disappearing.
+- **The consent screen is Supabase's host** because the redirect goes through the Supabase project's
+  OAuth endpoint. A verified-domain consent screen would require GIS and a separate public Google
+  client ID; that is deliberately not the setup here.
+- **The post-login destination is shared with `/auth/callback`.** `resolvePostAuthPath` sends an
+  undeclared social account to `/{locale}/account/onboarding`, staff to `/admin`, and a declared
+  customer to `/{locale}/account`. The callback reads the session and profile; there is no
+  client-side completion action.
 
 ### General customer favorites and the Customer account type
 
