@@ -328,7 +328,6 @@
     "oauthDivider": "ou utilisez votre adresse e-mail",
     "oauthSigningIn": "Connexion en cours…",
     "oauthUnavailable": "Cette méthode de connexion n'est pas disponible pour le moment. Veuillez utiliser votre adresse e-mail.",
-    "oauthGoogleUnavailable": "La connexion Google n'est pas configurée pour ce site. Veuillez utiliser votre adresse e-mail.",
     "oauthFailed": "Nous n'avons pas pu terminer cette connexion. Veuillez réessayer ou utiliser votre adresse e-mail.",
     "onboardingEyebrow": "Dernière étape",
     "onboardingHeading": "Dites-nous comment vous allez utiliser la plateforme",

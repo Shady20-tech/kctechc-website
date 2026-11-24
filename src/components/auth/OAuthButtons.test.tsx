@@ -75,17 +75,37 @@ describe("OAuthButtons", () => {
     expect(mocks.script.src).toBeNull();
   });
 
-  it("warns instead of silently dropping Google when its client id is missing", () => {
+  it("falls back to the server redirect when the Google client id is missing", () => {
     mocks.env.publicEnv.googleClientId = "";
     render(<OAuthButtons locale="en" disabled={false} />);
 
-    expect(
-      screen.getByText(/Google sign-in is not configured/),
-    ).toBeInTheDocument();
+    const google = screen.getByRole("button", { name: "Google" });
+    expect(google).toBeInTheDocument();
     expect(mocks.script.src).toBeNull();
+
+    const provider = google
+      .closest("form")
+      ?.querySelector<HTMLInputElement>('input[name="provider"]');
+    expect(provider?.value).toBe("google");
+
     expect(
       screen.getByRole("button", { name: "Facebook" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps the Google fallback visible but disabled when the form is unavailable", () => {
+    mocks.env.publicEnv.googleClientId = "";
+    render(<OAuthButtons locale="en" disabled />);
+
+    expect(screen.getByRole("button", { name: "Google" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Facebook" })).toBeDisabled();
+  });
+
+  it("uses a disabled Google fallback when GIS cannot run", () => {
+    render(<OAuthButtons locale="en" disabled />);
+
+    expect(screen.getByRole("button", { name: "Google" })).toBeDisabled();
+    expect(mocks.script.src).toBeNull();
   });
 
   it("uses one full-width column when only Facebook is offered", () => {

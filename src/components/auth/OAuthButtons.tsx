@@ -33,19 +33,55 @@ function FacebookMark() {
 }
 
 /**
+ * Google's brand mark for the server-redirect fallback.
+ *
+ * The GIS button supplies its own official mark. This one is only used when
+ * `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent and the form falls back to Supabase's
+ * OAuth redirect, so the Google option still appears.
+ */
+function GoogleMark() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      className="h-5 w-5"
+    >
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.54-5.17 3.54-8.87Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.94-2.91l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.09A12 12 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.63H1.26a12 12 0 0 0 0 10.74l4.01-3.09Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.26 6.63l4.01 3.09C6.22 6.86 8.87 4.75 12 4.75Z"
+      />
+    </svg>
+  );
+}
+
+/**
  * Social sign-in buttons.
  *
- * Google renders the official Google Identity Services button, which returns an
- * ID token to the browser for `signInWithIdToken`. Facebook keeps the
- * server-side OAuth redirect. The two controls sit in the same grid so the
- * layout stays balanced, and the surrounding forms reserve the same height so a
- * provider that loads a little later does not shift the page.
+ * Google renders the official Google Identity Services button when
+ * `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is configured, which returns an ID token to the
+ * browser for `signInWithIdToken`. When the client id is absent it falls back to
+ * the Supabase server-side OAuth redirect, so the Google option is never silently
+ * removed. Facebook always uses the redirect. The two controls sit in the same
+ * grid so the layout stays balanced, and the surrounding forms reserve the same
+ * height so a provider that loads a little later does not shift the page.
  *
- * The Facebook control is a real `<form>` posting to a Server Action, so the
- * allow-list is enforced server-side and it degrades to a normal submission
- * without JavaScript. The Google control needs JavaScript by definition; when
- * the client ID is missing it is replaced by a plain notice rather than a button
- * that cannot work.
+ * The Facebook and fallback Google controls are real `<form>`s posting to a
+ * Server Action, so the allow-list is enforced server-side and they degrade to a
+ * normal submission without JavaScript. The GIS Google control needs JavaScript
+ * by definition.
  */
 export function OAuthButtons({
   locale,
@@ -64,38 +100,49 @@ export function OAuthButtons({
   const facebookEnabled = providers.includes("facebook");
   const googleConfigured = Boolean(publicEnv.googleClientId);
 
-  const googleVisible = googleEnabled && googleConfigured && !disabled;
+  // Google is always visible when it is enabled: the GIS button when it can
+  // work, otherwise the server-redirect form (disabled if the form is
+  // unavailable). Hiding it in the disabled state made an unconfigured preview
+  // look as if Google had been removed.
+  const googleVisible = googleEnabled;
   const facebookVisible = facebookEnabled;
 
   if (!googleVisible && !facebookVisible) {
-    if (googleEnabled && !googleConfigured) {
-      return (
-        <p className="text-sm text-muted">{t("auth.oauthGoogleUnavailable")}</p>
-      );
-    }
     return null;
   }
 
   return (
     <div>
-      {googleEnabled && !googleConfigured ? (
-        <p className="mb-2.5 text-sm text-muted">
-          {t("auth.oauthGoogleUnavailable")}
-        </p>
-      ) : null}
-
       <div
         className={`grid gap-2.5 ${
           googleVisible && facebookVisible ? "sm:grid-cols-2" : "sm:grid-cols-1"
         }`}
       >
         {googleVisible ? (
-          <GoogleSignInButton
-            locale={locale}
-            mode={mode}
-            nextPath={nextPath}
-            disabled={disabled}
-          />
+          googleConfigured && !disabled ? (
+            <GoogleSignInButton
+              locale={locale}
+              mode={mode}
+              nextPath={nextPath}
+              disabled={disabled}
+            />
+          ) : (
+            <form action={signInWithOAuthProviderAction}>
+              <input type="hidden" name="provider" value="google" />
+              <input type="hidden" name="locale" value={locale} />
+              {nextPath ? (
+                <input type="hidden" name="next" value={nextPath} />
+              ) : null}
+              <button
+                type="submit"
+                disabled={disabled}
+                className="cta-lift flex h-full min-h-11 w-full items-center justify-center gap-2 rounded-control border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-900 transition-soft hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GoogleMark />
+                <span>{t("auth.oauth.google")}</span>
+              </button>
+            </form>
+          )
         ) : null}
 
         {facebookVisible ? (

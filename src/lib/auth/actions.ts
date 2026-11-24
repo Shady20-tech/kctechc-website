@@ -450,8 +450,9 @@ export async function signInWithOAuthProviderAction(
     redirect(`${signInHref}?reason=unconfigured`);
   }
 
-  // Google is not on this list: it uses Google Identity Services in the
-  // browser. Only Facebook still starts a server-side OAuth redirect.
+  // Google normally uses Google Identity Services in the browser. It reaches
+  // this action only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is absent, where the UI
+  // falls back to the server redirect rather than hiding the button.
   if (
     !isServerOAuthProvider(requested) ||
     !enabledOAuthProviders().includes(requested)

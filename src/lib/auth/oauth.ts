@@ -3,9 +3,9 @@
  *
  * Which providers are offered is decided here and nowhere else. Google uses
  * Google Identity Services in the browser and exchanges the ID token with
- * `signInWithIdToken`; Facebook still uses Supabase's server-side OAuth
- * redirect. The two paths are kept as separate lists so the Server Action cannot
- * start a Google redirect the UI no longer offers.
+ * `signInWithIdToken` when the public client id is configured; without it the
+ * UI falls back to Supabase's server-side OAuth redirect, so the Google button
+ * is never silently removed. Facebook always uses the redirect.
  *
  * A provider is *offered* only when the deployment says it is enabled. Supabase
  * keeps the provider secrets; the Google client ID is public and is read from
@@ -26,14 +26,15 @@ export const OAUTH_PROVIDERS = ["google", "facebook"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 
 /**
- * Providers that still use the server-side `signInWithOAuth` redirect.
+ * Providers that use the server-side `signInWithOAuth` redirect.
  *
- * Google moved to Google Identity Services: the browser gets an ID token from
- * Google and exchanges it with `signInWithIdToken`. Facebook still needs the
- * redirect. The Server Action validates against this list, so a crafted POST
- * cannot start a Google OAuth redirect that the UI no longer offers.
+ * Google uses Google Identity Services when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is
+ * set, because that path shows the site's verified domain on the consent
+ * screen. When the client id is absent the UI falls back to this redirect
+ * rather than hiding Google, so the button is always available. Facebook
+ * always uses the redirect.
  */
-export const SERVER_OAUTH_PROVIDERS = ["facebook"] as const;
+export const SERVER_OAUTH_PROVIDERS = ["google", "facebook"] as const;
 
 export type ServerOAuthProvider = (typeof SERVER_OAUTH_PROVIDERS)[number];
 

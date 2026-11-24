@@ -3709,11 +3709,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   domain.
 - **`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the public client id and must equal the client id in
   Supabase's Google provider.** It is inlined at build time, so adding or changing it requires a
-  redeploy. The client secret stays in Supabase. `publicEnv.googleClientId` is the only reader; the
-  Google button is replaced by a visible notice when the variable is missing, rather than rendering
-  a control that cannot work. For a self-hosted standalone server it must also be present in the
-  runtime `.env`: the server-rendered button and the CSP are evaluated at startup, so a build-only
-  value leaves the SSR HTML on the unconfigured path even though the client bundle has it.
+  redeploy. The client secret stays in Supabase. `publicEnv.googleClientId` is the only reader. When
+  it is missing, `OAuthButtons` falls back to the Supabase Google OAuth redirect rather than hiding
+  Google, so the button is always visible; the GIS path is preferred because it shows the verified
+  domain. A build-only value still leaves the CSP without the Google origins, so set it before
+  building.
+- **A missing GIS client id must not hide Google.** The first GIS revision returned `null` from
+  `GoogleSignInButton` and rendered an "unavailable" notice in `OAuthButtons` when the client id was
+  absent, so an unconfigured deployment showed no Google button at all. `OAuthButtons` now renders a
+  Google form posting to `signInWithOAuthProviderAction` in that case; the GIS button is used only
+  when the client id is present. The fallback needs no Google script or iframe, so the CSP can keep
+  adding the Google origins only for the GIS path.
 - **The GIS button is an iframe, so CSP needs `frame-src`, not just `script-src`.**
   `buildContentSecurityPolicy` adds `https://accounts.google.com` to `script-src`, `connect-src` and
   `frame-src`, plus `https://www.googleapis.com` to `connect-src`, only when
@@ -3728,11 +3734,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `/{locale}/account/onboarding`, staff to `/admin`, and a declared customer to `/{locale}/account`.
   `completeOAuthSignInAction` reads the session the browser client just wrote and returns that path;
   `GoogleSignInButton` pushes it. Do not duplicate the rule in the client.
-- **Only Facebook remains on the server-side `signInWithOAuth` redirect.** `SERVER_OAUTH_PROVIDERS`
-  in `src/lib/auth/oauth.ts` is `["facebook"]`, and `signInWithOAuthProviderAction` validates against
-  it, so a crafted POST cannot start a Google redirect the UI no longer offers. The action also
-  carries a validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page
-  return target.
+- **Google and Facebook can both use the server-side `signInWithOAuth` redirect.** `SERVER_OAUTH_PROVIDERS`
+  in `src/lib/auth/oauth.ts` is `["google", "facebook"]`; Google uses it only as the fallback when
+  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent, and Facebook always uses it.
+  `signInWithOAuthProviderAction` validates against the list and against `enabledOAuthProviders()`,
+  so a crafted POST cannot start a provider the UI does not offer. The action also carries a
+  validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page return
+  target.
 - **Google Cloud Console setup is part of the feature.** The OAuth client is a Web application; add
   every site origin (`https://kctechc.com`, `https://www.kctechc.com`, preview domains,
   `http://localhost:3000`) to Authorized JavaScript origins. Keep

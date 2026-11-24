@@ -328,7 +328,6 @@
     "oauthDivider": "or use your email",
     "oauthSigningIn": "Signing you in…",
     "oauthUnavailable": "That sign-in method is not available right now. Please use your email address.",
-    "oauthGoogleUnavailable": "Google sign-in is not configured for this site. Please use your email address.",
     "oauthFailed": "We could not complete that sign-in. Please try again, or use your email address.",
     "onboardingEyebrow": "One last step",
     "onboardingHeading": "Tell us how you will use the marketplace",

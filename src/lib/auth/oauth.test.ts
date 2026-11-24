@@ -106,10 +106,11 @@ describe("oauth callback url", () => {
 });
 
 describe("server-side oauth providers", () => {
-  it("keeps Google off the server redirect because it uses GIS", () => {
-    expect(SERVER_OAUTH_PROVIDERS).toEqual(["facebook"]);
+  it("keeps Google and Facebook available for the server redirect fallback", () => {
+    expect(SERVER_OAUTH_PROVIDERS).toEqual(["google", "facebook"]);
+    expect(isServerOAuthProvider("google")).toBe(true);
     expect(isServerOAuthProvider("facebook")).toBe(true);
-    for (const value of ["google", "apple", "", null, undefined, 1]) {
+    for (const value of ["apple", "", null, undefined, 1]) {
       expect(isServerOAuthProvider(value)).toBe(false);
     }
   });
