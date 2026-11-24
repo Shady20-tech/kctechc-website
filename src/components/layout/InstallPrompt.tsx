@@ -63,7 +63,8 @@ export function ServiceWorkerRegistration() {
  * would not.
  */
 /** Routes where a floating overlay must never appear over the page's own form. */
-const AUTH_PATH_PATTERN = /^\/admin\/(login|sign-up|forgot-password|reset-password)$/;
+const AUTH_PATH_PATTERN =
+  /^\/(?:admin\/)?(login|sign-up|forgot-password|reset-password)$/;
 
 export function InstallPrompt() {
   const pathname = usePathname();

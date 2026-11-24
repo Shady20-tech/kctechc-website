@@ -58,10 +58,10 @@ export default async function AccountReviewsPage({
   const returnTo = encodeURIComponent(`/${locale}/account/reviews`);
   const state = await getAuthState();
   if (state.status === "unconfigured") {
-    redirect(`/admin/login?reason=unconfigured&next=${returnTo}`);
+    redirect(`/login?reason=unconfigured&next=${returnTo}`);
   }
   if (state.status !== "authenticated") {
-    redirect(`/admin/login?next=${returnTo}`);
+    redirect(`/login?next=${returnTo}`);
   }
 
   const reviews = await loadOwnReviews();

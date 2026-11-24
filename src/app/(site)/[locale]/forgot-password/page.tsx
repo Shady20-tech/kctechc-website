@@ -25,7 +25,7 @@ export async function generateMetadata({
   const t = createTranslator(locale).t;
   return buildMetadata({
     locale,
-    pathWithoutLocale: "/admin/forgot-password",
+    pathWithoutLocale: "/forgot-password",
     title: t("auth.forgotPasswordHeading"),
     description: t("auth.forgotPasswordDescription"),
     noindex: true,

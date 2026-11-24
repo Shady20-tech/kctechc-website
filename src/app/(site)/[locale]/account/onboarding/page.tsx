@@ -60,10 +60,10 @@ export default async function OnboardingPage({
 
   const state = await getAuthState();
   if (state.status === "unconfigured") {
-    redirect(`/${resolved}/admin/login?reason=unconfigured&next=${returnTo}`);
+    redirect(`/${resolved}/login?reason=unconfigured&next=${returnTo}`);
   }
   if (state.status !== "authenticated") {
-    redirect(`/${resolved}/admin/login?next=${returnTo}`);
+    redirect(`/${resolved}/login?next=${returnTo}`);
   }
 
   // Already declared: nothing to complete. Redirecting rather than showing a

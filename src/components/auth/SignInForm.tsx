@@ -162,7 +162,7 @@ export function SignInForm({
 
       <div className="flex justify-end">
         <Link
-          href={`/${locale}/admin/forgot-password`}
+          href={`/${locale}/forgot-password`}
           className="text-sm font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.forgotPasswordLink")}
@@ -178,7 +178,7 @@ export function SignInForm({
       <p className="text-sm text-body">
         {t("auth.noAccount")}{" "}
         <Link
-          href={`/${locale}/admin/sign-up`}
+          href={`/${locale}/sign-up`}
           className="font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.signUpSubmit")}

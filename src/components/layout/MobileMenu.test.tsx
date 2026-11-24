@@ -177,7 +177,7 @@ describe("MobileMenu", () => {
     fireEvent.click(trigger());
     expect(
       within(screen.getByRole("dialog")).getByRole("link", { name: "Sign in" }),
-    ).toHaveAttribute("href", "/admin/login");
+    ).toHaveAttribute("href", "/en/login");
   });
 
   it("closes on Escape", () => {

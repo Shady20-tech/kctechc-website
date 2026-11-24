@@ -82,10 +82,10 @@ export default async function AccountPage({
 
   const state = await getAuthState();
   if (state.status === "unconfigured") {
-    redirect(`/admin/login?reason=unconfigured&next=${returnTo}`);
+    redirect(`/login?reason=unconfigured&next=${returnTo}`);
   }
   if (state.status !== "authenticated") {
-    redirect(`/admin/login?next=${returnTo}`);
+    redirect(`/login?next=${returnTo}`);
   }
 
   const orders = await listOrdersForCustomer(state.userId);

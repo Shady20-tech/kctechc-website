@@ -58,9 +58,7 @@ export function FavoriteButton({
             const result = await toggleListingFavoriteAction(listingId);
             if (result.status === "unauthenticated") {
               setSaved(!next);
-              router.push(
-                `/admin/login?next=${encodeURIComponent(returnPath)}`,
-              );
+              router.push(`/login?next=${encodeURIComponent(returnPath)}`);
               return;
             }
             if (result.status !== "ok") {

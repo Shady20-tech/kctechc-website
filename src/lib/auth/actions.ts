@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
-import { postSignInPathFor, recoveryRedirectUrlFor } from "@/lib/auth/redirects";
+import {
+  confirmationRedirectUrl,
+  postSignInPathFor,
+  recoveryRedirectUrlFor,
+} from "@/lib/auth/redirects";
 import {
   enabledOAuthProviders,
   isOAuthProvider,
@@ -28,11 +32,6 @@ import {
 } from "@/lib/validation/auth";
 
 export type SignInActionState = SignInState;
-
-/** The confirmation email lands here so the link works from any device. */
-function confirmationRedirectUrl(): string {
-  return new URL("/auth/callback?next=/admin", getSiteUrl()).toString();
-}
 
 /** The recovery email lands here; see {@link recoveryRedirectUrlFor}. */
 async function recoveryRedirectUrl(): Promise<string> {
@@ -438,7 +437,7 @@ export async function signInWithOAuthProviderAction(
   // Resolve the locale first: every failure below redirects back to the sign-in
   // page, and a French visitor should not be bounced into the English one.
   const safeLocale = localeValue === "fr" ? "fr" : "en";
-  const signInHref = `/${safeLocale}/admin/login`;
+  const signInHref = `/${safeLocale}/login`;
 
   if (!isSupabaseConfigured()) {
     redirect(`${signInHref}?reason=unconfigured`);

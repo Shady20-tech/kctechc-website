@@ -3,6 +3,18 @@ import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
 import { isAdminRole, type AppRole } from "@/lib/auth/roles";
 
 /**
+ * Where an email confirmation link lands.
+ *
+ * No `next` is passed: `/auth/callback` decides by the account's role and
+ * declarations. A self-registration is always a `customer`, so it lands on the
+ * account hub; a staff account lands on the console. Passing `next=/admin` here
+ * sent every newly confirmed customer into a console that refuses them.
+ */
+export function confirmationRedirectUrl(origin: URL = getSiteUrl()): string {
+  return new URL("/auth/callback", origin).toString();
+}
+
+/**
  * Where a password-recovery email lands.
  *
  * Supabase appends the PKCE `code` to the redirect URL, so the link cannot point
@@ -16,7 +28,7 @@ import { isAdminRole, type AppRole } from "@/lib/auth/roles";
  * export must be an async Server Action; this is a pure string builder and is
  * exported so a test can assert the path shape without request context.
  *
- * The target is locale-scoped because the page lives under `/[locale]/admin/…`.
+ * The target is locale-scoped because the page lives under `/[locale]/…`.
  */
 export function recoveryRedirectUrlFor(
   localeCookie: string | undefined,
@@ -24,7 +36,7 @@ export function recoveryRedirectUrlFor(
 ): string {
   const locale =
     localeCookie && isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
-  const next = `/${locale}/admin/reset-password`;
+  const next = `/${locale}/reset-password`;
   return new URL(
     `/auth/callback?next=${encodeURIComponent(next)}`,
     origin,

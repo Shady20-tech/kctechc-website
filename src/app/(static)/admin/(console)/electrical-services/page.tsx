@@ -23,10 +23,10 @@ export default async function AdminElectricalServicesPage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Felectrical-services");
+    redirect("/login?next=%2Fadmin%2Felectrical-services");
   }
   if (
     !state.profile ||

@@ -1174,9 +1174,9 @@ clientWidth` on every department (no horizontal scroll), the trigger reads "Filt
 - **`saved_searches` is `unique (user_id, label)`.** A duplicate save is a distinct outcome, not a
   generic failure — "please try again" is advice that cannot work. Map Postgres `23505` to its own
   message rather than reporting every insert error as retryable.
-- **The sign-in route is `/admin/login`, and its `next` parameter is Zod-validated.** It rejects
+- **The sign-in route is `/[locale]/login`, and its `next` parameter is Zod-validated.** It rejects
   anything not starting with a single `/`, so a customer returning from a save control lands back
-  on the listings view.
+  on the listings view. The old `/[locale]/admin/login` path permanently redirects here.
 
 ### Phase 4 gotchas worth not rediscovering
 
@@ -2093,7 +2093,8 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   render agree.
 - **A `fixed` overlay in the `(site)` layout also lands on the auth screens, and it can swallow the
   submit button.** The install banner is `fixed inset-x-3 bottom-3 z-40` and the `(site)` group
-  renders `/admin/login`, `/admin/sign-up`, `/admin/forgot-password` and `/admin/reset-password`.
+  renders `/[locale]/login`, `/[locale]/sign-up`, `/[locale]/forgot-password` and
+  `/[locale]/reset-password` (formerly under `/[locale]/admin/`).
   At 375x667 the 190px-tall card covered the sign-in button (banner 465-655, button 489-529), so
   `elementFromPoint` at the button's centre returned the banner and the click never reached the
   form — signing in was simply impossible on a small phone, with no error and no POST. The auth
@@ -2796,7 +2797,7 @@ regressions this caught: a dropped `rank` tiebreaker on query paths, and
 - **The public header renders its account control as a client island fed by one JSON endpoint,
   because reading the session in the shared layout would make every public page dynamic.**
   `AccountAction` is an icon: a `User` glyph by default, replaced by the account's own profile
-  picture once `/api/account/summary` reports one. It renders the signed-out link (`/admin/login`)
+  picture once `/api/account/summary` reports one. It renders the signed-out link (`/[locale]/login`)
   on the server and on the first client render — `useAccountSummary`'s first value is `null`, so
   there is no hydration mismatch — and swaps to the account hub once the answer arrives.
   `useAccountSummary` (`src/lib/hooks/use-account-summary.ts`) is one module-level store shared by
@@ -3577,9 +3578,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### Auth-page Lighthouse scores: SEO 66 is correct
 
-- `/en/admin/login`, `/en/admin/sign-up` and `/en/account/*` are `noindex` by design, so Lighthouse
-  reports SEO **66** from the `is-crawlable` audit. That is the intended outcome for a private
-  surface, not a defect. Accessibility and Best Practices are 100.
+- `/en/login`, `/en/sign-up`, `/en/forgot-password`, `/en/reset-password` and `/en/account/*` are
+  `noindex` by design, so Lighthouse reports SEO **66** from the `is-crawlable` audit. That is the
+  intended outcome for a private surface, not a defect. Accessibility and Best Practices are 100.
 - **Best Practices on `/en/real-estate` is 96 in this container and it is environmental.** The
   `errors-in-console` audit fails on `/_next/image?...127.0.0.1:54321/storage/...` 500s because no
   local Supabase is running to serve the listing photography. The page itself returns 200 and the
@@ -3658,3 +3659,39 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   a draft of the same kind stays invisible, and that a description-only word still
   matches. Both are needed: the text test cannot execute SQL, and the harness
   cannot run in CI without a database.
+
+### Customer auth routes moved out of `/admin`
+
+- The customer authentication pages are no longer under the console namespace. They live at
+  `/[locale]/login`, `/[locale]/sign-up`, `/[locale]/forgot-password` and
+  `/[locale]/reset-password`
+  (`src/app/(site)/[locale]/{login,sign-up,forgot-password,reset-password}`). The console itself
+  stays at the non-localized `/admin` (`src/app/(static)/admin`).
+- **Every internal reference uses one of two shapes.** A component or page that already knows its
+  locale uses `/${locale}/login` (for example `AccountAction`, the auth forms, the callback and
+  `recoveryRedirectUrlFor`). A guard or admin-console page that does not know the locale uses the
+  unprefixed `/login`, and `src/proxy.ts` localizes it from the `kc_locale` cookie or
+  `Accept-Language` - the same path the public tree uses. Do not send a customer to
+  `/[locale]/admin/login` again.
+- **The legacy paths are 308 redirects, not 404s.** `src/lib/config/redirects.ts` maps both
+  `/admin/login` and `/{locale}/admin/login` (and the three sibling pages) to the new paths, and
+  Next.js preserves the query string, so a bookmarked `?next=` keeps working.
+- **`/login`, `/sign-up`, `/forgot-password` and `/reset-password` are ordinary localized public
+  paths**, so `isNonLocalizedPath` returns false and the proxy's generic branch prefixes them. The
+  old `LOCALIZED_ADMIN_PATHS` special case in `src/proxy.ts` was removed; only `/admin`, `/api`
+  and `/auth` remain non-localized prefixes.
+- **The install banner and the service worker both treat the new paths as auth screens.**
+  `AUTH_PATH_PATTERN` in `InstallPrompt.tsx` matches both the new and legacy forms, and
+  `public/sw.js`'s `NEVER_CACHE` includes them so a cached auth form is never served.
+- **The confirmation email no longer hardcodes `next=/admin`.** `confirmationRedirectUrl()` in
+  `src/lib/auth/redirects.ts` points at `/auth/callback` with no `next`, so the callback decides by
+  role: a self-registered customer reaches `/{locale}/account`, staff reach `/admin`. The old
+  `next=/admin` sent every confirmed customer into a console that refuses them.
+- **The sitemap does not list auth pages and `robots.txt` does not disallow `/login`.** They are
+  `noindex, nofollow, nocache`; disallowing them in robots would prevent a crawler from seeing that
+  directive. The old `/admin/*` forms remain under the existing `Disallow: /admin/` rule, which is
+  harmless because they only redirect.
+- **Supabase redirect URLs are unchanged by the move.** The app's OAuth, confirmation and recovery
+  links all land on `/auth/callback` (with a `next` for recovery), so the Supabase allow-list still
+  needs `https://your-domain/auth/callback` (or `.../auth/callback**` to cover `?locale=`). The
+  provider consoles still point at `https://<project-ref>.supabase.co/auth/v1/callback`.

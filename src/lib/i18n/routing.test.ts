@@ -21,6 +21,17 @@ describe("isNonLocalizedPath", () => {
     }
   });
 
+  it("treats the customer auth doors as localized public paths", () => {
+    for (const path of [
+      "/login",
+      "/sign-up",
+      "/forgot-password",
+      "/reset-password",
+    ]) {
+      expect(isNonLocalizedPath(path)).toBe(false);
+    }
+  });
+
   it("does not match a path that merely starts with an admin-like prefix", () => {
     expect(isNonLocalizedPath("/administrators")).toBe(false);
   });

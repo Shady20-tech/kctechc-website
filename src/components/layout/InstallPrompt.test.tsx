@@ -72,9 +72,13 @@ describe("InstallPrompt", () => {
     // button and the button could not be tapped at all, so signing in was
     // impossible on a small screen. Auth pages opt out of the overlay entirely.
     for (const route of [
+      "/en/login",
+      "/fr/sign-up",
+      "/en/forgot-password",
+      "/fr/reset-password",
+      // The legacy admin aliases still redirect, but the banner must not flash
+      // over them either.
       "/en/admin/login",
-      "/fr/admin/sign-up",
-      "/en/admin/forgot-password",
       "/admin/login",
     ]) {
       pathname.mockReturnValue(route);

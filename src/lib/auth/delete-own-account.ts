@@ -88,8 +88,6 @@ export async function deleteOwnAccountAction(
   // redirect. `reason=deleted` reuses the sign-in form's existing notice slot,
   // so the page acknowledges the deletion without a second mechanism.
   const locale = String(formData.get("locale") ?? "");
-  const base = /^[a-z]{2}$/.test(locale)
-    ? `/${locale}/admin/login`
-    : "/admin/login";
+  const base = /^[a-z]{2}$/.test(locale) ? `/${locale}/login` : "/login";
   redirect(`${base}?reason=deleted`);
 }

@@ -33,10 +33,10 @@ export default async function AdminRealEstatePage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Freal-estate");
+    redirect("/login?next=%2Fadmin%2Freal-estate");
   }
   // The staff tier opens the console front door; the individual listing routes
   // below keep `isRealEstateAdminRole`, because working the queue is not the same

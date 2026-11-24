@@ -26,10 +26,10 @@ export default async function AdminDigitalMarketingPage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Fdigital-marketing");
+    redirect("/login?next=%2Fadmin%2Fdigital-marketing");
   }
   if (
     !state.profile ||

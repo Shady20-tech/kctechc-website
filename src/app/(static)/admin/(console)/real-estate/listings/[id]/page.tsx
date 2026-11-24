@@ -35,10 +35,10 @@ export default async function AdminEditListingPage({
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect(`/admin/login?next=${encodeURIComponent(`/admin/real-estate/listings/${id}`)}`);
+    redirect(`/login?next=${encodeURIComponent(`/admin/real-estate/listings/${id}`)}`);
   }
   if (!state.profile || !isRealEstateAdminRole(state.profile.role)) {
     redirect("/admin/unauthorized");

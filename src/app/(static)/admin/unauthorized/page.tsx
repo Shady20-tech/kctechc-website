@@ -15,7 +15,7 @@ export default function UnauthorizedPage() {
           <p>{t("auth.unauthorizedDescription")}</p>
         </Notice>
         <Link
-          href="/admin/login"
+          href="/login"
           className="text-sm text-ink-700 underline underline-offset-4"
         >
           {t("actions.signIn")}

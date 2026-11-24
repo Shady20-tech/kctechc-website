@@ -61,7 +61,7 @@ export function SaveSearchControl({
       const result = await saveSearchAction(label, queryString, locale);
       if (result.status === "unauthenticated") {
         router.push(
-          `/admin/login?next=${encodeURIComponent(
+          `/login?next=${encodeURIComponent(
             `/${locale}/real-estate/listings${queryString}`,
           )}`,
         );

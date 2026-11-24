@@ -11,9 +11,11 @@
  * It is deliberately conservative, because this runs on a live site and a
  * caching bug here is worse than no service worker at all:
  *
- *   * `/api`, `/admin` and `/auth` are never touched. A cached authenticated
- *     response would be served to the next visitor on a shared device, and a
- *     cached admin page could show stale operational data.
+ *   * `/api`, `/admin`, `/auth` and the customer auth pages (`/login`,
+ *     `/sign-up`, `/forgot-password`, `/reset-password`) are never touched. A
+ *     cached authenticated response would be served to the next visitor on a
+ *     shared device, a cached admin page could show stale operational data, and
+ *     a cached auth form could show a stale error or success state.
  *   * Only build-hashed `/_next/static` assets are cache-first. Their filenames
  *     change whenever their contents do, so a stale entry is impossible.
  *   * Navigations are network-first, so a deployed change is picked up on the
@@ -38,7 +40,15 @@ const STATIC_CACHE = `kc-static-${VERSION}`;
 const OFFLINE_PAGES = { en: "/en/offline", fr: "/fr/offline" };
 
 // Prefixes the worker must never intercept.
-const NEVER_CACHE = ["/api/", "/admin", "/auth"];
+const NEVER_CACHE = [
+  "/api/",
+  "/admin",
+  "/auth",
+  "/login",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

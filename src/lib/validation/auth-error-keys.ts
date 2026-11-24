@@ -10,7 +10,7 @@
  * Zod 4 probes for JIT support with `Function("")` inside a try/catch. Under the
  * site's CSP (`script-src 'self' 'unsafe-inline'`, no `unsafe-eval`) the browser
  * reports that as an `eval` violation, which Lighthouse surfaces through
- * `inspector-issues` and which dropped `/en/admin/sign-up` to a Best Practices
+ * `inspector-issues` and which dropped `/en/sign-up` to a Best Practices
  * score of 96. Sign-in was unaffected because it imports only types from the
  * same module, and types leave no runtime trace.
  *

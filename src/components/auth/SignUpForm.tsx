@@ -80,7 +80,7 @@ export function SignUpForm({
         <p>{t("auth.checkEmailBody")}</p>
         <p className="mt-2">
           <Link
-            href={`/${locale}/admin/login`}
+            href={`/${locale}/login`}
             className="font-medium underline underline-offset-4"
           >
             {t("auth.backToSignIn")}
@@ -275,7 +275,7 @@ export function SignUpForm({
       <p className="text-sm text-body">
         {t("auth.haveAccount")}{" "}
         <Link
-          href={`/${locale}/admin/login`}
+          href={`/${locale}/login`}
           className="font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.signInSubmit")}

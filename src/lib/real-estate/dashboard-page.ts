@@ -33,10 +33,10 @@ export async function requireDashboardContext(
   const returnTo = encodeURIComponent(`/${locale}/account/${kind}`);
 
   if (auth.status === "unconfigured") {
-    redirect(`/admin/login?reason=unconfigured&next=${returnTo}`);
+    redirect(`/login?reason=unconfigured&next=${returnTo}`);
   }
   if (auth.status !== "authenticated") {
-    redirect(`/admin/login?next=${returnTo}`);
+    redirect(`/login?next=${returnTo}`);
   }
 
   const context = await loadDashboardContext(kind);

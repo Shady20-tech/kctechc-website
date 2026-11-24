@@ -21,23 +21,15 @@ import { isNonLocalizedPath } from "@/lib/i18n/routing";
 const LOCALE_COOKIE = "kc_locale";
 
 /**
- * Unprefixed admin paths that have a localized counterpart.
+ * Customer auth pages are ordinary public paths.
  *
- * Sign-in, sign-up and the password-recovery pages are customer-facing doors and
- * are bilingual; every other admin path is internal and English-only. They are
- * therefore served from `/[locale]/admin/...` so they inherit the site header,
- * footer and language switcher, while these unprefixed forms stay working — they
- * are what the shared header, the guards and existing bookmarks link to.
- *
- * Only these are remapped. An arbitrary `/admin/anything` must not be rewritten,
- * or the mapping would leak into the internal console.
+ * Sign-in, sign-up and the password-recovery pages live at `/{locale}/login`,
+ * `/{locale}/sign-up`, `/{locale}/forgot-password` and `/{locale}/reset-password`.
+ * Their unprefixed forms (`/login`, ...) are handled by the public-tree branch
+ * below, exactly like `/about`: the visitor is redirected to the locale the
+ * cookie or Accept-Language selects. No special case is needed here, and the
+ * internal `/admin` tree stays untouched.
  */
-const LOCALIZED_ADMIN_PATHS = new Set([
-  "/admin/login",
-  "/admin/sign-up",
-  "/admin/forgot-password",
-  "/admin/reset-password",
-]);
 
 function detectLocale(request: NextRequest): string {
   // 1. An explicit choice made by the visitor.
@@ -97,21 +89,6 @@ export async function proxy(request: NextRequest) {
   }
 
   // Keep the Supabase auth cookie pair fresh. Cookie handling only.
-  //
-  // The localized sign-in and sign-up aliases are forwarded here, before the
-  // refresh, because there is nothing to refresh for a stateless hop and the
-  // destination will run the refresh itself. `rememberLocale` is called so the
-  // guess this redirect just made is honoured on the visitor's next unprefixed
-  // visit, exactly as the public tree does.
-  if (LOCALIZED_ADMIN_PATHS.has(pathname)) {
-    const locale = detectLocale(request);
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}${pathname}`;
-    const redirect = NextResponse.redirect(url, 307);
-    rememberLocale(redirect, locale);
-    return redirect;
-  }
-
   return refreshSession(request, NextResponse.next());
 }
 

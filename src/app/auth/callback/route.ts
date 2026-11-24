@@ -39,9 +39,9 @@ function asLocale(value: string | null | undefined): "en" | "fr" | null {
 
 /** The sign-in page is localized; send the visitor to the one matching them. */
 function signInPath(acceptLanguage: string | null, cookieLocale?: string): string {
-  if (cookieLocale && isLocale(cookieLocale)) return `/${cookieLocale}/admin/login`;
+  if (cookieLocale && isLocale(cookieLocale)) return `/${cookieLocale}/login`;
   const fromHeader = resolveLocaleFromAcceptLanguage(acceptLanguage);
-  return `/${fromHeader ?? "en"}/admin/login`;
+  return `/${fromHeader ?? "en"}/login`;
 }
 
 export async function GET(request: Request): Promise<NextResponse> {

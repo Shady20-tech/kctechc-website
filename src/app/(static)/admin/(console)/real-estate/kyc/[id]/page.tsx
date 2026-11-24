@@ -44,11 +44,11 @@ export default async function AdminKycDetailPage({
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
     redirect(
-      `/admin/login?next=${encodeURIComponent(`/admin/real-estate/kyc/${id}`)}`,
+      `/login?next=${encodeURIComponent(`/admin/real-estate/kyc/${id}`)}`,
     );
   }
   if (!state.profile || !isKycReviewerRole(state.profile.role)) {

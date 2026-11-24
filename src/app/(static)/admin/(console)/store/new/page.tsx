@@ -29,10 +29,10 @@ export default async function AdminNewProductPage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Fstore%2Fnew");
+    redirect("/login?next=%2Fadmin%2Fstore%2Fnew");
   }
   if (!state.profile || !isDepartmentEditorRole(state.profile.role)) {
     redirect("/admin/unauthorized");

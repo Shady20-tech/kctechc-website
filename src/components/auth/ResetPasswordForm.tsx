@@ -53,7 +53,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
         <p>{t("auth.passwordUpdatedBody")}</p>
         <p className="mt-2">
           <Link
-            href={`/${locale}/admin/login`}
+            href={`/${locale}/login`}
             className="font-medium underline underline-offset-4"
           >
             {t("auth.backToSignIn")}
@@ -121,7 +121,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
 
       <p className="text-sm text-body">
         <Link
-          href={`/${locale}/admin/login`}
+          href={`/${locale}/login`}
           className="font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.backToSignIn")}

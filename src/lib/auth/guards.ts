@@ -24,10 +24,10 @@ export async function requireUser(returnTo: string): Promise<Profile> {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated" || !state.profile) {
-    redirect(`/admin/login?next=${encodeURIComponent(returnTo)}`);
+    redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
   if (!state.profile.isActive) {
     redirect("/admin/unauthorized?reason=inactive");

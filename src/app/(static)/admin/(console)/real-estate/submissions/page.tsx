@@ -30,10 +30,10 @@ export default async function AdminSubmissionsPage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Freal-estate%2Fsubmissions");
+    redirect("/login?next=%2Fadmin%2Freal-estate%2Fsubmissions");
   }
   if (!state.profile || !isRealEstateAdminRole(state.profile.role)) {
     redirect("/admin/unauthorized");
