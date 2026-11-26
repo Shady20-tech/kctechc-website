@@ -63,7 +63,9 @@ export async function loadSalesReport(limit = 30): Promise<SalesRow[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("report_sales_daily")
-    .select("sale_date, currency, paid_order_count, gross_minor, ordered_minor, overpayment_minor")
+    .select(
+      "sale_date, currency, paid_order_count, gross_minor, ordered_minor, overpayment_minor",
+    )
     .order("sale_date", { ascending: false })
     .limit(limit);
   return (data ?? []).map((row) => ({
@@ -91,14 +93,21 @@ export async function loadPipelineReport(): Promise<PipelineRow[]> {
   }));
 }
 
-export async function loadInquiryReport(limit = 30): Promise<InquiryRow[]> {
+export async function loadInquiryReport(
+  limit = 30,
+  departmentSlug?: string,
+): Promise<InquiryRow[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const { data } = await supabase
+  let query = supabase
     .from("report_inquiries_daily")
-    .select("inquiry_date, department_slug, inquiry_type, source, inquiry_count, responded_count")
+    .select(
+      "inquiry_date, department_slug, inquiry_type, source, inquiry_count, responded_count",
+    )
     .order("inquiry_date", { ascending: false })
     .limit(limit);
+  if (departmentSlug) query = query.eq("department_slug", departmentSlug);
+  const { data } = await query;
   return (data ?? []).map((row) => ({
     inquiryDate: row.inquiry_date ?? "",
     departmentSlug: row.department_slug,
@@ -109,7 +118,9 @@ export async function loadInquiryReport(limit = 30): Promise<InquiryRow[]> {
   }));
 }
 
-export async function loadListingActivityReport(limit = 30): Promise<ListingActivityRow[]> {
+export async function loadListingActivityReport(
+  limit = 30,
+): Promise<ListingActivityRow[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const { data } = await supabase
@@ -130,7 +141,9 @@ export async function loadInventoryReport(): Promise<InventoryRow[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("report_inventory_status")
-    .select("product_id, sku, title, stock, availability, publish_state, price_minor, currency, low_stock, times_ordered")
+    .select(
+      "product_id, sku, title, stock, availability, publish_state, price_minor, currency, low_stock, times_ordered",
+    )
     .order("title", { ascending: true });
   return (data ?? []).map((row) => ({
     productId: row.product_id ?? "",

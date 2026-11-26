@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { Card, CardHeading } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
@@ -31,6 +32,8 @@ export type DepartmentOverviewPanelProps = {
   hasStore: boolean;
   /** True when this department has a Work Done projects surface. */
   hasProjects: boolean;
+  /** An optional analytics block rendered before the quick actions. */
+  report?: ReactNode;
 };
 
 /** Guard shared by both department pages, so neither can forget the check. */
@@ -47,6 +50,7 @@ export function DepartmentOverviewPanel({
   actions,
   hasStore,
   hasProjects,
+  report,
 }: DepartmentOverviewPanelProps) {
   const t = createTranslator("en").t;
 
@@ -68,6 +72,8 @@ export function DepartmentOverviewPanel({
           </Card>
         ))}
       </div>
+
+      {report ? <div className="mt-8">{report}</div> : null}
 
       <Card className="mt-8">
         <CardHeading>{t("adminDashboard.quickActions")}</CardHeading>
@@ -123,8 +129,14 @@ export function DepartmentOverviewPanel({
         be able to see what this console is scoped to without guessing.
       */}
       <Notice tone="info" title={t("adminDepartments.scopeHeading")}>
-        <p>{t("adminDepartments.scopeBody", { department: t(`adminNav.${labelKeyFor(slug)}`) })}</p>
-        <p className="mt-2 text-sm">{t("adminDepartments.roleNote", { role: t(`roleName.${role}`) })}</p>
+        <p>
+          {t("adminDepartments.scopeBody", {
+            department: t(`adminNav.${labelKeyFor(slug)}`),
+          })}
+        </p>
+        <p className="mt-2 text-sm">
+          {t("adminDepartments.roleNote", { role: t(`roleName.${role}`) })}
+        </p>
       </Notice>
     </>
   );

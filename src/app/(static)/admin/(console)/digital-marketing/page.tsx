@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
 
 import { DepartmentOverviewPanel } from "@/components/admin/DepartmentOverviewPanel";
+import { ReportHighlights } from "@/components/admin/reports/ReportVisuals";
+import { summarizeInquiries } from "@/lib/admin/report-metrics";
+import { loadInquiryReport } from "@/lib/admin/reports";
 import { getAuthState } from "@/lib/auth/session";
 import { canAccessDepartment } from "@/lib/auth/roles";
 import { listAdminProjects } from "@/lib/content/project-admin-queries";
+import { createTranslator } from "@/lib/i18n/translator";
 import { listProductsForAdmin } from "@/lib/store/admin-queries";
 
 export const dynamic = "force-dynamic";
@@ -38,13 +42,26 @@ export default async function AdminDigitalMarketingPage() {
     redirect("/admin/unauthorized");
   }
 
-  const [products, projects] = await Promise.all([
+  const [products, projects, inquiryRows] = await Promise.all([
     listProductsForAdmin(["digital-marketing"]),
     listAdminProjects(state.profile.role),
+    loadInquiryReport(200, "digital-marketing"),
   ]);
+  const t = createTranslator("en").t;
+  const inquiries = summarizeInquiries(
+    inquiryRows.filter((row) => row.departmentSlug === "digital-marketing"),
+  );
 
   const published = products.filter((row) => row.publishState === "published");
   const drafts = products.filter((row) => row.publishState === "draft");
+  const lowStock = products.filter(
+    (row) => row.stock > 0 && row.stock <= 5,
+  ).length;
+  const outOfStock = products.filter((row) => row.stock <= 0).length;
+  const publishedShare =
+    products.length > 0
+      ? Math.round((published.length / products.length) * 1000) / 10
+      : null;
 
   return (
     <DepartmentOverviewPanel
@@ -66,6 +83,50 @@ export default async function AdminDigitalMarketingPage() {
       ]}
       hasStore
       hasProjects
+      report={
+        <ReportHighlights
+          heading={t("adminDepartments.reportHeading")}
+          intro={t("adminDepartments.reportIntro")}
+          metrics={[
+            {
+              label: t("adminDepartments.publishedShare"),
+              value:
+                publishedShare === null
+                  ? t("adminReports.noValueRecorded")
+                  : `${publishedShare}%`,
+              hint: t("adminDepartments.publishedShareHint"),
+            },
+            {
+              label: t("adminReports.inventoryLow"),
+              value: String(lowStock),
+              hint: t("adminReports.kpiLowStockHint", {
+                out: outOfStock,
+                total: products.length,
+              }),
+            },
+            {
+              label: t("adminReports.kpiResponse"),
+              value:
+                inquiries.responseRate === null
+                  ? t("adminReports.noValueRecorded")
+                  : `${inquiries.responseRate}%`,
+              hint:
+                inquiries.total > 0
+                  ? t("adminReports.kpiResponseHint", {
+                      responded: inquiries.responded,
+                      total: inquiries.total,
+                    })
+                  : t("adminReports.inquiriesEmpty"),
+            },
+            {
+              label: t("adminReports.inquiriesUnanswered"),
+              value: String(inquiries.unanswered),
+            },
+          ]}
+          href="/admin/reports"
+          linkLabel={t("adminDashboardCards.viewReports")}
+        />
+      }
     />
   );
 }

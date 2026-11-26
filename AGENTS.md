@@ -3857,3 +3857,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 1709 Vitest tests pass (148 files); `tsc --noEmit`, ESLint and the production build are clean. The
   new SQL parses with `pglast` (the local Postgres harness is unavailable here, so the validate
   scripts were not replayed).
+
+### Reports that analyse, and the blank reviews queue
+
+- **`/admin/reviews` returned `null` for every moderator because it read a locale it did not
+  have.** The page lives under the non-localized `(static)/admin` tree, but its implementation
+  awaited `params`, read `params.locale`, failed `isLocale`, and returned `null`; the console
+  chrome and sidebar still rendered, so the screen looked like an empty page rather than an error.
+  It now uses `createTranslator("en")` like the rest of the console. `admin-reviews-route.test.ts`
+  pins the route's shape (no `params` type, no `isLocale(`, no `buildMetadata(`) so a later
+  localization edit must also move the route, not silently blank it again. A `null` return from a
+  page is the hardest blank-page shape to spot because Status and layout are both 200.
+- **The reports page is derived analysis, not a dump of the database views.**
+  `src/lib/admin/report-metrics.ts` is pure and unit-tested (`report-metrics.test.ts`, 11 tests):
+  it sums paid revenue **per currency** (there is no exchange-rate feed, so never add XAF to USD),
+  detects overpayment/underpayment, derives a paid share, builds a 14-day trend, summarises the
+  pipeline, computes inquiry response rate and listing views, and resolves inventory availability
+  per SKU. The page renders that output through `ReportVisuals` — KPI cards, bar charts, an SVG
+  trend with a screen-reader list, insight cards and the raw daily records in `<details>`.
+- **There is no chart library and should not be one for this.** The bars are flex tracks and the
+  trend is an inline SVG polyline with a text alternative; adding a charting dependency for four
+  small charts would cost more JS than the dashboard uses in total. `ReportVisuals.test.tsx`
+  covers the KPIs, empty states, accessible trend name and the dashboard link.
+- **Empty report views are reported, never drawn as zeros.** `report_sales_daily`,
+  `report_order_pipeline`, `report_inquiries_daily` and `report_listing_activity_daily` can all be
+  empty on a new deployment. Each section says "no data recorded yet" (or the specific empty
+  message) instead of rendering a flat chart that looks like measured zero activity. That is the
+  same rule as an unconfigured email service: report the absence, do not simulate success.
+- **The four dashboard front doors carry the same analysis in compact form.** `/admin` shows the
+  operational pulse; `/admin/digital-marketing` and `/admin/electrical-services` show published
+  share, low stock, enquiry response and unanswered count; `/admin/real-estate` shows published
+  share, listing views, listing enquiries and pending submissions. `ReportHighlights` is the
+  shared block, and `DepartmentOverviewPanel` takes it through a `report` React node so the shell
+  does not gain department-specific data logic.
+- **A trend label suffix is computed from the rows, not hard-coded.** The current report views do
+  not project a currency, so the page says "Daily confirmed revenue" until at least one row exists
+  and then names the single recorded currency; it never appends one currency to a mixed series.
+- **Department inquiry summaries filter in the database, not after the limit.**
+  `loadInquiryReport(limit, departmentSlug?)` applies the department predicate to the query, so a
+  department's pulse is not computed from the last 30 rows of every department combined.
+- 1731 Vitest tests pass (152 files); `tsc --noEmit`, ESLint and the production build are clean.
+  `/admin/reports` and `/admin/reviews` both build as dynamic console routes.

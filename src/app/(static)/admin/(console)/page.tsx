@@ -1,11 +1,23 @@
 import Link from "next/link";
 
 import { Avatar, resolveAvatarUrl } from "@/components/admin/Avatar";
+import { ReportHighlights } from "@/components/admin/reports/ReportVisuals";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
+import {
+  summarizeInquiries,
+  summarizePipeline,
+  summarizeSales,
+} from "@/lib/admin/report-metrics";
+import {
+  loadInquiryReport,
+  loadPipelineReport,
+  loadSalesReport,
+} from "@/lib/admin/reports";
 import { navItemsForRole, navSectionsForRole } from "@/lib/admin/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
 import { createTranslator } from "@/lib/i18n/translator";
+import { formatPrice } from "@/lib/store/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +36,16 @@ export default async function AdminDashboardPage() {
   const items = navItemsForRole(profile.role);
   const sections = navSectionsForRole(profile.role);
   const displayName = profile.fullName || profile.email || "";
+
+  const [salesRows, pipelineRows, inquiryRows] = await Promise.all([
+    loadSalesReport(),
+    loadPipelineReport(),
+    loadInquiryReport(),
+  ]);
+  const sales = summarizeSales(salesRows);
+  const pipeline = summarizePipeline(pipelineRows);
+  const inquiries = summarizeInquiries(inquiryRows);
+  const primaryCurrency = sales.currencies[0] ?? null;
 
   return (
     <>
@@ -49,8 +71,78 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
+      <div className="mt-8">
+        <ReportHighlights
+          heading={t("adminDashboard.reportHeading")}
+          intro={t("adminDashboard.reportIntro")}
+          metrics={[
+            {
+              label: primaryCurrency
+                ? t("adminReports.kpiRevenueCurrency", {
+                    currency: primaryCurrency.currency,
+                  })
+                : t("adminReports.kpiRevenue"),
+              value: primaryCurrency
+                ? formatPrice(
+                    primaryCurrency.grossMinor,
+                    primaryCurrency.currency,
+                    "en",
+                  )
+                : t("adminReports.noValueRecorded"),
+              hint: primaryCurrency
+                ? t("adminReports.kpiRevenueHint", {
+                    orders: primaryCurrency.paidOrders,
+                    average:
+                      primaryCurrency.averageOrderMinor === null
+                        ? t("adminReports.noValueRecorded")
+                        : formatPrice(
+                            primaryCurrency.averageOrderMinor,
+                            primaryCurrency.currency,
+                            "en",
+                          ),
+                  })
+                : t("adminReports.salesEmpty"),
+            },
+            {
+              label: t("adminReports.kpiPaidOrders"),
+              value: String(sales.totalPaidOrders),
+            },
+            {
+              label: t("adminReports.kpiPending"),
+              value: String(pipeline.pendingOrders),
+              hint:
+                pipeline.pendingValues[0] !== undefined
+                  ? formatPrice(
+                      pipeline.pendingValues[0].totalMinor,
+                      pipeline.pendingValues[0].currency,
+                      "en",
+                    )
+                  : t("adminReports.pipelineEmpty"),
+            },
+            {
+              label: t("adminReports.kpiResponse"),
+              value:
+                inquiries.responseRate === null
+                  ? t("adminReports.noValueRecorded")
+                  : `${inquiries.responseRate}%`,
+              hint:
+                inquiries.total > 0
+                  ? t("adminReports.kpiResponseHint", {
+                      responded: inquiries.responded,
+                      total: inquiries.total,
+                    })
+                  : t("adminReports.inquiriesEmpty"),
+            },
+          ]}
+          href="/admin/reports"
+          linkLabel={t("adminDashboardCards.viewReports")}
+        />
+      </div>
+
       {items.length === 0 ? (
-        <p className="mt-8 text-sm text-muted">{t("adminDashboard.noAccess")}</p>
+        <p className="mt-8 text-sm text-muted">
+          {t("adminDashboard.noAccess")}
+        </p>
       ) : (
         <div className="mt-8 space-y-8">
           {sections.map((section) => (

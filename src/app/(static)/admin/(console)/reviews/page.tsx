@@ -7,14 +7,21 @@ import { StarRating } from "@/components/reviews/StarRating";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireUser } from "@/lib/auth/guards";
 import type { AppRole } from "@/lib/auth/roles";
-import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { loadReviewQueue } from "@/lib/reviews/loaders";
-import { MODERATOR_DECISIONS, REVIEW_MODERATOR_ROLES } from "@/lib/reviews/types";
-import { buildMetadata } from "@/lib/seo/metadata";
+import {
+  MODERATOR_DECISIONS,
+  REVIEW_MODERATOR_ROLES,
+} from "@/lib/reviews/types";
 
 /**
  * Review moderation queue.
+ *
+ * This route lives under the non-localized `/admin` tree, so it has no `[locale]`
+ * segment. It previously read `params.locale`, found `undefined`, failed
+ * `isLocale`, and returned `null` — a completely blank console page for every
+ * moderator. The console is English-only (`createTranslator("en")`), the same as
+ * every other admin surface.
  *
  * Guarded by `REVIEW_MODERATOR_ROLES`, which is deliberately narrower than
  * "anyone in the console": an agent is a marketplace participant and a landlord is
@@ -27,31 +34,13 @@ import { buildMetadata } from "@/lib/seo/metadata";
  */
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  if (!isLocale(locale)) return {};
-  const t = createTranslator(locale).t;
-  return buildMetadata({
-    locale,
-    pathWithoutLocale: "/admin/reviews",
-    title: t("reviews.moderationHeading"),
-    noindex: true,
-  });
-}
+export const metadata: Metadata = {
+  title: "Review moderation",
+  robots: { index: false, follow: false, nocache: true },
+};
 
-export default async function AdminReviewsPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale: raw } = await params;
-  if (!isLocale(raw)) return null;
-  const locale = raw as Locale;
-  const t = createTranslator(locale).t;
+export default async function AdminReviewsPage() {
+  const t = createTranslator("en").t;
 
   const profile = await requireUser("/admin/reviews");
   if (!REVIEW_MODERATOR_ROLES.includes(profile.role as AppRole as never)) {
@@ -59,13 +48,18 @@ export default async function AdminReviewsPage({
   }
 
   const reviews = await loadReviewQueue();
-  const pending = reviews.filter((review) => review.status === "pending_review");
-  const decided = reviews.filter((review) => review.status !== "pending_review");
-
-  const dateFormatter = new Intl.DateTimeFormat(
-    locale === "fr" ? "fr-CM" : "en-CM",
-    { year: "numeric", month: "short", day: "numeric" },
+  const pending = reviews.filter(
+    (review) => review.status === "pending_review",
   );
+  const decided = reviews.filter(
+    (review) => review.status !== "pending_review",
+  );
+
+  const dateFormatter = new Intl.DateTimeFormat("en-CM", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 
   const decisionLabels = {
     approve: t("reviews.approve"),
@@ -88,7 +82,9 @@ export default async function AdminReviewsPage({
         />
 
         {reviews.length === 0 ? (
-          <p className="mt-8 text-sm text-body">{t("reviews.moderationEmpty")}</p>
+          <p className="mt-8 text-sm text-body">
+            {t("reviews.moderationEmpty")}
+          </p>
         ) : (
           <div className="mt-8 space-y-10">
             {pending.length > 0 ? (
@@ -158,7 +154,9 @@ export default async function AdminReviewsPage({
                         {review.body}
                       </p>
                       {review.reviewNotes ? (
-                        <p className="mt-2 text-xs text-muted">{review.reviewNotes}</p>
+                        <p className="mt-2 text-xs text-muted">
+                          {review.reviewNotes}
+                        </p>
                       ) : null}
                     </li>
                   ))}

@@ -75,6 +75,16 @@ describe("OAuthButtons", () => {
     expect(mocks.script.src).toBeNull();
   });
 
+  it("renders nothing when the environment names Apple", () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS", "apple");
+
+    const { container } = render(<OAuthButtons locale="en" disabled={false} />);
+
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole("button", { name: /apple/i })).toBeNull();
+    expect(mocks.script.src).toBeNull();
+  });
+
   it("falls back to the server redirect when the Google client id is missing", () => {
     mocks.env.publicEnv.googleClientId = "";
     render(<OAuthButtons locale="en" disabled={false} />);
