@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
@@ -121,8 +122,10 @@ function numberOrNull(value: string): number | null {
  */
 async function authorize(): Promise<{ ok: false; error: string } | null> {
   const auth = await getAuthState();
-  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
-  if (auth.status !== "authenticated") return { ok: false, error: "unauthenticated" };
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
+  if (auth.status !== "authenticated")
+    return { ok: false, error: "unauthenticated" };
   if (!auth.profile || !isRealEstateAdminRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
@@ -159,7 +162,11 @@ export async function createListingAction(
 
   const parsed = listingInputSchema.safeParse(readListingForm(formData));
   if (!parsed.success) {
-    return { ok: false, error: "invalid", fields: fieldErrorsFrom(parsed.error) };
+    return {
+      ok: false,
+      error: "invalid",
+      fields: fieldErrorsFrom(parsed.error),
+    };
   }
 
   const supabase = await createClient();
@@ -262,7 +269,11 @@ export async function updateListingAction(
 
   const parsed = listingInputSchema.safeParse(readListingForm(formData));
   if (!parsed.success) {
-    return { ok: false, error: "invalid", fields: fieldErrorsFrom(parsed.error) };
+    return {
+      ok: false,
+      error: "invalid",
+      fields: fieldErrorsFrom(parsed.error),
+    };
   }
 
   const supabase = await createClient();
@@ -463,7 +474,8 @@ export async function deleteListingAction(
   reason: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const auth = await getAuthState();
-  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }
@@ -494,7 +506,8 @@ export async function deleteListingAction(
 
   revalidateListings();
   revalidatePath("/admin/real-estate/listings");
-  return { ok: true };
+  revalidatePath(`/admin/real-estate/listings/${listingId}`);
+  redirect("/admin/real-estate/listings");
 }
 
 // ---------------------------------------------------------------------------
@@ -667,7 +680,7 @@ export async function commitListingImportAction(
         bedrooms: row.bedrooms,
         bathrooms: row.bathrooms,
         year_built: row.yearBuilt,
-        agent_id: row.agentSlug ? agentIds.get(row.agentSlug) ?? null : null,
+        agent_id: row.agentSlug ? (agentIds.get(row.agentSlug) ?? null) : null,
       })
       .select("id")
       .single();

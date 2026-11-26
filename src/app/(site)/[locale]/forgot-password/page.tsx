@@ -50,6 +50,7 @@ export default async function ForgotPasswordPage({
         <PageIntro
           heading={t("auth.forgotPasswordHeading")}
           intro={t("auth.forgotPasswordDescription")}
+          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
         />
         <div className="mt-6">
           <ForgotPasswordForm locale={resolved} />

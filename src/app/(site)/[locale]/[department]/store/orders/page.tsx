@@ -66,9 +66,12 @@ export default async function OrderHistoryPage({
   const storePath = storePathFor(department);
 
   const authState = await getAuthState();
-  const customerId = authState.status === "authenticated" ? authState.userId : null;
+  const customerId =
+    authState.status === "authenticated" ? authState.userId : null;
 
-  const accountOrders = customerId ? await listOrdersForCustomer(customerId) : [];
+  const accountOrders = customerId
+    ? await listOrdersForCustomer(customerId)
+    : [];
 
   // Guest orders: each remembered token is checked against the order it claims to
   // authorize. `allSettled` rather than `all` so one stale reference cannot fail
@@ -84,7 +87,10 @@ export default async function OrderHistoryPage({
       if (!order) return null;
       return {
         ...order,
-        itemCount: order.lines.reduce((total, line) => total + line.quantity, 0),
+        itemCount: order.lines.reduce(
+          (total, line) => total + line.quantity,
+          0,
+        ),
       };
     }),
   );
@@ -117,14 +123,22 @@ export default async function OrderHistoryPage({
         department as (typeof DEPARTMENTS)[number]["slug"],
       )}
     >
-      <Breadcrumbs items={breadcrumbs} ariaLabel={t("a11y.breadcrumb")} className="mb-8" />
-      <PageIntro heading={t("order.historyHeading")} intro={t("order.historyIntro")} />
+      <Breadcrumbs
+        items={breadcrumbs}
+        ariaLabel={t("a11y.breadcrumb")}
+        className="mb-8"
+      />
+      <PageIntro
+        heading={t("order.historyHeading")}
+        intro={t("order.historyIntro")}
+        back={{
+          href: `/${resolved}${storePath}`,
+          label: t("store.backToStore"),
+        }}
+      />
       {customerId ? (
         <div className="mt-4">
-          <CustomerSignOutForm
-            locale={resolved}
-            label={t("actions.signOut")}
-          />
+          <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />
         </div>
       ) : null}
       <h2 id="orders-heading" className="visually-hidden">
@@ -177,7 +191,9 @@ export default async function OrderHistoryPage({
                     <p className="text-sm text-muted">
                       {order.itemCount === 1
                         ? t("order.historyItemCountOne")
-                        : t("order.historyItemCount", { count: order.itemCount })}
+                        : t("order.historyItemCount", {
+                            count: order.itemCount,
+                          })}
                     </p>
                   </div>
                 </div>
@@ -198,7 +214,9 @@ export default async function OrderHistoryPage({
   );
 }
 
-function statusTone(status: OrderStatus): "success" | "info" | "warning" | "danger" {
+function statusTone(
+  status: OrderStatus,
+): "success" | "info" | "warning" | "danger" {
   switch (status) {
     case "paid":
     case "processing":

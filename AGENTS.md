@@ -3942,3 +3942,24 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   process environment and a live PostgREST response; the Vitest coverage pins the resolver, the
   error formatter and the loader's discriminated result, while `/api/health` proves the deployed
   key against the deployed database.
+
+### Department-scoped content deletion and parent back links
+
+- **A department editor can now permanently delete authored content in a department they manage,
+  including a draft that was never published.** Migration
+  `20260101000084_department_content_deletion.sql` adds the department-editor branch to
+  `delete_content_permanently` and to the `forbid_unsanctioned_delete` trigger. A super admin may
+  still delete any product, project or article; property listings keep their retention-gated,
+  super-admin-only path.
+- **The raw DELETE remains closed to department editors.** The RPC sets a transaction-local
+  `kc.content_deletion` marker before its own delete, and the trigger admits a department editor
+  only when that marker is present. This prevents a direct PostgREST DELETE from bypassing the
+  translation/SEO cleanup the RPC performs.
+- **Storage objects are removed after the RPC succeeds, not before.** Reading the media paths is
+  harmless, but removing them first meant an unauthorized cross-department call could destroy
+  another department's photographs before the database refused the row deletion. All three delete
+  actions now read paths, call the RPC, and purge objects only on success.
+- **`PageIntro` accepts an optional `back` link**, rendered by the shared `BackLink` component.
+  Admin detail/create pages, dashboard listing pages, account subpages and the store/order/quote
+  flows use it, so a detail page always has a deterministic parent link rather than relying on
+  browser history. The product detail page also renders a top back link to its category.

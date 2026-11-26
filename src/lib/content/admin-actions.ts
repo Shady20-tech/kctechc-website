@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAuthState } from "@/lib/auth/session";
 import {
   canAccessDepartment,
   isDepartmentEditorRole,
-  isSuperAdminRole,
   type AppRole,
 } from "@/lib/auth/roles";
 import {
@@ -707,12 +707,14 @@ async function createClientOrAdmin() {
 }
 
 /**
- * Permanently delete an article. Super-admin only.
+ * Permanently delete an article.
  *
- * The cover and gallery objects are removed from Storage first, then the row. The
- * row delete cascades `insight_media`; the FK-less translation rows are cleared by
- * `delete_content_permanently`. The role check is a message; the function's own
- * `is_super_admin()` guard is the control.
+ * A super admin may delete any article; a department editor may delete an article
+ * in a department they author, including a draft. The cover and gallery paths are
+ * read before the RPC and the objects removed only after it succeeds, so an
+ * unauthorized attempt cannot destroy another department's media. The row delete
+ * cascades `insight_media`; the FK-less translation rows are cleared by
+ * `delete_content_permanently`.
  */
 export async function deleteInsightAction(
   insightId: string,
@@ -724,7 +726,7 @@ export async function deleteInsightAction(
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!isSuperAdminRole(auth.profile.role)) {
+  if (!isDepartmentEditorRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
 
@@ -756,15 +758,12 @@ export async function deleteInsightAction(
     ...(article?.cover_image_path ? [article.cover_image_path] : []),
     ...(media ?? []).map((row) => row.storage_path),
   ];
-  if (paths.length > 0) {
-    await admin.storage.from(CONTENT_MEDIA_BUCKET).remove(paths);
-  }
 
   // The session client, not the service-role one: `delete_content_permanently`
-  // authorizes with `is_super_admin()`, which reads `auth.uid()`. A service-role
-  // call carries no JWT subject, so the guard would refuse every deletion. The
-  // storage removal above still uses the service-role client because the bucket
-  // has no browser write policy.
+  // authorizes with the caller's JWT-derived role. A service-role call carries no
+  // JWT subject, so the guard would refuse every deletion. The storage removal
+  // below still uses the service-role client because the bucket has no browser
+  // write policy.
   const { createClient } = await import("@/lib/supabase/server");
   const session = await createClient();
   if (!session) return { ok: false, error: "unconfigured" };
@@ -785,6 +784,11 @@ export async function deleteInsightAction(
     return { ok: false, error: "write_failed" };
   }
 
+  if (paths.length > 0) {
+    await admin.storage.from(CONTENT_MEDIA_BUCKET).remove(paths);
+  }
+
   revalidatePath("/admin/content");
-  return { ok: true };
+  revalidatePath(`/admin/content/${insightId}`);
+  redirect("/admin/content");
 }

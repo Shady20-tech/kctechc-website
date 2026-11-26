@@ -7,6 +7,7 @@ import { AddToCartButton } from "@/components/store/AddToCartButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { AvailabilityBadge } from "@/components/store/ProductCard";
 import { ProductGallery } from "@/components/store/ProductGallery";
+import { BackLink } from "@/components/ui/BackLink";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
 import { storePathFor } from "@/lib/config/navigation";
@@ -207,6 +208,11 @@ export default async function ProductDetailPage({
           department as (typeof DEPARTMENTS)[number]["slug"],
         )}
       >
+        <BackLink
+          href={`/${resolved}${storePath}/${category.slug}`}
+          label={t("store.backToCategory")}
+          className="mb-4"
+        />
         <Breadcrumbs
           items={breadcrumbs}
           ariaLabel={t("a11y.breadcrumb")}

@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  DEPARTMENT_EDITOR_ROLES,
+  isDepartmentEditorRole,
+} from "@/lib/auth/roles";
 import {
   departmentsForRole,
   loadEditableDepartments,
@@ -56,9 +59,7 @@ export default async function AdminProductPage({
     loadCategoryOptions(),
     loadEditableDepartments(profile.role),
   ]);
-  const allowed = new Set<string>(
-    editableDepartments.map((row) => row.slug),
-  );
+  const allowed = new Set<string>(editableDepartments.map((row) => row.slug));
   const offeredCategories = categories
     .filter((category) => allowed.has(category.departmentSlug))
     .map((category) => ({
@@ -70,7 +71,7 @@ export default async function AdminProductPage({
     slug: row.slug,
     name: row.name,
   }));
-  const canDelete = isSuperAdminRole(profile.role);
+  const canDelete = isDepartmentEditorRole(profile.role);
 
   const image = primaryImage(product.images);
   const published = product.publishState === "published";
@@ -141,6 +142,10 @@ export default async function AdminProductPage({
         eyebrow={t("admin.store.catalogueHeading")}
         heading={product.title}
         intro={`${product.sku} · ${product.categoryName}`}
+        back={{
+          href: "/admin/store",
+          label: t("common.backTo", { destination: t("adminNav.store") }),
+        }}
       />
 
       <div className="mt-6">
@@ -158,7 +163,10 @@ export default async function AdminProductPage({
           </h2>
           <dl className="mt-3 space-y-2 text-sm">
             {[
-              [t("admin.store.columnPrice"), product.priceMinor.toLocaleString("en")],
+              [
+                t("admin.store.columnPrice"),
+                product.priceMinor.toLocaleString("en"),
+              ],
               [t("admin.store.columnStock"), String(product.stock)],
               [t("admin.store.columnStatus"), product.publishState],
               [t("admin.store.columnSku"), product.sku],

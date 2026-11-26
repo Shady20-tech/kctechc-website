@@ -96,6 +96,10 @@ export default async function FavoritesPage({
         eyebrow={t("favorites.eyebrow")}
         heading={t("favorites.heading")}
         intro={t("favorites.intro")}
+        back={{
+          href: `/${resolved}/account`,
+          label: t("common.backTo", { destination: t("account.heading") }),
+        }}
       />
       <div className="mt-4">
         <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />

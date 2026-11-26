@@ -1,7 +1,10 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { QuoteForm, type QuoteFormLabels } from "@/components/inquiries/QuoteForm";
+import {
+  QuoteForm,
+  type QuoteFormLabels,
+} from "@/components/inquiries/QuoteForm";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -194,7 +197,10 @@ export default async function QuotePage({
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
     { name: departmentLabel, href: `/${resolved}/${definition.slug}` },
-    { name: t("quote.metaTitle"), href: `/${resolved}/${definition.slug}/quote` },
+    {
+      name: t("quote.metaTitle"),
+      href: `/${resolved}/${definition.slug}/quote`,
+    },
   ];
 
   return (
@@ -221,6 +227,10 @@ export default async function QuotePage({
           eyebrow={t("quote.eyebrow")}
           heading={t("quote.heading")}
           intro={t("quote.intro")}
+          back={{
+            href: `/${resolved}/${definition.slug}`,
+            label: t("common.backTo", { destination: departmentLabel }),
+          }}
         />
       </SectionBand>
 
@@ -301,7 +311,9 @@ export default async function QuotePage({
                   </dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="visually-hidden">{t("footer.addressLabel")}</dt>
+                  <dt className="visually-hidden">
+                    {t("footer.addressLabel")}
+                  </dt>
                   <MapPin
                     aria-hidden="true"
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted"
@@ -319,7 +331,9 @@ export default async function QuotePage({
                   </dd>
                 </div>
               </dl>
-              <p className="mt-4 text-xs text-muted">{t("quote.privacyNote")}</p>
+              <p className="mt-4 text-xs text-muted">
+                {t("quote.privacyNote")}
+              </p>
             </section>
           </div>
         </div>

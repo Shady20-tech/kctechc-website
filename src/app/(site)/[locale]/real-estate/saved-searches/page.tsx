@@ -63,7 +63,9 @@ export default async function SavedSearchesPage({
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
-  const returnTo = encodeURIComponent(`/${resolved}/real-estate/saved-searches`);
+  const returnTo = encodeURIComponent(
+    `/${resolved}/real-estate/saved-searches`,
+  );
 
   const state = await getAuthState();
   if (state.status === "unconfigured") {
@@ -98,6 +100,10 @@ export default async function SavedSearchesPage({
         eyebrow={t("realEstate.eyebrow")}
         heading={t("realEstate.savedSearches.heading")}
         intro={t("realEstate.savedSearches.intro")}
+        back={{
+          href: `/${resolved}/real-estate`,
+          label: t("common.backTo", { destination: t("realEstate.heading") }),
+        }}
       />
       <div className="mt-4">
         <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />

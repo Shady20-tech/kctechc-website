@@ -113,6 +113,10 @@ export default async function KycPage({
           eyebrow={t("account.eyebrow")}
           heading={t("account.kyc.heading")}
           intro={t("account.kyc.intro")}
+          back={{
+            href: `/${resolved}/account`,
+            label: t("common.backTo", { destination: t("account.heading") }),
+          }}
         />
         <div className="mt-10">
           <Notice tone="info">{t("account.kyc.buyerNote")}</Notice>
@@ -127,9 +131,7 @@ export default async function KycPage({
   }
 
   const application = await loadMyKycApplication(membershipType);
-  const documents = application
-    ? await loadMyKycDocuments(application.id)
-    : [];
+  const documents = application ? await loadMyKycDocuments(application.id) : [];
   const history = application ? await loadMyKycHistory(application.id) : [];
 
   const capabilityLabel = t(`account.membership.typeLabel.${membershipType}`);
@@ -145,6 +147,10 @@ export default async function KycPage({
         eyebrow={capabilityLabel}
         heading={t("account.kyc.heading")}
         intro={t("account.kyc.intro")}
+        back={{
+          href: `/${resolved}/account`,
+          label: t("common.backTo", { destination: t("account.heading") }),
+        }}
       />
 
       <div className="mt-4 flex flex-wrap items-center gap-4">

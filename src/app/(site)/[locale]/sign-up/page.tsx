@@ -72,6 +72,7 @@ export default async function SignUpPage({
         <PageIntro
           heading={t("auth.signUpHeading")}
           intro={t("auth.signUpDescription")}
+          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
         />
 
         <div className="mt-6 space-y-4">

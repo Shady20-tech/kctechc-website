@@ -40,6 +40,10 @@ export default async function AdminNewListingPage() {
         eyebrow={t("realEstate.eyebrow")}
         heading={t("realEstate.admin.createHeading")}
         intro={t("realEstate.admin.createIntro")}
+        back={{
+          href: "/admin/real-estate/listings",
+          label: t("common.backTo", { destination: t("adminNav.listings") }),
+        }}
       />
 
       <div className="mt-8">

@@ -6,7 +6,10 @@ import { ProjectMediaForm } from "@/components/admin/ProjectMediaForm";
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  DEPARTMENT_EDITOR_ROLES,
+  isDepartmentEditorRole,
+} from "@/lib/auth/roles";
 import {
   deleteProjectAction,
   updateProjectAction,
@@ -52,6 +55,10 @@ export default async function AdminWorkEditorPage({
         eyebrow={t("adminNav.work")}
         heading={t("adminWork.editHeading")}
         intro={project.title}
+        back={{
+          href: "/admin/work",
+          label: t("common.backTo", { destination: t("adminNav.work") }),
+        }}
       />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -94,7 +101,7 @@ export default async function AdminWorkEditorPage({
         </Card>
       </div>
 
-      {isSuperAdminRole(profile.role) ? (
+      {isDepartmentEditorRole(profile.role) ? (
         <div className="mt-12">
           <DeleteContentForm
             entityLabel={t("admin.deleteForm.entityProject")}

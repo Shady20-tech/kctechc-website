@@ -47,6 +47,10 @@ export default async function AdminSubmissionsPage() {
         eyebrow={t("realEstate.eyebrow")}
         heading={t("realEstate.admin.submissionsHeading")}
         intro={t("realEstate.admin.submissionsIntro")}
+        back={{
+          href: "/admin/real-estate",
+          label: t("common.backTo", { destination: t("adminNav.realEstate") }),
+        }}
       />
 
       <div className="mt-8 flex flex-wrap gap-3">
@@ -72,7 +76,9 @@ export default async function AdminSubmissionsPage() {
                         title: submission.listingTitle,
                       })}
                     </CardHeading>
-                    <Badge>{t(`realEstate.statuses.${submission.status}`)}</Badge>
+                    <Badge>
+                      {t(`realEstate.statuses.${submission.status}`)}
+                    </Badge>
                   </div>
 
                   <p className="mt-3 text-sm text-body">

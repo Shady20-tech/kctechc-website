@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { AdminOrderControls } from "@/components/admin/AdminOrderControls";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
-import { ButtonLink } from "@/components/ui/Button";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/roles";
@@ -52,18 +51,19 @@ export default async function AdminOrderDetailPage({
         eyebrow={t("adminOrder.eyebrow")}
         heading={order.reference}
         intro={t("adminOrder.detailIntro")}
+        back={{
+          href: "/admin/orders",
+          label: t("common.backTo", { destination: t("adminNav.orders") }),
+        }}
       />
-
-      <p className="mt-4">
-        <ButtonLink href="/admin/orders" variant="secondary" size="sm">
-          {t("adminOrder.backToQueue")}
-        </ButtonLink>
-      </p>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
           <section aria-labelledby="order-customer-heading">
-            <h2 id="order-customer-heading" className="text-lg font-semibold text-ink-900">
+            <h2
+              id="order-customer-heading"
+              className="text-lg font-semibold text-ink-900"
+            >
               {t("adminOrder.customerHeading")}
             </h2>
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
@@ -84,16 +84,22 @@ export default async function AdminOrderDetailPage({
                 <dd className="font-mono text-ink-900">{order.reference}</dd>
               </div>
               <div>
-                <dt className="text-muted">{t("adminOrder.requestedPayment")}</dt>
+                <dt className="text-muted">
+                  {t("adminOrder.requestedPayment")}
+                </dt>
                 <dd className="text-ink-900">
-                  {order.paymentMethod ? t(`paymentMethod.${order.paymentMethod}`) : "—"}
+                  {order.paymentMethod
+                    ? t(`paymentMethod.${order.paymentMethod}`)
+                    : "—"}
                 </dd>
               </div>
             </dl>
 
             {order.fulfillment === "delivery" ? (
               <address className="mt-4 text-sm not-italic text-body">
-                <span className="block text-muted">{t("order.deliveryTo")}</span>
+                <span className="block text-muted">
+                  {t("order.deliveryTo")}
+                </span>
                 {order.deliveryAddressLine1}
                 <br />
                 {order.deliveryAddressLine2 ? (
@@ -110,14 +116,19 @@ export default async function AdminOrderDetailPage({
 
             {order.deliveryNotes ? (
               <p className="mt-3 text-sm text-body">
-                <span className="text-muted">{t("checkout.fieldDeliveryNotes")}: </span>
+                <span className="text-muted">
+                  {t("checkout.fieldDeliveryNotes")}:{" "}
+                </span>
                 {order.deliveryNotes}
               </p>
             ) : null}
           </section>
 
           <section aria-labelledby="order-lines-heading">
-            <h2 id="order-lines-heading" className="text-lg font-semibold text-ink-900">
+            <h2
+              id="order-lines-heading"
+              className="text-lg font-semibold text-ink-900"
+            >
               {t("order.itemsHeading")}
             </h2>
             <table className="mt-3 w-full text-sm">
@@ -141,7 +152,9 @@ export default async function AdminOrderDetailPage({
                     <td className="py-2 pr-2 font-mono text-xs text-muted">
                       {line.sku}
                     </td>
-                    <td className="py-2 text-right tabular-nums">{line.quantity}</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {line.quantity}
+                    </td>
                     <td className="py-2 text-right tabular-nums">
                       {formatPrice(line.lineTotalMinor, order.currency, "en")}
                     </td>
@@ -179,14 +192,21 @@ export default async function AdminOrderDetailPage({
           </section>
 
           <section aria-labelledby="order-payments-heading">
-            <h2 id="order-payments-heading" className="text-lg font-semibold text-ink-900">
+            <h2
+              id="order-payments-heading"
+              className="text-lg font-semibold text-ink-900"
+            >
               {t("adminOrder.paymentsHeading")}
             </h2>
             {order.payments.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">{t("adminOrder.noPayments")}</p>
+              <p className="mt-3 text-sm text-muted">
+                {t("adminOrder.noPayments")}
+              </p>
             ) : (
               <table className="mt-3 w-full text-sm">
-                <caption className="sr-only">{t("adminOrder.paymentsHeading")}</caption>
+                <caption className="sr-only">
+                  {t("adminOrder.paymentsHeading")}
+                </caption>
                 <thead>
                   <tr className="text-left text-muted">
                     <th scope="col">{t("adminOrder.colPaymentStatus")}</th>
@@ -199,7 +219,10 @@ export default async function AdminOrderDetailPage({
                 </thead>
                 <tbody>
                   {order.payments.map((payment) => (
-                    <tr key={payment.id} className="border-t border-border-strong">
+                    <tr
+                      key={payment.id}
+                      className="border-t border-border-strong"
+                    >
                       <td className="py-2 pr-2">
                         {t(`paymentStatus.${payment.status}`)}
                         {payment.failureReason ? (
@@ -215,7 +238,11 @@ export default async function AdminOrderDetailPage({
                         {payment.providerReference ?? "—"}
                       </td>
                       <td className="py-2 text-right tabular-nums">
-                        {formatPrice(payment.amountMinor, payment.currency, "en")}
+                        {formatPrice(
+                          payment.amountMinor,
+                          payment.currency,
+                          "en",
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -225,9 +252,15 @@ export default async function AdminOrderDetailPage({
           </section>
         </div>
 
-        <aside aria-labelledby="order-actions-heading" className="space-y-6 lg:col-span-1">
+        <aside
+          aria-labelledby="order-actions-heading"
+          className="space-y-6 lg:col-span-1"
+        >
           <div className="space-y-4 rounded-card border border-border bg-surface-alt p-6">
-            <h2 id="order-actions-heading" className="text-base font-semibold text-ink-900">
+            <h2
+              id="order-actions-heading"
+              className="text-base font-semibold text-ink-900"
+            >
               {t("adminOrder.actionsHeading")}
             </h2>
 
@@ -255,7 +288,9 @@ export default async function AdminOrderDetailPage({
   );
 }
 
-function statusTone(status: OrderStatus): "success" | "info" | "warning" | "danger" {
+function statusTone(
+  status: OrderStatus,
+): "success" | "info" | "warning" | "danger" {
   switch (status) {
     case "paid":
     case "processing":

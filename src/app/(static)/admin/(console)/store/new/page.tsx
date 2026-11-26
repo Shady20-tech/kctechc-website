@@ -94,6 +94,10 @@ export default async function AdminNewProductPage() {
         eyebrow={t("admin.metaTitle")}
         heading={t("admin.store.heading")}
         intro={t("admin.store.intro")}
+        back={{
+          href: "/admin/store",
+          label: t("common.backTo", { destination: t("adminNav.store") }),
+        }}
       />
 
       <div className="mt-8">

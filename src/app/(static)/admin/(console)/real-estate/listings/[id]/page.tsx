@@ -38,7 +38,9 @@ export default async function AdminEditListingPage({
     redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect(`/login?next=${encodeURIComponent(`/admin/real-estate/listings/${id}`)}`);
+    redirect(
+      `/login?next=${encodeURIComponent(`/admin/real-estate/listings/${id}`)}`,
+    );
   }
   if (!state.profile || !isRealEstateAdminRole(state.profile.role)) {
     redirect("/admin/unauthorized");
@@ -91,6 +93,10 @@ export default async function AdminEditListingPage({
         eyebrow={t("realEstate.eyebrow")}
         heading={t("realEstate.admin.editHeading")}
         intro={t("realEstate.admin.editIntro")}
+        back={{
+          href: "/admin/real-estate/listings",
+          label: t("common.backTo", { destination: t("adminNav.listings") }),
+        }}
       />
 
       <p className="mt-4 font-mono text-sm text-muted">

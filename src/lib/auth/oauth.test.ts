@@ -145,6 +145,14 @@ describe("the env template documents how to turn social sign-in on", () => {
     expect(readEnvTemplate()).not.toContain("apple");
   });
 
+  it("does not configure Apple in the Supabase auth block", () => {
+    const config = readFileSync(
+      join(process.cwd(), "supabase", "config.toml"),
+      "utf8",
+    );
+    expect(config.toLowerCase()).not.toContain("apple");
+  });
+
   it("defaults to Google and Facebook, so the buttons are visible", () => {
     const template = readEnvTemplate();
     expect(template).toMatch(

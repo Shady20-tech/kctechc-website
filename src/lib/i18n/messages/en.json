@@ -11,7 +11,8 @@
     "close": "Close",
     "menu": "Menu",
     "language": "Language",
-    "required": "Required"
+    "required": "Required",
+    "backTo": "Back to {destination}"
   },
   "actions": {
     "contact": "Contact us",
@@ -541,7 +542,7 @@
       "errorHeading": "Could not delete",
       "errors": {
         "unauthenticated": "Your session has expired. Sign in again.",
-        "forbidden": "Only a super administrator may permanently delete content.",
+        "forbidden": "Only a super administrator or the department editor for this content may permanently delete it.",
         "unconfigured": "The database is not connected.",
         "reason_required": "Enter a reason of at least 10 characters.",
         "not_found": "That record no longer exists.",

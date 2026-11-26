@@ -81,6 +81,7 @@ export default async function SignInPage({
         <PageIntro
           heading={t("auth.signInHeading")}
           intro={t("auth.signInDescription")}
+          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
         />
 
         <div className="mt-6 space-y-4">

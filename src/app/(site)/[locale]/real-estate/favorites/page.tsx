@@ -104,6 +104,10 @@ export default async function FavoriteListingsPage({
         eyebrow={t("realEstate.eyebrow")}
         heading={t("realEstate.favorites.heading")}
         intro={t("realEstate.favorites.intro")}
+        back={{
+          href: `/${resolved}/real-estate`,
+          label: t("common.backTo", { destination: t("realEstate.heading") }),
+        }}
       />
       <div className="mt-4">
         <CustomerSignOutForm locale={resolved} label={t("actions.signOut")} />

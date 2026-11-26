@@ -59,6 +59,7 @@ export default async function ResetPasswordPage({
         <PageIntro
           heading={t("auth.resetPasswordHeading")}
           intro={t("auth.resetPasswordDescription")}
+          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
         />
         <div className="mt-6">
           <ResetPasswordForm locale={resolved} initialEmail={initialEmail} />

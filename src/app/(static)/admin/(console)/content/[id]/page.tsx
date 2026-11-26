@@ -10,7 +10,10 @@ import {
 import { Card } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { requireRole } from "@/lib/auth/guards";
-import { DEPARTMENT_EDITOR_ROLES, isSuperAdminRole } from "@/lib/auth/roles";
+import {
+  DEPARTMENT_EDITOR_ROLES,
+  isDepartmentEditorRole,
+} from "@/lib/auth/roles";
 import {
   deleteInsightAction,
   updateInsightAction,
@@ -121,6 +124,10 @@ export default async function AdminInsightEditorPage({
         eyebrow={t("adminNav.content")}
         heading={t("adminContent.editHeading")}
         intro={insight.title}
+        back={{
+          href: "/admin/content",
+          label: t("common.backTo", { destination: t("adminNav.content") }),
+        }}
       />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -166,7 +173,7 @@ export default async function AdminInsightEditorPage({
         </div>
       </div>
 
-      {isSuperAdminRole(profile.role) ? (
+      {isDepartmentEditorRole(profile.role) ? (
         <div className="mt-12">
           <DeleteContentForm
             entityLabel={t("admin.deleteForm.entityArticle")}

@@ -61,9 +61,17 @@ export default async function AdminNewInsightPage() {
         eyebrow={t("adminNav.content")}
         heading={t("adminContent.newHeading")}
         intro={t("adminContent.formIntro")}
+        back={{
+          href: "/admin/content",
+          label: t("common.backTo", { destination: t("adminNav.content") }),
+        }}
       />
       <Card className="mt-8">
-        <InsightForm action={createInsightAction} options={options} labels={labels} />
+        <InsightForm
+          action={createInsightAction}
+          options={options}
+          labels={labels}
+        />
       </Card>
     </>
   );

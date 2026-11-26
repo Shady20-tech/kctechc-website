@@ -192,6 +192,10 @@ export function DashboardCreateBody({
         eyebrow={t("account.eyebrow")}
         heading={t(`${base}.createHeading`)}
         intro={t(`${base}.createIntroLong`)}
+        back={{
+          href: `/${locale}/account/${kind}`,
+          label: t("common.backTo", { destination: t(`${base}.title`) }),
+        }}
       />
 
       <h2 id="create-heading" className="visually-hidden">
@@ -247,6 +251,10 @@ export function DashboardDetailBody({
         eyebrow={t("account.eyebrow")}
         heading={t(`${base}.editHeading`)}
         intro={t(`${base}.editIntro`)}
+        back={{
+          href: `/${locale}/account/${kind}`,
+          label: t("common.backTo", { destination: t(`${base}.title`) }),
+        }}
       />
 
       <h2 id="detail-heading" className="visually-hidden">

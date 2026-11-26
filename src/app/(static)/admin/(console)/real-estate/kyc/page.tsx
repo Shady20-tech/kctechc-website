@@ -66,6 +66,10 @@ export default async function AdminKycQueuePage({
         eyebrow={t("realEstate.eyebrow")}
         heading={t("adminKyc.heading")}
         intro={t("adminKyc.intro")}
+        back={{
+          href: "/admin/real-estate",
+          label: t("common.backTo", { destination: t("adminNav.realEstate") }),
+        }}
       />
 
       <div className="mt-8 flex flex-wrap gap-3">

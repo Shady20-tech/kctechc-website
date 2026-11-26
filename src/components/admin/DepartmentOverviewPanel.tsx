@@ -60,6 +60,10 @@ export function DepartmentOverviewPanel({
         eyebrow={t("adminNav.sectionDepartments")}
         heading={t(titleKey)}
         intro={t(introKey)}
+        back={{
+          href: "/admin",
+          label: t("common.backTo", { destination: t("adminNav.dashboard") }),
+        }}
       />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

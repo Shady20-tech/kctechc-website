@@ -34,6 +34,10 @@ export default async function AdminNewWorkPage() {
         eyebrow={t("adminNav.work")}
         heading={t("adminWork.newHeading")}
         intro={t("adminWork.formIntro")}
+        back={{
+          href: "/admin/work",
+          label: t("common.backTo", { destination: t("adminNav.work") }),
+        }}
       />
       <div className="mt-8">
         {options.departments.length === 0 ? (

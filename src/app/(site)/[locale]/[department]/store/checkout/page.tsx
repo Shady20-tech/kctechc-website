@@ -84,7 +84,14 @@ export default async function CheckoutPage({
         ariaLabel={t("a11y.breadcrumb")}
         className="mb-8"
       />
-      <PageIntro heading={t("checkout.heading")} intro={t("checkout.intro")} />
+      <PageIntro
+        heading={t("checkout.heading")}
+        intro={t("checkout.intro")}
+        back={{
+          href: `/${resolved}${storePath}/cart`,
+          label: t("common.backTo", { destination: t("store.cart.heading") }),
+        }}
+      />
       <h2 id="checkout-heading" className="visually-hidden">
         {t("checkout.heading")}
       </h2>
@@ -113,7 +120,8 @@ export default async function CheckoutPage({
               // `place_order` computes, which is the worst possible surprise at
               // checkout. `currentPriceMinor` is that catalogue price.
               (total, line) =>
-                total + (line.currentPriceMinor ?? line.unitPriceMinor) * line.quantity,
+                total +
+                (line.currentPriceMinor ?? line.unitPriceMinor) * line.quantity,
               0,
             )}
             items={cart.lines.map((line) => ({

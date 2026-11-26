@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { canAccessDepartment, isSuperAdminRole } from "@/lib/auth/roles";
+import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
 import { getAuthState, type Profile } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -531,14 +532,16 @@ export async function removeProjectMediaAction(
 }
 
 /**
- * Permanently delete a project. Super-admin only.
+ * Permanently delete a project.
  *
- * The project's media objects are removed from Storage first, then the row. A
- * failed object removal does not block the delete: an orphan object is invisible
- * to the site, whereas a half-deleted project is not. The row delete cascades its
+ * A super admin may delete any project; a department editor may delete a project
+ * in a department they author, including a draft. The project's media paths are
+ * read before the RPC and the objects removed only after it succeeds, so an
+ * unauthorized attempt cannot destroy another department's photography. A failed
+ * object removal does not block the delete: an orphan object is invisible to the
+ * site, whereas a half-deleted project is not. The row delete cascades its
  * `project_media` and service links; the FK-less translation rows are cleared by
- * `delete_content_permanently`. The role check is a message; the function's own
- * `is_super_admin()` guard is the control.
+ * `delete_content_permanently`.
  */
 export async function deleteProjectAction(
   projectId: string,
@@ -550,7 +553,7 @@ export async function deleteProjectAction(
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!isSuperAdminRole(auth.profile.role)) {
+  if (!isDepartmentEditorRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
 
@@ -560,7 +563,8 @@ export async function deleteProjectAction(
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "unconfigured" };
 
-  // Remove stored objects first, while the media rows still exist to name them.
+  // Read the object paths while the media rows still name them, but remove
+  // nothing until the RPC has authorized the caller.
   const { data: media } = await supabase
     .from("project_media")
     .select("storage_path")
@@ -569,9 +573,6 @@ export async function deleteProjectAction(
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
-  if (paths.length > 0) {
-    await admin.storage.from(PROJECT_MEDIA_BUCKET).remove(paths);
-  }
 
   const { error } = await supabase.rpc("delete_content_permanently", {
     p_entity_type: "electrical_project",
@@ -589,6 +590,11 @@ export async function deleteProjectAction(
     return { ok: false, error: "write_failed" };
   }
 
+  if (paths.length > 0) {
+    await admin.storage.from(PROJECT_MEDIA_BUCKET).remove(paths);
+  }
+
   revalidatePath("/admin/work");
-  return { ok: true };
+  revalidatePath(`/admin/work/${projectId}`);
+  redirect("/admin/work");
 }

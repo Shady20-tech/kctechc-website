@@ -11,7 +11,8 @@
     "close": "Fermer",
     "menu": "Menu",
     "language": "Langue",
-    "required": "Obligatoire"
+    "required": "Obligatoire",
+    "backTo": "Retour à {destination}"
   },
   "actions": {
     "contact": "Nous contacter",
@@ -541,7 +542,7 @@
       "errorHeading": "Suppression impossible",
       "errors": {
         "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
-        "forbidden": "Seul un super administrateur peut supprimer définitivement du contenu.",
+        "forbidden": "Seul un super administrateur ou le responsable du département de ce contenu peut le supprimer définitivement.",
         "unconfigured": "La base de données n'est pas connectée.",
         "reason_required": "Saisissez un motif d'au moins 10 caractères.",
         "not_found": "Cet enregistrement n'existe plus.",

@@ -149,6 +149,69 @@ describe("EXECUTE hardening allow-list", () => {
   });
 });
 
+describe("department-scoped content deletion", () => {
+  const migration = readFileSync(
+    join(
+      process.cwd(),
+      "supabase",
+      "migrations",
+      "20260101000084_department_content_deletion.sql",
+    ),
+    "utf8",
+  );
+
+  it("lets the owning department editor delete authored content", () => {
+    const body = functionBody(migration, "delete_content_permanently");
+    expect(body).toContain("public.is_department_editor");
+    expect(body).toContain("product_categories");
+    expect(body).toContain("electrical_projects");
+    expect(body).toContain("insights");
+  });
+
+  it("keeps a direct DELETE closed to a department editor", () => {
+    const body = functionBody(migration, "forbid_unsanctioned_delete");
+    expect(body).toContain("current_setting('kc.content_deletion', true)");
+    expect(body).toContain("public.is_department_editor");
+  });
+
+  it("marks the RPC transaction before its own delete", () => {
+    const body = functionBody(migration, "delete_content_permanently");
+    expect(body).toContain("set_config('kc.content_deletion', 'on', true)");
+    expect(body).toContain("set_config('kc.audit_reason'");
+  });
+
+  it.each([
+    [
+      "store/admin-actions.ts",
+      "deleteProductAction",
+      'redirect("/admin/store")',
+    ],
+    [
+      "content/project-admin-actions.ts",
+      "deleteProjectAction",
+      'redirect("/admin/work")',
+    ],
+    [
+      "content/admin-actions.ts",
+      "deleteInsightAction",
+      'redirect("/admin/content")',
+    ],
+  ])(
+    "lets a department editor delete through %s and returns to the list",
+    (file, action, redirectCall) => {
+      const source = readFileSync(
+        join(process.cwd(), "src", "lib", file),
+        "utf8",
+      );
+      const start = source.indexOf(`export async function ${action}(`);
+      expect(start, `${action} is missing`).toBeGreaterThan(-1);
+      const body = source.slice(start, source.indexOf("\n}", start));
+      expect(body).toContain("isDepartmentEditorRole");
+      expect(body).toContain(redirectCall);
+    },
+  );
+});
+
 describe("existing listing CRUD is preserved", () => {
   const actions = readFileSync(
     join(process.cwd(), "src", "lib", "real-estate", "admin-actions.ts"),

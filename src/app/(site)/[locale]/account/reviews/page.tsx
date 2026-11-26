@@ -91,6 +91,10 @@ export default async function AccountReviewsPage({
             eyebrow={t("reviews.eyebrow")}
             heading={t("reviews.myReviewsHeading")}
             intro={t("reviews.myReviewsIntro")}
+            back={{
+              href: `/${locale}/account`,
+              label: t("common.backTo", { destination: t("account.heading") }),
+            }}
           />
 
           <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
@@ -139,7 +143,9 @@ export default async function AccountReviewsPage({
               </h2>
 
               {reviews.length === 0 ? (
-                <p className="mt-4 text-sm text-body">{t("reviews.myReviewsEmpty")}</p>
+                <p className="mt-4 text-sm text-body">
+                  {t("reviews.myReviewsEmpty")}
+                </p>
               ) : (
                 <ul className="mt-4 space-y-4">
                   {reviews.map((review) => (
@@ -172,7 +178,9 @@ export default async function AccountReviewsPage({
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                             {t("reviews.noteLabel")}
                           </p>
-                          <p className="mt-1 text-sm text-body">{review.reviewNotes}</p>
+                          <p className="mt-1 text-sm text-body">
+                            {review.reviewNotes}
+                          </p>
                         </div>
                       ) : null}
 

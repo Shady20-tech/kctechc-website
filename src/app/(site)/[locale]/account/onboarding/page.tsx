@@ -79,6 +79,10 @@ export default async function OnboardingPage({
           eyebrow={t("auth.onboardingEyebrow")}
           heading={t("auth.onboardingHeading")}
           intro={t("auth.onboardingDescription")}
+          back={{
+            href: `/${resolved}/account`,
+            label: t("common.backTo", { destination: t("account.heading") }),
+          }}
         />
 
         <div className="mt-6">

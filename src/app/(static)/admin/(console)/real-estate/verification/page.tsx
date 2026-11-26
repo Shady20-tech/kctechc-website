@@ -61,6 +61,10 @@ export default async function AdminVerificationPage() {
         eyebrow={t("realEstate.eyebrow")}
         heading={t("adminVerification.heading")}
         intro={t("adminVerification.intro")}
+        back={{
+          href: "/admin/real-estate",
+          label: t("common.backTo", { destination: t("adminNav.realEstate") }),
+        }}
       />
 
       <div className="mt-8 flex flex-wrap gap-3">

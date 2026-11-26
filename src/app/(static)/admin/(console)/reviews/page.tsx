@@ -79,6 +79,10 @@ export default async function AdminReviewsPage() {
           eyebrow={t("reviews.eyebrow")}
           heading={t("reviews.moderationHeading")}
           intro={t("reviews.moderationIntro")}
+          back={{
+            href: "/admin",
+            label: t("common.backTo", { destination: t("adminNav.dashboard") }),
+          }}
         />
 
         {reviews.length === 0 ? (

@@ -74,7 +74,8 @@ export default async function OrderPage({
   const storePath = storePathFor(department);
 
   const authState = await getAuthState();
-  const customerId = authState.status === "authenticated" ? authState.userId : null;
+  const customerId =
+    authState.status === "authenticated" ? authState.userId : null;
   const accessToken = customerId ? null : await guestTokenFor(reference);
 
   const order = await getOrderForOwner({ reference, customerId, accessToken });
@@ -83,7 +84,10 @@ export default async function OrderPage({
   const breadcrumbs: BreadcrumbItem[] = [
     { name: t("nav.home"), href: `/${resolved}` },
     { name: t("nav.store"), href: `/${resolved}${storePath}` },
-    { name: t("order.historyHeading"), href: `/${resolved}${storePath}/orders` },
+    {
+      name: t("order.historyHeading"),
+      href: `/${resolved}${storePath}/orders`,
+    },
     {
       name: order.reference,
       href: `/${resolved}${storePath}/orders/${encodeURIComponent(order.reference)}`,
@@ -100,10 +104,20 @@ export default async function OrderPage({
         department as (typeof DEPARTMENTS)[number]["slug"],
       )}
     >
-      <Breadcrumbs items={breadcrumbs} ariaLabel={t("a11y.breadcrumb")} className="mb-8" />
+      <Breadcrumbs
+        items={breadcrumbs}
+        ariaLabel={t("a11y.breadcrumb")}
+        className="mb-8"
+      />
       <PageIntro
-        heading={paid ? t("order.confirmationHeading") : t("order.statusHeading")}
+        heading={
+          paid ? t("order.confirmationHeading") : t("order.statusHeading")
+        }
         intro={paid ? t("order.thanking") : undefined}
+        back={{
+          href: `/${resolved}${storePath}/orders`,
+          label: t("common.backTo", { destination: t("order.historyHeading") }),
+        }}
       />
       {customerId ? (
         <div className="mt-4">
@@ -139,11 +153,16 @@ export default async function OrderPage({
           })}
 
           <section aria-labelledby="order-items-heading">
-            <h3 id="order-items-heading" className="text-lg font-semibold text-ink-900">
+            <h3
+              id="order-items-heading"
+              className="text-lg font-semibold text-ink-900"
+            >
               {t("order.itemsHeading")}
             </h3>
             <table className="mt-3 w-full text-sm">
-              <caption className="visually-hidden">{t("order.itemsHeading")}</caption>
+              <caption className="visually-hidden">
+                {t("order.itemsHeading")}
+              </caption>
               <thead>
                 <tr className="text-left text-muted">
                   <th scope="col">{t("checkout.summaryItem")}</th>
@@ -167,9 +186,15 @@ export default async function OrderPage({
                         {line.title}
                       </ButtonLink>
                     </td>
-                    <td className="py-2 text-right tabular-nums">{line.quantity}</td>
                     <td className="py-2 text-right tabular-nums">
-                      {formatPrice(line.lineTotalMinor, order.currency, resolved)}
+                      {line.quantity}
+                    </td>
+                    <td className="py-2 text-right tabular-nums">
+                      {formatPrice(
+                        line.lineTotalMinor,
+                        order.currency,
+                        resolved,
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -207,7 +232,10 @@ export default async function OrderPage({
           </section>
 
           <section aria-labelledby="order-payment-heading">
-            <h3 id="order-payment-heading" className="text-lg font-semibold text-ink-900">
+            <h3
+              id="order-payment-heading"
+              className="text-lg font-semibold text-ink-900"
+            >
               {t("order.paymentHeading")}
             </h3>
             <dl className="mt-3 space-y-2 text-sm">
@@ -227,15 +255,23 @@ export default async function OrderPage({
           </section>
         </div>
 
-        <aside aria-labelledby="order-summary-heading" className="lg:col-span-1">
+        <aside
+          aria-labelledby="order-summary-heading"
+          className="lg:col-span-1"
+        >
           <div className="space-y-4 rounded-card border border-border bg-surface-alt p-6">
-            <h3 id="order-summary-heading" className="text-base font-semibold text-ink-900">
+            <h3
+              id="order-summary-heading"
+              className="text-base font-semibold text-ink-900"
+            >
               {t("order.referenceLabel")}
             </h3>
             <p className="font-mono text-sm text-ink-900">{order.reference}</p>
 
             <p className="text-sm text-muted">
-              {t("order.placedOn", { date: formatDate(order.placedAt, resolved) })}
+              {t("order.placedOn", {
+                date: formatDate(order.placedAt, resolved),
+              })}
             </p>
 
             <p>
@@ -247,10 +283,14 @@ export default async function OrderPage({
                 {t("order.fulfillmentHeading")}
               </h4>
               {order.fulfillment === "pickup" ? (
-                <p className="mt-1 text-sm text-body">{t("order.collection")}</p>
+                <p className="mt-1 text-sm text-body">
+                  {t("order.collection")}
+                </p>
               ) : (
                 <address className="mt-1 text-sm not-italic text-body">
-                  <span className="block text-muted">{t("order.deliveryTo")}</span>
+                  <span className="block text-muted">
+                    {t("order.deliveryTo")}
+                  </span>
                   {order.deliveryAddressLine1}
                   <br />
                   {order.deliveryAddressLine2 ? (
@@ -278,7 +318,9 @@ export default async function OrderPage({
   );
 }
 
-function statusTone(status: OrderStatus): "success" | "info" | "warning" | "danger" {
+function statusTone(
+  status: OrderStatus,
+): "success" | "info" | "warning" | "danger" {
   switch (status) {
     case "paid":
     case "processing":

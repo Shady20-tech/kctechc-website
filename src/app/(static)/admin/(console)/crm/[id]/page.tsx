@@ -63,6 +63,10 @@ export default async function AdminCrmDetailPage({
         eyebrow={row.departmentName ?? t("adminNav.crm")}
         heading={t("adminCrm.detailHeading", { reference: row.reference })}
         intro={row.subject ?? undefined}
+        back={{
+          href: "/admin/crm",
+          label: t("common.backTo", { destination: t("adminNav.crm") }),
+        }}
       />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -81,7 +85,9 @@ export default async function AdminCrmDetailPage({
               {t("adminCrm.timelineHeading")}
             </h2>
             {events.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">{t("adminCrm.noTimeline")}</p>
+              <p className="mt-3 text-sm text-muted">
+                {t("adminCrm.noTimeline")}
+              </p>
             ) : (
               <ol className="mt-4 space-y-4">
                 {events.map((event) => (
@@ -111,7 +117,10 @@ export default async function AdminCrmDetailPage({
               {t("adminCrm.detailsHeading")}
             </h2>
             <dl className="mt-3 space-y-3 text-sm">
-              <Detail label={t("adminCrm.columnContact")} value={row.fullName ?? "—"} />
+              <Detail
+                label={t("adminCrm.columnContact")}
+                value={row.fullName ?? "—"}
+              />
               <Detail label="Email" value={row.email ?? "—"} />
               <Detail label="Phone" value={inquiry.phone ?? "—"} />
               {inquiry.acquisitionPurpose ? (
@@ -131,7 +140,9 @@ export default async function AdminCrmDetailPage({
                 value={
                   inquiry.consentGiven
                     ? inquiry.consentAt
-                      ? t("adminCrm.consentAt", { date: formatDate(inquiry.consentAt) })
+                      ? t("adminCrm.consentAt", {
+                          date: formatDate(inquiry.consentAt),
+                        })
                       : "—"
                     : "—"
                 }

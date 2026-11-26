@@ -72,13 +72,15 @@ export default async function AdminKycDetailPage({
         eyebrow={t("adminKyc.detailHeading")}
         heading={application.fullLegalName}
         intro={t("adminKyc.intro")}
+        back={{
+          href: "/admin/real-estate/kyc",
+          label: t("common.backTo", { destination: t("adminNav.kyc") }),
+        }}
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Badge tone="accent">{capabilityLabel}</Badge>
-        <Badge tone="neutral">
-          {t(kycStatusLabelKey(application.status))}
-        </Badge>
+        <Badge tone="neutral">{t(kycStatusLabelKey(application.status))}</Badge>
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
@@ -93,9 +95,20 @@ export default async function AdminKycDetailPage({
             {t("adminKyc.personalSection")}
           </h2>
           <dl className="mt-4 space-y-2 text-sm">
-            <DetailRow label={t("adminKyc.fullLegalName")} value={application.fullLegalName} />
-            <DetailRow label={t("adminKyc.email")} value={application.email} mono />
-            <DetailRow label={t("adminKyc.phone")} value={application.phone} mono />
+            <DetailRow
+              label={t("adminKyc.fullLegalName")}
+              value={application.fullLegalName}
+            />
+            <DetailRow
+              label={t("adminKyc.email")}
+              value={application.email}
+              mono
+            />
+            <DetailRow
+              label={t("adminKyc.phone")}
+              value={application.phone}
+              mono
+            />
             <DetailRow
               label={t("adminKyc.countryOfResidence")}
               value={application.countryOfResidence}

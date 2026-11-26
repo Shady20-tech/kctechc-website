@@ -84,6 +84,10 @@ export default async function CartPage({
       <PageIntro
         heading={t("store.cart.heading")}
         intro={t("store.cart.intro")}
+        back={{
+          href: `/${resolved}${storePath}`,
+          label: t("store.backToStore"),
+        }}
       />
       <h2 id="cart-heading" className="visually-hidden">
         {t("store.cart.heading")}

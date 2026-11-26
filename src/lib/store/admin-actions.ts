@@ -1,12 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAuthState } from "@/lib/auth/session";
-import {
-  canAccessDepartment,
-  isDepartmentEditorRole,
-  isSuperAdminRole,
-} from "@/lib/auth/roles";
+import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
 import { storePathFor } from "@/lib/config/navigation";
 import {
   createAdminClient,
@@ -488,13 +485,17 @@ export async function updateProductAction(
 }
 
 /**
- * Permanently delete a product. Super-admin only.
+ * Permanently delete a product.
  *
- * The order-history safety is structural: `order_items.product_id` is
+ * A super admin may delete any product; a department editor may delete a product
+ * in a department they author, including a draft that was never published. The
+ * order-history safety is structural: `order_items.product_id` is
  * `on delete set null` and every line keeps its own title/sku/slug/price snapshot,
  * so removing a product does not rewrite a past order — it only drops the link.
+ *
  * The role check here is a message; `delete_content_permanently`'s own
- * `is_super_admin()` guard is the control.
+ * department-scoped guard is the control, and it also holds for a direct
+ * PostgREST call.
  */
 export async function deleteProductAction(
   productId: string,
@@ -506,7 +507,7 @@ export async function deleteProductAction(
   if (auth.status !== "authenticated") {
     return { ok: false, error: "unauthenticated" };
   }
-  if (!auth.profile || !isSuperAdminRole(auth.profile.role)) {
+  if (!auth.profile || !isDepartmentEditorRole(auth.profile.role)) {
     return { ok: false, error: "forbidden" };
   }
 
@@ -516,23 +517,19 @@ export async function deleteProductAction(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  // Remove the stored objects first, while the media rows still name them. The
-  // product delete cascades `product_media`, but nothing removes the objects, so
-  // without this a deleted product would leave its photographs orphaned in the
-  // bucket. The read and the removal use the service-role client because the
-  // bucket has no browser write policy; the row delete below does not.
+  // Read the object paths while the media rows still name them, but do not
+  // remove anything until the RPC has authorized the caller. Otherwise a
+  // department editor aiming at another department's product could destroy its
+  // photographs before the database refused the row deletion.
   const { data: media } = await admin
     .from("product_media")
     .select("storage_path")
     .eq("product_id", productId);
   const paths = (media ?? []).map((row) => row.storage_path);
-  if (paths.length > 0) {
-    await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove(paths);
-  }
 
   // The session client, not the service-role one: `delete_content_permanently`
-  // authorizes with `is_super_admin()`, which reads `auth.uid()`. A service-role
-  // call carries no JWT subject, so the guard would refuse every deletion.
+  // authorizes with the caller's JWT-derived role. A service-role call carries no
+  // JWT subject, so the guard would refuse every deletion.
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "unconfigured" };
 
@@ -552,8 +549,16 @@ export async function deleteProductAction(
     return { ok: false, error: "write_failed" };
   }
 
+  // The row and its media rows are gone; remove the now-orphaned objects. A
+  // failed object removal does not undo the deletion, because an orphan object is
+  // invisible to the site while a half-deleted product is not.
+  if (paths.length > 0) {
+    await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove(paths);
+  }
+
   revalidatePath("/admin/store");
-  return { ok: true };
+  revalidatePath(`/admin/store/${productId}`);
+  redirect("/admin/store");
 }
 
 /**
