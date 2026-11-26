@@ -6,8 +6,13 @@ import {
   serverEnv,
 } from "@/lib/config/server-env";
 
-// Cache the probe briefly so monitoring cannot turn into a load source.
-export const revalidate = 30;
+// This endpoint reports the *running process* configuration. Without a dynamic
+// declaration Next prerenders it at build time (the route reads no request
+// data), so an environment variable added after the build would never appear
+// and the probe would confidently report the wrong answer.
+export const dynamic = "force-dynamic";
+
+const startedAt = new Date().toISOString();
 
 /**
  * Health endpoint.
@@ -21,6 +26,14 @@ export const revalidate = 30;
 export function GET() {
   return NextResponse.json({
     status: "ok",
+    build: {
+      commit:
+        process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+        process.env.GIT_COMMIT_SHA?.slice(0, 7) ??
+        null,
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? null,
+      startedAt,
+    },
     locale: {
       default: publicEnv.defaultLocale,
       supported: ["en", "fr"],
@@ -35,6 +48,10 @@ export function GET() {
       // never received the key" from "it arrived under a name the app did not
       // read", which is otherwise invisible from the health response.
       supabaseAdminKeySource: serverEnv.supabaseServiceRoleKeySource,
+      // Format only, never a fragment of the value. A legacy `service_role`
+      // JWT and a current `sb_secret_…` key are both valid; anything else is a
+      // pasted database password or truncated value and will be refused.
+      supabaseAdminKeyType: serverEnv.supabaseServiceRoleKeyType,
       tolgee: Boolean(publicEnv.tolgeeProjectId),
       email: isEmailConfigured(),
       maps: publicEnv.mapProvider,

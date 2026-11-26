@@ -12,15 +12,18 @@ afterEach(() => {
 
 describe("Supabase server key resolution", () => {
   it("reads the legacy service-role variable", async () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service-role-jwt");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiJ9.payload.sig");
     vi.stubEnv("SUPABASE_SECRET_KEY", "");
 
     const { serverEnv, isSupabaseAdminConfigured } = await loadServerEnv();
 
-    expect(serverEnv.supabaseServiceRoleKey).toBe("legacy-service-role-jwt");
+    expect(serverEnv.supabaseServiceRoleKey).toBe(
+      "eyJhbGciOiJIUzI1NiJ9.payload.sig",
+    );
     expect(serverEnv.supabaseServiceRoleKeySource).toBe(
       "SUPABASE_SERVICE_ROLE_KEY",
     );
+    expect(serverEnv.supabaseServiceRoleKeyType).toBe("legacy_jwt");
     expect(isSupabaseAdminConfigured()).toBe(true);
   });
 
@@ -32,7 +35,17 @@ describe("Supabase server key resolution", () => {
 
     expect(serverEnv.supabaseServiceRoleKey).toBe("sb_secret_test");
     expect(serverEnv.supabaseServiceRoleKeySource).toBe("SUPABASE_SECRET_KEY");
+    expect(serverEnv.supabaseServiceRoleKeyType).toBe("secret");
     expect(isSupabaseAdminConfigured()).toBe(true);
+  });
+
+  it("flags a malformed key instead of treating it as valid", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "HmYxFNt9not-a-supabase-key");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "");
+
+    const { serverEnv } = await loadServerEnv();
+
+    expect(serverEnv.supabaseServiceRoleKeyType).toBe("unknown");
   });
 
   it("prefers the service-role variable when both are set", async () => {

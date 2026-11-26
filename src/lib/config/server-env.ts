@@ -24,6 +24,15 @@ const legacyServiceRoleKey = optional(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const secretKey = optional(process.env.SUPABASE_SECRET_KEY);
 const serviceRoleKey = legacyServiceRoleKey ?? secretKey;
 
+function serverKeyType(
+  key: string | null,
+): "legacy_jwt" | "secret" | "unknown" | null {
+  if (!key) return null;
+  if (key.startsWith("sb_secret_")) return "secret";
+  if (key.startsWith("eyJ")) return "legacy_jwt";
+  return "unknown";
+}
+
 export const serverEnv = {
   supabaseServiceRoleKey: serviceRoleKey,
   supabaseServiceRoleKeySource: legacyServiceRoleKey
@@ -31,6 +40,7 @@ export const serverEnv = {
     : secretKey
       ? "SUPABASE_SECRET_KEY"
       : null,
+  supabaseServiceRoleKeyType: serverKeyType(serviceRoleKey),
   /** Salt for hashing submitter IPs. Rotating it invalidates past hashes. */
   inquiryIpSalt: optional(process.env.INQUIRY_IP_SALT),
   tolgeeApiKey: optional(process.env.TOLGEE_API_KEY),
