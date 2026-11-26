@@ -18,8 +18,8 @@ import {
 const VALID_SIGN_UP = {
   fullName: "Amina Njoya",
   email: "amina@example.com",
-  password: "correct-horse",
-  confirmPassword: "correct-horse",
+  password: "Correct-horse1",
+  confirmPassword: "Correct-horse1",
   // A buyer account: the declaration that carries no age requirement.
   accountType: "buyer" as const,
   dateOfBirth: "1990-05-01",
@@ -84,6 +84,24 @@ describe("signInSchema", () => {
 describe("signUpSchema", () => {
   it("accepts a complete registration", () => {
     expect(signUpSchema.safeParse(VALID_SIGN_UP).success).toBe(true);
+  });
+
+  it("requires uppercase, lowercase, a number and a symbol", () => {
+    expect(
+      signUpSchema.safeParse({
+        ...VALID_SIGN_UP,
+        password: "correct-horse",
+        confirmPassword: "correct-horse",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      signUpSchema.safeParse({
+        ...VALID_SIGN_UP,
+        password: "Correct-horse1",
+        confirmPassword: "Correct-horse1",
+      }).success,
+    ).toBe(true);
   });
 
   it("trims the submitted name", () => {
@@ -236,12 +254,26 @@ describe("resetPasswordSchema", () => {
   const valid = {
     email: "amina@example.com",
     token: "123456",
-    password: "new-passphrase",
-    confirmPassword: "new-passphrase",
+    password: "Correct-horse1",
+    confirmPassword: "Correct-horse1",
   };
 
   it("accepts a valid email, 6-digit code and matching passwords", () => {
     expect(resetPasswordSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("normalizes the recovery email and trims the code", () => {
+    expect(
+      forgotPasswordSchema.parse({ email: "  Amina@Example.COM  " }).email,
+    ).toBe("amina@example.com");
+
+    const parsed = resetPasswordSchema.parse({
+      ...valid,
+      email: "  Amina@Example.COM  ",
+      token: " 123456 ",
+    });
+    expect(parsed.email).toBe("amina@example.com");
+    expect(parsed.token).toBe("123456");
   });
 
   it("rejects a mismatch", () => {
@@ -259,6 +291,16 @@ describe("resetPasswordSchema", () => {
         ...valid,
         password: "short",
         confirmPassword: "short",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("enforces the password policy before the code is consumed", () => {
+    expect(
+      resetPasswordSchema.safeParse({
+        ...valid,
+        password: "new-passphrase",
+        confirmPassword: "new-passphrase",
       }).success,
     ).toBe(false);
   });

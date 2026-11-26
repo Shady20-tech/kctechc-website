@@ -49,6 +49,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient }));
 import { forgotPasswordAction, resetPasswordAction } from "./actions";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
+const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
 function formData(entries: Record<string, string>): FormData {
   const form = new FormData();
@@ -73,11 +74,11 @@ beforeEach(() => {
 });
 
 describe("forgotPasswordAction", () => {
-  it("requests a code without a redirect link and lands on the localized reset page", async () => {
+  it("normalizes the address and lands on the localized reset page", async () => {
     await expect(
       forgotPasswordAction(
         { status: "idle" },
-        formData({ email: "amina@example.com" }),
+        formData({ email: "  Amina@Example.COM  " }),
       ),
     ).rejects.toThrow("REDIRECT:/fr/reset-password?email=amina%40example.com");
 
@@ -89,14 +90,14 @@ describe("forgotPasswordAction", () => {
 });
 
 describe("resetPasswordAction", () => {
-  it("verifies the recovery OTP, updates the password and signs out", async () => {
+  it("verifies the trimmed recovery OTP with the lowercased address", async () => {
     const result = await resetPasswordAction(
       { status: "idle" },
       formData({
-        email: "amina@example.com",
-        token: "123456",
-        password: "new-passphrase",
-        confirmPassword: "new-passphrase",
+        email: "  Amina@Example.COM  ",
+        token: " 123456 ",
+        password: "Correct-horse1",
+        confirmPassword: "Correct-horse1",
       }),
     );
 
@@ -105,7 +106,7 @@ describe("resetPasswordAction", () => {
       token: "123456",
       type: "recovery",
     });
-    expect(updateUser).toHaveBeenCalledWith({ password: "new-passphrase" });
+    expect(updateUser).toHaveBeenCalledWith({ password: "Correct-horse1" });
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -117,10 +118,14 @@ describe("resetPasswordAction", () => {
     expect(result).toEqual({ status: "updated" });
   });
 
-  it("stops without updating when the code is refused", async () => {
+  it("returns and logs the exact verifyOtp failure details", async () => {
     verifyOtp.mockResolvedValueOnce({
       data: { user: null, session: null },
-      error: { message: "invalid" },
+      error: {
+        status: 403,
+        code: "otp_expired",
+        message: "Token has expired or is invalid",
+      },
     });
 
     const result = await resetPasswordAction(
@@ -128,16 +133,77 @@ describe("resetPasswordAction", () => {
       formData({
         email: "amina@example.com",
         token: "123456",
-        password: "new-passphrase",
-        confirmPassword: "new-passphrase",
+        password: "Correct-horse1",
+        confirmPassword: "Correct-horse1",
       }),
     );
 
     expect(result).toEqual({
       status: "error",
       errors: { form: "invalidOtp" },
+      debug: {
+        step: "verifyOtp",
+        status: 403,
+        code: "otp_expired",
+        message: "Token has expired or is invalid",
+      },
     });
+    expect(consoleError).toHaveBeenCalledWith(
+      "[reset-password] verifyOtp failed",
+      expect.objectContaining({
+        step: "verifyOtp",
+        status: 403,
+        code: "otp_expired",
+        message: "Token has expired or is invalid",
+        email: "amina@example.com",
+        tokenLength: 6,
+      }),
+    );
     expect(updateUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("returns and logs the exact updateUser failure details", async () => {
+    updateUser.mockResolvedValueOnce({
+      data: {},
+      error: {
+        status: 422,
+        code: "weak_password",
+        message: "Password is too weak",
+      },
+    });
+
+    const result = await resetPasswordAction(
+      { status: "idle" },
+      formData({
+        email: "amina@example.com",
+        token: "123456",
+        password: "Correct-horse1",
+        confirmPassword: "Correct-horse1",
+      }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      errors: { password: "errPassword" },
+      debug: {
+        step: "updateUser",
+        status: 422,
+        code: "weak_password",
+        message: "Password is too weak",
+      },
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "[reset-password] updateUser failed",
+      expect.objectContaining({
+        step: "updateUser",
+        status: 422,
+        code: "weak_password",
+        message: "Password is too weak",
+        email: "amina@example.com",
+      }),
+    );
+    expect(recordAudit).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
   });
 });

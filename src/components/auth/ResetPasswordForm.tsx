@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -18,20 +18,23 @@ const INITIAL_STATE: ResetPasswordState = { status: "idle" };
 function SubmitButton({
   label,
   pendingLabel,
+  disabled,
 }: {
   label: string;
   pendingLabel: string;
+  disabled: boolean;
 }) {
   const { pending } = useFormStatus();
+  const loading = pending || disabled;
   return (
     <Button
       type="submit"
       variant="primary"
-      disabled={pending}
-      aria-busy={pending}
+      disabled={loading}
+      aria-busy={loading}
       className="w-full"
     >
-      {pending ? pendingLabel : label}
+      {loading ? pendingLabel : label}
     </Button>
   );
 }
@@ -55,10 +58,27 @@ export function ResetPasswordForm({
 }) {
   const t = createTranslator(locale).t;
   const router = useRouter();
-  const [state, formAction] = useActionState(
+  const [state, formAction, isPending] = useActionState(
     resetPasswordAction,
     INITIAL_STATE,
   );
+  const submitGuard = useRef(false);
+
+  // A recovery OTP is single-use. The guard stops a second submit that lands
+  // before React reports pending, which would otherwise verify the same code
+  // twice and show "invalid" for a code the first request already consumed.
+  useEffect(() => {
+    if (!isPending) submitGuard.current = false;
+  }, [isPending]);
+
+  // Server Action console output stays on the server. Mirror the safe diagnostic
+  // payload in the browser console so the exact Supabase status/code/message is
+  // visible while debugging; it contains no token, password or email.
+  useEffect(() => {
+    if (state.status === "error" && state.debug) {
+      console.error("[reset-password] action failed", state.debug);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== "updated") return;
@@ -67,6 +87,14 @@ export function ResetPasswordForm({
     }, 2000);
     return () => window.clearTimeout(timer);
   }, [locale, router, state.status]);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (submitGuard.current) {
+      event.preventDefault();
+      return;
+    }
+    submitGuard.current = true;
+  };
 
   if (state.status === "updated") {
     return (
@@ -92,7 +120,12 @@ export function ResetPasswordForm({
     errors[field] ? t(`auth.${RESET_PASSWORD_ERROR_KEYS[field]}`) : undefined;
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form
+      action={formAction}
+      onSubmit={onSubmit}
+      className="space-y-4"
+      noValidate
+    >
       {state.status === "rate_limited" ? (
         <Alert tone="error" title={t("auth.rateLimitedTitle")}>
           {t("auth.rateLimitedBody")}
@@ -165,6 +198,7 @@ export function ResetPasswordForm({
       <SubmitButton
         label={t("auth.setNewPassword")}
         pendingLabel={t("auth.settingNewPassword")}
+        disabled={isPending}
       />
 
       <p className="text-sm text-body">

@@ -330,6 +330,11 @@ export async function forgotPasswordAction(
   });
   if (!parsed.success) return { status: "error", messageKey: "auth.invalidEmail" };
 
+  // Supabase looks the account up by its normalized address, and the recovery
+  // token is bound to that address. Sending and redirecting with the same
+  // normalized value prevents a capitals/whitespace mismatch on the next step.
+  const email = parsed.data.email.trim().toLowerCase();
+
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
@@ -344,11 +349,10 @@ export async function forgotPasswordAction(
     message?: string;
   } | null = null;
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      parsed.data.email,
-    );
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
     requestError = error;
-  } catch {
+  } catch (error) {
+    console.error("[forgot-password] resetPasswordForEmail threw", error);
     return { status: "error", messageKey: "auth.errorBody" };
   }
 
@@ -360,18 +364,18 @@ export async function forgotPasswordAction(
     return { status: "rate_limited" };
   }
   if (requestError) {
-    console.error(
-      "Password reset email failed",
-      requestError.code ?? "unknown",
-    );
+    console.error("[forgot-password] resetPasswordForEmail failed", {
+      status: requestError.status,
+      code: requestError.code,
+      message: requestError.message,
+      email,
+    });
   }
 
   const localeCookie = (await cookies()).get("kc_locale")?.value;
   const locale =
     localeCookie && isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
-  redirect(
-    `/${locale}/reset-password?email=${encodeURIComponent(parsed.data.email)}`,
-  );
+  redirect(`/${locale}/reset-password?email=${encodeURIComponent(email)}`);
 }
 
 /**
@@ -417,15 +421,45 @@ export async function resetPasswordAction(
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
+  // `verifyOtp` matches the recovery token against this exact address and code.
+  // Trim/lowercase the address and trim the code so a pasted value with a
+  // leading/trailing space cannot produce a false "expired or invalid" result.
+  const email = parsed.data.email.trim().toLowerCase();
+  const token = parsed.data.token.trim();
+
   const { data: verifyData, error: verifyError } =
     await supabase.auth.verifyOtp({
-      email: parsed.data.email,
-      token: parsed.data.token,
+      email,
+      token,
       type: "recovery",
     });
 
-  if (verifyError || !verifyData.user) {
-    return { status: "error", errors: { form: "invalidOtp" } };
+  if (verifyError) {
+    const debug = {
+      step: "verifyOtp" as const,
+      status: verifyError.status,
+      code: verifyError.code,
+      message: verifyError.message,
+    };
+    console.error("[reset-password] verifyOtp failed", {
+      ...debug,
+      email,
+      tokenLength: token.length,
+    });
+    return { status: "error", errors: { form: "invalidOtp" }, debug };
+  }
+
+  if (!verifyData.user) {
+    const debug = {
+      step: "verifyOtp" as const,
+      code: "no_user",
+      message: "verifyOtp returned no user",
+    };
+    console.error("[reset-password] verifyOtp returned no user", {
+      email,
+      hasSession: Boolean(verifyData.session),
+    });
+    return { status: "error", errors: { form: "invalidOtp" }, debug };
   }
 
   const { error: updateError } = await supabase.auth.updateUser({
@@ -433,7 +467,24 @@ export async function resetPasswordAction(
   });
 
   if (updateError) {
-    return { status: "error", errors: { form: "errorBody" } };
+    const debug = {
+      step: "updateUser" as const,
+      status: updateError.status,
+      code: updateError.code,
+      message: updateError.message,
+    };
+    console.error("[reset-password] updateUser failed", {
+      ...debug,
+      email,
+    });
+    if (updateError.code === "weak_password") {
+      return {
+        status: "error",
+        errors: { password: "errPassword" },
+        debug,
+      };
+    }
+    return { status: "error", errors: { form: "errorBody" }, debug };
   }
 
   const userId = verifyData.user.id;
@@ -447,10 +498,11 @@ export async function resetPasswordAction(
 
   const { error: signOutError } = await supabase.auth.signOut();
   if (signOutError) {
-    console.error(
-      "Password reset sign-out failed",
-      signOutError.code ?? signOutError.message,
-    );
+    console.error("[reset-password] signOut failed", {
+      status: signOutError.status,
+      code: signOutError.code,
+      message: signOutError.message,
+    });
   }
 
   return { status: "updated" };

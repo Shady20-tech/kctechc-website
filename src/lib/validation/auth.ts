@@ -25,6 +25,27 @@ export const signInSchema = z.object({
 export type SignInInput = z.infer<typeof signInSchema>;
 
 /**
+ * Password policy for account creation and recovery.
+ *
+ * Enforced before `verifyOtp` in the reset flow: a recovery OTP is single-use,
+ * so if Supabase rejects a weak password after the code has been verified the
+ * visitor cannot retry with the same code. Sign-in deliberately keeps the looser
+ * minimum so an account created under an older policy can still authenticate.
+ */
+export const passwordSchema = z
+  .string()
+  .min(8)
+  .max(200)
+  .refine(
+    (value) =>
+      /[a-z]/.test(value) &&
+      /[A-Z]/.test(value) &&
+      /\d/.test(value) &&
+      /[^A-Za-z0-9]/.test(value),
+    { message: "passwordPolicy" },
+  );
+
+/**
  * Self-registration payload.
  *
  * Role is never accepted from the client: `handle_new_user` provisions every
@@ -61,8 +82,8 @@ export const signUpSchema = z
   .object({
     fullName: z.string().trim().min(1).max(200),
     email: emailSchema,
-    password: z.string().min(8).max(200),
-    confirmPassword: z.string().min(8).max(200),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
     accountType: z.enum(ACCOUNT_TYPES),
     dateOfBirth: z
       .string()
@@ -100,9 +121,23 @@ export const signUpSchema = z
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
+/**
+ * The address Supabase should look up for a recovery code.
+ *
+ * Supabase stores emails lowercased and issues the recovery token for that exact
+ * address. Trimming and lowercasing here keeps `resetPasswordForEmail` and
+ * `verifyOtp` in step even if the visitor typed capitals or copied a trailing
+ * space; a mismatch surfaces as "Token has expired or is invalid" immediately.
+ */
+const recoveryEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(emailSchema);
+
 /** Request a password-reset email. */
 export const forgotPasswordSchema = z.object({
-  email: emailSchema,
+  email: recoveryEmailSchema,
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -116,16 +151,18 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
  *
  * `token` is the 6-digit OTP from the Supabase "Reset Password" email. The email
  * must use the `{{ .Token }}` variable; this flow does not use a clickable link.
+ * The email is trimmed and lowercased before it reaches Supabase: `verifyOtp`
+ * matches the exact address the recovery token was issued for.
  */
 export const resetPasswordSchema = z
   .object({
-    email: emailSchema,
+    email: recoveryEmailSchema,
     token: z
       .string()
       .trim()
       .regex(/^\d{6}$/, "otpInvalid"),
-    password: z.string().min(8).max(200),
-    confirmPassword: z.string().min(8).max(200),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
   })
   .refine((value) => value.password === value.confirmPassword, {
     message: "passwordMismatch",
@@ -216,10 +253,28 @@ export type ForgotPasswordState =
   | { status: "rate_limited" }
   | { status: "unconfigured" };
 
+/**
+ * Diagnostic details for a failed reset step.
+ *
+ * Deliberately contains no token, password or email; it is returned to the form
+ * so the browser console can show the Supabase status and error code alongside
+ * the server log. The message is the provider's own wording.
+ */
+export type ResetPasswordDebug = {
+  step: "verifyOtp" | "updateUser";
+  status?: number;
+  code?: string;
+  message?: string;
+};
+
 /** Reset-password outcome. */
 export type ResetPasswordState =
   | { status: "idle" }
-  | { status: "error"; errors: Record<string, string> }
+  | {
+      status: "error";
+      errors: Record<string, string>;
+      debug?: ResetPasswordDebug;
+    }
   | { status: "updated" }
   | { status: "rate_limited" }
   | { status: "unconfigured" };

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -16,20 +16,23 @@ const INITIAL_STATE: ForgotPasswordState = { status: "idle" };
 function SubmitButton({
   label,
   pendingLabel,
+  disabled,
 }: {
   label: string;
   pendingLabel: string;
+  disabled: boolean;
 }) {
   const { pending } = useFormStatus();
+  const loading = pending || disabled;
   return (
     <Button
       type="submit"
       variant="primary"
-      disabled={pending}
-      aria-busy={pending}
+      disabled={loading}
+      aria-busy={loading}
       className="w-full"
     >
-      {pending ? pendingLabel : label}
+      {loading ? pendingLabel : label}
     </Button>
   );
 }
@@ -45,10 +48,34 @@ function SubmitButton({
  */
 export function ForgotPasswordForm({ locale }: { locale: Locale }) {
   const t = createTranslator(locale).t;
-  const [state, formAction] = useActionState(forgotPasswordAction, INITIAL_STATE);
+  const [state, formAction, isPending] = useActionState(
+    forgotPasswordAction,
+    INITIAL_STATE,
+  );
+  const submitGuard = useRef(false);
+
+  // A second click before React reports pending must not send a second email:
+  // Supabase invalidates the previous recovery token on every send. This effect
+  // only releases the guard; it never calls the action.
+  useEffect(() => {
+    if (!isPending) submitGuard.current = false;
+  }, [isPending]);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (submitGuard.current) {
+      event.preventDefault();
+      return;
+    }
+    submitGuard.current = true;
+  };
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form
+      action={formAction}
+      onSubmit={onSubmit}
+      className="space-y-4"
+      noValidate
+    >
       {state.status === "rate_limited" ? (
         <Alert tone="error" title={t("auth.rateLimitedTitle")}>
           {t("auth.rateLimitedBody")}
@@ -77,6 +104,7 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
       <SubmitButton
         label={t("auth.sendResetLink")}
         pendingLabel={t("auth.sendingResetLink")}
+        disabled={isPending}
       />
 
       <p className="text-sm text-body">
