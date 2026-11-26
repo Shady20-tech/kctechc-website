@@ -4,9 +4,20 @@ import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
-import { postSignInPathFor, recoveryRedirectUrlFor } from "@/lib/auth/redirects";
+import {
+  confirmationRedirectUrl,
+  postSignInPathFor,
+} from "@/lib/auth/redirects";
+import {
+  enabledOAuthProviders,
+  isServerOAuthProvider,
+  oauthCallbackUrl,
+} from "@/lib/auth/oauth";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
+import { getAuthState } from "@/lib/auth/session";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
-import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
+import { safeRedirectPathSchema } from "@/lib/validation/common";
 import { checkRateLimit, clientKeyFrom } from "@/lib/security/rate-limit";
 import { recordAudit } from "@/lib/security/audit";
 import {
@@ -14,24 +25,15 @@ import {
   signUpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  oauthOnboardingSchema,
   type SignInState,
   type SignUpState,
   type ForgotPasswordState,
   type ResetPasswordState,
+  type OAuthOnboardingState,
 } from "@/lib/validation/auth";
 
 export type SignInActionState = SignInState;
-
-/** The confirmation email lands here so the link works from any device. */
-function confirmationRedirectUrl(): string {
-  return new URL("/auth/callback?next=/admin", getSiteUrl()).toString();
-}
-
-/** The recovery email lands here; see {@link recoveryRedirectUrlFor}. */
-async function recoveryRedirectUrl(): Promise<string> {
-  const cookieStore = await cookies();
-  return recoveryRedirectUrlFor(cookieStore.get("kc_locale")?.value);
-}
 
 /**
  * Supabase reports an unconfirmed account with a stable machine code. Matching
@@ -301,11 +303,14 @@ export async function resendConfirmationAction(
 }
 
 /**
- * Request a password-reset email.
+ * Request a password-reset code.
  *
- * The response is always `sent`, whether or not the address exists, so the form
- * cannot be used to discover which emails have accounts. Supabase itself does not
- * create an account here; it emails a recovery link to an existing one.
+ * Sends the Supabase "Reset Password" email, which must contain the
+ * `{{ .Token }}` 6-digit code. No `redirectTo` is passed: the flow does not
+ * depend on a clickable link. A non-existent address must look identical to an
+ * existing one, so provider errors other than rate limiting are logged and the
+ * visitor still lands on the code-entry page; only our own rate limit and a
+ * transport failure are shown.
  */
 export async function forgotPasswordAction(
   _previous: ForgotPasswordState,
@@ -325,24 +330,64 @@ export async function forgotPasswordAction(
   });
   if (!parsed.success) return { status: "error", messageKey: "auth.invalidEmail" };
 
+  // Supabase looks the account up by its normalized address, and the recovery
+  // token is bound to that address. Sending and redirecting with the same
+  // normalized value prevents a capitals/whitespace mismatch on the next step.
+  const email = parsed.data.email.trim().toLowerCase();
+
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: await recoveryRedirectUrl(),
-  });
+  // Do not pass `redirectTo`: the flow uses the 6-digit `{{ .Token }}` in the
+  // Supabase "Reset Password" email, not a clickable recovery link. A
+  // non-existent address must look identical to an existing one, so only a
+  // transport failure or our own rate limit is surfaced; provider errors are
+  // logged and the visitor still reaches the code-entry page.
+  let requestError: {
+    status?: number;
+    code?: string;
+    message?: string;
+  } | null = null;
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    requestError = error;
+  } catch (error) {
+    console.error("[forgot-password] resetPasswordForEmail threw", error);
+    return { status: "error", messageKey: "auth.errorBody" };
+  }
 
-  return { status: "sent" };
+  if (
+    requestError &&
+    (requestError.status === 429 ||
+      requestError.code === "over_email_send_rate_limit")
+  ) {
+    return { status: "rate_limited" };
+  }
+  if (requestError) {
+    console.error("[forgot-password] resetPasswordForEmail failed", {
+      status: requestError.status,
+      code: requestError.code,
+      message: requestError.message,
+      email,
+    });
+  }
+
+  const localeCookie = (await cookies()).get("kc_locale")?.value;
+  const locale =
+    localeCookie && isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
+  redirect(`/${locale}/reset-password?email=${encodeURIComponent(email)}`);
 }
 
 /**
- * Set a new password from a recovery link.
+ * Set a new password from a 6-digit recovery OTP.
  *
- * Requires the session that the recovery link established via `/auth/callback`.
- * Without it Supabase refuses the update, so a visitor who guesses this URL
- * changes nothing. The new password is the only value accepted; the email is not
- * re-read, because a recovery flow that could be pointed at another address would
- * be an account-takeover primitive.
+ * `verifyOtp({ type: "recovery" })` creates the short-lived recovery session
+ * server-side; the same request then calls `updateUser`. Neither step trusts a
+ * link or a client-side session, so a guessed URL cannot change anything.
+ *
+ * The recovery session is signed out after the change so the redirect to
+ * `/login` actually shows the sign-in form instead of bouncing an
+ * already-authenticated visitor to the account hub.
  */
 export async function resetPasswordAction(
   _previous: ResetPasswordState,
@@ -358,6 +403,8 @@ export async function resetPasswordAction(
   if (!limit.allowed) return { status: "rate_limited" };
 
   const parsed = resetPasswordSchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -374,32 +421,302 @@ export async function resetPasswordAction(
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `verifyOtp` matches the recovery token against this exact address and code.
+  // Trim/lowercase the address and trim the code so a pasted value with a
+  // leading/trailing space cannot produce a false "expired or invalid" result.
+  const email = parsed.data.email.trim().toLowerCase();
+  const token = parsed.data.token.trim();
 
-  if (!user) {
-    // No recovery session: the link was not followed, or it expired. Nothing is
-    // written, and the caller is told to request a new link rather than shown a
-    // success it did not achieve.
-    return { status: "error", errors: { form: "recoverySessionMissing" } };
+  const { data: verifyData, error: verifyError } =
+    await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "recovery",
+    });
+
+  if (verifyError) {
+    const debug = {
+      step: "verifyOtp" as const,
+      status: verifyError.status,
+      code: verifyError.code,
+      message: verifyError.message,
+    };
+    console.error("[reset-password] verifyOtp failed", {
+      ...debug,
+      email,
+      tokenLength: token.length,
+    });
+    return { status: "error", errors: { form: "invalidOtp" }, debug };
   }
 
-  const { error } = await supabase.auth.updateUser({
+  if (!verifyData.user) {
+    const debug = {
+      step: "verifyOtp" as const,
+      code: "no_user",
+      message: "verifyOtp returned no user",
+    };
+    console.error("[reset-password] verifyOtp returned no user", {
+      email,
+      hasSession: Boolean(verifyData.session),
+    });
+    return { status: "error", errors: { form: "invalidOtp" }, debug };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
 
+  if (updateError) {
+    const debug = {
+      step: "updateUser" as const,
+      status: updateError.status,
+      code: updateError.code,
+      message: updateError.message,
+    };
+    console.error("[reset-password] updateUser failed", {
+      ...debug,
+      email,
+    });
+    if (updateError.code === "weak_password") {
+      return {
+        status: "error",
+        errors: { password: "errPassword" },
+        debug,
+      };
+    }
+    return { status: "error", errors: { form: "errorBody" }, debug };
+  }
+
+  const userId = verifyData.user.id;
+  await recordAudit({
+    actorId: userId,
+    action: "password_changed",
+    entityType: "auth",
+    entityId: userId,
+    metadata: { source: "recovery_otp" },
+  });
+
+  const { error: signOutError } = await supabase.auth.signOut();
+  if (signOutError) {
+    console.error("[reset-password] signOut failed", {
+      status: signOutError.status,
+      code: signOutError.code,
+      message: signOutError.message,
+    });
+  }
+
+  return { status: "updated" };
+}
+
+/**
+ * Start a social sign-in.
+ *
+ * Only a provider that still uses the server-side redirect may reach this
+ * action: `isServerOAuthProvider` narrows to Facebook, and the enabled list is
+ * checked as well. Both matter: the first stops an arbitrary provider name (or a
+ * Google redirect the UI no longer offers) reaching Supabase, and the second
+ * stops a button for an unconfigured provider being reachable by a crafted POST
+ * even though it is not rendered.
+ *
+ * A Server Action rather than a client call to `supabase.auth.signInWithOAuth`,
+ * because the allow-list decision must not live in the browser. `signInWithOAuth`
+ * returns an authorization URL instead of navigating, so the redirect is issued
+ * here and the browser follows it.
+ *
+ * The redirect carries the locale and an optional validated `next`, so a French
+ * visitor comes back to French and a visitor who was heading somewhere specific
+ * is not dropped on the account hub. `/auth/callback` decides the destination
+ * once it can see whether the account still owes us its declarations.
+ */
+export async function signInWithOAuthProviderAction(
+  formData: FormData,
+): Promise<void> {
+  const requested = formData.get("provider");
+  const localeValue = formData.get("locale");
+  const nextParsed = safeRedirectPathSchema.safeParse(formData.get("next"));
+  const next = nextParsed.success ? nextParsed.data : undefined;
+
+  // Resolve the locale first: every failure below redirects back to the sign-in
+  // page, and a French visitor should not be bounced into the English one.
+  const safeLocale = localeValue === "fr" ? "fr" : "en";
+  const signInHref = `/${safeLocale}/login`;
+
+  if (!isSupabaseConfigured()) {
+    redirect(`${signInHref}?reason=unconfigured`);
+  }
+
+  // Google normally uses Google Identity Services in the browser. It reaches
+  // this action only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is absent, where the UI
+  // falls back to the server redirect rather than hiding the button.
+  if (
+    !isServerOAuthProvider(requested) ||
+    !enabledOAuthProviders().includes(requested)
+  ) {
+    redirect(`${signInHref}?reason=oauth_unavailable`);
+  }
+
+  const requestHeaders = await headers();
+  const limit = checkRateLimit(clientKeyFrom(requestHeaders, "oauth"), {
+    limit: 20,
+    windowSeconds: 300,
+  });
+  if (!limit.allowed) {
+    redirect(`${signInHref}?reason=rate_limited`);
+  }
+
+  const supabase = await createClient();
+  if (!supabase) {
+    redirect(`${signInHref}?reason=unconfigured`);
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: requested,
+    options: {
+      redirectTo: oauthCallbackUrl(getSiteUrl(), safeLocale, next),
+      // The action runs on the server, so it returns the provider URL and lets
+      // Next.js perform the redirect instead of the browser client.
+      skipBrowserRedirect: true,
+    },
+  });
+
+  if (error || !data.url) {
+    redirect(`${signInHref}?reason=oauth_failed`);
+  }
+
+  redirect(data.url);
+}
+
+export type OAuthCompletionState =
+  | { status: "redirect"; path: string }
+  | { status: "error"; messageKey: string };
+
+/**
+ * Resolve where a Google ID-token sign-in should land.
+ *
+ * `signInWithIdToken` runs in the browser and writes the session cookies there;
+ * this action then reads the session server-side so the destination is decided by
+ * the same rule `/auth/callback` uses. It returns a path instead of calling
+ * `redirect()` because the caller has just finished a popup flow and needs to
+ * show a failure inline if anything is wrong.
+ *
+ * The `next` path is validated against the open-redirect allowlist here, not in
+ * the browser. An unauthenticated call is an error, not a redirect, so the
+ * action cannot be used to probe destinations.
+ */
+export async function completeOAuthSignInAction(input: {
+  locale?: string | null;
+  next?: string | null;
+}): Promise<OAuthCompletionState> {
+  const state = await getAuthState();
+
+  if (state.status === "unconfigured") {
+    return { status: "error", messageKey: "auth.notConfigured" };
+  }
+  if (state.status !== "authenticated") {
+    return { status: "error", messageKey: "auth.oauthFailed" };
+  }
+
+  const locale =
+    typeof input.locale === "string" && isLocale(input.locale)
+      ? input.locale
+      : DEFAULT_LOCALE;
+  const nextParsed = safeRedirectPathSchema.safeParse(input.next);
+  if (nextParsed.success) {
+    return { status: "redirect", path: nextParsed.data };
+  }
+
+  const profile = state.profile
+    ? {
+        role: state.profile.role,
+        declaredAccountType: state.profile.declaredAccountType,
+      }
+    : null;
+
+  return {
+    status: "redirect",
+    path: resolvePostAuthPath(locale, profile),
+  };
+}
+
+/**
+ * Complete the declarations an OAuth account still owes us.
+ *
+ * A social sign-in never asks for a role or a residency, because neither
+ * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload —
+ * `handle_new_user` provisions the profile as `customer` with
+ * `declared_account_type` null. This writes those two facts afterwards, so an
+ * OAuth account ends up indistinguishable from a password account that answered
+ * the same questions.
+ *
+ * The write goes through the **session** client, so `profiles_update_own` is the
+ * control: it pins `role` to its stored value, which is what keeps this from
+ * becoming a privilege-escalation path. `declared_account_type` is a declaration
+ * and no policy reads it as a permission; a landlord or agent still has to pass
+ * KYC before publishing anything.
+ *
+ * A profile that has already declared is not overwritten: the redirect to the
+ * account hub happens first, so a second submission cannot rewrite a declaration
+ * a person made earlier.
+ */
+export async function completeOAuthOnboardingAction(
+  _previous: OAuthOnboardingState,
+  formData: FormData,
+): Promise<OAuthOnboardingState> {
+  if (!isSupabaseConfigured()) return { status: "unconfigured" };
+
+  const requestHeaders = await headers();
+  const limit = checkRateLimit(clientKeyFrom(requestHeaders, "onboarding"), {
+    limit: 10,
+    windowSeconds: 900,
+  });
+  if (!limit.allowed) return { status: "rate_limited" };
+
+  const supabase = await createClient();
+  if (!supabase) return { status: "unconfigured" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "unauthenticated" };
+
+  const parsed = oauthOnboardingSchema.safeParse({
+    accountType: formData.get("accountType"),
+    permanentResidency: formData.get("permanentResidency"),
+    phone: formData.get("phone") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    const errors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const key = (issue.path[0] as string) ?? "form";
+      if (!errors[key]) errors[key] = issue.message;
+    }
+    return { status: "error", errors };
+  }
+
+  const phone = parsed.data.phone?.trim() ? parsed.data.phone.trim() : null;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      declared_account_type: parsed.data.accountType,
+      permanent_residency: parsed.data.permanentResidency === "true",
+      ...(phone ? { phone } : {}),
+    })
+    .eq("id", user.id);
+
   if (error) {
-    return { status: "error", errors: { form: "errorBody" } };
+    return { status: "error", errors: { form: "write_failed" } };
   }
 
   await recordAudit({
     actorId: user.id,
-    action: "password_changed",
+    action: "profile_updated",
     entityType: "auth",
     entityId: user.id,
-    metadata: { source: "recovery" },
+    metadata: { source: "oauth_onboarding" },
   });
 
-  return { status: "updated" };
+  const localeCookie = (await cookies()).get("kc_locale")?.value;
+  redirect(`/${localeCookie === "fr" ? "fr" : "en"}/account`);
 }

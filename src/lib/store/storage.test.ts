@@ -77,6 +77,19 @@ describe("productImageSrc", () => {
     expect(src).toBe("/products/electrical/sako-solar-system.jpg");
   });
 
+  it("rejects an external public path instead of passing it to next/image", () => {
+    expect(
+      productImageSrc(
+        { storagePath: null, publicPath: "https://imgur.com/undefined" },
+        "KC-LAPTOP-1",
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects an external storage path", () => {
+    expect(storagePublicUrl("https://imgur.com/undefined")).toBeNull();
+  });
+
   it("returns null when nothing resolves", () => {
     expect(productImageSrc({ storagePath: null })).toBeNull();
     expect(productImageSrc({ storagePath: null }, "KC-LAPTOP-1")).toBeNull();

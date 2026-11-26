@@ -198,6 +198,7 @@ export function localizeInsight(
   );
 
   return {
+    id: record.id,
     slug: record.slug,
     department: record.department,
     categorySlug: record.categorySlug,

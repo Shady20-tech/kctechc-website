@@ -12,9 +12,6 @@ import { STORE_CURRENCY } from "@/lib/config/site";
  * the control.
  *
  * The rules mirror the database constraints deliberately, and where they differ
- * the database is stricter: `gtin` is validated here for a useful message, but
- * the `gtin_is_valid` check and the column type are what actually guarantee a
- * GTIN is well-formed.
  */
 
 /**
@@ -25,15 +22,6 @@ import { STORE_CURRENCY } from "@/lib/config/site";
  * nobody typed. The caller is told to fix it instead.
  */
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-/**
- * A GTIN: 8, 12, 13 or 14 digits.
- *
- * The check-digit itself is verified by the database's `gtin_is_valid` function,
- * which is the authoritative test; this only rejects an obviously wrong shape
- * early.
- */
-const gtinPattern = /^\d{8}$|^\d{12,14}$/;
 
 export const productInputSchema = z.object({
   title: z.string().trim().min(2).max(200),
@@ -48,12 +36,6 @@ export const productInputSchema = z.object({
   shortDescription: z.string().trim().min(10).max(400),
   description: z.string().trim().min(20).max(20_000),
   brand: z.string().trim().max(120).optional().or(z.literal("")),
-  gtin: z
-    .string()
-    .trim()
-    .regex(gtinPattern, "A GTIN is 8, 12, 13 or 14 digits.")
-    .optional()
-    .or(z.literal("")),
   // Whole francs. A price must be positive: a zero-priced published product is a
   // free offer, which is not what an empty form field should mean.
   priceMinor: z.coerce.number().int().min(1).max(1_000_000_000),

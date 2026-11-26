@@ -157,3 +157,49 @@ describe("message keys referenced in code", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * A page intro prints `eyebrow` above `heading`. When the two strings are equal
+ * the page renders the same words twice, one directly above the other, which
+ * reads as a duplicated header rather than as a section label and a title. The
+ * projects surface shipped like this in both locales (`Work Done` over
+ * `Work Done`) because the eyebrow was copied from the heading.
+ *
+ * Every other page-intro section pairs a short section label with a descriptive
+ * title ("Portfolio" / "Our work"), so the two being identical is always a
+ * mistake rather than a style choice.
+ */
+describe("page intro eyebrows", () => {
+  const SECTIONS = [
+    "projects",
+    "portfolio",
+    "insights",
+    "gallery",
+    "services",
+    "store",
+    "realEstate",
+    "packages",
+  ] as const;
+
+  it.each(["en", "fr"] as const)(
+    "does not repeat the heading as the eyebrow (%s)",
+    (locale) => {
+      const messages = (locale === "en" ? en : fr) as Tree;
+      const duplicates: string[] = [];
+      for (const section of SECTIONS) {
+        const group = messages[section];
+        if (!group || typeof group === "string") continue;
+        const eyebrow = group.eyebrow;
+        const heading = group.heading;
+        if (
+          typeof eyebrow === "string" &&
+          typeof heading === "string" &&
+          eyebrow === heading
+        ) {
+          duplicates.push(`${locale}.${section}: "${eyebrow}"`);
+        }
+      }
+      expect(duplicates).toEqual([]);
+    },
+  );
+});

@@ -65,6 +65,64 @@ describe("createPublicClient", () => {
     expect(createPublicClient()).toBeNull();
   });
 
+  it("fails fast instead of retrying with backoff", async () => {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:1");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "publishable-key");
+
+    const { createPublicClient } = await import("@/lib/supabase/public");
+    const client = createPublicClient();
+    expect(client).not.toBeNull();
+
+    // supabase-js retries a failed request three times with 1s/2s/4s backoff,
+    // which turned an unreachable database into a flat ~7s stall on every public
+    // page. Assert the attempt count, because the retry policy is invisible to
+    // types and to every other test.
+    let attempts = 0;
+    const original = globalThis.fetch;
+    globalThis.fetch = ((input, init) => {
+      attempts += 1;
+      return original(input, init);
+    }) as typeof fetch;
+
+    try {
+      const started = Date.now();
+      await client!.from("property_listings").select("id").limit(1);
+      const elapsed = Date.now() - started;
+
+      expect(attempts).toBe(1);
+      expect(elapsed).toBeLessThan(1000);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it("bounds a hung request with an abort timeout", async () => {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "publishable-key");
+
+    const { createPublicClient } = await import("@/lib/supabase/public");
+    const client = createPublicClient();
+    expect(client).not.toBeNull();
+
+    // A connection that hangs rather than refusing is the case `retry: false`
+    // cannot help with, so the request itself must carry an abort signal.
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("[]", { status: 200 }));
+
+    await client!.from("property_listings").select("id").limit(1);
+
+    expect(timeout).toHaveBeenCalled();
+    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+
+    fetchSpy.mockRestore();
+    timeout.mockRestore();
+  });
+
   it("builds a client without a persisted session when configured", async () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");

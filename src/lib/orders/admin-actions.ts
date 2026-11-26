@@ -6,7 +6,12 @@ import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { getAuthState } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ORDER_STATUSES, canTransition, type OrderStatus } from "./types";
+import {
+  ORDER_STATUSES,
+  canRecordManualPayment,
+  canTransition,
+  type OrderStatus,
+} from "./types";
 
 /**
  * Admin order actions.
@@ -178,18 +183,11 @@ export async function recordManualPayment(
 
   if (!order) return { status: "error" };
 
-  // Cash, bank transfer and "pay on confirmation" are settled by hand; a
-  // customer who chose a mobile-money *intent* is reconciled by the team too,
-  // since no payment is taken online. Only the unoffered `card` value is refused.
-  if (
-    order.payment_method !== "bank_transfer" &&
-    order.payment_method !== "cash_on_confirmation" &&
-    order.payment_method !== "mobile_money_mtn" &&
-    order.payment_method !== "mobile_money_orange"
-  ) {
-    return { status: "invalid_transition" };
-  }
-  if (order.status !== "pending_payment") {
+  // One predicate, shared with the form that renders the control, so the button
+  // cannot appear for an order this action would then refuse. Reading the method
+  // into a local keeps the non-null narrowing for the insert below.
+  const method = order.payment_method;
+  if (!canRecordManualPayment(method, order.status as OrderStatus) || method === null) {
     return { status: "invalid_transition" };
   }
 
@@ -200,7 +198,7 @@ export async function recordManualPayment(
     .insert({
       order_id: order.id,
       status: "succeeded",
-      method: order.payment_method,
+      method,
       // `manual` (not the provider name) marks this as operator-confirmed.
       provider: "manual",
       amount_minor: order.total_minor,

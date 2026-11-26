@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SectionBand } from "@/components/layout/PageShell";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { PropertyMap } from "@/components/maps/PropertyMap";
 import {
   FactRow,
@@ -9,6 +10,7 @@ import {
   formatArea,
 } from "@/components/real-estate/ListingCard";
 import { ListingGallery } from "@/components/real-estate/ListingGallery";
+import { VerifiedBadge } from "@/components/real-estate/VerifiedBadge";
 import { ListingInquiryForm } from "@/components/real-estate/ListingInquiryForm";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/ui/Breadcrumbs";
@@ -192,12 +194,26 @@ export default async function PropertyListingPage({
               {record.regionName}
               {record.locality ? ` · ${record.locality}` : ""}
             </p>
-            <h1
-              id="listing-heading"
-              className="display-tight mt-3 font-display text-3xl font-bold text-ink-900"
-            >
-              {record.title}
-            </h1>
+            {record.publisherVerified ? (
+              <div className="mt-3">
+                <VerifiedBadge t={t} />
+              </div>
+            ) : null}
+            <div className="mt-3 flex items-start justify-between gap-4">
+              <h1
+                id="listing-heading"
+                className="display-tight font-display text-3xl font-bold text-ink-900"
+              >
+                {record.title}
+              </h1>
+              <FavoriteButton
+                locale={resolved}
+                entityType="listing"
+                entityId={record.id}
+                returnPath={`/${resolved}${REAL_ESTATE_PATH}/listings/${record.slug}`}
+                title={record.title}
+              />
+            </div>
             <p className="mt-4 font-display text-2xl font-semibold text-ink-900">
               {price}
             </p>

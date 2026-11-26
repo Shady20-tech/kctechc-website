@@ -26,6 +26,8 @@ export type ProductGalleryImage = {
   alt: string;
   isPrimary: boolean;
   position: number;
+  /** The stored path is not a Storage object path, so it cannot be rendered. */
+  invalidReference?: boolean;
 };
 
 /**
@@ -131,6 +133,10 @@ export function ProductMediaForm({
                 ) : (
                   <div className="h-44 w-full rounded-card bg-ink-100" />
                 )}
+
+                {image.invalidReference ? (
+                  <Notice tone="error">{labels.imageInvalid}</Notice>
+                ) : null}
 
                 <div className="flex items-center gap-2">
                   {image.isPrimary ? (

@@ -67,6 +67,44 @@ describe("InstallPrompt", () => {
     ).toBeTruthy();
   });
 
+  it("never covers an auth form", async () => {
+    // The regression: on a 375x667 phone the banner sat over the sign-in submit
+    // button and the button could not be tapped at all, so signing in was
+    // impossible on a small screen. Auth pages opt out of the overlay entirely.
+    for (const route of [
+      "/en/login",
+      "/fr/sign-up",
+      "/en/forgot-password",
+      "/fr/reset-password",
+      // The legacy admin aliases still redirect, but the banner must not flash
+      // over them either.
+      "/en/admin/login",
+      "/admin/login",
+    ]) {
+      pathname.mockReturnValue(route);
+      const view = renderBanner();
+      fireEvent(window, makeInstallEvent());
+
+      expect(
+        screen.queryByText(createTranslator("en").t("pwa.installTitle")),
+      ).toBeNull();
+      view.unmount();
+    }
+  });
+
+  it("keeps the banner compact on small screens so it cannot cover page controls", async () => {
+    // Regression: at 190px tall the banner sat on top of the sign-in submit
+    // button on a 667px-tall phone, and the button became untappable. The body
+    // copy is the part that goes, since the title and the actions still explain
+    // the banner on their own.
+    renderBanner();
+    fireEvent(window, makeInstallEvent());
+
+    const body = await screen.findByText(createTranslator("en").t("pwa.installBody"));
+    expect(body.className).toContain("hidden");
+    expect(body.className).toContain("sm:block");
+  });
+
   it("calls the browser prompt when the action is pressed", async () => {
     renderBanner();
     const event = makeInstallEvent();

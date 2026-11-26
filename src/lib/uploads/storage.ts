@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/config/env";
+import { isStorageObjectPath } from "@/lib/uploads/object-path";
 
 /**
  * Supabase Storage access for Electrical Services media.
@@ -41,10 +42,9 @@ const SIGNED_URL_TTL_SECONDS = 300;
  */
 export function projectMediaPublicUrl(objectPath: string): string | null {
   if (!publicEnv.supabaseUrl) return null;
+  if (!isStorageObjectPath(objectPath)) return null;
   const base = publicEnv.supabaseUrl.replace(/\/$/, "");
-  const clean = objectPath.replace(/^\/+/, "");
-  if (clean.length === 0) return null;
-  return `${base}/storage/v1/object/public/${PROJECT_MEDIA_BUCKET}/${clean}`;
+  return `${base}/storage/v1/object/public/${PROJECT_MEDIA_BUCKET}/${objectPath.trim()}`;
 }
 
 /**

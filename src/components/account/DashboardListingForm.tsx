@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
@@ -14,10 +14,16 @@ import {
 } from "@/lib/real-estate/dashboard-actions";
 import type { DashboardListing } from "@/lib/real-estate/dashboard-loaders";
 import {
+  asListingPropertyKind,
+  fieldRelevanceFor,
+  shouldRenderField,
+} from "@/lib/real-estate/field-relevance";
+import {
   LISTING_PROPERTY_KINDS,
   LISTING_TYPES,
   PRICE_PERIODS,
   PROPERTY_TYPES,
+  type ListingPropertyKind,
 } from "@/lib/real-estate/enums";
 import type { DashboardKind } from "@/lib/real-estate/dashboard";
 
@@ -90,6 +96,14 @@ export function DashboardListingForm({
         : createDashboardListingAction(kind, formData),
     EMPTY,
   );
+
+  // The kind drives which characteristic fields are worth asking for. It is
+  // controlled so the form adapts the moment the owner picks "Land" rather than
+  // only after a save.
+  const [propertyKind, setPropertyKind] = useState<ListingPropertyKind | "">(
+    asListingPropertyKind(listing?.propertyKind),
+  );
+  const relevance = fieldRelevanceFor(propertyKind);
 
   const fields = state.ok ? undefined : state.fields;
   const errorCode = state.ok ? undefined : state.error;
@@ -195,6 +209,9 @@ export function DashboardListingForm({
           label={t("realEstate.admin.fieldPropertyKind")}
           defaultValue={listing?.propertyKind ?? "house"}
           error={fields?.propertyKind}
+          onChange={(event) =>
+            setPropertyKind(event.target.value as ListingPropertyKind)
+          }
         >
           {LISTING_PROPERTY_KINDS.map((value) => (
             <option key={value} value={value}>
@@ -289,6 +306,9 @@ export function DashboardListingForm({
         <legend className="font-display text-lg font-semibold text-ink-900">
           {t("realEstate.admin.sections.pricing")}
         </legend>
+        <p className="text-sm text-muted">
+          {t("realEstate.admin.fieldsOptionalNote")}
+        </p>
 
         <TextField
           id="price"
@@ -335,60 +355,80 @@ export function DashboardListingForm({
           </span>
         </label>
 
-        <TextField
-          id="landAreaSqm"
-          name="landAreaSqm"
-          label={t("realEstate.admin.fieldLandArea")}
-          inputMode="numeric"
-          defaultValue={
-            listing?.landAreaSqm != null ? String(listing.landAreaSqm) : ""
-          }
-          error={fields?.landAreaSqm}
-        />
+        {shouldRenderField(relevance.landArea, listing?.landAreaSqm) ? (
+          <TextField
+            id="landAreaSqm"
+            name="landAreaSqm"
+            label={t("realEstate.admin.fieldLandArea")}
+            hint={t("realEstate.admin.fieldLandAreaHint")}
+            inputMode="numeric"
+            defaultValue={
+              listing?.landAreaSqm != null ? String(listing.landAreaSqm) : ""
+            }
+            error={fields?.landAreaSqm}
+          />
+        ) : null}
 
-        <TextField
-          id="buildingAreaSqm"
-          name="buildingAreaSqm"
-          label={t("realEstate.admin.fieldBuildingArea")}
-          inputMode="numeric"
-          defaultValue={
-            listing?.buildingAreaSqm != null
-              ? String(listing.buildingAreaSqm)
-              : ""
-          }
-          error={fields?.buildingAreaSqm}
-        />
+        {shouldRenderField(
+          relevance.buildingArea,
+          listing?.buildingAreaSqm,
+        ) ? (
+          <TextField
+            id="buildingAreaSqm"
+            name="buildingAreaSqm"
+            label={t("realEstate.admin.fieldBuildingArea")}
+            hint={t("realEstate.admin.fieldBuildingAreaHint")}
+            inputMode="numeric"
+            defaultValue={
+              listing?.buildingAreaSqm != null
+                ? String(listing.buildingAreaSqm)
+                : ""
+            }
+            error={fields?.buildingAreaSqm}
+          />
+        ) : null}
 
-        <TextField
-          id="bedrooms"
-          name="bedrooms"
-          label={t("realEstate.admin.fieldBedrooms")}
-          inputMode="numeric"
-          defaultValue={listing?.bedrooms != null ? String(listing.bedrooms) : ""}
-          error={fields?.bedrooms}
-        />
+        {shouldRenderField(relevance.rooms, listing?.bedrooms) ? (
+          <TextField
+            id="bedrooms"
+            name="bedrooms"
+            label={t("realEstate.admin.fieldBedrooms")}
+            hint={t("realEstate.admin.fieldBedroomsHint")}
+            inputMode="numeric"
+            defaultValue={
+              listing?.bedrooms != null ? String(listing.bedrooms) : ""
+            }
+            error={fields?.bedrooms}
+          />
+        ) : null}
 
-        <TextField
-          id="bathrooms"
-          name="bathrooms"
-          label={t("realEstate.admin.fieldBathrooms")}
-          inputMode="numeric"
-          defaultValue={
-            listing?.bathrooms != null ? String(listing.bathrooms) : ""
-          }
-          error={fields?.bathrooms}
-        />
+        {shouldRenderField(relevance.rooms, listing?.bathrooms) ? (
+          <TextField
+            id="bathrooms"
+            name="bathrooms"
+            label={t("realEstate.admin.fieldBathrooms")}
+            hint={t("realEstate.admin.fieldBathroomsHint")}
+            inputMode="numeric"
+            defaultValue={
+              listing?.bathrooms != null ? String(listing.bathrooms) : ""
+            }
+            error={fields?.bathrooms}
+          />
+        ) : null}
 
-        <TextField
-          id="yearBuilt"
-          name="yearBuilt"
-          label={t("realEstate.admin.fieldYearBuilt")}
-          inputMode="numeric"
-          defaultValue={
-            listing?.yearBuilt != null ? String(listing.yearBuilt) : ""
-          }
-          error={fields?.yearBuilt}
-        />
+        {shouldRenderField(relevance.yearBuilt, listing?.yearBuilt) ? (
+          <TextField
+            id="yearBuilt"
+            name="yearBuilt"
+            label={t("realEstate.admin.fieldYearBuilt")}
+            hint={t("realEstate.admin.fieldYearBuiltHint")}
+            inputMode="numeric"
+            defaultValue={
+              listing?.yearBuilt != null ? String(listing.yearBuilt) : ""
+            }
+            error={fields?.yearBuilt}
+          />
+        ) : null}
       </fieldset>
 
       <fieldset className="space-y-6">
@@ -427,6 +467,7 @@ export function DashboardListingForm({
           id="longitude"
           name="longitude"
           label={t("realEstate.admin.fieldLongitude")}
+          hint={t("realEstate.admin.fieldLongitudeHint")}
           inputMode="decimal"
           defaultValue={
             privateDetails?.exactLongitude != null
@@ -440,6 +481,7 @@ export function DashboardListingForm({
           id="latitude"
           name="latitude"
           label={t("realEstate.admin.fieldLatitude")}
+          hint={t("realEstate.admin.fieldLatitudeHint")}
           inputMode="decimal"
           defaultValue={
             privateDetails?.exactLatitude != null

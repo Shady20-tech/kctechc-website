@@ -68,6 +68,9 @@ const contentSecurityPolicy = buildContentSecurityPolicy({
   analyticsEnabled: Boolean(
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim(),
   ),
+  googleIdentityEnabled: Boolean(
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim(),
+  ),
 });
 
 const nextConfig: NextConfig = {

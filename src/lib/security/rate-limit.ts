@@ -63,3 +63,30 @@ export function clientKeyFrom(headers: Headers, scope: string): string {
   const ip = forwarded?.split(",")[0]?.trim() || "unknown";
   return `${scope}:${ip}`;
 }
+
+/**
+ * Rate-limit key for a form submission.
+ *
+ * Prefers the visitor's IP, but falls back to a per-browser cookie rather than a
+ * literal `"unknown"`. Behind a proxy that does not set `x-forwarded-for` every
+ * visitor collapsed into one shared bucket, so a handful of unrelated checkouts
+ * locked the form for everybody — the tenth person to order in ten minutes was
+ * told "too many attempts" for no reason of their own.
+ *
+ * The cookie value is opaque and never logged; it identifies a browser, not a
+ * person, and is only used to keep one visitor's retries from spending another
+ * visitor's budget.
+ */
+export function submissionKeyFrom(
+  headers: Headers,
+  scope: string,
+  cookieValue: string | null | undefined,
+): string {
+  const forwarded = headers.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim();
+  if (ip) return `${scope}:ip:${ip}`;
+  if (cookieValue) return `${scope}:browser:${cookieValue}`;
+  // Nothing identifies the caller. This is still a shared bucket, but it now
+  // only happens for a client that blocks cookies and sends no forwarded header.
+  return `${scope}:anonymous`;
+}

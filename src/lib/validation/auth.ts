@@ -2,6 +2,19 @@ import { z } from "zod";
 import { ACCOUNT_TYPES, accountTypeRequiresKyc, isOldEnoughToApply } from "@/lib/real-estate/kyc";
 import { emailSchema, safeRedirectPathSchema } from "./common";
 
+// The field-to-message-key maps live in a dependency-free module because the
+// auth forms are Client Components; importing them from here would pull Zod
+// into the browser bundle, where Zod's JIT probe (`Function("")`) trips the
+// CSP eval check. Re-exported so server-side importers keep their path.
+export {
+  OAUTH_ONBOARDING_ERROR_KEYS,
+  RESET_PASSWORD_ERROR_KEYS,
+  SIGN_UP_ERROR_KEYS,
+  type OAuthOnboardingFieldErrors,
+  type ResetPasswordFieldErrors,
+  type SignUpFieldErrors,
+} from "./auth-error-keys";
+
 /** Credentials accepted by the sign-in Server Action. */
 export const signInSchema = z.object({
   email: emailSchema,
@@ -10,6 +23,27 @@ export const signInSchema = z.object({
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;
+
+/**
+ * Password policy for account creation and recovery.
+ *
+ * Enforced before `verifyOtp` in the reset flow: a recovery OTP is single-use,
+ * so if Supabase rejects a weak password after the code has been verified the
+ * visitor cannot retry with the same code. Sign-in deliberately keeps the looser
+ * minimum so an account created under an older policy can still authenticate.
+ */
+export const passwordSchema = z
+  .string()
+  .min(8)
+  .max(200)
+  .refine(
+    (value) =>
+      /[a-z]/.test(value) &&
+      /[A-Z]/.test(value) &&
+      /\d/.test(value) &&
+      /[^A-Za-z0-9]/.test(value),
+    { message: "passwordPolicy" },
+  );
 
 /**
  * Self-registration payload.
@@ -48,8 +82,8 @@ export const signUpSchema = z
   .object({
     fullName: z.string().trim().min(1).max(200),
     email: emailSchema,
-    password: z.string().min(8).max(200),
-    confirmPassword: z.string().min(8).max(200),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
     accountType: z.enum(ACCOUNT_TYPES),
     dateOfBirth: z
       .string()
@@ -87,24 +121,48 @@ export const signUpSchema = z
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
+/**
+ * The address Supabase should look up for a recovery code.
+ *
+ * Supabase stores emails lowercased and issues the recovery token for that exact
+ * address. Trimming and lowercasing here keeps `resetPasswordForEmail` and
+ * `verifyOtp` in step even if the visitor typed capitals or copied a trailing
+ * space; a mismatch surfaces as "Token has expired or is invalid" immediately.
+ */
+const recoveryEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(emailSchema);
+
 /** Request a password-reset email. */
 export const forgotPasswordSchema = z.object({
-  email: emailSchema,
+  email: recoveryEmailSchema,
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 /**
- * Set a new password from a recovery link.
+ * Set a new password from a 6-digit email recovery code.
  *
  * The same confirmation rule as sign-up, for the same reason: a mistyped
  * password on this form locks the account out until another reset, so the match
  * is enforced on the server rather than trusted from the browser.
+ *
+ * `token` is the 6-digit OTP from the Supabase "Reset Password" email. The email
+ * must use the `{{ .Token }}` variable; this flow does not use a clickable link.
+ * The email is trimmed and lowercased before it reaches Supabase: `verifyOtp`
+ * matches the exact address the recovery token was issued for.
  */
 export const resetPasswordSchema = z
   .object({
-    password: z.string().min(8).max(200),
-    confirmPassword: z.string().min(8).max(200),
+    email: recoveryEmailSchema,
+    token: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, "otpInvalid"),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
   })
   .refine((value) => value.password === value.confirmPassword, {
     message: "passwordMismatch",
@@ -143,25 +201,49 @@ export type SignUpState =
   | { status: "unconfigured" };
 
 /**
- * Maps a sign-up field to its message key. Kept beside the schema so a new field
- * cannot be added without a decision about how to explain it.
+ * The declarations an OAuth account still owes us.
+ *
+ * A social sign-in creates the account without asking anything: neither
+ * `signInWithOAuth` nor `signInWithIdToken` accepts a metadata payload, so
+ * `handle_new_user` provisions the profile with `declared_account_type` null.
+ * This schema collects the two facts the password form already collects — the
+ * role the person is signing up as and their residency — so both paths end in
+ * the same place.
+ *
+ * Nothing here is an authorization input. The declaration is stored on the
+ * profile; only an approved KYC application grants a capability, exactly as for a
+ * password sign-up. There is deliberately no `role` field to post.
+ *
+ * `permanentResidency` is required here, unlike on the password form. The form
+ * asks it as an explicit yes/no and the onboarding step exists precisely to
+ * collect these answers, so "not stated" would mean the step did nothing.
  */
-export const SIGN_UP_ERROR_KEYS = {
-  fullName: "errFullName",
-  email: "errEmail",
-  password: "errPassword",
-  confirmPassword: "errConfirmPassword",
-  accountType: "errAccountType",
-  dateOfBirth: "errDateOfBirth",
-  phone: "errPhone",
-  permanentResidency: "errPermanentResidency",
-  acceptPrivacy: "errPrivacy",
-  form: "errorBody",
-} as const satisfies Record<string, string>;
+export const oauthOnboardingSchema = z.object({
+  accountType: z.enum(ACCOUNT_TYPES, { message: "invalidAccountType" }),
+  permanentResidency: z.enum(["true", "false"], {
+    message: "residencyRequired",
+  }),
+  // Optional because a social provider may not supply one, and the account page
+  // already collects it later. A blank string is "not given", not an error.
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || /^[0-9+ ()./-]{5,32}$/.test(value),
+      "invalidPhone",
+    )
+    .optional(),
+});
 
-export type SignUpFieldErrors = Partial<
-  Record<keyof typeof SIGN_UP_ERROR_KEYS, string>
->;
+export type OAuthOnboardingInput = z.infer<typeof oauthOnboardingSchema>;
+
+/** Outcome of completing the OAuth declarations. */
+export type OAuthOnboardingState =
+  | { status: "idle" }
+  | { status: "error"; errors: Record<string, string> }
+  | { status: "rate_limited" }
+  | { status: "unauthenticated" }
+  | { status: "unconfigured" };
 
 /** Forgot-password outcome. `sent` is returned whether or not the account exists. */
 export type ForgotPasswordState =
@@ -171,20 +253,29 @@ export type ForgotPasswordState =
   | { status: "rate_limited" }
   | { status: "unconfigured" };
 
+/**
+ * Diagnostic details for a failed reset step.
+ *
+ * Deliberately contains no token, password or email; it is returned to the form
+ * so the browser console can show the Supabase status and error code alongside
+ * the server log. The message is the provider's own wording.
+ */
+export type ResetPasswordDebug = {
+  step: "verifyOtp" | "updateUser";
+  status?: number;
+  code?: string;
+  message?: string;
+};
+
 /** Reset-password outcome. */
 export type ResetPasswordState =
   | { status: "idle" }
-  | { status: "error"; errors: Record<string, string> }
+  | {
+      status: "error";
+      errors: Record<string, string>;
+      debug?: ResetPasswordDebug;
+    }
   | { status: "updated" }
   | { status: "rate_limited" }
   | { status: "unconfigured" };
 
-export const RESET_PASSWORD_ERROR_KEYS = {
-  password: "errPassword",
-  confirmPassword: "errConfirmPassword",
-  form: "errorBody",
-} as const satisfies Record<string, string>;
-
-export type ResetPasswordFieldErrors = Partial<
-  Record<keyof typeof RESET_PASSWORD_ERROR_KEYS, string>
->;

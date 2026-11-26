@@ -1,4 +1,5 @@
 import { publicEnv } from "@/lib/config/env";
+import { isStorageObjectPath } from "./object-path";
 
 /**
  * Public media URL construction for the admin-managed buckets.
@@ -38,11 +39,9 @@ export function publicBucketUrl(
   objectPath: string | null | undefined,
 ): string | null {
   if (!publicEnv.supabaseUrl) return null;
-  if (!objectPath) return null;
-  const clean = objectPath.replace(/^\/+/, "");
-  if (clean.length === 0) return null;
+  if (!isStorageObjectPath(objectPath)) return null;
   const base = publicEnv.supabaseUrl.replace(/\/$/, "");
-  return `${base}/storage/v1/object/public/${bucket}/${clean}`;
+  return `${base}/storage/v1/object/public/${bucket}/${objectPath.trim()}`;
 }
 
 /** Public URL for a profile picture. */

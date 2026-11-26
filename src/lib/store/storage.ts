@@ -1,5 +1,9 @@
 import { packageBySku } from "@/lib/content/solar-packages";
 import { publicEnv } from "@/lib/config/env";
+import {
+  isBundledPublicPath,
+  isStorageObjectPath,
+} from "@/lib/uploads/object-path";
 import type { ProductImage } from "./types";
 
 /**
@@ -26,10 +30,9 @@ export const PRODUCT_MEDIA_BUCKET = "product-media";
  */
 export function storagePublicUrl(objectPath: string): string | null {
   if (!publicEnv.supabaseUrl) return null;
+  if (!isStorageObjectPath(objectPath)) return null;
   const base = publicEnv.supabaseUrl.replace(/\/$/, "");
-  const clean = objectPath.replace(/^\/+/, "");
-  if (clean.length === 0) return null;
-  return `${base}/storage/v1/object/public/${PRODUCT_MEDIA_BUCKET}/${clean}`;
+  return `${base}/storage/v1/object/public/${PRODUCT_MEDIA_BUCKET}/${objectPath.trim()}`;
 }
 
 /**
@@ -77,7 +80,9 @@ export function productImageSrc(
   image: Pick<ProductImage, "storagePath" | "publicPath">,
   sku?: string | null,
 ): string | null {
-  if (image.publicPath) return image.publicPath;
+  if (image.publicPath && isBundledPublicPath(image.publicPath)) {
+    return image.publicPath;
+  }
   const seeded = seededImage(sku);
   if (seeded) return seeded;
   return image.storagePath ? storagePublicUrl(image.storagePath) : null;

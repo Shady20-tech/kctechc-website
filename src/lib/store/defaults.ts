@@ -95,8 +95,8 @@ export function localizeProduct(
     // the French slug, not the English one.
     slug: slugForLocale(record, locale),
     sku: record.sku,
+    productReference: record.productReference,
     brand: record.brand,
-    gtin: record.gtin,
     title: text(record.title, overlay?.title),
     shortDescription: text(
       record.shortDescription,

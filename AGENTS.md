@@ -747,6 +747,17 @@ Both files were cropped to 16:9 and resized (corporate 2048×1152, DM 2560×1440
 commit. The attribution obligation for these two CC BY files is **not yet rendered in the UI**;
 surface a credit (or swap to the CC0 alternatives below) before launch.
 
+- `/hero/real-estate-v3.jpg` — "Modern residential facade" (Samuel Zeller, via Unsplash),
+  **CC0**, no attribution obligation. Source:
+  `https://commons.wikimedia.org/wiki/File:Modern_residential_facade_(Unsplash).jpg`.
+  Cropped 16:9 and resized to 2048x1152, then brightness-matched to the asset it replaced so
+  the hero scrim's measured contrast carries over. It supersedes `real-estate-v2.jpg`, which was
+  **626x417** — the only department hero under 1024px, and the LCP element of the real-estate
+  page. `next/image` never upscales, so the `w=2048` request returned the 626px source and every
+  visitor saw it stretched. The hero test now holds full-bleed department heroes to 1600px
+  (corporate page heroes, which sit behind a narrower band and top out at 1024, keep a 1000px
+  floor) so this cannot recur.
+
 CC0 fallbacks already vetted for contrast, should attribution be undesirable:
 
 - Corporate: "Data center infrastructure in the United States" (DOE/NREL, public domain).
@@ -1155,9 +1166,9 @@ clientWidth` on every department (no horizontal scroll), the trigger reads "Filt
 - **`saved_searches` is `unique (user_id, label)`.** A duplicate save is a distinct outcome, not a
   generic failure — "please try again" is advice that cannot work. Map Postgres `23505` to its own
   message rather than reporting every insert error as retryable.
-- **The sign-in route is `/admin/login`, and its `next` parameter is Zod-validated.** It rejects
+- **The sign-in route is `/[locale]/login`, and its `next` parameter is Zod-validated.** It rejects
   anything not starting with a single `/`, so a customer returning from a save control lands back
-  on the listings view.
+  on the listings view. The old `/[locale]/admin/login` path permanently redirects here.
 
 ### Phase 4 gotchas worth not rediscovering
 
@@ -1543,6 +1554,25 @@ undefined`. Message keys with a dot must be nested objects (`state: { draft: ...
   and `{ ok: false, error: "send_failed" }` on a provider error or a thrown network error — it never
   throws into the request that triggered the notification. `send.test.ts` pins both, plus HTML
   escaping of visitor input.
+
+### Admin order actions: one predicate, three call sites
+
+- **A pending order's status select legitimately offers only `cancelled`.** `staffTransitions`
+  withholds `paid` because money is recorded, not picked. That is correct on its own, and it is
+  what made the console look broken: the step that *does* reach `paid` lives in a separate form.
+- **That form was gated to `paymentMethod === "bank_transfer"` while the Server Action accepted
+  four methods.** Since the site takes no payment itself, cash on confirmation, MTN, Orange and
+  bank transfer are all reconciled by a person — so three of the four showed a one-option select
+  and no way to record money at all. The action would have accepted the request the UI never
+  offered.
+- **`canRecordManualPayment(method, status)` in `src/lib/orders/types.ts` is now the single
+  predicate** for the form, the order page's caution notice and the action's guard. Only the
+  retired `card` value and a non-`pending_payment` status are refused. `types.test.ts` asserts
+  the predicate's allowed set equals `PAYMENT_METHODS`, so the UI and the guard cannot drift
+  again — which is precisely how this broke.
+- **Copy must follow the method.** "Record a bank transfer" on a cash order tells an operator to
+  confirm something that never happened; it is now "Record a received payment" with the chosen
+  method shown, in both locales.
 
 ### Solar packages, multi-email contacts and the provider-less payment flow
 
@@ -2053,6 +2083,25 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   `appinstalled` listeners) — the same pattern the repo already uses for `localStorage` and
   `matchMedia`. It also gives a defined server snapshot (`null`), so the server and first client
   render agree.
+- **A `fixed` overlay in the `(site)` layout also lands on the auth screens, and it can swallow the
+  submit button.** The install banner is `fixed inset-x-3 bottom-3 z-40` and the `(site)` group
+  renders `/[locale]/login`, `/[locale]/sign-up`, `/[locale]/forgot-password` and
+  `/[locale]/reset-password` (formerly under `/[locale]/admin/`).
+  At 375x667 the 190px-tall card covered the sign-in button (banner 465-655, button 489-529), so
+  `elementFromPoint` at the button's centre returned the banner and the click never reached the
+  form — signing in was simply impossible on a small phone, with no error and no POST. The auth
+  routes now opt out of the overlay entirely, and the banner is compact below `sm` (body copy
+  hidden). `InstallPrompt.test.tsx` pins both. Diagnose this shape with `elementFromPoint` on the
+  control's own centre rather than by clicking: a Puppeteer `click()` on a covered element and a
+  `form.requestSubmit()` both "work" and hide the bug, and a `page.click` that lands on the overlay
+  produces no request and no console error at all.
+- **A stale `next-server` from an earlier session holds the preview port and serves the OLD build.**
+  `pkill -f "node server.js"` and a `ps | grep server.js` both miss it, because a running Next
+  standalone renames its process to `next-server` — and its `cwd` reads as `(deleted)` after a
+  rebuild. Every route still answers 200 from the previous build, so a fix appears not to work and
+  a login failure looks like an auth defect. Match `next-server` in `/proc/*/cmdline` and confirm
+  the cwd is this repo before killing, so the Supabase Studio container (also `next-server`, cwd
+  `/app/apps/studio`) is left alone. Verify a restart by checking the version line in the log.
 
 ### DEYE brand and the acquisition-purpose field
 
@@ -2112,6 +2161,39 @@ See `docs/PROJECT_BRIEF.md` for the phase roadmap and the exact next step.
   `ListingInquiryForm` and only ever set for a `property_inquiry`/`viewing_request` source; every
   other inquiry leaves it null. Do not add it to the corporate contact form or the quote form —
   neither has an acquisition to speak of.
+
+### Article cover images: upload existed, rendering did not
+
+- **Staff and department admins could already upload an article cover, and it was
+  invisible.** `uploadInsightCoverAction` + `CoverUploadForm` + the `cover_image_path` column
+  were all in place, gated by `isDepartmentEditorRole` with the department boundary in RLS. But
+  the only consumer of `cover_image_path` was `articleJsonLd` — so the value fed structured data
+  and Open Graph, and the article page rendered a plain ink band with no photograph. Before
+  adding an upload path for an entity, grep for who *reads* the stored path; an upload with no
+  reader looks complete in the console and ships nothing.
+- **The hero uses `HeroMedia`, but with `scrim="article"`.** The shared `.hero-scrim` stops are
+  tuned for curated hero photography whose brightness range is known. An article cover is an
+  arbitrary upload and can be pure white, and the article's copy column (`max-w-3xl`, ~62% of the
+  container) runs well past where that scrim has thinned to 0.30. Measured against a white cover,
+  the byline landed at **1.65:1** — an invisible byline, not a cosmetic problem.
+  `.hero-scrim-article` holds 0.84–0.90 across the copy column and only then tapers; the worst
+  pair inside the column is 5.06:1. `src/app/article-hero-scrim.test.ts` computes that from the
+  stylesheet and fails on the old stops (verified by reverting them: 4.45:1).
+- **`.bg-glow` is a later sibling of `HeroMedia`, so it composites *over* the scrim.** Computing
+  the contrast with the glow underneath gives a wrong answer in the safe direction — the real
+  background is lighter, because the teal glow sits on top. Order matters when reasoning about
+  stacked hero layers; read the markup order, not the intent.
+- **The cover is decorative in the hero and on the card (`alt=""`, inside `aria-hidden`).** The
+  heading already names the article, so alt text would repeat it. On the card the media is also
+  wrapped in its own `aria-hidden` link with `tabIndex={-1}`, so the image does not become a
+  second tab stop for the same destination.
+- **A card with no cover renders no media box at all.** An article published without a photograph
+  is normal; a placeholder rectangle reads as a broken image. The `flex-1` summary absorbs the
+  height difference, so the grid keeps its rhythm either way.
+- **Uploading a cover must revalidate the public paths, not just `/admin/content`.** The article
+  and index pages are prerendered, so the console showed the new image while the site kept the
+  old one. The action now revalidates `/{locale}/insights/{slug}` and `/{locale}/insights` for
+  both locales, which is why it reads the article's `slug` in the same ownership query.
 
 ### Insight article translation (the missing write path)
 
@@ -2255,6 +2337,40 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
 
 ### Landlord and agent dashboards (Phase 3)
 
+- **A characteristic field is shown only when the property kind supports it, and a
+  field that already holds a value is always shown.** `src/lib/real-estate/field-relevance.ts`
+  is the single rule (`fieldRelevanceFor`, `shouldRenderField`, `asListingPropertyKind`),
+  read by both `DashboardListingForm` and the console's `ListingForm` so the two cannot
+  drift. Land and farm drop bedrooms, bathrooms, building area and year built; a
+  warehouse drops rooms; year built applies only to structures. The second half of the
+  rule is the one that is easy to omit: `shouldRenderField(relevant, existingValue)`
+  keeps a hidden field visible when it is populated, because otherwise switching a house
+  to land would hide the bedrooms the owner typed and the next save would drop them.
+- **None of these columns was ever required; the form implied they were.** Every one is
+  nullable, `listingInputSchema` accepts it blank, and the CHECK constraints only bound
+  the value when present. A land listing with no bedrooms, no building area and no
+  coordinates validated and inserted before this change. Verified against the live
+  database: the seeded land row has no bedrooms or building area, and all seven listings
+  had no coordinates. So this was presentation, not validation -- and a field that
+  *looks* mandatory on a plot invites an owner to invent a number to get past it.
+- **Coordinates are never hidden for any kind.** A surveyed plot may carry them and an
+  unsurveyed one legitimately may not, so the fields stay for every kind and are marked
+  optional with a hint instead. Do not "tidy" them into the land branch: that would
+  remove the only way to record a position for the properties that do have one.
+- **`DashboardListing.propertyKind` is typed `string`, not the enum**, so seeding form
+  state from it needs `asListingPropertyKind` rather than a cast. It maps an
+  unrecognised value to `""`, which `fieldRelevanceFor` treats as "show everything";
+  a cast would have let an unknown kind fall through to no branch and hide fields the
+  operator needs.
+- **The relevance rule is presentation, so the form is controlled on `propertyKind`.**
+  `useState` + `onChange` means the fields adapt the moment the owner picks "Land"
+  rather than only after a save. `DashboardListingForm.test.tsx` asserts the fields
+  actually disappear and reappear, because the failure mode is a form that computes
+  relevance and then renders every field anyway.
+- **There is no `furnished` column.** The brief lists furnished/unfurnished as a
+  possible characteristic "if the schema supports it"; it does not, so it was left out
+  rather than added. Do not add the field without the column.
+
 - **A dashboard is a _capability_ surface, not a role surface.** `/account/landlord` and
   `/account/agent` open for an approved `real_estate_memberships` row, never for a role and never
   for the `declared_account_type` a user picked at signup. `accessibleDashboards()` is the single
@@ -2340,6 +2456,171 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   themselves (`client-boundary.test.ts` enforces the boundary) — so a provider there would be an
   unused client bundle. `force-dynamic` is on the group layout because the shell reads the session
   cookie.
+
+### Cart quantity display and the shared checkout rate-limit bucket
+
+- **A `defaultValue` input stops tracking state the moment the customer types
+  into it, so a stepper beside it updates the cart and not the screen.** React
+  writes to an uncontrolled input only until its first edit; after that the DOM
+  value belongs to the user. `CartLines` sent the correct quantity to the server
+  on every `+`/`-` press, the row's quantity advanced in the database, and the
+  field kept showing the number the customer had typed — `1`, type `2`, press
+  `+`, database says `3`, screen says `2`. Reproduced against the running build
+  by comparing `input.value` with `cart_items.quantity`; it is invisible to a
+  test that only presses the buttons. The field is now controlled by a local
+  draft that re-syncs from the row when the server quantity changes (during
+  render, not in an effect, because `react-hooks/set-state-in-effect` rejects
+  the effect form and the render-time reset cannot flash a stale value).
+  `CartLines.test.tsx` covers type-then-click in both directions.
+- **A rate-limit key of `scope:unknown` is one shared bucket for every visitor.**
+  `clientKeyFrom` fell back to the literal `"unknown"` when `x-forwarded-for` was
+  absent, and this preview proxy sends no such header, so all visitors spent the
+  same 10-per-10-minutes checkout budget: the tenth person to order in ten
+  minutes was told "too many attempts" for no reason of their own. The failure
+  looks like a broken form because it only appears once traffic exists, and it
+  is invisible in a single-visitor test. `submissionKeyFrom` now prefers the
+  forwarded IP and otherwise keys on the visitor's own cart token, so two
+  browsers never share a budget. The cart token is read *before* the rate check
+  for exactly this reason.
+- **A confirmation page must not claim an email was sent when the mail
+  integration is off.** `/…/store/orders/[reference]` rendered "Our team has
+  received your order by email" unconditionally, while `isEmailConfigured()` was
+  false and `send.ts` had returned `{ ok: false, error: "unconfigured" }` — so
+  the order was stored, the team was never told, and the customer was waiting for
+  a reply that could not come. The page now branches on `isEmailConfigured()` and
+  renders the phone numbers and inbox to contact instead. This is the same rule as
+  the inquiry and quote paths: an unconfigured external service is reported, never
+  simulated. Setting `RESEND_API_KEY` and `EMAIL_FROM` restores the original copy
+  with no code change.
+
+### Marketplace search: two filters that looked wired but were not
+
+- **`locality` was parsed, carried in the URL, listed as an active filter — and
+  never sent to the RPC.** `parseListingFilters` read `?locality=`, the page put
+  it in `ListingQueryParams`, and `searchListingPage` simply never passed it:
+  `search_property_listings` has a `p_locality` parameter (an `ilike '%…%'`
+  match) that no caller set. The symptom is subtle because it looks like a
+  working filter: `?locality=Bonapriso` returned the unfiltered 50 rather than an
+  error or zero, and only comparing it against `?q=Bonapriso` (which did narrow,
+  via full-text search) showed the difference. When a filter is "supported" by
+  the RPC, grep the loader for the `p_<name>` key before trusting the UI.
+- **Amenities are matched with array containment (`p_amenities <@ p.amenities`),
+  so the stored values must be lowercase.** The seeded listings carried title
+  case (`"Air conditioning"`) while `parseAmenities` lowercases the query, so
+  every amenity filter returned zero. `ListingFilters.amenities` lowercases on
+  the way in; the *column* is what has to agree. Store amenities lowercase, or
+  normalise both sides in the RPC — do not lowercase only one end.
+- **`priority` on a card image is a CLS/LCP decision, not decoration.** The
+  insights grid rendered 40 covers with no `priority`, so the LCP image was
+  lazy-loaded and Lighthouse measured a 2.2s *load delay* on 7 images totalling
+  151 KB — the bytes were never the problem. `InsightCard` now takes
+  `priority`, and both the index and the category archive pass
+  `priority={index === 0}`. The listings grid already did this via
+  `priorityCount`. A large image count is not the same thing as a large payload;
+  check `network-requests` before optimising images that are already small.
+- **A filtered listings URL scores SEO 69 in Lighthouse and that is correct.**
+  `?type=sale&region=littoral` is served `noindex, nofollow, nocache` because
+  filter permutations are duplicate content, so `is-crawlable` fails and the
+  category drops. The canonical `/…/listings` is `index, follow` and scores 100.
+  Do not "fix" this by making filtered views indexable.
+
+### Marketplace search is deployed in two parts, on purpose
+
+The performance fix is two migrations so the risky-looking half can be applied
+alone:
+
+1. `20260101000076_listing_search_indexes.sql` - six partial indexes. **Additive
+   and idempotent.** No table, column, constraint or function is touched and no
+   row is written, so it changes no behaviour: the old query simply has better
+   indexes available. Reverting is `drop index` on the six names.
+2. `20260101000077_listing_search_statement_build.sql` - `create or replace` of
+   `search_property_listings` with an identical 22-parameter signature, so it
+   cannot create an overload and no caller changes.
+
+Part 2 depends on part 1 for its speed but not for correctness; applied alone it
+still returns the same rows, just without the indexes to exploit.
+
+**A separate Postgres schema cannot do this job, and the request to put it in one
+should be declined with reasons rather than silently "satisfied".** Two hard
+constraints: an index is owned by its table and cannot live in another schema (the
+syntax must name `on public.property_listings`), and the app calls
+`supabase.rpc("search_property_listings")` unqualified through PostgREST, which
+only exposes `public`/`graphql_public` (`supabase/config.toml`). A function in
+another schema would be invisible to the site, leaving a second unused function
+and the original still slow. Both halves are non-destructive DDL, which is the
+property that actually addresses the "do not take production down" concern.
+
+### Marketplace search at 40,000 rows: five causes, not one
+
+`search_property_listings` measured 232 ms for a plain browse and 515-766 ms for a
+keyword on a 40,000-listing portfolio, with p95 at 6.7 s under 25 concurrent
+requests. Migrations `20260101000076_listing_search_indexes.sql` (indexes) and
+`20260101000077_listing_search_statement_build.sql` (the function) fixed it to
+9 ms browse / 15-31 ms keyword. **Five independent causes, each of which alone was
+enough to force a full scan.** Fixing one and re-measuring would have shown a
+small gain and hidden the rest, so treat "the query is slow" as a list to check
+off, not a single bug.
+
+- **`SECURITY DEFINER` blocks inlining, so a `case when p_sort = ...` ORDER BY can
+  never use an index.** The planner sees an opaque expression, not a sort key, so
+  every sort materialises the whole result set. A `language sql` function cannot
+  avoid this; the body must be `plpgsql` assembling a statement per call so each
+  branch carries a *literal* ORDER BY. This is the only fix that works without
+  duplicating the whole function per sort.
+- **`cross join params` makes a predicate a Join Filter.** The keyword clause
+  `(params.q is null or ... or p.title %> $1)` references the CTE row, so it
+  cannot be pushed into an index scan: the table is scanned and the OR re-tested
+  per row. The `q is null or ...` guard is itself the problem — a static body
+  cannot avoid it, so the clause must be *absent* when no query was given.
+  Measured 470 ms -> 30 ms on its own.
+- **A partial index is only usable when the query predicate *implies* the index
+  predicate.** All four `*_visible_*` indexes were predicated on
+  `status = 'published'` while the function filters
+  `status = any('{published,under_offer,sold,rented}')`. That `any` does not
+  imply the single value, so the indexes existed and could never be chosen. The
+  same ORDER BY with `status = 'published'` used an index in 0.22 ms; with the
+  four-value set it seq-scanned in 28 ms. When adding a partial index, copy the
+  predicate from the query, not from the column's "usual" value.
+- **`desc` in an index means NULLS FIRST, but the queries ask for NULLS LAST.**
+  Postgres will not use an index whose null placement differs from the requested
+  order, so even with the predicate fixed the planner sorted. Every index now
+  spells out the exact ORDER BY tail (`published_at desc nulls last, reference
+  asc`). This one alone was 54 ms -> 9 ms. A `price_minor desc` sort likewise
+  cannot read a `price_minor asc` index, so descending price needs its own index
+  rather than relying on a backward scan.
+- **An inner join for a lookup column destroys index order.** `join public.regions
+  r on r.id = v.region_id` became a hash join over *every* matched row, so the
+  whole set was materialised before the LIMIT and the sort index was useless. A
+  correlated scalar subquery `(select r.slug from public.regions r where r.id =
+  v.region_id)` is evaluated for the 24 returned rows only. Safe here because
+  `region_id` is NOT NULL with a foreign key, so it returns exactly the join's row
+  — check that before applying the pattern.
+
+Verification method that made this trustworthy: keep the previous definition
+under a second name (`_ref_search_property_listings`) and compare the *full
+ordered row set and the row count as text* across a matrix of parameter
+combinations. 32 cases - every sort with and without a keyword, each filter in
+isolation, paging, French locale, upper-case and whitespace-only queries - all
+byte-identical. Comparing only `count(*)` would have missed the two real
+regressions this caught: a dropped `rank` tiebreaker on query paths, and
+`relevance` with no query falling through to the `newest` branch (which adds
+`is_featured` as a leading key the original did not have).
+
+- **`set_config('pg_trgm.word_similarity_threshold', ...)` in the body, not a
+  declarative `SET` clause.** A `SET` clause on the function fails with
+  "permission denied to set parameter" unless `pg_trgm` is already loaded in the
+  session; `set_config(..., true)` works inside a read-only transaction and is
+  scoped to the call.
+- **The residual cost is relevance ranking over a broad match, and it is
+  inherent.** `'spacious house'` matches 5,714 rows, so the 219 ms is sorting
+  them by `ts_rank` + `word_similarity`, not scanning. Narrow keywords are 15-31
+  ms. Hoisting the repeated `word_similarity` calls or replacing the score with a
+  boolean did not help (333-382 ms) — the per-row function calls are the cost.
+  Do not "optimise" this by dropping the rank from the sort; it changes the order.
+- **`rank` is 0.0 on every row when there is no keyword**, so `p_sort =>
+  'relevance'` must reduce to exactly the original `published_at, reference`
+  order — not to `newest`, which leads with `is_featured` and would reorder
+  featured listings to the top. This was a real parity bug caught by the harness.
 
 ### The self-publish hole: a column default is not a security boundary
 
@@ -2508,7 +2789,7 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
 - **The public header renders its account control as a client island fed by one JSON endpoint,
   because reading the session in the shared layout would make every public page dynamic.**
   `AccountAction` is an icon: a `User` glyph by default, replaced by the account's own profile
-  picture once `/api/account/summary` reports one. It renders the signed-out link (`/admin/login`)
+  picture once `/api/account/summary` reports one. It renders the signed-out link (`/[locale]/login`)
   on the server and on the first client render — `useAccountSummary`'s first value is `null`, so
   there is no hydration mismatch — and swaps to the account hub once the answer arrives.
   `useAccountSummary` (`src/lib/hooks/use-account-summary.ts`) is one module-level store shared by
@@ -3104,3 +3385,498 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+### Department consoles, the real-estate staff tier, and stock concurrency
+
+- **`real_estate_staff` is a staff tier, not a second administrator.** Real estate had
+  `real_estate_agent` (works their own listings) and `real_estate_admin` (runs the queue and
+  everyone's listings) but nothing between, so queue staff were handed the administrator role.
+  Migration `20260101000075_real_estate_staff_role.sql` adds the value and `is_real_estate_staff()`
+  (console access), and deliberately does **not** add it to `is_real_estate_admin()` (portfolio
+  management). `roles.test.ts` asserts both directions, and the migration's own `do $$` block
+  raises if a later edit folds staff into the admin predicate.
+- **`real_estate_staff` was also added to `is_department_editor('real-estate')`**, because real
+  estate gained a Work Done surface and its staff author that content like the other departments'
+  staff author theirs. It is still scoped to `real-estate` only.
+- **A new enum value cannot be *used* in the transaction that adds it.** PostgreSQL raises
+  `unsafe use of new value` — a migration file is one transaction, so the functions in migration 75
+  compare `current_user_role()::text` against string literals. Do the same for any future role.
+- **`create or replace function` means only the LAST definition counts, and a test that scrapes the
+  FIRST one asserts agreement with dead code.** `roles.test.ts` matched `is_department_editor` with a
+  single `match()` and so read the pre-migration version; it now collects every definition with
+  `matchAll` and takes `.at(-1)`. Any test that parses a function out of the migrations has this
+  hazard.
+- **Each department has a console front door at `/admin/{department}`.** Digital Marketing and
+  Electrical Services gained one so their staff are not left with the cross-department Operations
+  list; real estate already had `/admin/real-estate` and its guard moved to
+  `isRealEstateStaffRole`. The *listing* routes under it keep `isRealEstateAdminRole` — the console
+  is the staff tier's, the portfolio manager is not. `nav-role-scope.test.ts` pins the whole matrix.
+- **`ADMIN_NAV` requires a distinct `iconKey` per href** (`navigation.test.ts`). Adding a
+  destination with an existing key fails even though the icon renders fine.
+- **Stock is written by the ledger, not by the order functions.** `place_order` and
+  `release_order_inventory` each updated `products.stock` *and* inserted an `inventory_movements`
+  row whose `BEFORE INSERT` trigger applies the same delta again, so ordering one unit removed two.
+  Migration `20260101000074_single_writer_stock.sql` makes the trigger the single writer and repairs
+  the drift. **Never `update products.stock` from application or migration code** — insert a
+  movement. The repair loop at the end of that migration is a one-off, not a pattern.
+- **Proving concurrency needs two real connections and `select … for update`.** Two threads, one
+  unit, `for update` on the product row: exactly one commits and the other sees stock 0 and halts.
+  A single-connection test cannot fail this way. The losing shopper's halt surfaces through
+  `checkout-actions.ts` as `out_of_stock`.
+- **A concurrency probe leaves debris, and `products` is not the only table to clear.** The
+  `RACE-TEST-*` products created while probing were *published*, so they appeared on the public
+  storefront. Deleting the product cascades nothing to `translation_entries`,
+  `content_translations` or `translation_sync_jobs` (none has an FK to `products`), so the probe
+  also stranded 24 index rows and 48 translations. Clean up by id across all four tables, and
+  remember `entity_id` is `uuid` — a `text[]` parameter raises
+  `operator does not exist: uuid = text`.
+- **The Phase 4 marketplace UI was already built and wired**: `MarketplaceSearchLayout` (two-column),
+  `ListingSidebar`, `MarketplaceMobileFilterDrawer`, `ResultsToolbar`, `ActiveFilterChips`,
+  `ListingCard`, `VerifiedBadge`. Filtering runs through the `search_property_listings` RPC, never
+  in React. All six screenshots' requirements are met on `/en/real-estate/listings`, which measures
+  **100 SEO / 100 accessibility / 100 best-practices** under `--throttling-method=devtools`.
+- **The verified badge is deliberately not universal.** It renders only for a publisher whose
+  `real_estate_memberships.verified_at` is set, and the card carries the disclaimer that KC
+  Technology reviewed identity and this is *not* a government guarantee of land title. Granting it
+  is `super_admin`-only (`setPublisherVerificationAction`), with the membership trigger as backstop.
+  On the seeded data five listings show it and two do not — which is the property that proves the
+  badge means something.
+
+### Lighthouse 100/100/100/100 across the public surface (Phase 4 verification)
+
+- **A 16px checkbox with a 2px gap is a `target-size` failure, and it is the only thing that stood
+  between the marketplace and a 100 accessibility score.** The verified-publisher and amenity
+  checkboxes in `ListingSidebar`, and the in-stock checkbox in `StoreFilterSidebar`, were
+  `inline-flex ... h-4 w-4` labels. Lighthouse's WCAG 2.2 `target-size` audit needs 24x24 CSS px of
+  target (or equivalent spacing), so a 16px box in a 20px row fails even though every colour pair
+  and label passes. The fix is the row, not the box: `flex min-h-11` on the label makes the whole
+  text-plus-box row the target, and `h-6 w-6 shrink-0` gives the box itself the 24px minimum.
+  A checkbox is not "small enough to ignore" — measure it.
+- **`target-size` is weighted 7 in the accessibility category, so one instance is worth ~4 points.**
+  That is why the score read 96 rather than 100 while every other audit passed; a single 16px
+  control cannot be found by reading the markup, only by running the audit. Re-run Lighthouse after
+  any filter-control change rather than assuming a token check covers it.
+- **Measured on the standalone preview build (`node server.js`), desktop preset:**
+  `/en/real-estate/listings` 100/100/100/100, `/fr/real-estate/listings` 100/100/100/100,
+  `/en/electrical-services/store` 100/100/100/100 after the fix (99/96/100/100 before).
+  `/en/real-estate` measured performance 95 with LCP 1.4s — the LCP element is the 2048x1152
+  department hero, which is already the correct source size, so that is a fast-network variance
+  artifact and not a defect. Performance is the one category that moves run to run; do not chase a
+  single sub-100 performance sample when LCP is well inside "Good".
+- **Run Lighthouse against `127.0.0.1:12000` with `CHROME_PATH=/usr/bin/chromium` and
+  `--chrome-flags="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu"`.** It takes
+  ~60-75s per page on this container, so launch it detached (`setsid nohup ... &`) and read the JSON
+  afterwards; a foreground run hits the shell soft timeout and looks like a hang.
+
+### An unreachable database cost 7s per page, and it was supabase-js retrying
+
+- **`supabase-js` retries a failed request three times with 1s/2s/4s exponential backoff, and that
+  backoff — not a hung connection — is what made every database-backed page slow.** Measured on the
+  standalone preview with the local Supabase stack down: `/en/real-estate/listings` TTFB 7.06s and
+  `/en/digital-marketing/store` 14.05s. Both numbers are the backoff, not the query: a page doing one
+  round trip pays 1+2+4 = 7s, a page doing two pays it twice. A bare `fetch` to the same host fails in
+  38ms with `ECONNREFUSED`, which is why "the database is unreachable" looked like it should be fast.
+- **`db: { retry: false }` is the fix; an `AbortSignal` alone does not help.** Each retry attempt
+  fails instantly on `ECONNREFUSED`, so nothing ever reaches a timeout — the time is spent sleeping
+  between attempts. Reproduced in isolation: one query took **7033ms with `db.retry` on and 1ms with
+  it off**. A signal is still worth having for the *other* failure mode (a blackholed IP or stalled
+  TLS handshake, which hangs rather than refusing), so both live in
+  `SUPABASE_CLIENT_OPTIONS` in `src/lib/supabase/fetch-options.ts` and are spread into the public,
+  cookie-bound and service-role clients.
+- **The option is `global.fetch`, not a top-level `fetch`.** A top-level `fetch` key typechecks and
+  is silently ignored by `createClient`, so the bound looked wired while doing nothing. This is why
+  `public.test.ts` asserts the *behaviour* — attempt count is 1 and elapsed is under a second against
+  a dead port — rather than the presence of an option.
+- **Fail-fast is correct here only because every caller already degrades.** The content and
+  real-estate loaders return a bundled fallback or an empty list, the listings page renders its
+  honest "no properties published yet" state, and Server Actions surface a retryable error. Verify
+  that before disabling retries on a client whose caller assumes success: with the stack down the
+  listings page still returns 200 with the filter sidebar, canonical, breadcrumbs and empty state
+  intact, rather than a 500.
+- **The symptom was invisible to the test suite, because tests mock the database.** Nothing in
+  Vitest exercises a real socket. It only appears when a page is requested against a dead or
+  partitioned database, which is exactly the production incident this guards against. Timing a page
+  with the database stopped is the check; do it before blaming the framework or the query.
+- **A `next-server` process survives `pkill -f server.js`, and a stale one silently serves the old
+  build.** Several measurements during this investigation were of a previous build because the port
+  was still held; the server also logs `EADDRINUSE` into its own log file rather than to the
+  terminal, so the request appears to succeed. Confirm the port is free (`ss -ltn | grep 12000`) and
+  read the server's log for `EADDRINUSE` before trusting a measurement. Bind the preview with
+  `HOSTNAME=127.0.0.1`, or it listens on the container hostname and `localhost` connects to nothing.
+
+### Hero images on mobile, and the gallery/contact backdrops
+
+- **The mobile hero scrim was hiding every hero photograph.** Below `1024px` `.hero-scrim` was a
+  flat `0.88` ink overlay, so only **12%** of the photo reached the screen and each hero read as a
+  near-black band with text on it. The scrim exists to protect copy, but at that opacity it made the
+  image decorative-only. It is now `0.82 / 0.78 / 0.78 / 0.84`, which transmits **22%** — 1.83x more
+  — and still holds AA against a *pure-white* photo, the worst case a hero can carry. Measured on the
+  lightest stop: the `ink-300` meta label is the weakest pair at **4.83:1**, heading 6.97:1, body
+  7.05:1, eyebrow 6.14:1. **0.76 is the floor** — the meta label drops to 4.47:1 and fails.
+  `src/app/hero-scrim.test.ts` pins both halves (light enough to see, dark enough to read) and was
+  verified to fail when the old `0.88` was restored.
+- **One scrim change covers every hero**, because the corporate pages, the three departments and
+  real-estate all render their backdrop through `HeroMedia`. There is no per-page scrim to chase.
+- **Verify mobile hero visibility by measuring the band, not by looking at it.** Screenshot the hero
+  with the text elements set to `visibility: hidden` and assert the grayscale **stddev** and distinct
+  tone count: a blank band is flat (stddev near 0). All six heroes measured 12–104 stddev after the
+  change. A screenshot alone cannot distinguish "deliberately dark design" from "image not visible".
+- **Measure contrast from background pixels, not from glyphs.** Sampling inside a text element's own
+  rect catches anti-aliased edges and reports ~1:1 for everything. Hide the text first, then sample
+  the same rects. The live check across all six heroes gave a worst pair of **5.66:1** (electrical
+  services eyebrow/body), every other pair 6.7–12:1.
+- **The gallery and contact backdrops are business-supplied imgur images** (`upgJS6C` → gallery,
+  `yZ8xX50` → contact; the `TnNsOwC` alternative was rejected — it is a 2.81:1 banner with roughly a
+  third of the sharpness). **Both sources are only ~735px wide**, which is the documented
+  "736px thumbnail stretched full-bleed" trap: `next/image` never upscales, so a `w=3840` request
+  silently returns 735px and the hero looks soft. No larger original exists (`.png`, `_h`/`_l`
+  variants and the OG endpoint all resolve to the same 735px), so they are shipped as
+  `public/hero/gallery-v3.jpg` (1536×867) and `contact-v3.jpg` (1536×837), Lanczos-upscaled to clear
+  the 1000px floor `hero-images.test.ts` enforces. Replace them with genuinely larger originals
+  before launch; the upscale is a floor-clearing measure, not extra detail.
+- **Ship a new filename when swapping a hero.** `gallery-v2`/`contact-v2` were deleted and the config
+  points at `-v3`, so the image optimiser's `max-age` cannot serve the old bytes.
+
+### Zod in a Client Component trips the CSP eval check (`inspector-issues`)
+
+- **`/en/admin/sign-up` scored Best Practices 96 while sign-in scored 100, and the difference was an
+  import.** `SignUpForm` imported the runtime value `SIGN_UP_ERROR_KEYS` from
+  `src/lib/validation/auth.ts`, which imports `zod` for its schemas. `SignInForm` imported only
+  *types* from the same module, and types are erased, so no Zod reached its bundle.
+- **Zod 4 probes for JIT support with `Function("")` in a try/catch.** Under the site CSP
+  (`script-src 'self' 'unsafe-inline'`, deliberately no `unsafe-eval`) Chrome logs that as a
+  `ContentSecurityPolicyIssue` with violation type `kEvalViolation`, which Lighthouse reports through
+  `inspector-issues` with an **empty sub-item list** — the audit detail names nothing, so the console
+  and the report both look blank. Read the real cause from the DevTools `Audits` CDP domain
+  (`Audits.issueAdded`), not from the Lighthouse detail blob.
+- **The fix is the repo's existing leaf-module pattern.** The field→message-key maps moved to
+  `src/lib/validation/auth-error-keys.ts`, a module with **no imports of its own** — the same reason
+  `src/lib/uploads/limits.ts` exists. `validation/auth.ts` re-exports them so server-side importers
+  are unchanged; the three client forms import from the leaf. Verified by asserting the Zod chunk is
+  no longer requested on sign-up (it is not) rather than by grepping the chunk directory, since the
+  chunk still exists for other routes.
+- **`autocomplete="bday"` is rejected by Chrome on `<input type="date">`.** `bday` is the WHATWG token
+  for a complete birth date, but Chrome's audit wants the granular `bday-day` / `bday-month` /
+  `bday-year` tokens, which are wrong on a control capturing a whole date. It emitted
+  `FormInputHasWrongButWellIntendedAutocompleteValueError`, a second `inspector-issues` entry. The
+  attribute is now omitted (`type="date"` already gives the native picker), which is honest: it does
+  not claim a token the browser treats as invalid. Bisected by rendering candidate inputs on a blank
+  page and counting `Audits.issueAdded` events — `date+bday` = 2 issues, `date` alone = 0,
+  `date+bday-year` = 0.
+- **Both of these pre-existed the OAuth work.** Verified by stashing the branch, rebuilding from a
+  clean tree and reproducing the identical two issues on sign-up with **zero** OAuth buttons in the
+  markup — so they were not introduced by the social sign-in change, but they did block the "100%
+  everywhere" goal and are now fixed.
+
+### Auth-page Lighthouse scores: SEO 66 is correct
+
+- `/en/login`, `/en/sign-up`, `/en/forgot-password`, `/en/reset-password` and `/en/account/*` are
+  `noindex` by design, so Lighthouse reports SEO **66** from the `is-crawlable` audit. That is the
+  intended outcome for a private surface, not a defect. Accessibility and Best Practices are 100.
+- **Best Practices on `/en/real-estate` is 96 in this container and it is environmental.** The
+  `errors-in-console` audit fails on `/_next/image?...127.0.0.1:54321/storage/...` 500s because no
+  local Supabase is running to serve the listing photography. The page itself returns 200 and the
+  listing data renders; only the images fail. Reproduce with the local stack up before treating it
+  as a code defect.
+- **Performance under default Lantern throttling is not trustworthy on this app.** The same pages
+  measured 78–93 with Lantern but **97–98** with `--throttling-method=devtools`. Use applied
+  throttling before chasing a simulated-LCP regression; this repo has hit it three times now.
+
+### A glob delete can take tracked config files with it
+
+- **`rm -f *.mjs` deleted `eslint.config.mjs` and `postcss.config.mjs`**, because the repo's
+  ESLint and PostCSS configs are `.mjs` files. They were restored with
+  `git checkout -- eslint.config.mjs postcss.config.mjs`, but the lesson is to name the scratch
+  files explicitly (`rm -f csp-probe.mjs ac-probe.mjs …`) or `git clean -n` first. A deletion
+  shows up as ` D` in `git status`, and a build run against the damaged tree fails ESLint and
+  PostCSS resolution — but a build *before* noticing reports success if the files were only needed
+  by the lint step.
+- **Never widen a cleanup glob in a repo whose configs share the scratch file's extension.** Check
+  `git ls-files '*.mjs'` before deleting by pattern.
+
+### The searchable taxonomy: a category word is not in the search vector
+
+- **`property_listings.search_vector` was generated from `title`, `description`,
+  `locality` and `highlights` only.** The three columns that *classify* a listing -
+  `property_kind`, `listing_type`, `property_type` - were in no search path at all:
+  not the vector, not the trigram arms (title and locality only), not
+  `locality ilike`. So the taxonomy was unfilterable by keyword, and a visitor who
+  typed "land" was told "No properties match your filters" while browsing listed
+  land. A listing titled "Titled plot in Buea" with `property_kind = 'land'` was
+  unreachable by a search for "land" - the advert's *wording* was searchable and
+  its *category* was not.
+- **A marketplace search is used in nouns, not in column values.** Nobody types
+  `property_kind = 'land'`; they type "land", "plot", "terrain", "parcel". A
+  full-text search built only over prose silently requires the visitor to guess the
+  wording of the advert. When a filter exists as a column, ask whether the same
+  word reaches it through search - the two are separate code paths and only one of
+  them is usually tested.
+- **Migration `20260101000080_searchable_taxonomy.sql` fixes it in two additive
+  ways**, and both are needed:
+  1. the generated vector now includes the three taxonomy columns, with
+     `replace(col::text, '_', ' ')` so `short_term` is searchable as "short term"
+     (a vector holding `short_term` does not match
+     `websearch_to_tsquery('english', 'short term')`);
+  2. a synonym arm for the words that are not the stored enum value - "plot",
+     "parcel", "terrain", "parcelle" for land, "maison" for house, "flat" for
+     apartment, "for rent"/"a louer" for the listing type. French is carried
+     explicitly because `property_kind` is an enum with no translation overlay to
+     search, and `lower()` does not strip accents, so accented forms are listed
+     separately rather than depending on `unaccent` (an optional extension whose
+     absence would break the function).
+- **The synonym lookup is two scalar subqueries on `params`, never a
+  `cross join`.** Migration 77 measured a `cross join params` in the keyword
+  predicate at 470 ms vs 30 ms, because it turns the keyword OR into an
+  un-indexable Join Filter and defeats the FTS and trigram indexes on the exact
+  path they exist for. A joined CTE is the natural way to write this and the wrong
+  one.
+- **Whole-phrase comparison, not substring.** `lower(btrim($1))` is compared with
+  `=`, so "land" resolves and "island" does not, and a multi-word query like
+  "land buea" keeps its text search instead of silently becoming a category filter
+  that ignores "buea". A substring match here would make every search containing a
+  category word *as a substring* return that whole category.
+- **`drop column search_vector` cascades to `property_listings_search_idx`.** A
+  generated column cannot be altered in place, so the migration drops and re-adds
+  it - and must recreate the GIN index, or every keyword search becomes a scan.
+  Check `pg_index`/`pg_constraint` for dependents before dropping a generated
+  column; here no view, constraint or other index referenced it.
+- **The synonym list is inline in the function, not a table or a helper
+  function.** It is product vocabulary that must be reviewable in a diff, it needs
+  no index, and a new helper function would have to be classified in the Phase 12
+  EXECUTE allow-list (`30_function_execute_hardening.sql` asserts the subset
+  property, so an unclassified function fails the harness).
+- **`src/lib/real-estate/searchable-taxonomy.test.ts` asserts the migration's
+  shape; `supabase/validate/160_searchable_taxonomy_behaviour.sql` asserts the
+  behaviour** by calling the RPC as `anon` against a real database - including that
+  a draft of the same kind stays invisible, and that a description-only word still
+  matches. Both are needed: the text test cannot execute SQL, and the harness
+  cannot run in CI without a database.
+
+### Customer auth routes moved out of `/admin`
+
+- The customer authentication pages are no longer under the console namespace. They live at
+  `/[locale]/login`, `/[locale]/sign-up`, `/[locale]/forgot-password` and
+  `/[locale]/reset-password`
+  (`src/app/(site)/[locale]/{login,sign-up,forgot-password,reset-password}`). The console itself
+  stays at the non-localized `/admin` (`src/app/(static)/admin`).
+- **Every internal reference uses one of two shapes.** A component or page that already knows its
+  locale uses `/${locale}/login` (for example `AccountAction`, the auth forms, the callback and
+  `recoveryRedirectUrlFor`). A guard or admin-console page that does not know the locale uses the
+  unprefixed `/login`, and `src/proxy.ts` localizes it from the `kc_locale` cookie or
+  `Accept-Language` - the same path the public tree uses. Do not send a customer to
+  `/[locale]/admin/login` again.
+- **The legacy paths are 308 redirects, not 404s.** `src/lib/config/redirects.ts` maps both
+  `/admin/login` and `/{locale}/admin/login` (and the three sibling pages) to the new paths, and
+  Next.js preserves the query string, so a bookmarked `?next=` keeps working.
+- **`/login`, `/sign-up`, `/forgot-password` and `/reset-password` are ordinary localized public
+  paths**, so `isNonLocalizedPath` returns false and the proxy's generic branch prefixes them. The
+  old `LOCALIZED_ADMIN_PATHS` special case in `src/proxy.ts` was removed; only `/admin`, `/api`
+  and `/auth` remain non-localized prefixes.
+- **The install banner and the service worker both treat the new paths as auth screens.**
+  `AUTH_PATH_PATTERN` in `InstallPrompt.tsx` matches both the new and legacy forms, and
+  `public/sw.js`'s `NEVER_CACHE` includes them so a cached auth form is never served.
+- **The confirmation email no longer hardcodes `next=/admin`.** `confirmationRedirectUrl()` in
+  `src/lib/auth/redirects.ts` points at `/auth/callback` with no `next`, so the callback decides by
+  role: a self-registered customer reaches `/{locale}/account`, staff reach `/admin`. The old
+  `next=/admin` sent every confirmed customer into a console that refuses them.
+- **The sitemap does not list auth pages and `robots.txt` does not disallow `/login`.** They are
+  `noindex, nofollow, nocache`; disallowing them in robots would prevent a crawler from seeing that
+  directive. The old `/admin/*` forms remain under the existing `Disallow: /admin/` rule, which is
+  harmless because they only redirect.
+- **Supabase redirect URLs are unchanged by the move.** The app's OAuth, confirmation and recovery
+  links all land on `/auth/callback` (with a `next` for recovery), so the Supabase allow-list still
+  needs `https://your-domain/auth/callback` (or `.../auth/callback**` to cover `?locale=`). The
+  provider consoles still point at `https://<project-ref>.supabase.co/auth/v1/callback`.
+
+### Google sign-in uses Google Identity Services, not the Supabase OAuth redirect
+
+- **Google now uses `signInWithIdToken`, and the consent screen belongs to the site.** The old
+  `signInWithOAuth({ provider: "google" })` flow sent the browser through
+  `<project-ref>.supabase.co/auth/v1/callback`, which is why Google named the Supabase host.
+  `GoogleSignInButton` (`src/components/auth/GoogleSignInButton.tsx`) loads
+  `https://accounts.google.com/gsi/client` with `next/script`, renders the official button with
+  `google.accounts.id.renderButton`, and exchanges the returned `response.credential` with
+  `supabase.auth.signInWithIdToken({ provider: "google", token, nonce })`. The browser never visits
+  Supabase's auth host, so the consent screen shows the Google Cloud project's app name and verified
+  domain.
+- **`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the public client id and must equal the client id in
+  Supabase's Google provider.** It is inlined at build time, so adding or changing it requires a
+  redeploy. The client secret stays in Supabase. `publicEnv.googleClientId` is the only reader. When
+  it is missing, `OAuthButtons` falls back to the Supabase Google OAuth redirect rather than hiding
+  Google, so the button is always visible; the GIS path is preferred because it shows the verified
+  domain. A build-only value still leaves the CSP without the Google origins, so set it before
+  building.
+- **This is the same Google OAuth client, not a second app.** The public id above belongs to the
+  client already configured in Supabase's Google provider; do not create a second Google Cloud
+  project or OAuth client. `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS` remains the single list that decides
+  which provider buttons appear (`google,facebook` by default).
+- **A missing GIS client id must not hide Google.** The first GIS revision returned `null` from
+  `GoogleSignInButton` and rendered an "unavailable" notice in `OAuthButtons` when the client id was
+  absent, so an unconfigured deployment showed no Google button at all. `OAuthButtons` now renders a
+  Google form posting to `signInWithOAuthProviderAction` in that case; the GIS button is used only
+  when the client id is present. The fallback needs no Google script or iframe, so the CSP can keep
+  adding the Google origins only for the GIS path.
+- **The GIS button is an iframe, so CSP needs `frame-src`, not just `script-src`.**
+  `buildContentSecurityPolicy` adds `https://accounts.google.com` to `script-src`, `connect-src` and
+  `frame-src`, plus `https://www.googleapis.com` to `connect-src`, only when
+  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set. A missing `frame-src` blocks the button with no page-level
+  error; the only clue is a console CSP violation.
+- **The nonce is generated once per mount and passed to both GIS and Supabase.**
+  `google.accounts.id.initialize({ nonce })` puts it in the ID token, and
+  `signInWithIdToken({ nonce })` verifies it. Re-initializing the button on resize reuses the same
+  nonce; a new mount gets a new one.
+- **The post-login destination is shared with `/auth/callback`.** `resolvePostAuthPath`
+  (`src/lib/auth/post-auth.ts`) sends an undeclared social account to
+  `/{locale}/account/onboarding`, staff to `/admin`, and a declared customer to `/{locale}/account`.
+  `completeOAuthSignInAction` reads the session the browser client just wrote and returns that path;
+  `GoogleSignInButton` pushes it. Do not duplicate the rule in the client.
+- **Google and Facebook can both use the server-side `signInWithOAuth` redirect.** `SERVER_OAUTH_PROVIDERS`
+  in `src/lib/auth/oauth.ts` is `["google", "facebook"]`; Google uses it only as the fallback when
+  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is absent, and Facebook always uses it.
+  `signInWithOAuthProviderAction` validates against the list and against `enabledOAuthProviders()`,
+  so a crafted POST cannot start a provider the UI does not offer. The action also carries a
+  validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page return
+  target.
+- **Apple is deliberately not an offered provider.** `OAUTH_PROVIDERS` and
+  `SERVER_OAUTH_PROVIDERS` are exactly `["google", "facebook"]`; `isOAuthProvider("apple")` and
+  `isServerOAuthProvider("apple")` both return false, so neither the button list nor the Server
+  Action can start an Apple flow. `.env.example` does not mention Apple. If an older Supabase
+  project still has the Apple provider enabled in its dashboard, disable it there as well: the code
+  no longer requests it, but the provider remains a configured sign-in method until removed in
+  Supabase.
+- **Google Cloud Console setup is part of the feature.** The OAuth client is a Web application; add
+  every site origin (`https://kctechc.com`, `https://www.kctechc.com`, preview domains,
+  `http://localhost:3000`) to Authorized JavaScript origins. Keep
+  `https://<project-ref>.supabase.co/auth/v1/callback` in Authorized redirect URIs for the Supabase
+  provider config and the legacy flow. The consent screen's app name ("KC Technology Corporation")
+  and authorized domain (`kctechc.com`) are what the visitor sees. A missing client id, or a
+  different one between Vercel and Supabase, makes `signInWithIdToken` fail; the button reports the
+  generic OAuth error.
+
+### Password reset uses a 6-digit email OTP, not a clickable link
+
+- **`forgotPasswordAction` calls `supabase.auth.resetPasswordForEmail(email)` and then redirects to `/{locale}/reset-password?email=...`.** The locale comes from the `kc_locale` cookie, so the reset page stays in the language the visitor was using. No `redirectTo` is passed and no recovery session is required.
+- **The Supabase "Reset Password" email template must include `{{ .Token }}`.** The default `{{ .ConfirmationURL }}` link is not used by this flow; it is an external Supabase dashboard setting and cannot be changed from this repository. Without the `{{ .Token }}` variable the visitor receives a link instead of a 6-digit code.
+- **`resetPasswordAction` verifies the code server-side with `verifyOtp({ email, token, type: "recovery" })` and then calls `updateUser({ password })` in the same request.** It signs the short-lived recovery session out afterwards, records `password_changed` with `source: "recovery_otp"`, and returns `updated`; the form shows a success message and redirects to `/login?reason=password_updated`.
+- **`/forgot-password` and `/{locale}/reset-password` are public.** The proxy only localizes them; neither the page nor the form guards on a session. `/auth/callback` is not part of this flow (it remains for confirmation links and legacy recovery links), so a missing callback `code` cannot bounce an OTP visitor to sign-in.
+- **The old link-only path is deliberately gone.** `recoveryRedirectUrlFor`, `recoverySessionMissing` and the reset action's `getUser()` gate were removed; do not reintroduce them. The reset form pre-fills the email from the query string, accepts a 6-digit `token`, and maps field failures through `RESET_PASSWORD_ERROR_KEYS`.
+- **Normalize the address and the code before `verifyOtp`.** The action passes `email.trim().toLowerCase()` and `token.trim()` with `type: "recovery"` and no `token_hash`; the schemas for the forgot/reset flow also trim/lowercase the email so the address that receives the token and the address that verifies it are identical. A capitals/whitespace mismatch fails immediately with "Token has expired or is invalid".
+- **One send and one verification per click.** Supabase invalidates the previous recovery token whenever a new one is sent, and a recovery OTP is single-use. Both forms disable their submit button while pending and carry a `useRef` submit guard, because a second submit can land before React reports pending. Neither form calls an auth action from an effect; the only reset effects release the guard and mirror diagnostics.
+- **If the code is rejected within seconds of arriving, check these in order:** the Supabase "Reset Password" template contains `{{ .Token }}` and **not** a clickable `{{ .ConfirmationURL }}` (a mail scanner or an accidental click consumes a one-time link); only one `resetPasswordForEmail` was sent for that code; the app and the email use the same Supabase project; and the hosted project's OTP length is 6 with an expiry long enough for the visitor. These are dashboard/deployment facts, not code paths.
+- **The action logs the exact provider failure.** `verifyOtp` and `updateUser` failures are logged server-side with `status`, `code` and `message`, and the same safe payload is returned in `ResetPasswordState.debug` so the form mirrors it to the browser console. The payload deliberately contains no token, password or email.
+- **Password guidance is shown on the field and enforced before the code is spent.** `passwordSchema` (used by sign-up and reset) requires at least 8 characters with uppercase, lowercase, a number and a symbol, so a weak password is rejected before `verifyOtp` consumes the single-use code. `auth.passwordHint` and `auth.errPassword` state the same rule, and a Supabase `weak_password` failure maps to the password field. Sign-in keeps the looser minimum so an older account can still authenticate.
+
+### General customer favorites and the Customer account type
+
+- **The heart is one control for properties, products and articles.** `FavoriteButton`
+  (`src/components/favorites/FavoriteButton.tsx`) posts to `toggleFavoriteAction`
+  (`src/lib/favorites/actions.ts`) with an `entityType` of `listing`, `product` or `insight` and the
+  entity id. Each type has its own table (`listing_favorites` from migration 28,
+  `product_favorites` and `insight_favorites` from migration
+  `20260101000081_general_favorites.sql`) so every row carries a real cascade foreign key. The action
+  uses the **session** client, never the service-role client, so each table's own-row
+  `auth.uid() = user_id` policy is the control.
+- **The heart renders on every card and detail surface.** `ListingCard`, `ProductCard`,
+  `InsightCard` and the solar `PackageCard` carry it, as do the property, product and article detail
+  pages. The package heart uses `entityType="product"` and the package's seeded product id; a package
+  with no product row (an unseeded deployment) renders no heart rather than one that would fail.
+- **A statically rendered page cannot read the session, so hearts fill from a client store.**
+  `useFavoriteIds` (`src/lib/hooks/use-favorite-ids.ts`) fetches `GET /api/favorites/summary` once
+  per page and returns the id sets. The endpoint returns `{ listing, product, insight }` id arrays
+  only, never titles or another account's data, and a signed-out visitor gets empty arrays. The
+  server renders each heart in its default state, so the HTML is complete without JavaScript; the
+  store fills saved hearts after hydration. A toggle calls `requestFavoriteSummary(true)` and
+  `router.refresh()` so a server-rendered favourites page reflects the write.
+- **A signed-out click is a sign-in link, not a silent failure.** The action returns
+  `unauthenticated`; the button sends the browser to `/login?next=<current path>`, the same pattern
+  as the existing save controls. `unconfigured` and `error` render their own status message and the
+  optimistic fill rolls back.
+- **`/[locale]/favorites` is the single customer favourites page.** It is `force-dynamic` and
+  `noindex`, redirects a signed-out visitor to sign in with itself as the return target, and renders
+  saved properties, products and articles in sections using the same `ListingGrid`, `ProductGrid`
+  and `InsightCard` as the public surfaces. The account hub's favourites tile links here and counts
+  all three tables (`loadFavoriteTotal`). The old `/real-estate/favorites` page remains as the
+  real-estate-only view.
+- **"Customer" is the visible label for the `buyer` account type.** `auth.accountType.buyer.label`
+  is now "Customer" in both locales; the stored `account_type` value remains `buyer`, so no
+  migration or policy changes. The admin role dropdown already had a `customer` role; this change is
+  the sign-up account-type picker, which now reads Customer / Landlord / Agent. The role stays a
+  declaration: only an approved `real_estate_memberships` row grants a capability.
+- **The migration is additive and function-free.** `20260101000081_general_favorites.sql` creates
+  two tables, their indexes, enables RLS and adds select/insert/delete own-row policies. It creates
+  no function, so the Phase 12 EXECUTE allow-list is untouched. The migration parses cleanly with
+  `pglast` (16 statements); the local Postgres harness was unavailable in this container, so the
+  behavioural validate scripts were not replayed. Apply the migration before expecting the hearts to
+  persist.
+- 1671 Vitest tests pass (140 files), `tsc --noEmit` and ESLint are clean, and the production build
+  succeeds. Preview smoke on the standalone server: `/en/favorites` redirects a signed-out visitor
+  to login, `/api/favorites/summary` returns the empty id sets, and the public pages and CSS return
+  200.
+
+### Invalid external image references (`https://imgur.com/undefined`)
+
+- **The application never constructs an Imgur URL.** Every dashboard image is resolved by one of
+  four builders — `storagePublicUrl` (products), `propertyMediaPublicUrl` (listings), `projectMediaPublicUrl`
+  (projects) and `publicBucketUrl`/`contentMediaUrl`/`avatarPublicUrl` (insights, avatars and the
+  rest). Each derives a Supabase Storage URL from a bucket-relative object path. A value such as
+  `https://imgur.com/undefined` can only come from stored data, a manual console edit or a browser
+  extension; it is not emitted by the admin form, which accepts device files and has no image-URL
+  field.
+- **The render boundary now rejects it anyway.** `src/lib/uploads/object-path.ts` is the single
+  `isStorageObjectPath` predicate; all four builders use it, and `productImageSrc` accepts a bundled
+  `publicPath` only when it is root-relative. A bad reference becomes a placeholder instead of a
+  request to an unrelated host, on every admin dashboard and public surface.
+- **Migration `20260101000082_invalid_image_reference_cleanup.sql` repairs existing rows** across
+  product, listing, project and insight media, avatar, agent photo, article cover, listing evidence,
+  `entity_seo`/`seo_metadata` OG images and `site_settings`. It steps a published product back to
+  draft only when every media row attached to it is invalid, deletes the invalid media rows, clears
+  the single-image columns, adds narrow `imgur.com/undefined` guards to the unconstrained ones, and
+  raises if any reference remains. It does not rewrite prose (descriptions or article bodies), so an
+  author's words are never silently edited.
+- **Product media copy now states the contract:** photographs are uploaded from the device on the
+  product detail page; image URLs are not accepted. The product detail gallery also marks any
+  invalid stored reference and offers its existing Remove control.
+- 1709 Vitest tests pass (148 files); `tsc --noEmit`, ESLint and the production build are clean. The
+  new SQL parses with `pglast` (the local Postgres harness is unavailable here, so the validate
+  scripts were not replayed).
+
+### Reports that analyse, and the blank reviews queue
+
+- **`/admin/reviews` returned `null` for every moderator because it read a locale it did not
+  have.** The page lives under the non-localized `(static)/admin` tree, but its implementation
+  awaited `params`, read `params.locale`, failed `isLocale`, and returned `null`; the console
+  chrome and sidebar still rendered, so the screen looked like an empty page rather than an error.
+  It now uses `createTranslator("en")` like the rest of the console. `admin-reviews-route.test.ts`
+  pins the route's shape (no `params` type, no `isLocale(`, no `buildMetadata(`) so a later
+  localization edit must also move the route, not silently blank it again. A `null` return from a
+  page is the hardest blank-page shape to spot because Status and layout are both 200.
+- **The reports page is derived analysis, not a dump of the database views.**
+  `src/lib/admin/report-metrics.ts` is pure and unit-tested (`report-metrics.test.ts`, 11 tests):
+  it sums paid revenue **per currency** (there is no exchange-rate feed, so never add XAF to USD),
+  detects overpayment/underpayment, derives a paid share, builds a 14-day trend, summarises the
+  pipeline, computes inquiry response rate and listing views, and resolves inventory availability
+  per SKU. The page renders that output through `ReportVisuals` — KPI cards, bar charts, an SVG
+  trend with a screen-reader list, insight cards and the raw daily records in `<details>`.
+- **There is no chart library and should not be one for this.** The bars are flex tracks and the
+  trend is an inline SVG polyline with a text alternative; adding a charting dependency for four
+  small charts would cost more JS than the dashboard uses in total. `ReportVisuals.test.tsx`
+  covers the KPIs, empty states, accessible trend name and the dashboard link.
+- **Empty report views are reported, never drawn as zeros.** `report_sales_daily`,
+  `report_order_pipeline`, `report_inquiries_daily` and `report_listing_activity_daily` can all be
+  empty on a new deployment. Each section says "no data recorded yet" (or the specific empty
+  message) instead of rendering a flat chart that looks like measured zero activity. That is the
+  same rule as an unconfigured email service: report the absence, do not simulate success.
+- **The four dashboard front doors carry the same analysis in compact form.** `/admin` shows the
+  operational pulse; `/admin/digital-marketing` and `/admin/electrical-services` show published
+  share, low stock, enquiry response and unanswered count; `/admin/real-estate` shows published
+  share, listing views, listing enquiries and pending submissions. `ReportHighlights` is the
+  shared block, and `DepartmentOverviewPanel` takes it through a `report` React node so the shell
+  does not gain department-specific data logic.
+- **A trend label suffix is computed from the rows, not hard-coded.** The current report views do
+  not project a currency, so the page says "Daily confirmed revenue" until at least one row exists
+  and then names the single recorded currency; it never appends one currency to a mixed series.
+- **Department inquiry summaries filter in the database, not after the limit.**
+  `loadInquiryReport(limit, departmentSlug?)` applies the department predicate to the query, so a
+  department's pulse is not computed from the last 30 rows of every department combined.
+- 1731 Vitest tests pass (152 files); `tsc --noEmit`, ESLint and the production build are clean.
+  `/admin/reports` and `/admin/reviews` both build as dynamic console routes.

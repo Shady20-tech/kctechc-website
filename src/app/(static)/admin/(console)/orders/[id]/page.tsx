@@ -9,7 +9,11 @@ import { getAuthState } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import { getOrderById } from "@/lib/orders/queries";
-import { staffTransitions, type OrderStatus } from "@/lib/orders/types";
+import {
+  canRecordManualPayment,
+  staffTransitions,
+  type OrderStatus,
+} from "@/lib/orders/types";
 
 import { formatPrice } from "@/lib/store/types";
 
@@ -25,10 +29,10 @@ export default async function AdminOrderDetailPage({
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Forders");
+    redirect("/login?next=%2Fadmin%2Forders");
   }
   if (!state.profile || !isAdminRole(state.profile.role)) {
     redirect("/admin/unauthorized");
@@ -242,8 +246,7 @@ export default async function AdminOrderDetailPage({
             />
           </div>
 
-          {order.paymentMethod === "bank_transfer" &&
-          order.status === "pending_payment" ? (
+          {canRecordManualPayment(order.paymentMethod, order.status) ? (
             <Alert tone="warning">{t("adminOrder.manualCaution")}</Alert>
           ) : null}
         </aside>

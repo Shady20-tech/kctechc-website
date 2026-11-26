@@ -11,6 +11,7 @@ import {
   DEPARTMENTS,
   DEPARTMENT_EMAILS,
   isDepartmentSlug,
+  REAL_ESTATE_AGENT_PHONES,
   type DepartmentSlug,
 } from "@/lib/config/site";
 import { getSiteContent } from "@/lib/config/site-content";
@@ -310,6 +311,19 @@ export default async function ContactPage({
                     >
                       {DEPARTMENT_EMAILS[department.slug]}
                     </a>
+                    {department.slug === "real-estate" ? (
+                      <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-body">
+                        {REAL_ESTATE_AGENT_PHONES.map((phone) => (
+                          <a
+                            key={phone.tel}
+                            href={`tel:${phone.tel}`}
+                            className="inline-flex min-h-6 items-center underline underline-offset-4"
+                          >
+                            {phone.label}
+                          </a>
+                        ))}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

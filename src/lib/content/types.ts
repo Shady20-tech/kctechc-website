@@ -109,6 +109,7 @@ export type AuthorRecord = {
 export type Author = AuthorRecord;
 
 export type InsightRecord = {
+  id?: string;
   slug: string;
   /** Absent when the article is corporate-wide rather than department-specific. */
   department?: DepartmentSlug;
@@ -127,6 +128,7 @@ export type InsightRecord = {
 };
 
 export type LocalizedInsight = {
+  id?: string;
   slug: string;
   department?: DepartmentSlug;
   categorySlug?: string;

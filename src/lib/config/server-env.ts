@@ -13,8 +13,24 @@ function optional(value: string | undefined): string | null {
   return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * Supabase calls the server key two things depending on project age: the legacy
+ * `service_role` JWT, and the newer `sb_secret_…` key. The dashboard's newer
+ * wording is "secret key", and operators naturally name the variable after it,
+ * so accept either name rather than reporting a configured deployment as
+ * unconfigured. `SUPABASE_SERVICE_ROLE_KEY` wins when both are set.
+ */
+const legacyServiceRoleKey = optional(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const secretKey = optional(process.env.SUPABASE_SECRET_KEY);
+const serviceRoleKey = legacyServiceRoleKey ?? secretKey;
+
 export const serverEnv = {
-  supabaseServiceRoleKey: optional(process.env.SUPABASE_SERVICE_ROLE_KEY),
+  supabaseServiceRoleKey: serviceRoleKey,
+  supabaseServiceRoleKeySource: legacyServiceRoleKey
+    ? "SUPABASE_SERVICE_ROLE_KEY"
+    : secretKey
+      ? "SUPABASE_SECRET_KEY"
+      : null,
   /** Salt for hashing submitter IPs. Rotating it invalidates past hashes. */
   inquiryIpSalt: optional(process.env.INQUIRY_IP_SALT),
   tolgeeApiKey: optional(process.env.TOLGEE_API_KEY),
@@ -35,6 +51,10 @@ export const serverEnv = {
 
 export const isTolgeeServerConfigured = (): boolean =>
   serverEnv.tolgeeApiKey !== null;
+
+/** True when a server-side Supabase secret key is present, whatever its name. */
+export const isSupabaseAdminConfigured = (): boolean =>
+  serverEnv.supabaseServiceRoleKey !== null;
 
 export const isEmailConfigured = (): boolean => serverEnv.resendApiKey !== null;
 

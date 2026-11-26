@@ -13,6 +13,11 @@ import Image from "next/image";
  * light image would wash the heading out — which is the whole reason a plain
  * `bg-ink-950` band was safe to put text on and a photo is not.
  *
+ * `scrim="article"` selects the stronger variant used behind an uploaded article
+ * cover. The default stops are tuned for curated photography with a known
+ * brightness range; an arbitrary upload can be pure white, so it needs a scrim
+ * that holds across the copy column instead of tapering early.
+ *
  * Loading is eager with an explicit high fetch priority. Next.js 16 deprecated
  * the `priority` prop in favour of these two, and the distinction is not
  * cosmetic: `priority` emitted the `<link rel="preload">` but no
@@ -22,7 +27,13 @@ import Image from "next/image";
  * add `preload` here — the docs are explicit that it must not be combined with
  * `fetchPriority`, and `fetchPriority` is the one that fixes the queue order.
  */
-export function HeroMedia({ src }: { src: string }) {
+export function HeroMedia({
+  src,
+  scrim = "default",
+}: {
+  src: string;
+  scrim?: "default" | "article";
+}) {
   return (
     <div aria-hidden="true" className="absolute inset-0">
       <Image
@@ -34,7 +45,9 @@ export function HeroMedia({ src }: { src: string }) {
         sizes="100vw"
         className="object-cover"
       />
-      <div className="hero-scrim absolute inset-0" />
+      <div
+        className={`${scrim === "article" ? "hero-scrim-article" : "hero-scrim"} absolute inset-0`}
+      />
     </div>
   );
 }

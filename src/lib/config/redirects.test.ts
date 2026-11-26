@@ -60,6 +60,25 @@ describe("LEGACY_REDIRECTS", () => {
     }
   });
 
+  it("redirects the legacy admin auth paths to the customer doors", () => {
+    const authMoves = [
+      ["/admin/login", "/login"],
+      ["/admin/sign-up", "/sign-up"],
+      ["/admin/forgot-password", "/forgot-password"],
+      ["/admin/reset-password", "/reset-password"],
+    ] as const;
+
+    for (const [from, to] of authMoves) {
+      expect(LEGACY_REDIRECTS).toContainEqual({ from, to });
+      for (const locale of LOCALES) {
+        expect(LEGACY_REDIRECTS).toContainEqual({
+          from: `/${locale}${from}`,
+          to: `/${locale}${to}`,
+        });
+      }
+    }
+  });
+
   it("keeps each source unique so no redirect shadows another", () => {
     expect(new Set(sources).size).toBe(sources.length);
   });

@@ -456,7 +456,7 @@ export function ListingSidebar({
                   {facets.amenities.slice(0, 12).map((amenity) => (
                     <label
                       key={amenity.slug}
-                      className="inline-flex items-center gap-2 text-sm text-body"
+                      className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-body"
                     >
                       <input
                         type="checkbox"
@@ -465,7 +465,7 @@ export function ListingSidebar({
                         defaultChecked={filters.amenities?.includes(
                           amenity.slug,
                         )}
-                        className="h-4 w-4 rounded border-border"
+                        className="h-6 w-6 shrink-0 rounded border-border"
                       />
                       <span className="capitalize">
                         {humanize(amenity.slug)}
@@ -484,7 +484,7 @@ export function ListingSidebar({
         {/* E. Verified publishers. The badge is only ever shown for a membership
             a super admin granted and that is still approved. */}
         <MarketplaceFilterSection title={t("realEstate.search.publishersHeading")}>
-          <label className="inline-flex items-start gap-2 text-sm text-body">
+          <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm text-body">
             <input
               type="checkbox"
               checked={filters.verifiedOnly === true}
@@ -493,7 +493,7 @@ export function ListingSidebar({
                   verifiedOnly: event.currentTarget.checked || undefined,
                 })
               }
-              className="mt-0.5 h-4 w-4 rounded border-border"
+              className="mt-0.5 h-6 w-6 shrink-0 rounded border-border"
             />
             <span>
               <span className="font-medium text-ink-900">

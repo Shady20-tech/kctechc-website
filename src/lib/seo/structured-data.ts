@@ -181,7 +181,6 @@ export function productJsonLd(input: {
   locale: Locale;
   sku: string;
   brand?: string;
-  gtin?: string;
   priceMinor: number;
   currency: string;
   availability: string;
@@ -204,9 +203,6 @@ export function productJsonLd(input: {
       : {}),
     // `brand` is only emitted when one is genuinely known.
     ...(input.brand ? { brand: { "@type": "Brand", name: input.brand } } : {}),
-    // Google expects the length-specific property (gtin13, gtin12, …) rather
-    // than the generic `gtin`, so the correct one is selected from the length.
-    ...(input.gtin ? { [gtinPropertyName(input.gtin)]: input.gtin } : {}),
     offers: {
       "@type": "Offer",
       url,
@@ -235,29 +231,6 @@ const SCHEMA_CONDITION: Record<string, string> = {
   refurbished: "RefurbishedCondition",
   used: "UsedCondition",
 };
-
-/**
- * The schema.org property name for a GTIN of a given length.
- *
- * Google's product feed requires the length-specific property; the generic
- * `gtin` is a fallback that some validators ignore. An unrecognised length falls
- * back to `gtin` rather than guessing, and the database already rejects a GTIN
- * that is not 8, 12, 13 or 14 digits.
- */
-export function gtinPropertyName(gtin: string): string {
-  switch (gtin.length) {
-    case 8:
-      return "gtin8";
-    case 12:
-      return "gtin12";
-    case 13:
-      return "gtin13";
-    case 14:
-      return "gtin14";
-    default:
-      return "gtin";
-  }
-}
 
 /**
  * An item list, for the store and category indexes.

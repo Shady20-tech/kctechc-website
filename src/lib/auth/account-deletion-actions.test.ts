@@ -134,7 +134,7 @@ describe("deleteOwnAccountAction", () => {
         null,
         formData({ confirmation: "DELETE", locale: "fr" }),
       ),
-    ).rejects.toThrow("REDIRECT:/fr/admin/login?reason=deleted");
+    ).rejects.toThrow("REDIRECT:/fr/login?reason=deleted");
 
     expect(admin.rpc).toHaveBeenCalledWith("detach_and_archive_user_content", {
       p_user_id: USER_ID,

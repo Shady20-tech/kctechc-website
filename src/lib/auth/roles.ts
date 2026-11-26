@@ -8,6 +8,7 @@ export const APP_ROLES = [
   "visitor",
   "customer",
   "real_estate_agent",
+  "real_estate_staff",
   "real_estate_admin",
   "digital_marketing_staff",
   "digital_marketing_admin",
@@ -22,6 +23,7 @@ export type AppRole = (typeof APP_ROLES)[number];
 /** Roles that may reach the internal admin surface at all. */
 export const ADMIN_ROLES: readonly AppRole[] = [
   "real_estate_agent",
+  "real_estate_staff",
   "real_estate_admin",
   "digital_marketing_staff",
   "digital_marketing_admin",
@@ -77,6 +79,8 @@ export const DEPARTMENT_EDITOR_ROLES: readonly AppRole[] = [
   "digital_marketing_admin",
   "electrical_staff",
   "electrical_admin",
+  "real_estate_staff",
+  "real_estate_admin",
   "department_staff",
   "super_admin",
 ];
@@ -101,6 +105,30 @@ export function isElevatedRole(role: AppRole): boolean {
 /** True when `role` may manage every real estate listing, not only their own. */
 export function isRealEstateAdminRole(role: AppRole): boolean {
   return REAL_ESTATE_ADMIN_ROLES.includes(role);
+}
+
+/**
+ * Roles that may open the real-estate console at all.
+ *
+ * Broader than `REAL_ESTATE_ADMIN_ROLES` by exactly one entry: `real_estate_staff`
+ * works the submission queue and answers enquiries but must not act across every
+ * listing, which is the administrator's grant. The distinction is the reason the
+ * staff tier exists, so this predicate is deliberately NOT used for portfolio
+ * management — pages that manage listings keep using `isRealEstateAdminRole`.
+ *
+ * Mirrors `is_real_estate_staff()` in `20260101000075_real_estate_staff_role.sql`;
+ * `roles.test.ts` asserts the two agree.
+ */
+export const REAL_ESTATE_STAFF_ROLES: readonly AppRole[] = [
+  "real_estate_staff",
+  "real_estate_admin",
+  "department_staff",
+  "super_admin",
+];
+
+/** True when `role` may open the real-estate console. */
+export function isRealEstateStaffRole(role: AppRole): boolean {
+  return REAL_ESTATE_STAFF_ROLES.includes(role);
 }
 
 /**
@@ -143,6 +171,7 @@ export const ROLE_DEPARTMENTS: Partial<Record<AppRole, string>> = {
   electrical_staff: "electrical-services",
   electrical_admin: "electrical-services",
   real_estate_agent: "real-estate",
+  real_estate_staff: "real-estate",
   real_estate_admin: "real-estate",
 };
 

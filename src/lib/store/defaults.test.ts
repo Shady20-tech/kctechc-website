@@ -8,6 +8,7 @@ const BASE_PRODUCT: ProductRecord = {
   departmentSlug: "digital-marketing",
   slug: "thinkpad-x1",
   sku: "KC-LAP-01",
+  productReference: "KC-PR-000001",
   title: "ThinkPad X1 Carbon",
   shortDescription: "A lightweight business laptop.",
   description: "Full description.",

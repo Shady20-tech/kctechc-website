@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { checkRateLimit } from "@/lib/security/rate-limit";
+import {
+  checkRateLimit,
+  clientKeyFrom,
+  submissionKeyFrom,
+} from "@/lib/security/rate-limit";
 import { buildContentSecurityPolicy } from "@/lib/security/headers";
 import {
   paginationSchema,
@@ -197,6 +201,30 @@ describe("buildContentSecurityPolicy", () => {
     expect(withAnalytics).toContain("https://www.google-analytics.com");
     expect(withAnalytics).toContain("https://*.analytics.google.com");
   });
+
+  it("allows Google Identity Services only when it is configured", () => {
+    const without = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+    });
+    expect(without).not.toContain("accounts.google.com");
+    expect(without).toContain("frame-src 'self'");
+
+    const withGoogle = buildContentSecurityPolicy({
+      supabaseUrl: null,
+      tolgeeApiUrl: "https://app.tolgee.io",
+      isDevelopment: false,
+      googleIdentityEnabled: true,
+    });
+    expect(withGoogle).toContain(
+      "script-src 'self' 'unsafe-inline' https://accounts.google.com",
+    );
+    expect(withGoogle).toContain("https://www.googleapis.com");
+    expect(withGoogle).toContain(
+      "frame-src 'self' https://accounts.google.com",
+    );
+  });
 });
 
 describe("translator", () => {
@@ -233,5 +261,47 @@ describe("translator", () => {
     expect(flatten(STATIC_MESSAGES.fr).sort()).toEqual(
       flatten(STATIC_MESSAGES.en).sort(),
     );
+  });
+});
+
+describe("submissionKeyFrom", () => {
+  // Behind a proxy that sends no x-forwarded-for, every visitor used to share
+  // the literal key `checkout:unknown`, so the tenth unrelated checkout in ten
+  // minutes was refused with "too many attempts" for no reason of its own.
+  it("uses the forwarded IP when the proxy supplies one", () => {
+    const headers = new Headers({ "x-forwarded-for": "41.202.1.5, 10.0.0.1" });
+    expect(submissionKeyFrom(headers, "checkout", "cart-token")).toBe(
+      "checkout:ip:41.202.1.5",
+    );
+  });
+
+  it("falls back to the browser's own token when there is no forwarded IP", () => {
+    const headers = new Headers();
+    expect(submissionKeyFrom(headers, "checkout", "cart-token-a")).toBe(
+      "checkout:browser:cart-token-a",
+    );
+    expect(submissionKeyFrom(headers, "checkout", "cart-token-b")).toBe(
+      "checkout:browser:cart-token-b",
+    );
+  });
+
+  it("keeps two visitors on separate budgets when no IP is available", () => {
+    const headers = new Headers();
+    const options = { limit: 2, windowSeconds: 600 };
+    const a = submissionKeyFrom(headers, "checkout", "visitor-a");
+    const b = submissionKeyFrom(headers, "checkout", "visitor-b");
+
+    expect(checkRateLimit(a, options).allowed).toBe(true);
+    expect(checkRateLimit(a, options).allowed).toBe(true);
+    // Visitor A is now spent...
+    expect(checkRateLimit(a, options).allowed).toBe(false);
+    // ...and visitor B is unaffected, which is the defect this pins.
+    expect(checkRateLimit(b, options).allowed).toBe(true);
+  });
+
+  it("never produces the shared 'unknown' bucket for a browser with a token", () => {
+    const key = submissionKeyFrom(new Headers(), "checkout", "some-token");
+    expect(key).not.toContain("unknown");
+    expect(clientKeyFrom(new Headers(), "checkout")).toContain("unknown");
   });
 });

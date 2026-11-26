@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { Badge } from "@/components/ui/Badge";
 import { PackageCartControls } from "@/components/solar/PackageCartControls";
 import type { SolarPackage } from "@/lib/content/solar-packages";
@@ -53,6 +54,17 @@ export function PackageCard({
         <span className="absolute left-3 top-3">
           <Badge tone={pkg.highlighted ? "warning" : "neutral"}>{tag}</Badge>
         </span>
+        {productId ? (
+          <div className="absolute right-3 top-3 z-10">
+            <FavoriteButton
+              locale={locale}
+              entityType="product"
+              entityId={productId}
+              returnPath={`/${locale}/electrical-services/packages/${pkg.id}`}
+              title={name}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-6">

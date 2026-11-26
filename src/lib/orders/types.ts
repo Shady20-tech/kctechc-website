@@ -124,6 +124,28 @@ export function staffTransitions(current: OrderStatus): readonly OrderStatus[] {
   return ORDER_TRANSITIONS[current].filter((status) => status !== "paid");
 }
 
+/**
+ * Whether an operator can record a received payment against this order.
+ *
+ * Every offered method is settled offline — the site takes no money itself — so
+ * all of them are reconciled by hand, not just bank transfer. Only the retired
+ * `card` value is refused, because no card payment can have arrived. The order
+ * must also still be awaiting payment: once money is recorded the state moves on
+ * and a second record would be a double-count.
+ *
+ * This is one predicate for three call sites (the order page's caution notice,
+ * the controls' form, and the Server Action's guard). They previously each
+ * decided for themselves, and only bank transfer agreed with the action, so the
+ * form for a cash or mobile-money order was never rendered at all.
+ */
+export function canRecordManualPayment(
+  method: PaymentMethod | null,
+  status: OrderStatus,
+): boolean {
+  if (status !== "pending_payment") return false;
+  return method !== null && method !== "card";
+}
+
 /** True when money has been received, whatever else happened. */
 export function isPaidStatus(status: OrderStatus): boolean {
   return status === "paid" || status === "processing" || status === "fulfilled";

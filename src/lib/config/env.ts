@@ -16,6 +16,7 @@ export const publicEnv = {
   siteUrl: readPublic(process.env.NEXT_PUBLIC_SITE_URL, "http://localhost:3000"),
   defaultLocale: readPublic(process.env.NEXT_PUBLIC_DEFAULT_LOCALE, "en"),
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "",
+  googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? "",
   mapProvider: readPublic(process.env.NEXT_PUBLIC_MAP_PROVIDER, "openfreemap"),
   mapboxToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim() ?? "",
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "",

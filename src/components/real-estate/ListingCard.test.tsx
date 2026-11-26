@@ -8,6 +8,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/en/real-estate/listings",
 }));
 
+// The heart reads the browser summary store; the card test only needs the
+// server-rendered default, so the hook is stubbed rather than allowed to fetch.
+vi.mock("@/lib/hooks/use-favorite-ids", () => ({
+  useFavoriteIds: () => null,
+  requestFavoriteSummary: vi.fn(),
+}));
+
 // `publicEnv` is read once at import time, so a test cannot set
 // NEXT_PUBLIC_SUPABASE_URL late. The storage helper is stubbed instead, which
 // is the only thing standing between a fixture image and a rendered <img>.
@@ -206,26 +213,30 @@ describe("ListingCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("omits the save control unless the caller supplies a favourite state", () => {
+  it("always renders the save control and reflects the saved state", () => {
     const { rerender } = render(
       <ul>
         <ListingCard record={record()} locale="en" t={t} />
       </ul>,
     );
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: t("favorites.add", { title: "Villa with sea view" }),
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
 
     rerender(
       <ul>
-        <ListingCard record={record()} locale="en" t={t} isFavorite={false} />
+        <ListingCard record={record()} locale="en" t={t} isFavorite />
       </ul>,
     );
     // The save control is a nested, independently focusable button, so the whole
     // card can be a link without swallowing the action.
     expect(
       screen.getByRole("button", {
-        name: t("realEstate.favorites.add", { title: "Villa with sea view" }),
+        name: t("favorites.remove", { title: "Villa with sea view" }),
       }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });
 

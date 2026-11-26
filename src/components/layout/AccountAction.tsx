@@ -54,7 +54,7 @@ export function AccountAction({
   const signedIn = summary?.signedIn ?? false;
   const href = signedIn
     ? summary?.accountHref ?? `/${locale}/account`
-    : "/admin/login";
+    : `/${locale}/login`;
   const label = signedIn ? accountLabel : signInLabel;
   const avatarUrl = signedIn ? summary?.avatarUrl ?? null : null;
 

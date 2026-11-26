@@ -91,6 +91,14 @@ export function SiteFooter({
                 {t("footer.contactLink")}
               </Link>
             </li>
+            <li>
+              <Link
+                href={`/${locale}/reviews`}
+                className="text-sm text-white/80 transition-soft hover:text-white"
+              >
+                {t("footer.reviewsLink")}
+              </Link>
+            </li>
           </ul>
           <h2 id="footer-legal" className="mono-label mt-8 text-accent-bright">
             {t("footer.legalHeading")}

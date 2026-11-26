@@ -31,7 +31,7 @@ export type AdminProduct = {
   categorySlug: string;
   departmentSlug: string;
   brand: string;
-  gtin: string;
+  productReference: string;
   seoTitle: string;
   seoDescription: string;
   images: ProductImage[];
@@ -85,7 +85,7 @@ export async function listProductsForAdmin(
   const { data: rows } = await admin
     .from("products")
     .select(
-      "id, category_id, slug, sku, title, short_description, description, brand, gtin, price_minor, currency, stock, publish_state, published_at, updated_at",
+      "id, category_id, slug, sku, product_reference, title, short_description, description, brand, price_minor, currency, stock, publish_state, published_at, updated_at",
     )
     .in(
       "category_id",
@@ -137,7 +137,7 @@ export async function listProductsForAdmin(
       categorySlug: category?.slug ?? "",
       departmentSlug: category?.departmentSlug ?? "",
       brand: row.brand ?? "",
-      gtin: row.gtin ?? "",
+      productReference: row.product_reference,
       seoTitle: "",
       seoDescription: "",
       images: mediaByProduct.get(row.id) ?? [],
@@ -156,7 +156,7 @@ export async function loadProductForAdmin(
   const { data: row, error } = await admin
     .from("products")
     .select(
-      "id, category_id, slug, sku, title, short_description, description, brand, gtin, price_minor, currency, stock, publish_state, published_at, updated_at",
+      "id, category_id, slug, sku, product_reference, title, short_description, description, brand, price_minor, currency, stock, publish_state, published_at, updated_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -208,7 +208,7 @@ export async function loadProductForAdmin(
     categorySlug: category?.slug ?? "",
     departmentSlug,
     brand: row.brand ?? "",
-    gtin: row.gtin ?? "",
+    productReference: row.product_reference,
     seoTitle: seo?.title ?? "",
     seoDescription: seo?.description ?? "",
     images: (media ?? []).map((m) => ({

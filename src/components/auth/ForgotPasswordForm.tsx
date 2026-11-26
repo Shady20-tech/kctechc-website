@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -16,20 +16,23 @@ const INITIAL_STATE: ForgotPasswordState = { status: "idle" };
 function SubmitButton({
   label,
   pendingLabel,
+  disabled,
 }: {
   label: string;
   pendingLabel: string;
+  disabled: boolean;
 }) {
   const { pending } = useFormStatus();
+  const loading = pending || disabled;
   return (
     <Button
       type="submit"
       variant="primary"
-      disabled={pending}
-      aria-busy={pending}
+      disabled={loading}
+      aria-busy={loading}
       className="w-full"
     >
-      {pending ? pendingLabel : label}
+      {loading ? pendingLabel : label}
     </Button>
   );
 }
@@ -37,33 +40,42 @@ function SubmitButton({
 /**
  * Forgot-password form.
  *
- * Collects an email and asks Supabase to send a recovery link. The confirmation
- * is deliberately identical whether or not the address has an account: a form
- * that said "no account found" would be an account-enumeration oracle. The
- * customer is told to check their inbox, which is true in both cases.
+ * Collects an email and asks Supabase to send a 6-digit recovery code. The
+ * Server Action redirects to `/{locale}/reset-password?email=...`; the code is
+ * entered there. The response is deliberately identical whether or not the
+ * address has an account: a form that said "no account found" would be an
+ * account-enumeration oracle.
  */
 export function ForgotPasswordForm({ locale }: { locale: Locale }) {
   const t = createTranslator(locale).t;
-  const [state, formAction] = useActionState(forgotPasswordAction, INITIAL_STATE);
+  const [state, formAction, isPending] = useActionState(
+    forgotPasswordAction,
+    INITIAL_STATE,
+  );
+  const submitGuard = useRef(false);
 
-  if (state.status === "sent") {
-    return (
-      <Alert tone="success" title={t("auth.resetLinkSentTitle")}>
-        <p>{t("auth.resetLinkSentBody")}</p>
-        <p className="mt-2">
-          <Link
-            href={`/${locale}/admin/login`}
-            className="font-medium underline underline-offset-4"
-          >
-            {t("auth.backToSignIn")}
-          </Link>
-        </p>
-      </Alert>
-    );
-  }
+  // A second click before React reports pending must not send a second email:
+  // Supabase invalidates the previous recovery token on every send. This effect
+  // only releases the guard; it never calls the action.
+  useEffect(() => {
+    if (!isPending) submitGuard.current = false;
+  }, [isPending]);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (submitGuard.current) {
+      event.preventDefault();
+      return;
+    }
+    submitGuard.current = true;
+  };
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form
+      action={formAction}
+      onSubmit={onSubmit}
+      className="space-y-4"
+      noValidate
+    >
       {state.status === "rate_limited" ? (
         <Alert tone="error" title={t("auth.rateLimitedTitle")}>
           {t("auth.rateLimitedBody")}
@@ -77,7 +89,7 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {state.status === "error" ? (
-        <Alert tone="error">{t("auth.invalidEmail")}</Alert>
+        <Alert tone="error">{t(state.messageKey)}</Alert>
       ) : null}
 
       <TextField
@@ -92,11 +104,12 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
       <SubmitButton
         label={t("auth.sendResetLink")}
         pendingLabel={t("auth.sendingResetLink")}
+        disabled={isPending}
       />
 
       <p className="text-sm text-body">
         <Link
-          href={`/${locale}/admin/login`}
+          href={`/${locale}/login`}
           className="font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.backToSignIn")}

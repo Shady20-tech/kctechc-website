@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { SectionBand } from "@/components/layout/PageShell";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { AddToCartButton } from "@/components/store/AddToCartButton";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { AvailabilityBadge } from "@/components/store/ProductCard";
 import { ProductGallery } from "@/components/store/ProductGallery";
 import { Badge } from "@/components/ui/Badge";
@@ -192,7 +193,6 @@ export default async function ProductDetailPage({
           locale: resolved,
           sku: product.sku,
           brand: product.brand,
-          gtin: product.gtin,
           priceMinor: product.priceMinor,
           currency: product.currency,
           availability: product.availability,
@@ -229,12 +229,21 @@ export default async function ProductDetailPage({
               </Badge>
             </div>
 
-            <h1
-              id="product-heading"
-              className="display-tight mt-4 font-display text-3xl font-bold text-ink-900 sm:text-4xl"
-            >
-              {product.title}
-            </h1>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <h1
+                id="product-heading"
+                className="display-tight font-display text-3xl font-bold text-ink-900 sm:text-4xl"
+              >
+                {product.title}
+              </h1>
+              <FavoriteButton
+                locale={resolved}
+                entityType="product"
+                entityId={product.id}
+                returnPath={productPath}
+                title={product.title}
+              />
+            </div>
 
             {product.brand ? (
               <p className="mt-2 text-sm text-muted">{product.brand}</p>
@@ -364,16 +373,14 @@ export default async function ProductDetailPage({
                 </dd>
               </div>
             ) : null}
-            {product.gtin ? (
-              <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
-                <dt className="text-sm font-medium text-ink-900">
-                  {t("store.product.gtinLabel")}
-                </dt>
-                <dd className="text-sm text-body sm:col-span-2">
-                  {product.gtin}
-                </dd>
-              </div>
-            ) : null}
+            <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+              <dt className="text-sm font-medium text-ink-900">
+                {t("store.product.referenceLabel")}
+              </dt>
+              <dd className="font-mono text-sm text-body sm:col-span-2">
+                {product.productReference}
+              </dd>
+            </div>
             <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
               <dt className="text-sm font-medium text-ink-900">
                 {t("store.product.conditionLabel")}

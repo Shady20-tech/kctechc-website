@@ -336,13 +336,38 @@ export async function loadInsight(
   slug: string,
   locale: Locale,
 ): Promise<LocalizedInsight | null> {
-  const records = await loadInsightRecords({});
-  const record = records.find((entry) => entry.slug === slug);
+  const records = await loadInsightRecords({ slug });
+  const record = records[0];
   return record ? localizeInsight(record, locale) : null;
+}
+
+/**
+ * Load a specific set of published articles by id, in the caller's order.
+ *
+ * Used by the favourites page, where the saved order is the customer's own. The
+ * public `publish_state` filter still applies, so an article unpublished after it
+ * was saved simply stops appearing rather than rendering a private draft.
+ */
+export async function loadInsightsByIds(
+  ids: readonly string[],
+  locale: Locale,
+): Promise<LocalizedInsight[]> {
+  if (ids.length === 0) return [];
+  const records = await loadInsightRecords({ ids });
+  const byId = new Map<string, InsightRecord>();
+  for (const record of records) {
+    if (record.id) byId.set(record.id, record);
+  }
+  return ids.flatMap((id) => {
+    const record = byId.get(id);
+    return record ? [localizeInsight(record, locale)] : [];
+  });
 }
 
 async function loadInsightRecords(options: {
   department?: DepartmentSlug;
+  slug?: string;
+  ids?: readonly string[];
   limit?: number;
 }): Promise<readonly InsightRecord[]> {
   try {
@@ -369,6 +394,11 @@ async function loadInsightRecords(options: {
       .order("published_at", { ascending: false });
 
     if (departmentId) query = query.eq("department_id", departmentId);
+    // A detail lookup filters by slug in the database. Selecting the whole
+    // published set and searching it in TypeScript both reads every article body
+    // and silently misses anything past PostgREST's 1,000-row response cap.
+    if (options.slug) query = query.eq("slug", options.slug).limit(1);
+    if (options.ids) query = query.in("id", [...options.ids]);
     if (options.limit) query = query.limit(options.limit);
 
     const { data: rows, error } = await query;
@@ -409,6 +439,7 @@ async function loadInsightRecords(options: {
     );
 
     return rows.map((row) => ({
+      id: row.id,
       slug: row.slug,
       department: options.department,
       categorySlug: row.category_id

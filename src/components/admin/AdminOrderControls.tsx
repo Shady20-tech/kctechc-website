@@ -11,7 +11,11 @@ import {
   recordManualPayment,
   type OrderActionState,
 } from "@/lib/orders/admin-actions";
-import type { OrderStatus } from "@/lib/orders/types";
+import {
+  canRecordManualPayment,
+  type OrderStatus,
+  type PaymentMethod,
+} from "@/lib/orders/types";
 
 /**
  * Admin order controls.
@@ -22,9 +26,11 @@ import type { OrderStatus } from "@/lib/orders/types";
  *   * **Status** moves the order along its lifecycle. `paid` is deliberately
  *     absent — it is not a status an operator picks, it is the result of money
  *     arriving.
- *   * **Record bank transfer** is the one manual route to `paid`, offered only
- *     for a bank-transfer order. It says plainly that it asserts money was
- *     received, because that is what it is: a human attesting to a fact the
+ *   * **Record a received payment** is the one manual route to `paid`. It is
+ *     offered for every offered method, because none of them is charged online —
+ *     a bank transfer, a mobile-money transfer and cash on delivery are all
+ *     confirmed by a person after the fact. It says plainly that it asserts money
+ *     was received, because that is what it is: a human attesting to a fact the
  *     system could not observe.
  */
 export function AdminOrderControls({
@@ -37,7 +43,7 @@ export function AdminOrderControls({
   locale: Locale;
   orderId: string;
   currentStatus: OrderStatus;
-  paymentMethod: string | null;
+  paymentMethod: PaymentMethod | null;
   allowedStatuses: readonly OrderStatus[];
 }) {
   const t = createTranslator(locale).t;
@@ -52,8 +58,8 @@ export function AdminOrderControls({
     FormData
   >(recordManualPayment, { status: "idle" });
 
-  const canRecordManual =
-    paymentMethod === "bank_transfer" && currentStatus === "pending_payment";
+  const canRecordManual = canRecordManualPayment(paymentMethod, currentStatus);
+  const methodLabel = paymentMethod ? t(`paymentMethod.${paymentMethod}`) : null;
 
   return (
     <div className="space-y-8">
@@ -127,6 +133,11 @@ export function AdminOrderControls({
             {t("adminOrder.manualHeading")}
           </h3>
           <p className="text-sm text-muted">{t("adminOrder.manualIntro")}</p>
+          {methodLabel ? (
+            <p className="text-sm text-muted">
+              {t("adminOrder.manualMethodLabel")} <strong>{methodLabel}</strong>
+            </p>
+          ) : null}
 
           {paymentState.status === "paid_recorded" ? (
             <Alert tone="success">{t("adminOrder.manualRecorded")}</Alert>

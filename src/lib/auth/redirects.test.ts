@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  confirmationRedirectUrl,
   postSignInPathFor,
-  recoveryRedirectUrlFor,
 } from "@/lib/auth/redirects";
 import { APP_ROLES, isAdminRole } from "@/lib/auth/roles";
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
@@ -10,42 +10,24 @@ import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 const ORIGIN = new URL("https://kctechc.example");
 
 /**
- * The recovery link has to go through `/auth/callback`, not straight to the form.
+ * A confirmation link must not hardcode a console destination.
  *
- * Supabase puts the PKCE `code` on the redirect URL, and only `/auth/callback`
- * exchanges it for a session. The original bug pointed `redirectTo` at
- * `/auth/reset-password` — a route that never existed — so every recovery email
- * dead-ended on a 404. These pin both halves of the correct shape.
+ * Self-registration always creates a `customer`, so `next=/admin` sent every
+ * newly confirmed customer into a console that refuses them. With no `next`,
+ * `/auth/callback` decides by role: customers to the account hub, staff to the
+ * console.
  */
-describe("recoveryRedirectUrlFor", () => {
-  it("routes through the callback with a locale-scoped next target", () => {
-    const url = new URL(recoveryRedirectUrlFor("fr", ORIGIN));
+describe("confirmationRedirectUrl", () => {
+  it("lands on the callback without a hardcoded destination", () => {
+    const url = new URL(confirmationRedirectUrl(ORIGIN));
     expect(url.pathname).toBe("/auth/callback");
-    expect(url.searchParams.get("next")).toBe("/fr/admin/reset-password");
+    expect(url.searchParams.get("next")).toBeNull();
   });
 
-  it("uses the default locale when the cookie is absent", () => {
-    const url = new URL(recoveryRedirectUrlFor(undefined, ORIGIN));
-    expect(url.searchParams.get("next")).toBe(
-      `/${DEFAULT_LOCALE}/admin/reset-password`,
+  it("keeps the supplied origin", () => {
+    expect(confirmationRedirectUrl(ORIGIN)).toBe(
+      "https://kctechc.example/auth/callback",
     );
-  });
-
-  it("ignores a locale the app does not support", () => {
-    const url = new URL(recoveryRedirectUrlFor("de", ORIGIN));
-    expect(url.searchParams.get("next")).toBe(
-      `/${DEFAULT_LOCALE}/admin/reset-password`,
-    );
-  });
-
-  it("never emits a bare page path that skips the code exchange", () => {
-    for (const cookie of [undefined, "en", "fr", "xx"]) {
-      const url = new URL(recoveryRedirectUrlFor(cookie, ORIGIN));
-      expect(url.pathname).not.toBe("/auth/reset-password");
-      expect(url.searchParams.get("next")).toMatch(
-        /^\/[a-z]{2}\/admin\/reset-password$/,
-      );
-    }
   });
 });
 

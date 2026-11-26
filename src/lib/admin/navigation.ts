@@ -10,15 +10,19 @@ import {
   Settings,
   ShieldCheck,
   ShoppingCart,
+  Star,
   Users,
 } from "lucide-react";
 
 import {
   isAdminRole,
+  canAccessDepartment,
   isDepartmentEditorRole,
   isRealEstateAdminRole,
+  isRealEstateStaffRole,
   type AppRole,
 } from "@/lib/auth/roles";
+import { REVIEW_MODERATOR_ROLES } from "@/lib/reviews/types";
 
 /**
  * The admin navigation model.
@@ -71,9 +75,13 @@ export const ADMIN_NAV_ICON_KEYS = [
   "kyc",
   "import",
   "content",
+  "reviews",
   "users",
   "logs",
   "settings",
+  "digitalMarketing",
+  "electricalServices",
+  "realEstateConsole",
 ] as const;
 
 export type AdminNavIconKey = (typeof ADMIN_NAV_ICON_KEYS)[number];
@@ -106,8 +114,11 @@ export type AdminNavSectionClient = {
 
 const anyAdmin = (role: AppRole) => isAdminRole(role);
 const realEstateAdmin = (role: AppRole) => isRealEstateAdminRole(role);
+const realEstateStaff = (role: AppRole) => isRealEstateStaffRole(role);
 const superOnly = (role: AppRole) => role === "super_admin";
 const departmentEditor = (role: AppRole) => isDepartmentEditorRole(role);
+const reviewModerator = (role: AppRole) =>
+  REVIEW_MODERATOR_ROLES.includes(role as never);
 
 export const ADMIN_NAV: readonly AdminNavSection[] = [
   {
@@ -159,6 +170,39 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "work",
         icon: Briefcase,
         canSee: departmentEditor,
+      },
+    ],
+  },
+  {
+    headingKey: "sectionDepartments",
+    items: [
+      {
+        // Each department's own console. Real estate already has one at
+        // `/admin/real-estate`; these give the other two the same front door so a
+        // department's staff are not left with only the cross-department
+        // Operations entries, which mix in other departments' work.
+        href: "/admin/digital-marketing",
+        labelKey: "digitalMarketing",
+        iconKey: "digitalMarketing",
+        icon: Package,
+        canSee: (role) => canAccessDepartment(role, "digital-marketing"),
+      },
+      {
+        href: "/admin/electrical-services",
+        labelKey: "electricalServices",
+        iconKey: "electricalServices",
+        icon: Briefcase,
+        canSee: (role) => canAccessDepartment(role, "electrical-services"),
+      },
+      {
+        href: "/admin/real-estate",
+        labelKey: "realEstate",
+        iconKey: "realEstateConsole",
+        icon: Building2,
+        // The console front door, not the portfolio manager: the staff tier works
+        // the queue here, while the individual listing routes below stay
+        // administrator-only.
+        canSee: realEstateStaff,
       },
     ],
   },
@@ -227,6 +271,13 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
         iconKey: "content",
         icon: FileText,
         canSee: departmentEditor,
+      },
+      {
+        href: "/admin/reviews",
+        labelKey: "reviews",
+        iconKey: "reviews",
+        icon: Star,
+        canSee: reviewModerator,
       },
       { href: "/admin/users", labelKey: "users", iconKey: "users", icon: Users, canSee: superOnly },
     ],

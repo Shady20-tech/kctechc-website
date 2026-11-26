@@ -7,7 +7,7 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
-import type { Cart } from "@/lib/store/cart";
+import type { Cart, CartLine } from "@/lib/store/cart";
 import { productPath } from "@/lib/store/product-path";
 import {
   removeCartItemAction,

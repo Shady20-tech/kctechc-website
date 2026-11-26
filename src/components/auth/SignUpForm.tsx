@@ -14,7 +14,8 @@ import {
   accountTypeRequiresKyc,
   type AccountType,
 } from "@/lib/real-estate/kyc";
-import { SIGN_UP_ERROR_KEYS, type SignUpState } from "@/lib/validation/auth";
+import { SIGN_UP_ERROR_KEYS } from "@/lib/validation/auth-error-keys";
+import type { SignUpState } from "@/lib/validation/auth";
 
 const INITIAL_STATE: SignUpState = { status: "idle" };
 
@@ -79,7 +80,7 @@ export function SignUpForm({
         <p>{t("auth.checkEmailBody")}</p>
         <p className="mt-2">
           <Link
-            href={`/${locale}/admin/login`}
+            href={`/${locale}/login`}
             className="font-medium underline underline-offset-4"
           >
             {t("auth.backToSignIn")}
@@ -150,7 +151,13 @@ export function SignUpForm({
           name="dateOfBirth"
           type="date"
           label={t("auth.dateOfBirthLabel")}
-          autoComplete="bday"
+          // No `autocomplete="bday"`: the WHATWG token for a complete birth
+          // date is `bday`, but Chrome's audit rejects it in favour of the
+          // granular `bday-day`/`bday-month`/`bday-year` tokens, which would be
+          // wrong on a control that captures a whole date. Chrome reported the
+          // mismatch as a DevTools issue, which Lighthouse counts, so the
+          // attribute is omitted rather than claiming a token the browser
+          // treats as invalid. `type="date"` already gives the native picker.
           required
           aria-describedby="dateOfBirth-hint"
           error={errorFor("dateOfBirth")}
@@ -268,7 +275,7 @@ export function SignUpForm({
       <p className="text-sm text-body">
         {t("auth.haveAccount")}{" "}
         <Link
-          href={`/${locale}/admin/login`}
+          href={`/${locale}/login`}
           className="font-medium text-ink-900 underline underline-offset-4"
         >
           {t("auth.signInSubmit")}

@@ -76,6 +76,23 @@ const LEGACY_PROPERTY_PATH = "/real-estate/properties";
 const LEGACY_INSIGHTS_PATH = "/blog";
 
 /**
+ * The customer auth pages moved out of the console namespace.
+ *
+ * Sign-in, sign-up and the password-recovery pages were served from
+ * `/{locale}/admin/...`, which read as console routes to a customer. They now
+ * live at `/{locale}/login`, `/{locale}/sign-up`, `/{locale}/forgot-password`
+ * and `/{locale}/reset-password`. Both the bare and the locale-prefixed legacy
+ * forms redirect: the bare form is what the guards and the shared header used,
+ * and the localized form is what bookmarks and search results may hold.
+ */
+const AUTH_PATH_MOVES = [
+  { from: "/admin/login", to: "/login" },
+  { from: "/admin/sign-up", to: "/sign-up" },
+  { from: "/admin/forgot-password", to: "/forgot-password" },
+  { from: "/admin/reset-password", to: "/reset-password" },
+] as const;
+
+/**
  * Legacy paths that must keep working, each mapped to its canonical equivalent.
  *
  * Phase 2 shipped the section at `/blog` and linked to it as `/${locale}/blog`,
@@ -84,6 +101,13 @@ const LEGACY_INSIGHTS_PATH = "/blog";
  * every localized URL returning 404.
  */
 export const LEGACY_REDIRECTS: readonly { from: string; to: string }[] = [
+  ...AUTH_PATH_MOVES.flatMap(({ from, to }) => [
+    { from, to },
+    ...LOCALES.map((locale) => ({
+      from: `/${locale}${from}`,
+      to: `/${locale}${to}`,
+    })),
+  ]),
   { from: LEGACY_INSIGHTS_PATH, to: INSIGHTS_PATH },
   ...LOCALES.map((locale) => ({
     from: `/${locale}${LEGACY_INSIGHTS_PATH}`,

@@ -17,6 +17,7 @@ import { deleteProductAction } from "@/lib/store/admin-actions";
 import { loadProductForAdmin } from "@/lib/store/admin-queries";
 import { loadCategoryOptions } from "@/lib/store/loaders";
 import { storagePublicUrl } from "@/lib/store/storage";
+import { isStorageObjectPath } from "@/lib/uploads/object-path";
 import { primaryImage } from "@/lib/store/types";
 
 export const dynamic = "force-dynamic";
@@ -83,6 +84,9 @@ export default async function AdminProductPage({
     alt: entry.alt,
     isPrimary: entry.isPrimary,
     position: entry.position,
+    invalidReference: Boolean(
+      entry.storagePath && !isStorageObjectPath(entry.storagePath),
+    ),
   }));
 
   const labels: Record<string, string> = {
@@ -97,6 +101,7 @@ export default async function AdminProductPage({
     primarySet: t("admin.store.primarySet"),
     imageRemove: t("admin.store.imageRemove"),
     imageRemoved: t("admin.store.imageRemoved"),
+    imageInvalid: t("admin.store.imageInvalid"),
     primaryBadge: t("admin.store.primaryBadge"),
     positionLabel: t("admin.store.positionLabel"),
     noImageYet: t("admin.store.noImageYet"),
@@ -203,7 +208,7 @@ export default async function AdminProductPage({
               shortDescription: product.shortDescription,
               description: product.description,
               brand: product.brand,
-              gtin: product.gtin,
+              productReference: product.productReference,
               priceMinor: product.priceMinor,
               stock: product.stock,
               departmentSlug: product.departmentSlug,

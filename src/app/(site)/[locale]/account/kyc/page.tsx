@@ -83,10 +83,10 @@ export default async function KycPage({
 
   const state = await getAuthState();
   if (state.status === "unconfigured") {
-    redirect(`/admin/login?reason=unconfigured&next=${returnTo}`);
+    redirect(`/login?reason=unconfigured&next=${returnTo}`);
   }
   if (state.status !== "authenticated") {
-    redirect(`/admin/login?next=${returnTo}`);
+    redirect(`/login?next=${returnTo}`);
   }
 
   const { for: requestedFor } = await searchParams;

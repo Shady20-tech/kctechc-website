@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isLocale, resolveLocaleFromAcceptLanguage } from "@/lib/i18n/locales";
 import { safeRedirectPathSchema } from "@/lib/validation/common";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth";
 
 /**
  * Auth callback.
@@ -11,6 +12,11 @@ import { safeRedirectPathSchema } from "@/lib/validation/common";
  * short-lived `code` (the PKCE flow) which is exchanged here for a session,
  * server-side, so the tokens never sit in a URL that page script could read and
  * never remain in the browser history after the redirect.
+ *
+ * The password-reset OTP flow does not use this route: `/reset-password` calls
+ * `verifyOtp({ type: "recovery" })` directly, so a recovery code has no `code`
+ * for this handler to exchange, and a missing `code` here cannot redirect an OTP
+ * visitor to sign-in.
  *
  * This is a Route Handler rather than a page for one reason: it must set cookies,
  * and a Server Component cannot. The exchange writes the auth cookie pair through
@@ -30,11 +36,16 @@ export const dynamic = "force-dynamic";
 
 const LOCALE_COOKIE = "kc_locale";
 
+/** True when a value is one of the two supported locales. */
+function asLocale(value: string | null | undefined): "en" | "fr" | null {
+  return value === "en" || value === "fr" ? value : null;
+}
+
 /** The sign-in page is localized; send the visitor to the one matching them. */
 function signInPath(acceptLanguage: string | null, cookieLocale?: string): string {
-  if (cookieLocale && isLocale(cookieLocale)) return `/${cookieLocale}/admin/login`;
+  if (cookieLocale && isLocale(cookieLocale)) return `/${cookieLocale}/login`;
   const fromHeader = resolveLocaleFromAcceptLanguage(acceptLanguage);
-  return `/${fromHeader ?? "en"}/admin/login`;
+  return `/${fromHeader ?? "en"}/login`;
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
@@ -77,7 +88,49 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 
-  return NextResponse.redirect(new URL(destination, url.origin), {
+  // An explicit `next` is a deliberate destination and wins.
+  if (nextParsed.success) {
+    return NextResponse.redirect(new URL(destination, url.origin), {
+      status: 303,
+    });
+  }
+
+  // Otherwise decide from the profile. A social sign-in creates the account
+  // without asking anything — neither OAuth flow carries metadata, so
+  // `handle_new_user` leaves `declared_account_type` null — and that is the
+  // signal that the account still owes us its role and residency declarations.
+  // An account that already declared goes to the usual role-based landing.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("declared_account_type, role")
+        .eq("id", user.id)
+        .maybeSingle()
+    : { data: null };
+
+  // The locale is carried on the redirect for exactly this branch: a French
+  // visitor must land on the French onboarding page. The query parameter is what
+  // the OAuth action set; the cookie is the fallback for a flow that did not.
+  const destinationLocale =
+    asLocale(url.searchParams.get("locale")) ??
+    asLocale(locale) ??
+    asLocale(resolveLocaleFromAcceptLanguage(acceptLanguage)) ??
+    "en";
+
+  const postAuthPath = resolvePostAuthPath(
+    destinationLocale,
+    profile
+      ? {
+          role: profile.role,
+          declaredAccountType: profile.declared_account_type,
+        }
+      : null,
+  );
+  return NextResponse.redirect(new URL(postAuthPath, url.origin), {
     status: 303,
   });
 }

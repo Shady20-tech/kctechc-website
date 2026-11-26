@@ -3,6 +3,7 @@ import {
   INSIGHTS_PATH,
   NAV_PATHS,
   LEGAL_PATHS,
+  FOOTER_PATHS,
   PROPERTY_SEARCH_PATH,
   SOLAR_PACKAGES_PATH,
   storePathFor,
@@ -50,6 +51,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Legal pages are footer-linked rather than in the primary bar, so they are
     // listed from their own constant.
     ...LEGAL_PATHS,
+    // Footer-linked public pages that are not legal documents.
+    ...FOOTER_PATHS,
     // The solar package detail pages are data-driven from the bundled brochure
     // catalogue, so they are enumerated rather than a static path.
     ...SOLAR_PACKAGES.map(

@@ -15,10 +15,12 @@ import {
   Menu,
   Package,
   Settings,
+  Star,
   ShieldCheck,
   ShoppingCart,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 
 import { Avatar } from "@/components/admin/Avatar";
@@ -51,9 +53,13 @@ const NAV_ICONS: Record<AdminNavIconKey, typeof LayoutDashboard> = {
   kyc: ShieldCheck,
   import: FileText,
   content: FileText,
+  reviews: Star,
   users: Users,
   logs: Activity,
   settings: Settings,
+  digitalMarketing: Package,
+  electricalServices: Zap,
+  realEstateConsole: Building2,
 };
 
 /**

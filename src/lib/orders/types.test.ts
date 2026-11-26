@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   ORDER_STATUSES,
   ORDER_TRANSITIONS,
+  PAYMENT_METHODS,
   PAYMENT_STATUSES,
+  canRecordManualPayment,
   canTransition,
   isPaidStatus,
   isTerminalStatus,
+  staffTransitions,
   shouldTrackPurchase,
   type OrderStatus,
 } from "./types";
@@ -158,5 +161,56 @@ describe("transition graph reachability", () => {
     // Refunding an unpaid order is not a thing; the graph must not offer it.
     expect(ORDER_TRANSITIONS.pending_payment).not.toContain("refunded");
     expect(ORDER_TRANSITIONS.pending_payment).not.toContain("fulfilled");
+  });
+});
+
+describe("staffTransitions", () => {
+  it("never offers paid, which only a recorded payment may reach", () => {
+    for (const status of ORDER_STATUSES) {
+      expect(staffTransitions(status), status).not.toContain("paid");
+    }
+  });
+
+  it("leaves a pending order with only cancelled to pick", () => {
+    // This is why the console looked broken: with `paid` withheld, a pending
+    // order's status select had exactly one option, and the separate payment
+    // form that should have carried the rest was gated to bank transfer.
+    expect(staffTransitions("pending_payment")).toEqual(["cancelled"]);
+  });
+});
+
+describe("canRecordManualPayment", () => {
+  it("offers the manual route for every method the checkout offers", () => {
+    // None of these is charged online, so each is reconciled by a person.
+    // Gating this to bank transfer alone hid the control from three of four.
+    for (const method of PAYMENT_METHODS) {
+      expect(
+        canRecordManualPayment(method, "pending_payment"),
+        `${method} should be recordable`,
+      ).toBe(true);
+    }
+  });
+
+  it("refuses the retired card method", () => {
+    expect(canRecordManualPayment("card", "pending_payment")).toBe(false);
+  });
+
+  it("refuses an order that is no longer awaiting payment", () => {
+    for (const status of ORDER_STATUSES.filter((s) => s !== "pending_payment")) {
+      expect(canRecordManualPayment("bank_transfer", status), status).toBe(false);
+    }
+  });
+
+  it("refuses an order with no recorded method", () => {
+    expect(canRecordManualPayment(null, "pending_payment")).toBe(false);
+  });
+
+  it("agrees with the payment action's own allow-list", () => {
+    // The action used to inline a four-method list while the form checked
+    // `bank_transfer` alone, so the button and the guard disagreed. Both now
+    // call this function; the allowed set must be exactly the offered methods.
+    const allowed = (["bank_transfer", "cash_on_confirmation", "mobile_money_mtn", "mobile_money_orange"] as const)
+      .filter((m) => canRecordManualPayment(m, "pending_payment"));
+    expect(new Set(allowed)).toEqual(new Set(PAYMENT_METHODS));
   });
 });

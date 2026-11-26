@@ -1,13 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { ReportHighlights } from "@/components/admin/reports/ReportVisuals";
 import { DataTable } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, CardHeading } from "@/components/ui/Card";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { Notice } from "@/components/ui/Notice";
+import { summarizeListingActivity } from "@/lib/admin/report-metrics";
+import { loadListingActivityReport } from "@/lib/admin/reports";
 import { getAuthState } from "@/lib/auth/session";
-import { isRealEstateAdminRole } from "@/lib/auth/roles";
+import { isRealEstateStaffRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
   loadAdminListings,
@@ -33,19 +36,28 @@ export default async function AdminRealEstatePage() {
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Freal-estate");
+    redirect("/login?next=%2Fadmin%2Freal-estate");
   }
-  if (!state.profile || !isRealEstateAdminRole(state.profile.role)) {
+  // The staff tier opens the console front door; the individual listing routes
+  // below keep `isRealEstateAdminRole`, because working the queue is not the same
+  // grant as managing every listing in the portfolio.
+  if (!state.profile || !isRealEstateStaffRole(state.profile.role)) {
     redirect("/admin/unauthorized");
   }
 
-  const [overview, listings] = await Promise.all([
+  const [overview, listings, activityRows] = await Promise.all([
     loadRealEstateOverview(),
     loadAdminListings({ limit: 25 }),
+    loadListingActivityReport(),
   ]);
+  const activity = summarizeListingActivity(activityRows);
+  const publishedShare =
+    overview.total > 0
+      ? Math.round((overview.published / overview.total) * 1000) / 10
+      : null;
 
   return (
     <>
@@ -68,9 +80,7 @@ export default async function AdminRealEstatePage() {
           ] as const
         ).map(([key, value]) => (
           <Card key={key}>
-            <p className="text-sm text-muted">
-              {t(`realEstate.admin.${key}`)}
-            </p>
+            <p className="text-sm text-muted">{t(`realEstate.admin.${key}`)}</p>
             <p className="mt-2 font-display text-3xl font-bold text-ink-900">
               {value}
             </p>
@@ -78,11 +88,41 @@ export default async function AdminRealEstatePage() {
         ))}
       </div>
 
+      <div className="mt-8">
+        <ReportHighlights
+          heading={t("realEstate.admin.reportHeading")}
+          intro={t("realEstate.admin.reportIntro")}
+          metrics={[
+            {
+              label: t("realEstate.admin.reportPublishedShare"),
+              value:
+                publishedShare === null
+                  ? t("adminReports.noValueRecorded")
+                  : `${publishedShare}%`,
+              hint: t("realEstate.admin.reportPublishedShareHint"),
+            },
+            {
+              label: t("adminReports.listingsViews"),
+              value: String(activity.views),
+              hint: t("adminReports.listingsViewsHint"),
+            },
+            {
+              label: t("adminReports.listingsInquiries"),
+              value: String(activity.inquiries),
+              hint: t("adminReports.listingsInquiriesHint"),
+            },
+            {
+              label: t("realEstate.admin.overviewSubmissions"),
+              value: String(overview.pendingSubmissions),
+            },
+          ]}
+          href="/admin/reports"
+          linkLabel={t("adminDashboardCards.viewReports")}
+        />
+      </div>
+
       <div className="mt-8 flex flex-wrap gap-3">
-        <ButtonLink
-          href="/admin/real-estate/listings/new"
-          variant="primary"
-        >
+        <ButtonLink href="/admin/real-estate/listings/new" variant="primary">
           {t("realEstate.admin.createHeading")}
         </ButtonLink>
         <ButtonLink href="/admin/real-estate/submissions" variant="secondary">

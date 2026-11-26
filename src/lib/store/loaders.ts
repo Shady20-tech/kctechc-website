@@ -250,7 +250,7 @@ export async function loadProductRecordsByIds(
 
 /** The canonical columns every product read shares. */
 const PRODUCT_SELECT =
-  "id, category_id, slug, sku, brand, gtin, title, short_description, description, specifications, price_minor, currency, stock, availability, condition, published_at, updated_at";
+  "id, category_id, slug, sku, product_reference, brand, title, short_description, description, specifications, price_minor, currency, stock, availability, condition, published_at, updated_at";
 
 type ProductRow = {
   id: string;
@@ -258,7 +258,7 @@ type ProductRow = {
   slug: string;
   sku: string;
   brand: string | null;
-  gtin: string | null;
+  product_reference: string;
   title: string;
   short_description: string;
   description: string;
@@ -373,7 +373,7 @@ async function hydrateProductRows(
       slug: row.slug,
       sku: row.sku,
       brand: asString(row.brand),
-      gtin: asString(row.gtin),
+      productReference: row.product_reference,
       title: row.title,
       shortDescription: row.short_description,
       description: row.description,

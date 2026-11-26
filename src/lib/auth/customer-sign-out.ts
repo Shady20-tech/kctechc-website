@@ -29,8 +29,6 @@ export async function customerSignOutAction(formData: FormData): Promise<void> {
   }
 
   const locale = String(formData.get("locale") ?? "");
-  const target = /^[a-z]{2}$/.test(locale)
-    ? `/${locale}/admin/login`
-    : "/admin/login";
+  const target = /^[a-z]{2}$/.test(locale) ? `/${locale}/login` : "/login";
   redirect(target);
 }

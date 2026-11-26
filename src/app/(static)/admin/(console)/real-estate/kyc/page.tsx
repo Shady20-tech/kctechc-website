@@ -40,10 +40,10 @@ export default async function AdminKycQueuePage({
   const state = await getAuthState();
 
   if (state.status === "unconfigured") {
-    redirect("/admin/login?reason=unconfigured");
+    redirect("/login?reason=unconfigured");
   }
   if (state.status !== "authenticated") {
-    redirect("/admin/login?next=%2Fadmin%2Freal-estate%2Fkyc");
+    redirect("/login?next=%2Fadmin%2Freal-estate%2Fkyc");
   }
   if (!state.profile || !isKycReviewerRole(state.profile.role)) {
     redirect("/admin/unauthorized");
