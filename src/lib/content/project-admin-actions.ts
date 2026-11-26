@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
 import { getAuthState, type Profile } from "@/lib/auth/session";
+import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -581,13 +582,7 @@ export async function deleteProjectAction(
   });
 
   if (error) {
-    if (error.message.includes("at least 10 characters")) {
-      return { ok: false, error: "reason_required" };
-    }
-    if (error.message.includes("Unknown electrical_project")) {
-      return { ok: false, error: "not_found" };
-    }
-    return { ok: false, error: "write_failed" };
+    return { ok: false, error: contentDeletionErrorKey(error.message) };
   }
 
   if (paths.length > 0) {

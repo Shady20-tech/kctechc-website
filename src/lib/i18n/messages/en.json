@@ -543,6 +543,7 @@
       "errors": {
         "unauthenticated": "Your session has expired. Sign in again.",
         "forbidden": "Only a super administrator or the department editor for this content may permanently delete it.",
+        "migration_pending": "Deletion is not available yet: the database update that grants department editors this permission has not been applied.",
         "unconfigured": "The database is not connected.",
         "reason_required": "Enter a reason of at least 10 characters.",
         "not_found": "That record no longer exists.",

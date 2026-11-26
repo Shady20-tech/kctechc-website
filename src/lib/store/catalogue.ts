@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import type { Locale } from "@/lib/i18n/locales";
 import { createPublicClient } from "@/lib/supabase/public";
 import { loadCategoryRecords, loadProductRecordsByIds } from "./loaders";
@@ -78,16 +80,25 @@ export function isPriceSort(sort: StoreSort | undefined): boolean {
   return sort === "price-asc" || sort === "price-desc";
 }
 
-async function resolveDepartmentId(slug: string): Promise<string | null> {
-  const supabase = createPublicClient();
-  if (!supabase) return null;
-  const { data } = await supabase
-    .from("departments")
-    .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
-  return data?.id ?? null;
-}
+/**
+ * Resolve a department slug once per request.
+ *
+ * The store index asks for the same department from the catalogue, the facets and
+ * the category navigation. Without this cache those were three identical round
+ * trips, each costing the database's full request latency.
+ */
+const resolveDepartmentId = cache(
+  async (slug: string): Promise<string | null> => {
+    const supabase = createPublicClient();
+    if (!supabase) return null;
+    const { data } = await supabase
+      .from("departments")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data?.id ?? null;
+  },
+);
 
 /**
  * Resolve a category URL segment to its id within a department.

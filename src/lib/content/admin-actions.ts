@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAuthState } from "@/lib/auth/session";
+import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
 import {
   canAccessDepartment,
   isDepartmentEditorRole,
@@ -775,13 +776,7 @@ export async function deleteInsightAction(
   });
 
   if (error) {
-    if (error.message.includes("at least 10 characters")) {
-      return { ok: false, error: "reason_required" };
-    }
-    if (error.message.includes("Unknown insight")) {
-      return { ok: false, error: "not_found" };
-    }
-    return { ok: false, error: "write_failed" };
+    return { ok: false, error: contentDeletionErrorKey(error.message) };
   }
 
   if (paths.length > 0) {

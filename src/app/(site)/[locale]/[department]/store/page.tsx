@@ -98,11 +98,26 @@ export default async function StorePage({
   const basePath = `/${resolved}${storePath}`;
   const filters = parseStoreFilters(await searchParams);
 
-  const [records, facets] = await Promise.all([
+  const [records, facets, page] = await Promise.all([
     loadCategoryRecords(department),
     loadStoreFacets(department),
+    queryCatalogue({
+      departmentSlug: department,
+      locale: resolved,
+      query: filters.query,
+      categorySlug: filters.category,
+      currency: filters.currency,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      inStockOnly: filters.inStock,
+      brand: filters.brand,
+      sort: filters.sort,
+      page: filters.page,
+    }),
   ]);
-  const categories = records.map((record) => localizeCategory(record, resolved));
+  const categories = records.map((record) =>
+    localizeCategory(record, resolved),
+  );
 
   // The category navigation offers the real categories with their real counts, so
   // a shortcut reading "12" leads to a result set of 12. The count is looked up by
@@ -118,20 +133,6 @@ export default async function StorePage({
       count: facets.categories.get(record.slug),
       active: filters.category === category.slug,
     };
-  });
-
-  const page = await queryCatalogue({
-    departmentSlug: department,
-    locale: resolved,
-    query: filters.query,
-    categorySlug: filters.category,
-    currency: filters.currency,
-    minPrice: filters.minPrice,
-    maxPrice: filters.maxPrice,
-    inStockOnly: filters.inStock,
-    brand: filters.brand,
-    sort: filters.sort,
-    page: filters.page,
   });
 
   const activeCount = activeStoreFilterKeys(filters).length;
@@ -239,9 +240,7 @@ export default async function StorePage({
                       : t("store.emptyHeading")
                   }
                   body={
-                    hasFilters
-                      ? t("store.noResultsBody")
-                      : t("store.emptyBody")
+                    hasFilters ? t("store.noResultsBody") : t("store.emptyBody")
                   }
                   action={
                     hasFilters ? (
@@ -262,11 +261,7 @@ export default async function StorePage({
             ) : (
               <>
                 <div className="mt-2">
-                  <ProductGrid
-                    products={page.items}
-                    locale={resolved}
-                    t={t}
-                  />
+                  <ProductGrid products={page.items} locale={resolved} t={t} />
                 </div>
                 <MarketplacePagination
                   page={page.page}
@@ -276,8 +271,7 @@ export default async function StorePage({
                     nav: t("store.paginationLabel"),
                     previous: t("store.previousPage"),
                     next: t("store.nextPage"),
-                    page: (target) =>
-                      t("store.pageNumber", { page: target }),
+                    page: (target) => t("store.pageNumber", { page: target }),
                   }}
                 />
               </>

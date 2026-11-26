@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { getAuthState } from "@/lib/auth/session";
+import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
 import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
 import { storePathFor } from "@/lib/config/navigation";
 import {
@@ -281,14 +283,16 @@ export async function createProductAction(
 
   let syncWarning: string | undefined;
   if (isTolgeeSyncConfigured()) {
-    // Best-effort immediate push. The queue is durable, so a failure here costs
-    // nothing but latency; it must not fail the creation.
-    const { runTranslationSync } = await import("@/lib/tolgee/sync-worker");
-    const result = await runTranslationSync({ limit: 50 });
-    if (!result.ran) {
-      syncWarning = result.reason ?? "sync_unavailable";
-    } else if (result.permanentFailures.length > 0) {
-      syncWarning = result.permanentFailures[0]?.error ?? "sync_failed";
+    // The queue is durable, so draining it belongs after the response. Running it
+    // inline made "Create product" wait on up to 50 sequential Tolgee HTTP calls.
+    try {
+      after(async () => {
+        const { runTranslationSync } = await import("@/lib/tolgee/sync-worker");
+        await runTranslationSync({ limit: 25 });
+      });
+    } catch {
+      // `after()` needs a request scope. The queued jobs remain for the next run.
+      syncWarning = "sync_deferred_unavailable";
     }
   } else {
     syncWarning = "tolgee_unconfigured";
@@ -540,13 +544,7 @@ export async function deleteProductAction(
   });
 
   if (error) {
-    if (error.message.includes("at least 10 characters")) {
-      return { ok: false, error: "reason_required" };
-    }
-    if (error.message.includes("Unknown product")) {
-      return { ok: false, error: "not_found" };
-    }
-    return { ok: false, error: "write_failed" };
+    return { ok: false, error: contentDeletionErrorKey(error.message) };
   }
 
   // The row and its media rows are gone; remove the now-orphaned objects. A

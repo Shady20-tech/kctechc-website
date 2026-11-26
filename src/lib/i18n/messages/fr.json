@@ -543,6 +543,7 @@
       "errors": {
         "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
         "forbidden": "Seul un super administrateur ou le responsable du département de ce contenu peut le supprimer définitivement.",
+        "migration_pending": "La suppression n'est pas encore disponible : la mise à jour de la base de données qui accorde ce droit aux responsables de département n'a pas été appliquée.",
         "unconfigured": "La base de données n'est pas connectée.",
         "reason_required": "Saisissez un motif d'au moins 10 caractères.",
         "not_found": "Cet enregistrement n'existe plus.",

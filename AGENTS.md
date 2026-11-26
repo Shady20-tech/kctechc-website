@@ -3963,3 +3963,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Admin detail/create pages, dashboard listing pages, account subpages and the store/order/quote
   flows use it, so a detail page always has a deterministic parent link rather than relying on
   browser history. The product detail page also renders a top back link to its category.
+
+### Deletion diagnostics and product-creation latency
+
+- **The department-editor delete needs migration 84 applied to the database, not just deployed code.** A Vercel build does not run `supabase/migrations/`. When the database still has the old `delete_content_permanently`, the RPC raises "Only a super administrator may permanently delete content" and the form used to collapse that into `write_failed`. `src/lib/content/deletion-errors.ts` now maps that message (and `permission denied for function`) to `migration_pending`, so the operator sees that the database update is missing instead of retrying a delete that cannot succeed.
+- **`createProductAction` used to drain up to 50 Tolgee jobs inline.** Each job did a database read, a Tolgee HTTP call with a 10s timeout, and a write-back, so a new product could wait tens of seconds before returning. The sync now runs in `after()`, after the action response; the durable queue is unchanged and the admin never waits on Tolgee. If `after()` has no request scope, the action reports `sync_deferred_unavailable` and leaves the jobs queued.
+- **The store index now resolves the department once per request and runs the catalogue, facets and category navigation concurrently.** `resolveDepartmentId` is wrapped in React `cache`, and `queryCatalogue` is in the page's `Promise.all`. The database is roughly 400ms away per round trip, so three identical department lookups were a third of the page's TTFB.
