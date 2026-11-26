@@ -54,12 +54,14 @@ describe("Tolgee server client", () => {
       const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
       expect(url).toBe("https://app.tolgee.io/v2/projects/42/translations");
       expect(init.method).toBe("POST");
-      expect((init.headers as Record<string, string>)["X-API-Key"]).toBe(
-        apiKey,
-      );
-      expect((init.headers as Record<string, string>).Authorization).toBe(
-        undefined,
-      );
+      const headers = init.headers as Record<string, string>;
+      expect(headers["X-API-Key"]).toBe(apiKey);
+      expect(headers["Content-Type"]).toBe("application/json");
+      expect(headers.Authorization).toBe(undefined);
+      expect(JSON.parse(String(init.body))).toEqual({
+        key: "product.1.title.en",
+        translations: { en: "Laptop", fr: "Ordinateur portable" },
+      });
       expect(apiKeyKind).toBe(
         apiKey.startsWith("tgpak_")
           ? "project_api_key"
@@ -72,7 +74,7 @@ describe("Tolgee server client", () => {
     const fetchMock = stubFetch(new Response("{}", { status: 200 }));
     const { isTolgeeSyncConfigured, pushTranslation } = await loadServerClient({
       projectId: "99",
-      serverApiUrl: "https://tolgee.example.com/v2/",
+      serverApiUrl: "https://tolgee.example.com/platform/v2/",
       serverProjectId: "7",
       apiKey: "tgpak_project_key",
     });
@@ -87,9 +89,60 @@ describe("Tolgee server client", () => {
     expect(url).toBe("https://tolgee.example.com/v2/projects/7/translations");
   });
 
-  it("logs the exact URL, status and credential kind on a 404", async () => {
+  it("strips a pasted project path from the API URL", async () => {
+    const fetchMock = stubFetch(new Response("{}", { status: 200 }));
+    const { pushTranslation } = await loadServerClient({
+      apiUrl: "https://app.tolgee.io/projects/35323/v2/",
+      projectId: "35323",
+      apiKey: "tgpak_project_key",
+    });
+
+    await pushTranslation({
+      key: "product.1.title.en",
+      translations: { en: "Laptop" },
+    });
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://app.tolgee.io/v2/projects/35323/translations");
+  });
+
+  it("returns the v2 key id from a successful upsert", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          keyId: 1234,
+          keyName: "product.1.title.en",
+          keyIsPlural: false,
+          translations: { en: { id: 9, text: "Laptop" } },
+        }),
+        { status: 200 },
+      ),
+    );
+    const { pushTranslation } = await loadServerClient({
+      apiUrl: "https://app.tolgee.io",
+      projectId: "42",
+      apiKey: "tgpak_project_key",
+    });
+
+    const result = await pushTranslation({
+      key: "product.1.title.en",
+      translations: { en: "Laptop" },
+    });
+
+    expect(result).toMatchObject({ ok: true, data: { keyId: 1234 } });
+  });
+
+  it("includes Tolgee's response code and logs the body on a rejected request", async () => {
     const expectedUrl = "https://app.tolgee.io/v2/projects/42/translations";
-    stubFetch(new Response("{}", { status: 404 }));
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          code: "invalid_project_api_key",
+          params: ["project 42"],
+        }),
+        { status: 403 },
+      ),
+    );
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
@@ -105,14 +158,53 @@ describe("Tolgee server client", () => {
     });
 
     expect(result).toMatchObject({ ok: false, retryable: false });
-    expect(result.ok ? "" : result.error).toContain(expectedUrl);
+    expect(result.ok ? "" : result.error).toContain("invalid_project_api_key");
+    expect(result.ok ? "" : result.error).toContain('params=["project 42"]');
     expect(consoleError).toHaveBeenCalledWith(
-      "[tolgee] 404",
+      "[tolgee] request failed",
+      expect.objectContaining({
+        url: expectedUrl,
+        status: 403,
+        projectId: "42",
+        apiKeyKind: "project_api_key",
+        responseBody: expect.stringContaining("invalid_project_api_key"),
+      }),
+    );
+  });
+
+  it("logs the exact URL, status and credential kind on a 404", async () => {
+    const expectedUrl = "https://app.tolgee.io/v2/projects/42/translations";
+    stubFetch(
+      new Response(JSON.stringify({ code: "project_not_found" }), {
+        status: 404,
+      }),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const { pushTranslation } = await loadServerClient({
+      apiUrl: "https://app.tolgee.io",
+      projectId: "42",
+      apiKey: "tgpak_project_key",
+    });
+
+    const result = await pushTranslation({
+      key: "product.42.title.en",
+      translations: { en: "Laptop" },
+    });
+
+    expect(result).toMatchObject({ ok: false, retryable: false });
+    const error = result.ok ? "" : result.error;
+    expect(error).toContain(expectedUrl);
+    expect(error).toContain("project_not_found");
+    expect(consoleError).toHaveBeenCalledWith(
+      "[tolgee] request failed",
       expect.objectContaining({
         url: expectedUrl,
         status: 404,
         projectId: "42",
         apiKeyKind: "project_api_key",
+        responseBody: expect.stringContaining("project_not_found"),
       }),
     );
   });

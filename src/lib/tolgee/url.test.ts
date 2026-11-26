@@ -18,16 +18,27 @@ describe("normalizeTolgeeApiUrl", () => {
     );
   });
 
+  it("strips a pasted project path down to the origin", () => {
+    expect(normalizeTolgeeApiUrl("https://app.tolgee.io/projects/35323")).toBe(
+      "https://app.tolgee.io",
+    );
+    expect(
+      normalizeTolgeeApiUrl(
+        "https://app.tolgee.io/projects/35323/translations",
+      ),
+    ).toBe("https://app.tolgee.io");
+  });
+
   it("trims whitespace before normalizing", () => {
     expect(normalizeTolgeeApiUrl("  https://app.tolgee.io/v2/  ")).toBe(
       "https://app.tolgee.io",
     );
   });
 
-  it("keeps a self-hosted subpath", () => {
+  it("keeps a self-hosted origin including its port", () => {
     expect(
-      normalizeTolgeeApiUrl("https://tolgee.example.com/platform/v2/"),
-    ).toBe("https://tolgee.example.com/platform");
+      normalizeTolgeeApiUrl("https://tolgee.example.com:8443/platform/v2/"),
+    ).toBe("https://tolgee.example.com:8443");
   });
 
   it("drops query strings and fragments", () => {
@@ -36,9 +47,12 @@ describe("normalizeTolgeeApiUrl", () => {
     ).toBe("https://app.tolgee.io");
   });
 
-  it("falls back to the cloud endpoint for blank or invalid values", () => {
+  it("falls back to the cloud endpoint for blank, invalid or non-http values", () => {
     expect(normalizeTolgeeApiUrl("")).toBe(DEFAULT_TOLGEE_API_URL);
     expect(normalizeTolgeeApiUrl("   ")).toBe(DEFAULT_TOLGEE_API_URL);
     expect(normalizeTolgeeApiUrl("not a url")).toBe(DEFAULT_TOLGEE_API_URL);
+    expect(normalizeTolgeeApiUrl("javascript:alert(1)")).toBe(
+      DEFAULT_TOLGEE_API_URL,
+    );
   });
 });

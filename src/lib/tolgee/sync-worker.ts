@@ -199,13 +199,14 @@ export async function runTranslationSync(options: {
     const result = await pushTranslation({
       key,
       translations: buildTranslations(source, targets),
-      description: `KC Technology Corporation — ${entityType} ${field}`,
     });
 
     if (result.ok) {
       await supabase.rpc("complete_translation_sync_job", {
         p_job_id: job.id,
-        p_tolgee_key_id: result.data.id ? String(result.data.id) : undefined,
+        p_tolgee_key_id: result.data.keyId
+          ? String(result.data.keyId)
+          : undefined,
       });
       succeeded += 1;
       continue;

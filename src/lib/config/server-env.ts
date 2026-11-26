@@ -1,6 +1,7 @@
 import "server-only";
 
 import { SITE } from "@/lib/config/site";
+import { normalizeTolgeeApiUrl } from "@/lib/tolgee/url";
 
 /**
  * Server-only secrets. `import "server-only"` makes any accidental import from a
@@ -11,6 +12,11 @@ import { SITE } from "@/lib/config/site";
 function optional(value: string | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+function optionalTolgeeUrl(value: string | undefined): string | null {
+  const raw = optional(value);
+  return raw ? normalizeTolgeeApiUrl(raw) : null;
 }
 
 export type SupabaseServerKeySource =
@@ -79,7 +85,9 @@ export const serverEnv = {
    * id and API base out of the client bundle. A server-only value wins when both
    * are set; the public value is the fallback.
    */
-  tolgeeApiUrl: optional(process.env.TOLGEE_API_URL),
+  // Keep null when absent so the public URL remains the fallback; normalize
+  // when present so an accidental /v2 or /projects/... path cannot survive.
+  tolgeeApiUrl: optionalTolgeeUrl(process.env.TOLGEE_API_URL),
   tolgeeProjectId: optional(process.env.TOLGEE_PROJECT_ID),
   resendApiKey: optional(process.env.RESEND_API_KEY),
   emailFrom: optional(process.env.EMAIL_FROM),
