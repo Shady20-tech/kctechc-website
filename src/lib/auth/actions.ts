@@ -7,7 +7,6 @@ import { isSupabaseConfigured, getSiteUrl } from "@/lib/config/env";
 import {
   confirmationRedirectUrl,
   postSignInPathFor,
-  recoveryRedirectUrlFor,
 } from "@/lib/auth/redirects";
 import {
   enabledOAuthProviders,
@@ -35,12 +34,6 @@ import {
 } from "@/lib/validation/auth";
 
 export type SignInActionState = SignInState;
-
-/** The recovery email lands here; see {@link recoveryRedirectUrlFor}. */
-async function recoveryRedirectUrl(): Promise<string> {
-  const cookieStore = await cookies();
-  return recoveryRedirectUrlFor(cookieStore.get("kc_locale")?.value);
-}
 
 /**
  * Supabase reports an unconfirmed account with a stable machine code. Matching
@@ -310,11 +303,14 @@ export async function resendConfirmationAction(
 }
 
 /**
- * Request a password-reset email.
+ * Request a password-reset code.
  *
- * The response is always `sent`, whether or not the address exists, so the form
- * cannot be used to discover which emails have accounts. Supabase itself does not
- * create an account here; it emails a recovery link to an existing one.
+ * Sends the Supabase "Reset Password" email, which must contain the
+ * `{{ .Token }}` 6-digit code. No `redirectTo` is passed: the flow does not
+ * depend on a clickable link. A non-existent address must look identical to an
+ * existing one, so provider errors other than rate limiting are logged and the
+ * visitor still lands on the code-entry page; only our own rate limit and a
+ * transport failure are shown.
  */
 export async function forgotPasswordAction(
   _previous: ForgotPasswordState,
@@ -337,21 +333,57 @@ export async function forgotPasswordAction(
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: await recoveryRedirectUrl(),
-  });
+  // Do not pass `redirectTo`: the flow uses the 6-digit `{{ .Token }}` in the
+  // Supabase "Reset Password" email, not a clickable recovery link. A
+  // non-existent address must look identical to an existing one, so only a
+  // transport failure or our own rate limit is surfaced; provider errors are
+  // logged and the visitor still reaches the code-entry page.
+  let requestError: {
+    status?: number;
+    code?: string;
+    message?: string;
+  } | null = null;
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      parsed.data.email,
+    );
+    requestError = error;
+  } catch {
+    return { status: "error", messageKey: "auth.errorBody" };
+  }
 
-  return { status: "sent" };
+  if (
+    requestError &&
+    (requestError.status === 429 ||
+      requestError.code === "over_email_send_rate_limit")
+  ) {
+    return { status: "rate_limited" };
+  }
+  if (requestError) {
+    console.error(
+      "Password reset email failed",
+      requestError.code ?? "unknown",
+    );
+  }
+
+  const localeCookie = (await cookies()).get("kc_locale")?.value;
+  const locale =
+    localeCookie && isLocale(localeCookie) ? localeCookie : DEFAULT_LOCALE;
+  redirect(
+    `/${locale}/reset-password?email=${encodeURIComponent(parsed.data.email)}`,
+  );
 }
 
 /**
- * Set a new password from a recovery link.
+ * Set a new password from a 6-digit recovery OTP.
  *
- * Requires the session that the recovery link established via `/auth/callback`.
- * Without it Supabase refuses the update, so a visitor who guesses this URL
- * changes nothing. The new password is the only value accepted; the email is not
- * re-read, because a recovery flow that could be pointed at another address would
- * be an account-takeover primitive.
+ * `verifyOtp({ type: "recovery" })` creates the short-lived recovery session
+ * server-side; the same request then calls `updateUser`. Neither step trusts a
+ * link or a client-side session, so a guessed URL cannot change anything.
+ *
+ * The recovery session is signed out after the change so the redirect to
+ * `/login` actually shows the sign-in form instead of bouncing an
+ * already-authenticated visitor to the account hub.
  */
 export async function resetPasswordAction(
   _previous: ResetPasswordState,
@@ -367,6 +399,8 @@ export async function resetPasswordAction(
   if (!limit.allowed) return { status: "rate_limited" };
 
   const parsed = resetPasswordSchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -383,32 +417,41 @@ export async function resetPasswordAction(
   const supabase = await createClient();
   if (!supabase) return { status: "unconfigured" };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: verifyData, error: verifyError } =
+    await supabase.auth.verifyOtp({
+      email: parsed.data.email,
+      token: parsed.data.token,
+      type: "recovery",
+    });
 
-  if (!user) {
-    // No recovery session: the link was not followed, or it expired. Nothing is
-    // written, and the caller is told to request a new link rather than shown a
-    // success it did not achieve.
-    return { status: "error", errors: { form: "recoverySessionMissing" } };
+  if (verifyError || !verifyData.user) {
+    return { status: "error", errors: { form: "invalidOtp" } };
   }
 
-  const { error } = await supabase.auth.updateUser({
+  const { error: updateError } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
 
-  if (error) {
+  if (updateError) {
     return { status: "error", errors: { form: "errorBody" } };
   }
 
+  const userId = verifyData.user.id;
   await recordAudit({
-    actorId: user.id,
+    actorId: userId,
     action: "password_changed",
     entityType: "auth",
-    entityId: user.id,
-    metadata: { source: "recovery" },
+    entityId: userId,
+    metadata: { source: "recovery_otp" },
   });
+
+  const { error: signOutError } = await supabase.auth.signOut();
+  if (signOutError) {
+    console.error(
+      "Password reset sign-out failed",
+      signOutError.code ?? signOutError.message,
+    );
+  }
 
   return { status: "updated" };
 }

@@ -108,14 +108,22 @@ export const forgotPasswordSchema = z.object({
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 /**
- * Set a new password from a recovery link.
+ * Set a new password from a 6-digit email recovery code.
  *
  * The same confirmation rule as sign-up, for the same reason: a mistyped
  * password on this form locks the account out until another reset, so the match
  * is enforced on the server rather than trusted from the browser.
+ *
+ * `token` is the 6-digit OTP from the Supabase "Reset Password" email. The email
+ * must use the `{{ .Token }}` variable; this flow does not use a clickable link.
  */
 export const resetPasswordSchema = z
   .object({
+    email: emailSchema,
+    token: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, "otpInvalid"),
     password: z.string().min(8).max(200),
     confirmPassword: z.string().min(8).max(200),
   })

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -38,22 +39,43 @@ function SubmitButton({
 /**
  * Reset-password form.
  *
- * Reached only by following the recovery link, which `/auth/callback` exchanges
- * for a session. The action refuses without that session, so arriving here by
- * guessing the URL changes nothing — but the page still renders rather than
- * bouncing, so the customer sees why when the link has expired.
+ * The customer arrives from `/forgot-password` with the email in the query
+ * string and a 6-digit code in their inbox. The Server Action verifies the code
+ * with Supabase (`type: "recovery"`), updates the password in the same request,
+ * signs the recovery session out, and the form then sends the customer to the
+ * sign-in page. No clickable recovery link or pre-existing session is required,
+ * so an unauthenticated visitor can use this page directly.
  */
-export function ResetPasswordForm({ locale }: { locale: Locale }) {
+export function ResetPasswordForm({
+  locale,
+  initialEmail = "",
+}: {
+  locale: Locale;
+  initialEmail?: string;
+}) {
   const t = createTranslator(locale).t;
-  const [state, formAction] = useActionState(resetPasswordAction, INITIAL_STATE);
+  const router = useRouter();
+  const [state, formAction] = useActionState(
+    resetPasswordAction,
+    INITIAL_STATE,
+  );
+
+  useEffect(() => {
+    if (state.status !== "updated") return;
+    const timer = window.setTimeout(() => {
+      router.push(`/${locale}/login?reason=password_updated`);
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [locale, router, state.status]);
 
   if (state.status === "updated") {
     return (
       <Alert tone="success" title={t("auth.passwordUpdatedTitle")}>
         <p>{t("auth.passwordUpdatedBody")}</p>
+        <p className="mt-2 text-sm">{t("auth.redirectingToSignIn")}</p>
         <p className="mt-2">
           <Link
-            href={`/${locale}/login`}
+            href={`/${locale}/login?reason=password_updated`}
             className="font-medium underline underline-offset-4"
           >
             {t("auth.backToSignIn")}
@@ -85,11 +107,37 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
 
       {errors.form ? (
         <Alert tone="error">
-          {errors.form === "recoverySessionMissing"
-            ? t("auth.recoverySessionMissing")
+          {errors.form === "invalidOtp"
+            ? t("auth.invalidOtp")
             : t("auth.errorBody")}
         </Alert>
       ) : null}
+
+      <TextField
+        id="email"
+        name="email"
+        type="email"
+        label={t("auth.emailLabel")}
+        autoComplete="email"
+        defaultValue={initialEmail}
+        required
+        error={errorFor("email")}
+      />
+
+      <TextField
+        id="token"
+        name="token"
+        type="text"
+        label={t("auth.resetCodeLabel")}
+        hint={t("auth.resetCodeHint")}
+        autoComplete="one-time-code"
+        inputMode="numeric"
+        pattern="[0-9]{6}"
+        maxLength={6}
+        minLength={6}
+        required
+        error={errorFor("token")}
+      />
 
       <TextField
         id="password"

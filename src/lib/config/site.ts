@@ -36,7 +36,7 @@ export const SITE = {
  * so the honest value is the last revision of the content those routes render.
  * Bump this when a change to any statically-listed page ships.
  */
-export const SITE_REVISION_DATE = "2026-11-17";
+export const SITE_REVISION_DATE = "2026-11-23";
 
 /**
  * Brand colours, sampled from the supplied KC wordmark (black ink with a teal
@@ -77,6 +77,18 @@ export const DEPARTMENT_EMAILS: Record<DepartmentSlug, string> = {
   "electrical-services": "kcelectrical@kctechc.com",
   "real-estate": "kcrealestate@kctechc.com",
 };
+
+/**
+ * Real Estate agent phone numbers supplied by the business.
+ *
+ * `label` is the number as published; `tel` is the international dial string used
+ * for the `tel:` link. They are shown in the Real Estate section only, because
+ * they reach the agents rather than the corporate switchboard.
+ */
+export const REAL_ESTATE_AGENT_PHONES = [
+  { label: "674 865 583", tel: "+237674865583" },
+  { label: "659 717 870", tel: "+237659717870" },
+] as const;
 
 export type DepartmentDefinition = {
   slug: DepartmentSlug;

@@ -233,19 +233,21 @@ describe("forgotPasswordSchema", () => {
 });
 
 describe("resetPasswordSchema", () => {
-  it("accepts matching passwords", () => {
-    expect(
-      resetPasswordSchema.safeParse({
-        password: "new-passphrase",
-        confirmPassword: "new-passphrase",
-      }).success,
-    ).toBe(true);
+  const valid = {
+    email: "amina@example.com",
+    token: "123456",
+    password: "new-passphrase",
+    confirmPassword: "new-passphrase",
+  };
+
+  it("accepts a valid email, 6-digit code and matching passwords", () => {
+    expect(resetPasswordSchema.safeParse(valid).success).toBe(true);
   });
 
   it("rejects a mismatch", () => {
     expect(
       resetPasswordSchema.safeParse({
-        password: "new-passphrase",
+        ...valid,
         confirmPassword: "new-passphras",
       }).success,
     ).toBe(false);
@@ -254,9 +256,29 @@ describe("resetPasswordSchema", () => {
   it("rejects a password under the minimum length", () => {
     expect(
       resetPasswordSchema.safeParse({
+        ...valid,
         password: "short",
         confirmPassword: "short",
       }).success,
+    ).toBe(false);
+  });
+
+  it("requires six digits, allowing surrounding whitespace", () => {
+    for (const token of ["12345", "1234567", "12345a", ""]) {
+      expect(resetPasswordSchema.safeParse({ ...valid, token }).success).toBe(
+        false,
+      );
+    }
+
+    expect(
+      resetPasswordSchema.safeParse({ ...valid, token: " 123456 " }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an invalid email", () => {
+    expect(
+      resetPasswordSchema.safeParse({ ...valid, email: "not-an-email" })
+        .success,
     ).toBe(false);
   });
 });

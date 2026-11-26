@@ -3754,6 +3754,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   different one between Vercel and Supabase, makes `signInWithIdToken` fail; the button reports the
   generic OAuth error.
 
+### Password reset uses a 6-digit email OTP, not a clickable link
+
+- **`forgotPasswordAction` calls `supabase.auth.resetPasswordForEmail(email)` and then redirects to `/{locale}/reset-password?email=...`.** The locale comes from the `kc_locale` cookie, so the reset page stays in the language the visitor was using. No `redirectTo` is passed and no recovery session is required.
+- **The Supabase "Reset Password" email template must include `{{ .Token }}`.** The default `{{ .ConfirmationURL }}` link is not used by this flow; it is an external Supabase dashboard setting and cannot be changed from this repository. Without the `{{ .Token }}` variable the visitor receives a link instead of a 6-digit code.
+- **`resetPasswordAction` verifies the code server-side with `verifyOtp({ email, token, type: "recovery" })` and then calls `updateUser({ password })` in the same request.** It signs the short-lived recovery session out afterwards, records `password_changed` with `source: "recovery_otp"`, and returns `updated`; the form shows a success message and redirects to `/login?reason=password_updated`.
+- **`/forgot-password` and `/{locale}/reset-password` are public.** The proxy only localizes them; neither the page nor the form guards on a session. `/auth/callback` is not part of this flow (it remains for confirmation links and legacy recovery links), so a missing callback `code` cannot bounce an OTP visitor to sign-in.
+- **The old link-only path is deliberately gone.** `recoveryRedirectUrlFor`, `recoverySessionMissing` and the reset action's `getUser()` gate were removed; do not reintroduce them. The reset form pre-fills the email from the query string, accepts a 6-digit `token`, and maps field failures through `RESET_PASSWORD_ERROR_KEYS`.
+
 ### General customer favorites and the Customer account type
 
 - **The heart is one control for properties, products and articles.** `FavoriteButton`

@@ -43,6 +43,8 @@ export type SignUpFieldErrors = Partial<
 
 /** Maps a reset-password field to its message key. */
 export const RESET_PASSWORD_ERROR_KEYS = {
+  email: "invalidEmail",
+  token: "errOtp",
   password: "errPassword",
   confirmPassword: "errConfirmPassword",
   form: "errorBody",

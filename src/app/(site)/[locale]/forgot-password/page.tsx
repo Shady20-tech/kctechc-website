@@ -10,8 +10,9 @@ import { buildMetadata } from "@/lib/seo/metadata";
 /**
  * Forgot-password page.
  *
- * Customer-facing and localized. Collects an email and sends a recovery link.
- * Stayed reachable while signed out, which is the whole point.
+ * Customer-facing and localized. Collects an email and sends a 6-digit recovery
+ * code; the Server Action then redirects to the locale-scoped reset page. Stayed
+ * reachable while signed out, which is the whole point.
  */
 export const dynamic = "force-dynamic";
 

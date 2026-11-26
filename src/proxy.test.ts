@@ -87,6 +87,10 @@ describe("proxy locale-rewrite exclusions", () => {
     "/store/product/example",
     "/en/insights/some-article",
     "/privacy",
+    "/forgot-password",
+    "/reset-password",
+    "/en/forgot-password",
+    "/fr/reset-password",
   ])("still rewrites the public page %s", (pathname) => {
     expect(isRewritten(pathname)).toBe(true);
   });

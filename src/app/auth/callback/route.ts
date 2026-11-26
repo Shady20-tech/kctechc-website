@@ -13,6 +13,11 @@ import { resolvePostAuthPath } from "@/lib/auth/post-auth";
  * server-side, so the tokens never sit in a URL that page script could read and
  * never remain in the browser history after the redirect.
  *
+ * The password-reset OTP flow does not use this route: `/reset-password` calls
+ * `verifyOtp({ type: "recovery" })` directly, so a recovery code has no `code`
+ * for this handler to exchange, and a missing `code` here cannot redirect an OTP
+ * visitor to sign-in.
+ *
  * This is a Route Handler rather than a page for one reason: it must set cookies,
  * and a Server Component cannot. The exchange writes the auth cookie pair through
  * `createClient`, whose `setAll` is wired to the response cookie store.

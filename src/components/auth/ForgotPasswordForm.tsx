@@ -37,30 +37,15 @@ function SubmitButton({
 /**
  * Forgot-password form.
  *
- * Collects an email and asks Supabase to send a recovery link. The confirmation
- * is deliberately identical whether or not the address has an account: a form
- * that said "no account found" would be an account-enumeration oracle. The
- * customer is told to check their inbox, which is true in both cases.
+ * Collects an email and asks Supabase to send a 6-digit recovery code. The
+ * Server Action redirects to `/{locale}/reset-password?email=...`; the code is
+ * entered there. The response is deliberately identical whether or not the
+ * address has an account: a form that said "no account found" would be an
+ * account-enumeration oracle.
  */
 export function ForgotPasswordForm({ locale }: { locale: Locale }) {
   const t = createTranslator(locale).t;
   const [state, formAction] = useActionState(forgotPasswordAction, INITIAL_STATE);
-
-  if (state.status === "sent") {
-    return (
-      <Alert tone="success" title={t("auth.resetLinkSentTitle")}>
-        <p>{t("auth.resetLinkSentBody")}</p>
-        <p className="mt-2">
-          <Link
-            href={`/${locale}/login`}
-            className="font-medium underline underline-offset-4"
-          >
-            {t("auth.backToSignIn")}
-          </Link>
-        </p>
-      </Alert>
-    );
-  }
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
@@ -77,7 +62,7 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {state.status === "error" ? (
-        <Alert tone="error">{t("auth.invalidEmail")}</Alert>
+        <Alert tone="error">{t(state.messageKey)}</Alert>
       ) : null}
 
       <TextField

@@ -10,14 +10,13 @@ import { buildMetadata } from "@/lib/seo/metadata";
 /**
  * Reset-password page.
  *
- * Where a recovery link lands, via `/auth/callback` which exchanges the code for
- * a session first. Rendered inside the site layout so the customer is not dropped
- * into an unstyled form mid-flow.
+ * Public by design: the customer arrives from `/forgot-password` with the email
+ * in the query string and a 6-digit code in their inbox. No session or
+ * `/auth/callback` exchange is required — the Server Action verifies the code with
+ * Supabase and sets the new password in one request.
  *
- * The form does not check for a recovery session before rendering — the Server
- * Action does, and reports a missing session as a reason. Checking here would mean
- * a visitor who opened the page directly saw a redirect instead of an explanation
- * of what to do next.
+ * The form does not check for a session before rendering, and neither does the
+ * page: an unauthenticated visitor must be able to enter the code.
  */
 export const dynamic = "force-dynamic";
 
@@ -40,11 +39,16 @@ export async function generateMetadata({
 
 export default async function ResetPasswordPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ email?: string | string[] }>;
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+
+  const { email } = await searchParams;
+  const initialEmail = Array.isArray(email) ? (email[0] ?? "") : (email ?? "");
 
   const resolved: Locale = locale;
   const t = createTranslator(resolved).t;
@@ -57,7 +61,7 @@ export default async function ResetPasswordPage({
           intro={t("auth.resetPasswordDescription")}
         />
         <div className="mt-6">
-          <ResetPasswordForm locale={resolved} />
+          <ResetPasswordForm locale={resolved} initialEmail={initialEmail} />
         </div>
       </div>
     </SectionBand>

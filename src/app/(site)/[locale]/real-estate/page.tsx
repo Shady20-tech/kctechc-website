@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { SectionBand } from "@/components/layout/PageShell";
 import { PropertyMap } from "@/components/maps/PropertyMap";
+import { AgentContacts } from "@/components/real-estate/AgentContacts";
 import { ListingGrid, listingHref } from "@/components/real-estate/ListingCard";
 import { MarketplaceSearch } from "@/components/real-estate/MarketplaceSearch";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
@@ -208,6 +209,7 @@ export default async function RealEstatePage({
                 departmentEmail={DEPARTMENT_EMAILS["real-estate"]}
               />
             </div>
+            <AgentContacts locale={resolved} className="mt-6" />
           </div>
         </SectionBand>
       ) : (
@@ -394,7 +396,7 @@ export default async function RealEstatePage({
             </SectionBand>
           ) : null}
 
-          <div className="container-page section">
+          <div className="container-page section grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
             <CtaBand
               locale={resolved}
               t={t}
@@ -402,6 +404,7 @@ export default async function RealEstatePage({
               body={t("realEstate.marketplace.postCtaIntro")}
               accent
             />
+            <AgentContacts locale={resolved} />
           </div>
         </>
       )}

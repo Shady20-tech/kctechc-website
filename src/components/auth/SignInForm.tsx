@@ -108,11 +108,13 @@ export function SignInForm({
         ? t("auth.notConfiguredBody")
         : initialReason === "deleted"
           ? t("auth.accountDeleted")
-          : initialReason === "oauth_unavailable"
-            ? t("auth.oauthUnavailable")
-            : initialReason === "oauth_failed"
-              ? t("auth.oauthFailed")
-              : null;
+          : initialReason === "password_updated"
+            ? t("auth.passwordUpdatedBody")
+            : initialReason === "oauth_unavailable"
+              ? t("auth.oauthUnavailable")
+              : initialReason === "oauth_failed"
+                ? t("auth.oauthFailed")
+                : null;
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
