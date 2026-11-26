@@ -60,4 +60,8 @@ describe("propertyMediaPublicUrl", () => {
     expect(propertyMediaPublicUrl("")).toBeNull();
     expect(propertyMediaPublicUrl("///")).toBeNull();
   });
+
+  it("returns null for an external image reference", () => {
+    expect(propertyMediaPublicUrl("https://imgur.com/undefined")).toBeNull();
+  });
 });

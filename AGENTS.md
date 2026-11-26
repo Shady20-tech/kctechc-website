@@ -3745,6 +3745,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   so a crafted POST cannot start a provider the UI does not offer. The action also carries a
   validated `next` through `oauthCallbackUrl`, so both providers preserve a protected-page return
   target.
+- **Apple is deliberately not an offered provider.** `OAUTH_PROVIDERS` and
+  `SERVER_OAUTH_PROVIDERS` are exactly `["google", "facebook"]`; `isOAuthProvider("apple")` and
+  `isServerOAuthProvider("apple")` both return false, so neither the button list nor the Server
+  Action can start an Apple flow. `.env.example` does not mention Apple. If an older Supabase
+  project still has the Apple provider enabled in its dashboard, disable it there as well: the code
+  no longer requests it, but the provider remains a configured sign-in method until removed in
+  Supabase.
 - **Google Cloud Console setup is part of the feature.** The OAuth client is a Web application; add
   every site origin (`https://kctechc.com`, `https://www.kctechc.com`, preview domains,
   `http://localhost:3000`) to Authorized JavaScript origins. Keep
@@ -3813,3 +3820,30 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   succeeds. Preview smoke on the standalone server: `/en/favorites` redirects a signed-out visitor
   to login, `/api/favorites/summary` returns the empty id sets, and the public pages and CSS return
   200.
+
+### Invalid external image references (`https://imgur.com/undefined`)
+
+- **The application never constructs an Imgur URL.** Every dashboard image is resolved by one of
+  four builders — `storagePublicUrl` (products), `propertyMediaPublicUrl` (listings), `projectMediaPublicUrl`
+  (projects) and `publicBucketUrl`/`contentMediaUrl`/`avatarPublicUrl` (insights, avatars and the
+  rest). Each derives a Supabase Storage URL from a bucket-relative object path. A value such as
+  `https://imgur.com/undefined` can only come from stored data, a manual console edit or a browser
+  extension; it is not emitted by the admin form, which accepts device files and has no image-URL
+  field.
+- **The render boundary now rejects it anyway.** `src/lib/uploads/object-path.ts` is the single
+  `isStorageObjectPath` predicate; all four builders use it, and `productImageSrc` accepts a bundled
+  `publicPath` only when it is root-relative. A bad reference becomes a placeholder instead of a
+  request to an unrelated host, on every admin dashboard and public surface.
+- **Migration `20260101000082_invalid_image_reference_cleanup.sql` repairs existing rows** across
+  product, listing, project and insight media, avatar, agent photo, article cover, listing evidence,
+  `entity_seo`/`seo_metadata` OG images and `site_settings`. It steps a published product back to
+  draft only when every media row attached to it is invalid, deletes the invalid media rows, clears
+  the single-image columns, adds narrow `imgur.com/undefined` guards to the unconstrained ones, and
+  raises if any reference remains. It does not rewrite prose (descriptions or article bodies), so an
+  author's words are never silently edited.
+- **Product media copy now states the contract:** photographs are uploaded from the device on the
+  product detail page; image URLs are not accepted. The product detail gallery also marks any
+  invalid stored reference and offers its existing Remove control.
+- 1709 Vitest tests pass (148 files); `tsc --noEmit`, ESLint and the production build are clean. The
+  new SQL parses with `pglast` (the local Postgres harness is unavailable here, so the validate
+  scripts were not replayed).

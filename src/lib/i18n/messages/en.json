@@ -423,7 +423,7 @@
       "fieldSeoTitleHint": "Overrides the product name in search results. Leave blank to use the name.",
       "fieldSeoDescription": "SEO description",
       "draftNoticeHeading": "Saved as a draft",
-      "draftNoticeBody": "A product cannot be published without an image. Add one, then publish it from the product list.",
+      "draftNoticeBody": "A product cannot be published without an image. Save it, then upload photographs from your device on its product page; image URLs are not accepted.",
       "submit": "Create product",
       "errors": {
         "unauthenticated": "Your session has ended. Sign in again and retry.",
@@ -460,7 +460,7 @@
       "columnAvailability": "Availability",
       "detailsHeading": "Product details",
       "imagesHeading": "Product images",
-      "imagesIntro": "Add one or more photographs. The first image is used on cards, in search results and for social sharing; the rest form the gallery on the product page. A product needs at least one image before it can be published.",
+      "imagesIntro": "Add one or more photographs. The first image is used on cards, in search results and for social sharing; the rest form the gallery on the product page. A product needs at least one image before it can be published. Upload files from your device; image URLs are not accepted.",
       "imageRemove": "Remove image",
       "imageRemoved": "Image removed.",
       "imageAddedPartial": "Some images were added. One file could not be used — check its format and size, then add it again.",
@@ -490,7 +490,9 @@
       "saveChanges": "Save changes",
       "editHeading": "Edit product",
       "editIntro": "Update the product details. Images are managed below on the product page.",
-      "deleteHeading": "Permanently delete this product"
+      "deleteHeading": "Permanently delete this product",
+      "imageInvalid": "This image reference is invalid and cannot be displayed. Remove it, then upload the photograph from your device.",
+      "imageUploadNotice": "This step creates the product details. Save the product first, then upload photographs from your device on its product page. Image URLs are not accepted."
     },
     "projectsHeading": "Electrical projects",
     "projectsIntro": "Create and publish project records. A project only becomes public when it is published, and publishing requires a published date.",

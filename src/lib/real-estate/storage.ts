@@ -1,4 +1,5 @@
 import { publicEnv } from "@/lib/config/env";
+import { isStorageObjectPath } from "@/lib/uploads/object-path";
 
 /**
  * Property media URLs.
@@ -26,10 +27,9 @@ export const PROPERTY_MEDIA_BUCKET = "property-media";
  */
 export function propertyMediaPublicUrl(objectPath: string): string | null {
   if (!publicEnv.supabaseUrl) return null;
+  if (!isStorageObjectPath(objectPath)) return null;
   const base = publicEnv.supabaseUrl.replace(/\/$/, "");
-  const clean = objectPath.replace(/^\/+/, "");
-  if (clean.length === 0) return null;
-  return `${base}/storage/v1/object/public/${PROPERTY_MEDIA_BUCKET}/${clean}`;
+  return `${base}/storage/v1/object/public/${PROPERTY_MEDIA_BUCKET}/${objectPath.trim()}`;
 }
 
 /**

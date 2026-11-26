@@ -423,7 +423,7 @@
       "fieldSeoTitleHint": "Remplace le nom du produit dans les résultats de recherche. Laissez vide pour utiliser le nom.",
       "fieldSeoDescription": "Description SEO",
       "draftNoticeHeading": "Enregistré comme brouillon",
-      "draftNoticeBody": "Un produit ne peut pas être publié sans image. Ajoutez-en une, puis publiez le produit depuis la liste.",
+      "draftNoticeBody": "Un produit ne peut pas être publié sans image. Enregistrez-le, puis importez des photos depuis votre appareil sur sa page produit ; les URL d'images ne sont pas acceptées.",
       "submit": "Créer le produit",
       "errors": {
         "unauthenticated": "Votre session a expiré. Reconnectez-vous puis réessayez.",
@@ -460,7 +460,7 @@
       "columnAvailability": "Disponibilité",
       "detailsHeading": "Détails du produit",
       "imagesHeading": "Images du produit",
-      "imagesIntro": "Ajoutez une ou plusieurs photos. La première image est utilisee sur les fiches, dans les resultats de recherche et pour le partage social ; les autres forment la galerie de la page produit. Un produit doit avoir au moins une image avant de pouvoir etre publie.",
+      "imagesIntro": "Ajoutez une ou plusieurs photos. La première image est utilisée sur les fiches, dans les résultats de recherche et pour le partage social ; les autres forment la galerie de la page produit. Un produit doit avoir au moins une image avant de pouvoir être publié. Importez des fichiers depuis votre appareil ; les URL d'images ne sont pas acceptées.",
       "imageRemove": "Supprimer l'image",
       "imageRemoved": "Image supprimee.",
       "imageAddedPartial": "Quelques images ont ete ajoutees. Un fichier n'a pas pu etre utilise — verifiez son format et sa taille, puis ajoutez-le de nouveau.",
@@ -490,7 +490,9 @@
       "saveChanges": "Enregistrer les modifications",
       "editHeading": "Modifier le produit",
       "editIntro": "Mettez à jour les détails du produit. Les images sont gérées ci-dessous, sur la page du produit.",
-      "deleteHeading": "Supprimer définitivement ce produit"
+      "deleteHeading": "Supprimer définitivement ce produit",
+      "imageInvalid": "Cette référence d'image est invalide et ne peut pas être affichée. Supprimez-la, puis importez la photo depuis votre appareil.",
+      "imageUploadNotice": "Cette étape crée les informations du produit. Enregistrez d'abord le produit, puis importez des photos depuis votre appareil sur sa page produit. Les URL d'images ne sont pas acceptées."
     },
     "projectsHeading": "Projets électriques",
     "projectsIntro": "Créez et publiez des fiches de projet. Un projet ne devient public que lorsqu'il est publié, et la publication exige une date de publication.",

@@ -101,6 +101,10 @@ export function ProductForm({
         <input type="hidden" name="productId" value={initial.id} />
       ) : null}
 
+      {!editing ? (
+        <Notice tone="info">{t("admin.store.imageUploadNotice")}</Notice>
+      ) : null}
+
       {state.ok ? (
         <Notice
           tone="success"
