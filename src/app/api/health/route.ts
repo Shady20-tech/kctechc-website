@@ -44,12 +44,22 @@ async function probeAdminKey(): Promise<AdminProbe> {
     // A real round trip is the only way to tell a present key from a key the
     // server accepts. The table is a seeded reference table, so a successful
     // head request proves authentication without reading any business row.
-    const { error } = await admin
-      .from("departments")
-      .select("id", { count: "exact", head: true });
-    if (error) {
+    try {
+      const { error } = await admin
+        .from("departments")
+        .select("id", { count: "exact", head: true });
+      if (error) {
+        value.status = "error";
+        value.code = error.code ?? "unknown";
+      }
+    } catch (error) {
+      // An unreachable project throws before PostgREST answers. Report it as a
+      // probe failure rather than letting the health endpoint return 500.
       value.status = "error";
-      value.code = error.code ?? "unknown";
+      value.code =
+        error && typeof error === "object" && "code" in error
+          ? String((error as { code?: unknown }).code ?? "network")
+          : "network";
     }
   }
 
