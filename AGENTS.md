@@ -495,19 +495,11 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     warning, so it was only visible from the standalone server — Lighthouse surfaced it as
     `errors-in-console` on the product page, which prefetches its category. Fixed with
     `export const dynamic = "force-dynamic"` on that route.
-- 1546 Vitest tests pass (126 files). Lighthouse with applied throttling across `/en`, `/fr`,
+- 1460 Vitest tests pass (116 files). Lighthouse with applied throttling across `/en`, `/fr`,
   `/en/real-estate/listings`, a listing detail, the store index, a product detail and
   `/en/electrical-services`: accessibility, best-practices and SEO are **100** on every surface;
   performance measures 89-97. No horizontal overflow at 320/375/768/1440 on the marketplace, listing
   detail or product detail.
-- An insight article's uploaded cover now renders as the public hero and as the index/category card
-  image. The upload path already existed and was correctly gated; the stored
-  `cover_image_path` was only ever read by `articleJsonLd`, so the photograph fed structured data
-  and never appeared on the page. `InsightCard` is now the single card renderer for
-  `/[locale]/insights` and `/[locale]/insights/category/[category]`, and the article hero uses
-  `HeroMedia` with a dedicated `.hero-scrim-article` (an arbitrary upload can be pure white, where
-  the shared scrim left the byline at 1.65:1). Cover uploads revalidate the public article and
-  index paths for both locales. See "Article cover images" below.
 - KYC verification (Phase 2 of the real-estate work) is implemented:
   - Migration `20260101000060_kyc_verification.sql` creates `real_estate_kyc_applications`,
     `real_estate_kyc_documents`, `real_estate_kyc_review_events` and `listing_legal_documents`,
@@ -3349,27 +3341,6 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
 
 ### Store cart gotchas worth not rediscovering
 
-- **Migrations do not configure the service-role key, and a missing key is not a database problem.**
-  `createProductAction`, every media upload, audit write and privileged admin query calls
-  `createAdminClient()`, which returns `null` unless both the public Supabase config and a
-  server-side Supabase key are present. The form then reports `unconfigured` while the rest of
-  the site and the signed-in session work normally, which reads as "the migrations did not run".
-  Set the key in the deployment environment (Vercel project env, or the VPS `.env`/systemd unit) and
-  redeploy/restart; never give it a `NEXT_PUBLIC_` prefix. The console now carries a warning banner
-  when the key is absent, the store's admin error names the variable, and
-  `/api/health` exposes `integrations.supabaseAdmin` plus the variable name that supplied it
-  (`supabaseAdminKeySource`) so the state can be checked without reading the secret.
-- **Supabase now issues two server-key formats, and the env name must match what the app reads.**
-  `serverEnv` accepts `SUPABASE_SERVICE_ROLE_KEY` (the legacy `service_role` JWT) and
-  `SUPABASE_SECRET_KEY` (the newer `sb_secret_…` key), with the legacy name winning. A project
-  migrated to the new API keys exposes only `sb_secret_…`, and copying it into a variable the app
-  never reads looks exactly like "the key is missing". `@supabase/supabase-js` 2.117+ sends an
-  `sb_secret_` key as the `apikey` header only, never as a Bearer token; an older client version
-  may reject it. The key is read through a module constant, so adding it to `.env.local` while the
-  server is running changes nothing: restart `next dev`/the standalone server, or redeploy. Check
-  `/api/health` for `supabaseAdmin: true` after the restart, not just the dashboard's saved value.
-  A key pasted into chat, an issue or a screenshot is compromised: rotate it in Supabase before
-  redeploying.
 - **`npm run build` deletes `.next/standalone` wholesale, including any `.env` you copied into it.**
   The standalone bundle is regenerated from scratch, so `cp .env.local .next/standalone/.env` must be
   repeated after every build, before restarting `server.js`. The symptom is the previous session's
