@@ -1321,8 +1321,10 @@ clientWidth` on every department (no horizontal scroll), the trigger reads "Filt
   The symptom is invisible in unit tests, which never exercise prerendering. `createPublicClient()`
   is stateless and anonymous, which is the correct access level: RLS already limits it to published
   rows, and the loaders additionally filter `publish_state = 'published'`. `loadCategoryOptions()`
-  is the deliberate exception — it backs the admin product form and must see unpublished categories,
-  so it keeps the session client. `src/lib/supabase/public.test.ts` pins this split.
+  is the deliberate exception — it backs the admin product form and must see unpublished categories.
+  It now uses the service-role client because the hosted project's browser role lacked EXECUTE on
+  `is_department_editor()`, which its RLS policy calls. `src/lib/supabase/public.test.ts` pins that
+  the storefront reads stay stateless and the admin-only category read is the one admin-client import.
 
 ### Phase 2 gotchas worth not rediscovering
 
