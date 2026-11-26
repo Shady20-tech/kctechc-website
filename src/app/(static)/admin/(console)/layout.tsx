@@ -1,9 +1,12 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
 import { ViewSiteLink } from "@/components/layout/ViewSiteLink";
+import { Notice } from "@/components/ui/Notice";
 import { resolveAvatarUrl } from "@/components/admin/Avatar";
 import { navSectionsForRoleClient } from "@/lib/admin/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
+import { isSupabaseConfigured } from "@/lib/config/env";
+import { serverEnv } from "@/lib/config/server-env";
 import { createTranslator } from "@/lib/i18n/translator";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +34,12 @@ export default async function ConsoleLayout({
   const profile = await requireAdmin("/admin");
   const t = createTranslator("en").t;
   const sections = navSectionsForRoleClient(profile.role);
+  // Every privileged admin write, audit insert and Storage upload uses the
+  // service-role client. Its absence is a deployment problem, not a database
+  // migration problem, so say so at the top of the console instead of letting
+  // each form report the misleading "store is not connected to a database".
+  const serviceRoleConfigured =
+    isSupabaseConfigured() && Boolean(serverEnv.supabaseServiceRoleKey);
 
   const labels: Record<string, string> = {
     consoleName: t("adminNav.consoleName"),
@@ -114,6 +123,16 @@ export default async function ConsoleLayout({
         </header>
 
         <main id="main" className="px-4 py-8 sm:px-8">
+          {!serviceRoleConfigured ? (
+            <div className="mb-6">
+              <Notice
+                tone="warning"
+                title={t("adminNav.serviceRoleMissingTitle")}
+              >
+                <p>{t("adminNav.serviceRoleMissingBody")}</p>
+              </Notice>
+            </div>
+          ) : null}
           {children}
         </main>
       </div>

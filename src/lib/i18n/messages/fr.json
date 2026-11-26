@@ -429,7 +429,7 @@
         "unauthenticated": "Votre session a expiré. Reconnectez-vous puis réessayez.",
         "forbidden": "Votre rôle ne permet pas de créer des produits.",
         "forbidden_department": "Cette catégorie appartient à un autre département. Choisissez une catégorie de votre propre département.",
-        "unconfigured": "La boutique n'est pas connectée à une base de données.",
+        "unconfigured": "La clé de rôle de service Supabase du serveur est absente. Ajoutez SUPABASE_SERVICE_ROLE_KEY à l'environnement de déploiement puis redéployez.",
         "invalid": "Certains champs nécessitent votre attention. Les messages sont affichés sous chacun d'eux.",
         "duplicate": "Un produit utilise déjà cet identifiant ou cette référence.",
         "write_failed": "Le produit n'a pas pu être enregistré. Veuillez réessayer.",
@@ -2104,7 +2104,9 @@
     "digitalMarketing": "Marketing numérique",
     "electricalServices": "Services électriques",
     "realEstate": "Immobilier",
-    "reviews": "Avis"
+    "reviews": "Avis",
+    "serviceRoleMissingTitle": "La clé de rôle de service Supabase du serveur est absente",
+    "serviceRoleMissingBody": "Les écritures d’administration, les envois d’images et la journalisation d’audit nécessitent SUPABASE_SERVICE_ROLE_KEY. Ajoutez-la à l’environnement de déploiement (jamais avec le préfixe NEXT_PUBLIC_) puis redéployez. Il s’agit de configuration serveur, pas de migrations de base de données."
   },
   "roleName": {
     "super_admin": "Super administrateur",

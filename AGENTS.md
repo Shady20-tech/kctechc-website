@@ -3349,6 +3349,16 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
 
 ### Store cart gotchas worth not rediscovering
 
+- **Migrations do not configure the service-role key, and a missing key is not a database problem.**
+  `createProductAction`, every media upload, audit write and privileged admin query calls
+  `createAdminClient()`, which returns `null` unless both the public Supabase config and
+  `SUPABASE_SERVICE_ROLE_KEY` are present. The form then reports `unconfigured` while the rest of
+  the site and the signed-in session work normally, which reads as "the migrations did not run".
+  Set the key in the deployment environment (Vercel project env, or the VPS `.env`/systemd unit) and
+  redeploy/restart; never give it a `NEXT_PUBLIC_` prefix. The console now carries a warning banner
+  when the key is absent, the store's admin error names the variable, and
+  `/api/health` exposes a boolean `integrations.supabaseAdmin` so the state can be checked without
+  reading the secret.
 - **`npm run build` deletes `.next/standalone` wholesale, including any `.env` you copied into it.**
   The standalone bundle is regenerated from scratch, so `cp .env.local .next/standalone/.env` must be
   repeated after every build, before restarting `server.js`. The symptom is the previous session's

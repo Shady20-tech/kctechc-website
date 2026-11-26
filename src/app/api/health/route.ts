@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, publicEnv } from "@/lib/config/env";
-import { isEmailConfigured } from "@/lib/config/server-env";
+import { isEmailConfigured, serverEnv } from "@/lib/config/server-env";
 
 // Cache the probe briefly so monitoring cannot turn into a load source.
 export const revalidate = 30;
@@ -23,6 +23,10 @@ export function GET() {
     },
     integrations: {
       supabase: isSupabaseConfigured(),
+      // Boolean only, never the value. Admin writes and Storage uploads use the
+      // service-role client; without this key every one of them reports
+      // "unconfigured" even when the public Supabase connection is healthy.
+      supabaseAdmin: Boolean(serverEnv.supabaseServiceRoleKey),
       tolgee: Boolean(publicEnv.tolgeeProjectId),
       email: isEmailConfigured(),
       maps: publicEnv.mapProvider,
