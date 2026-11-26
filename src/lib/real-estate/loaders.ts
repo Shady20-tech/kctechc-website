@@ -3,6 +3,12 @@ import "server-only";
 import type { Locale } from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { describeSupabaseError } from "@/lib/supabase/errors";
+import {
+  adminReadClient,
+  unconfiguredRead,
+  type AdminReadResult,
+} from "@/lib/supabase/admin-read";
 
 import type {
   ListingPropertyKind,
@@ -29,6 +35,8 @@ import {
   PRIMARY_CURRENCY,
   type ListingSort,
 } from "./search";
+export type { AdminReadResult } from "@/lib/supabase/admin-read";
+
 import type {
   AdminListingRecord,
   AgentRecord,
@@ -44,11 +52,11 @@ import type {
  *
  *   - Public reads go through the anonymous, RLS-bound client, so "a draft is not
  *     public" is enforced by the database rather than by a filter this code could
- *     forget. Admin reads use the session client, where the policies grant the
- *     caller their own listings or the whole portfolio according to their role.
- *   - On any failure — unconfigured, unreachable, malformed — a loader returns an
- *     empty result rather than throwing, so a database outage shows the empty
- *     state instead of an error page.
+ *     forget. Admin reads use the service-role client behind a role guard, with
+ *     the session client as the fallback, and the `*Result` forms report the real
+ *     PostgREST error instead of collapsing it into an empty list.
+ *   - The older list-returning forms remain for callers that already render an
+ *     empty state; they return an empty list on failure by design.
  *
  * The private detail is loaded through a SEPARATE function from the public
  * record, and never joined into it. That is the point of the two-table design: a
@@ -1115,13 +1123,25 @@ function toAdminRecord(
  * disagree with the policy — and the policy is the one that holds for every
  * writer, including a migration.
  */
-export async function loadAdminListings(
+export async function loadAdminListingsResult(
   options: { status?: ListingStatus; search?: string; limit?: number } = {},
-): Promise<AdminListingRecord[]> {
+  client: "admin" | "session" = "session",
+): Promise<AdminReadResult<AdminListingRecord[]>> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
   try {
-    const supabase = await createClient();
-    if (!supabase) return [];
+    supabase = client === "session" ? await createClient() : await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return unconfiguredRead();
+  }
 
+  try {
     let query = supabase
       .from("property_listings")
       .select(
@@ -1144,22 +1164,47 @@ export async function loadAdminListings(
     }
 
     const { data, error } = await query;
-    if (error || !data) return [];
-    return data.map((row) => toAdminRecord(row as ListingRow));
-  } catch {
-    return [];
+    if (error) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+    return {
+      ok: true,
+      data: (data ?? []).map((row) => toAdminRecord(row as ListingRow)),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }
 
 /** Load one listing for editing, or null when the caller may not see it. */
-export async function loadAdminListingById(
+export async function loadAdminListingByIdResult(
   id: string,
-): Promise<AdminListingRecord | null> {
+  client: "admin" | "session" = "session",
+): Promise<AdminReadResult<AdminListingRecord | null>> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
   try {
-    const supabase = await createClient();
-    if (!supabase) return null;
+    supabase = client === "session" ? await createClient() : await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return unconfiguredRead();
+  }
 
-    const { data } = await supabase
+  try {
+    const { data, error } = await supabase
       .from("property_listings")
       .select(
         "id, reference, slug, listing_type, property_kind, property_type, status, source, locality, title, description, highlights, amenities, price_minor, currency, price_period, price_on_request, land_area_sqm, building_area_sqm, bedrooms, bathrooms, year_built, is_featured, view_count, inquiry_count, published_at, closed_at, listed_on, agent_id, created_at, updated_at, region_id, division_id, subdivision_id, regions (slug, name, name_fr), agent_profiles (display_name), listing_submissions (id, status)",
@@ -1167,21 +1212,42 @@ export async function loadAdminListingById(
       .eq("id", id)
       .maybeSingle();
 
-    if (!data) return null;
+    if (error) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+    if (!data) return { ok: true, data: null };
 
-    // The gallery is read through the session client, whose policies give an
-    // administrator the listings they may manage and an agent only their own —
-    // the same rule the listing row above is subject to. `listing_media` is a
-    // child table, so it carries its own policies rather than inheriting them.
-    const { data: media } = await supabase
+    // The gallery is read through the same client as the listing, so an
+    // administrator sees the whole gallery and the fallback session client is
+    // still scoped by `listing_media`'s policies.
+    const { data: media, error: mediaError } = await supabase
       .from("listing_media")
       .select("id, storage_path, alt_text, caption, position, is_primary, width, height")
       .eq("listing_id", id)
       .order("position", { ascending: true });
 
-    return toAdminRecord(data as ListingRow, media ?? []);
-  } catch {
-    return null;
+    if (mediaError) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(mediaError),
+      };
+    }
+
+    return {
+      ok: true,
+      data: toAdminRecord(data as ListingRow, media ?? []),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }
 
@@ -1364,14 +1430,40 @@ export async function loadListingPrivateDetails(listingId: string) {
  * Ordered oldest first, because a review queue is worked front to back and the
  * oldest waiting item is the one at risk of breaching a response time.
  */
-export async function loadListingSubmissions(
+export async function loadListingSubmissionsResult(
   status: "pending_review" | "approved" | "rejected" | "changes_requested" = "pending_review",
-) {
+  client: "admin" | "session" = "session",
+): Promise<AdminReadResult<readonly {
+  id: string;
+  listingId: string;
+  listingReference: string;
+  listingTitle: string;
+  listingSlug: string;
+  status: "pending_review" | "approved" | "rejected" | "changes_requested";
+  submitterName: string;
+  submitterEmail: string | undefined;
+  submitterPhone: string | undefined;
+  notes: string | undefined;
+  reviewedAt: string | undefined;
+  reviewNotes: string | undefined;
+  createdAt: string;
+}[]>> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
   try {
-    const supabase = await createClient();
-    if (!supabase) return [];
+    supabase = client === "session" ? await createClient() : await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return unconfiguredRead();
+  }
 
-    const { data } = await supabase
+  try {
+    const { data, error } = await supabase
       .from("listing_submissions")
       .select(
         "id, listing_id, status, submitter_name, submitter_email, submitter_phone, notes, reviewed_at, review_notes, created_at, property_listings (reference, title, slug)",
@@ -1379,31 +1471,46 @@ export async function loadListingSubmissions(
       .eq("status", status)
       .order("created_at", { ascending: true });
 
-    return (data ?? []).map((row) => {
-      const listing = row.property_listings as {
-        reference?: unknown;
-        title?: unknown;
-        slug?: unknown;
-      } | null;
-
+    if (error) {
       return {
-        id: row.id,
-        listingId: row.listing_id,
-        listingReference: asString(listing?.reference) ?? "",
-        listingTitle: asString(listing?.title) ?? "",
-        listingSlug: asString(listing?.slug) ?? "",
-        status: row.status,
-        submitterName: asString(row.submitter_name) ?? "",
-        submitterEmail: asString(row.submitter_email),
-        submitterPhone: asString(row.submitter_phone),
-        notes: asString(row.notes),
-        reviewedAt: asString(row.reviewed_at),
-        reviewNotes: asString(row.review_notes),
-        createdAt: row.created_at ?? "",
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(error),
       };
-    });
-  } catch {
-    return [];
+    }
+
+    return {
+      ok: true,
+      data: (data ?? []).map((row) => {
+        const listing = row.property_listings as {
+          reference?: unknown;
+          title?: unknown;
+          slug?: unknown;
+        } | null;
+
+        return {
+          id: row.id,
+          listingId: row.listing_id,
+          listingReference: asString(listing?.reference) ?? "",
+          listingTitle: asString(listing?.title) ?? "",
+          listingSlug: asString(listing?.slug) ?? "",
+          status: row.status,
+          submitterName: asString(row.submitter_name) ?? "",
+          submitterEmail: asString(row.submitter_email),
+          submitterPhone: asString(row.submitter_phone),
+          notes: asString(row.notes),
+          reviewedAt: asString(row.reviewed_at),
+          reviewNotes: asString(row.review_notes),
+          createdAt: row.created_at ?? "",
+        };
+      }),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }
 
@@ -1467,21 +1574,34 @@ export async function loadAgents(): Promise<AgentRecord[]> {
  * dashboard needs the totals and nothing else, and a portfolio of a few thousand
  * listings should not be transferred to answer six numbers.
  */
-export async function loadRealEstateOverview() {
-  const empty = {
-    total: 0,
-    drafts: 0,
-    pendingReview: 0,
-    published: 0,
-    archived: 0,
-    pendingSubmissions: 0,
-    activeAgents: 0,
-  };
+export type RealEstateOverview = {
+  total: number;
+  drafts: number;
+  pendingReview: number;
+  published: number;
+  archived: number;
+  pendingSubmissions: number;
+  activeAgents: number;
+};
+
+export async function loadRealEstateOverviewResult(
+  client: "admin" | "session" = "session",
+): Promise<AdminReadResult<RealEstateOverview>> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
+  try {
+    supabase = client === "session" ? await createClient() : await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return unconfiguredRead();
+  }
 
   try {
-    const supabase = await createClient();
-    if (!supabase) return empty;
-
     const countIn = (status: readonly ListingStatus[]) =>
       supabase
         .from("property_listings")
@@ -1512,39 +1632,70 @@ export async function loadRealEstateOverview() {
         .eq("is_active", true),
     ]);
 
+    const failure = [total, drafts, pending, published, archived, submissions, agents]
+      .map((result) => result.error)
+      .find(Boolean);
+    if (failure) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(failure),
+      };
+    }
+
     return {
-      total: total.count ?? 0,
-      drafts: drafts.count ?? 0,
-      pendingReview: pending.count ?? 0,
-      published: published.count ?? 0,
-      archived: archived.count ?? 0,
-      pendingSubmissions: submissions.count ?? 0,
-      activeAgents: agents.count ?? 0,
+      ok: true,
+      data: {
+        total: total.count ?? 0,
+        drafts: drafts.count ?? 0,
+        pendingReview: pending.count ?? 0,
+        published: published.count ?? 0,
+        archived: archived.count ?? 0,
+        pendingSubmissions: submissions.count ?? 0,
+        activeAgents: agents.count ?? 0,
+      },
     };
-  } catch {
-    return empty;
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }
 
 /** The region, division and subdivision options the listing form needs. */
-export async function loadGeographyOptions(): Promise<
-  readonly {
+export type GeographyOptions = readonly {
+  id: string;
+  name: string;
+  code: string;
+  divisions: readonly {
     id: string;
     name: string;
     code: string;
-    divisions: readonly {
-      id: string;
-      name: string;
-      code: string;
-      subdivisions: readonly { id: string; name: string; code: string }[];
-    }[];
-  }[]
-> {
-  try {
-    const supabase = await createClient();
-    if (!supabase) return [];
+    subdivisions: readonly { id: string; name: string; code: string }[];
+  }[];
+}[];
 
-    const [{ data: regions }, { data: divisions }, { data: subdivisions }] =
+export async function loadGeographyOptionsResult(
+  client: "admin" | "session" = "session",
+): Promise<AdminReadResult<GeographyOptions>> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
+  try {
+    supabase = client === "session" ? await createClient() : await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return unconfiguredRead();
+  }
+
+  try {
+    const [regionsResult, divisionsResult, subdivisionsResult] =
       await Promise.all([
         supabase
           .from("regions")
@@ -1560,29 +1711,48 @@ export async function loadGeographyOptions(): Promise<
           .order("name", { ascending: true }),
       ]);
 
-    if (!regions) return [];
+    const failure =
+      regionsResult.error ?? divisionsResult.error ?? subdivisionsResult.error;
+    if (failure) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(failure),
+      };
+    }
 
-    return regions.map((region) => ({
-      id: region.id,
-      name: region.name,
-      code: region.code,
-      divisions: (divisions ?? [])
-        .filter((division) => division.region_id === region.id)
-        .map((division) => ({
-          id: division.id,
-          name: division.name,
-          code: division.code,
-          subdivisions: (subdivisions ?? [])
-            .filter((subdivision) => subdivision.division_id === division.id)
-            .map((subdivision) => ({
-              id: subdivision.id,
-              name: subdivision.name,
-              code: subdivision.code,
-            })),
-        })),
-    }));
-  } catch {
-    return [];
+    const regions = regionsResult.data ?? [];
+    const divisions = divisionsResult.data ?? [];
+    const subdivisions = subdivisionsResult.data ?? [];
+
+    return {
+      ok: true,
+      data: regions.map((region) => ({
+        id: region.id,
+        name: region.name,
+        code: region.code,
+        divisions: divisions
+          .filter((division) => division.region_id === region.id)
+          .map((division) => ({
+            id: division.id,
+            name: division.name,
+            code: division.code,
+            subdivisions: subdivisions
+              .filter((subdivision) => subdivision.division_id === division.id)
+              .map((subdivision) => ({
+                id: subdivision.id,
+                name: subdivision.name,
+                code: subdivision.code,
+              })),
+          })),
+      })),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }
 
@@ -1592,36 +1762,76 @@ export async function loadGeographyOptions(): Promise<
  * Codes are uppercased so a lowercase or mixed-case file still resolves, matching
  * what the validator does when it reads a cell.
  */
-export async function loadGeographyIndex() {
-  try {
-    const supabase = await createClient();
-    if (!supabase) return null;
+export type GeographyIndex = {
+  regions: Map<string, string>;
+  divisions: Map<string, { id: string; regionId: string }>;
+  subdivisions: Map<
+    string,
+    { id: string; divisionId: string; regionId: string }
+  >;
+};
 
-    const [{ data: regions }, { data: divisions }, { data: subdivisions }] =
+export async function loadGeographyIndexResult(): Promise<
+  AdminReadResult<GeographyIndex | null>
+> {
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
+  try {
+    supabase = await adminReadClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) return unconfiguredRead();
+
+  try {
+    const [regionsResult, divisionsResult, subdivisionsResult] =
       await Promise.all([
         supabase.from("regions").select("id, code"),
         supabase.from("divisions").select("id, region_id, code"),
-        supabase.from("subdivisions").select("id, division_id, region_id, code"),
+        supabase
+          .from("subdivisions")
+          .select("id, division_id, region_id, code"),
       ]);
 
-    if (!regions) return null;
+    const failure =
+      regionsResult.error ?? divisionsResult.error ?? subdivisionsResult.error;
+    if (failure) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(failure),
+      };
+    }
+    if (!regionsResult.data) return { ok: true, data: null };
 
     return {
-      regions: new Map(regions.map((r) => [r.code.toUpperCase(), r.id])),
-      divisions: new Map(
-        (divisions ?? []).map((d) => [
-          d.code.toUpperCase(),
-          { id: d.id, regionId: d.region_id },
-        ]),
-      ),
-      subdivisions: new Map(
-        (subdivisions ?? []).map((s) => [
-          s.code.toUpperCase(),
-          { id: s.id, divisionId: s.division_id, regionId: s.region_id },
-        ]),
-      ),
+      ok: true,
+      data: {
+        regions: new Map(
+          regionsResult.data.map((r) => [r.code.toUpperCase(), r.id]),
+        ),
+        divisions: new Map(
+          (divisionsResult.data ?? []).map((d) => [
+            d.code.toUpperCase(),
+            { id: d.id, regionId: d.region_id },
+          ]),
+        ),
+        subdivisions: new Map(
+          (subdivisionsResult.data ?? []).map((s) => [
+            s.code.toUpperCase(),
+            { id: s.id, divisionId: s.division_id, regionId: s.region_id },
+          ]),
+        ),
+      },
     };
-  } catch {
-    return null;
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 }

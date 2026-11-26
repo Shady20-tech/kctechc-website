@@ -11,7 +11,7 @@ import {
   deleteListingAction,
 } from "@/lib/real-estate/admin-actions";
 
-const EMPTY = { ok: false } as { ok: boolean; error?: string };
+const EMPTY = { ok: false } as { ok: boolean; error?: string; detail?: string };
 
 /**
  * Archive and permanently delete a listing, each behind an explicit confirmation.
@@ -79,6 +79,11 @@ export function ListingLifecycleForm({
           {!archiveState.ok && archiveState.error ? (
             <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
               <p>{t(`realEstate.admin.errors.${archiveState.error}`)}</p>
+              {archiveState.detail ? (
+                <p className="mt-2 break-words font-mono text-xs">
+                  {archiveState.detail}
+                </p>
+              ) : null}
             </Notice>
           ) : null}
 
@@ -135,6 +140,11 @@ export function ListingLifecycleForm({
             {!deleteState.ok && deleteState.error ? (
               <Notice tone="error" title={t("realEstate.admin.metaTitle")}>
                 <p>{t(`realEstate.admin.errors.${deleteState.error}`)}</p>
+                {deleteState.detail ? (
+                  <p className="mt-2 break-words font-mono text-xs">
+                    {deleteState.detail}
+                  </p>
+                ) : null}
               </Notice>
             ) : null}
 

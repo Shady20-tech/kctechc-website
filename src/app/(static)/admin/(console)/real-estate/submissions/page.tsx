@@ -9,7 +9,7 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadListingSubmissions } from "@/lib/real-estate/loaders";
+import { loadListingSubmissionsResult } from "@/lib/real-estate/loaders";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,11 @@ export default async function AdminSubmissionsPage() {
     redirect("/admin/unauthorized");
   }
 
-  const submissions = await loadListingSubmissions("pending_review");
+  const submissionsResult = await loadListingSubmissionsResult(
+    "pending_review",
+    "admin",
+  );
+  const submissions = submissionsResult.ok ? submissionsResult.data : [];
 
   return (
     <>
@@ -60,7 +64,18 @@ export default async function AdminSubmissionsPage() {
       </div>
 
       <div className="mt-10">
-        {submissions.length === 0 ? (
+        {!submissionsResult.ok ? (
+          <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+            <p>
+              {submissionsResult.reason === "unconfigured"
+                ? t("realEstate.admin.errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {submissionsResult.detail}
+            </p>
+          </Notice>
+        ) : submissions.length === 0 ? (
           <Notice tone="info" title={t("realEstate.admin.submissionsHeading")}>
             <p>{t("realEstate.admin.noSubmissions")}</p>
           </Notice>

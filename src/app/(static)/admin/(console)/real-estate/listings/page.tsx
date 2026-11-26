@@ -9,7 +9,7 @@ import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import { LISTING_STATUSES } from "@/lib/real-estate/enums";
-import { loadAdminListings } from "@/lib/real-estate/loaders";
+import { loadAdminListingsResult } from "@/lib/real-estate/loaders";
 import type { AdminListingRecord } from "@/lib/real-estate/types";
 
 export const dynamic = "force-dynamic";
@@ -52,11 +52,15 @@ export default async function AdminListingsPage({
     ? (params.status as (typeof LISTING_STATUSES)[number])
     : undefined;
 
-  const listings = await loadAdminListings({
-    status,
-    search: search || undefined,
-    limit: 200,
-  });
+  const listingsResult = await loadAdminListingsResult(
+    {
+      status,
+      search: search || undefined,
+      limit: 200,
+    },
+    "admin",
+  );
+  const listings = listingsResult.ok ? listingsResult.data : [];
 
   const filtered = Boolean(search || status);
 
@@ -139,7 +143,18 @@ export default async function AdminListingsPage({
       ) : null}
 
       <div className="mt-8">
-        {listings.length === 0 ? (
+        {!listingsResult.ok ? (
+          <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+            <p>
+              {listingsResult.reason === "unconfigured"
+                ? t("realEstate.admin.errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {listingsResult.detail}
+            </p>
+          </Notice>
+        ) : listings.length === 0 ? (
           <Notice tone="info" title={t("realEstate.admin.listingsHeading")}>
             <p>
               {filtered

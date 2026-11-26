@@ -9,7 +9,7 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isKycReviewerRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadVerifiedMembershipCandidates } from "@/lib/real-estate/membership-loaders";
+import { loadVerifiedMembershipCandidatesResult } from "@/lib/real-estate/membership-loaders";
 import {
   isVerifiedMembership,
   membershipTypeLabelKey,
@@ -41,7 +41,8 @@ export default async function AdminVerificationPage() {
     redirect("/admin/unauthorized");
   }
 
-  const candidates = await loadVerifiedMembershipCandidates();
+  const candidatesResult = await loadVerifiedMembershipCandidatesResult();
+  const candidates = candidatesResult.ok ? candidatesResult.data : [];
 
   const labels: Record<string, string> = {
     grant: t("adminVerification.grant"),
@@ -80,7 +81,18 @@ export default async function AdminVerificationPage() {
       </div>
 
       <div className="mt-10">
-        {candidates.length === 0 ? (
+        {!candidatesResult.ok ? (
+          <Notice tone="warning" title={t("adminVerification.heading")}>
+            <p>
+              {candidatesResult.reason === "unconfigured"
+                ? t("errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {candidatesResult.detail}
+            </p>
+          </Notice>
+        ) : candidates.length === 0 ? (
           <Notice tone="info" title={t("adminVerification.heading")}>
             {t("adminVerification.empty")}
           </Notice>

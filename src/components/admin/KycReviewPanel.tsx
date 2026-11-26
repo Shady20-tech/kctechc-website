@@ -155,7 +155,14 @@ export function KycReviewPanel({
 
           {state && !state.ok ? (
             <div className="mt-3">
-              <Notice tone="error">{t(`errors.${state.error}`)}</Notice>
+              <Notice tone="error">
+                {t(`errors.${state.error}`)}
+                {state.detail ? (
+                  <span className="mt-2 block break-words font-mono text-xs">
+                    {state.detail}
+                  </span>
+                ) : null}
+              </Notice>
             </div>
           ) : null}
           {state?.ok ? (
@@ -221,7 +228,14 @@ export function KycReviewPanel({
 
         {noteState && !noteState.ok ? (
           <div className="mt-3">
-            <Notice tone="error">{t(`errors.${noteState.error}`)}</Notice>
+            <Notice tone="error">
+              {t(`errors.${noteState.error}`)}
+              {noteState.detail ? (
+                <span className="mt-2 block break-words font-mono text-xs">
+                  {noteState.detail}
+                </span>
+              ) : null}
+            </Notice>
           </div>
         ) : null}
         {noteState?.ok ? (

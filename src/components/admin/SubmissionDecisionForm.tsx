@@ -9,7 +9,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { reviewListingSubmissionAction } from "@/lib/real-estate/admin-actions";
 
-const EMPTY = { ok: false } as { ok: boolean; error?: string };
+const EMPTY = { ok: false } as { ok: boolean; error?: string; detail?: string };
 
 /**
  * Record a decision on one owner submission.
@@ -57,6 +57,9 @@ export function SubmissionDecisionForm({
       {!state.ok && state.error ? (
         <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
           <p>{t(`realEstate.admin.errors.${state.error}`)}</p>
+          {state.detail ? (
+            <p className="mt-2 break-words font-mono text-xs">{state.detail}</p>
+          ) : null}
         </Notice>
       ) : null}
 

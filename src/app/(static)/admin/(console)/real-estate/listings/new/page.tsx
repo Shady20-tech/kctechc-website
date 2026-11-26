@@ -6,7 +6,7 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadGeographyOptions } from "@/lib/real-estate/loaders";
+import { loadGeographyOptionsResult } from "@/lib/real-estate/loaders";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,24 @@ export default async function AdminNewListingPage() {
     redirect("/admin/unauthorized");
   }
 
-  const geography = await loadGeographyOptions();
+  const geographyResult = await loadGeographyOptionsResult("admin");
+  const geography = geographyResult.ok ? geographyResult.data : [];
+
+  let problem: { body: string; detail?: string } | null = null;
+  if (!geographyResult.ok) {
+    problem = {
+      body:
+        geographyResult.reason === "unconfigured"
+          ? t("realEstate.admin.errors.unconfigured")
+          : t("errors.read_failed"),
+      detail: geographyResult.detail,
+    };
+  } else if (geography.length === 0) {
+    // An empty reference table is not a configuration failure: the database
+    // answered, it simply has no regions. Saying "not configured" sent operators
+    // to the environment when the fix is the geography seed.
+    problem = { body: t("errors.geography_empty") };
+  }
 
   return (
     <>
@@ -47,12 +64,14 @@ export default async function AdminNewListingPage() {
       />
 
       <div className="mt-8">
-        {geography.length === 0 ? (
-          // Without geography there is nothing a listing can attach to, and the
-          // form would render a region select with no options. Saying so is
-          // better than presenting a form that cannot be completed.
+        {problem ? (
           <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
-            <p>{t("realEstate.admin.errors.unconfigured")}</p>
+            <p>{problem.body}</p>
+            {problem.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {problem.detail}
+              </p>
+            ) : null}
           </Notice>
         ) : (
           <ListingForm locale="en" geography={geography} />

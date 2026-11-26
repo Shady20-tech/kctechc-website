@@ -9,7 +9,9 @@ import {
   DashboardDetailBody,
   DashboardOverview,
 } from "@/components/account/DashboardViews";
+import { Notice } from "@/components/ui/Notice";
 import type { Locale } from "@/lib/i18n/locales";
+import { createTranslator } from "@/lib/i18n/translator";
 import type { DashboardKind } from "@/lib/real-estate/dashboard";
 import {
   loadDashboardListingById,
@@ -19,7 +21,10 @@ import {
   requireAuthorisedDashboard,
   requireDashboardContext,
 } from "@/lib/real-estate/dashboard-page";
-import { loadGeographyOptions, loadListingPrivateDetails } from "@/lib/real-estate/loaders";
+import {
+  loadGeographyOptionsResult,
+  loadListingPrivateDetails,
+} from "@/lib/real-estate/loaders";
 import { loadCameroonRegions } from "@/lib/real-estate/membership-loaders";
 
 /**
@@ -73,13 +78,26 @@ export async function renderDashboardCreate(
   locale: Locale,
 ) {
   await requireAuthorisedDashboard(kind, locale);
-  const geography = await loadGeographyOptions();
+  const geographyResult = await loadGeographyOptionsResult();
+  const geography = geographyResult.ok ? geographyResult.data : [];
+  const t = createTranslator(locale).t;
+  const geographyProblem = !geographyResult.ok
+    ? {
+        body:
+          geographyResult.reason === "unconfigured"
+            ? t("errors.unconfigured")
+            : t("errors.read_failed"),
+        detail: geographyResult.detail,
+      }
+    : geography.length === 0
+      ? { body: t("errors.geography_empty") }
+      : null;
 
   return (
     <DashboardCreateBody
       kind={kind}
       locale={locale}
-      hasGeography={geography.length > 0}
+      geographyProblem={geographyProblem}
       form={
         <DashboardListingForm kind={kind} locale={locale} geography={geography} />
       }
@@ -103,10 +121,23 @@ export async function renderDashboardDetail(
 ) {
   await requireAuthorisedDashboard(kind, locale);
 
-  const [listing, geography] = await Promise.all([
+  const [listing, geographyResult] = await Promise.all([
     loadDashboardListingById(listingId),
-    loadGeographyOptions(),
+    loadGeographyOptionsResult(),
   ]);
+  const geography = geographyResult.ok ? geographyResult.data : [];
+  const t = createTranslator(locale).t;
+  const geographyProblem = !geographyResult.ok
+    ? {
+        body:
+          geographyResult.reason === "unconfigured"
+            ? t("errors.unconfigured")
+            : t("errors.read_failed"),
+        detail: geographyResult.detail,
+      }
+    : geography.length === 0
+      ? { body: t("errors.geography_empty") }
+      : null;
 
   if (!listing) notFound();
 
@@ -118,6 +149,17 @@ export async function renderDashboardDetail(
   return (
     <DashboardDetailBody kind={kind} locale={locale}>
       <DashboardStatusPanel kind={kind} locale={locale} listing={listing} />
+
+      {geographyProblem ? (
+        <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+          <p>{geographyProblem.body}</p>
+          {geographyProblem.detail ? (
+            <p className="mt-2 break-words font-mono text-xs">
+              {geographyProblem.detail}
+            </p>
+          ) : null}
+        </Notice>
+      ) : null}
 
       <DashboardListingForm
         kind={kind}

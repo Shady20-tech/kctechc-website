@@ -13,7 +13,7 @@ import {
   kycStatusLabelKey,
   type KycStatus,
 } from "@/lib/real-estate/kyc";
-import { loadKycQueue } from "@/lib/real-estate/kyc-loaders";
+import { loadKycQueueResult } from "@/lib/real-estate/kyc-loaders";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  *
  * **Super-admin only.** The brief requires that a normal real-estate
  * administrator must not hold KYC approval permission, so this page is not merely
- * hidden from them — the guard redirects them, and `loadKycQueue` reads through
+ * hidden from them — the guard redirects them, and `loadKycQueueResult` reads through
  * the session client where `kyc_applications_select_super_admin` is the control.
  * A plain `real_estate_admin` reaching this URL sees the unauthorized page, and
  * would see no rows even if the guard were removed.
@@ -56,7 +56,8 @@ export default async function AdminKycQueuePage({
       : "all";
   const search = (rawSearch ?? "").slice(0, 120);
 
-  const queue = await loadKycQueue({ status, search });
+  const queueResult = await loadKycQueueResult({ status, search });
+  const queue = queueResult.ok ? queueResult.data : [];
 
   const filters = ["all", ...KYC_STATUSES] as const;
 
@@ -123,7 +124,18 @@ export default async function AdminKycQueuePage({
       </form>
 
       <div className="mt-10">
-        {queue.length === 0 ? (
+        {!queueResult.ok ? (
+          <Notice tone="warning" title={t("adminKyc.heading")}>
+            <p>
+              {queueResult.reason === "unconfigured"
+                ? t("errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {queueResult.detail}
+            </p>
+          </Notice>
+        ) : queue.length === 0 ? (
           <Notice tone="info" title={t("adminKyc.heading")}>
             {t("adminKyc.empty")}
           </Notice>

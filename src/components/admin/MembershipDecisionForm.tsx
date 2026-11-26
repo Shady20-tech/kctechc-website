@@ -44,6 +44,11 @@ export function MembershipDecisionForm({
       {state && !state.ok ? (
         <Notice tone="error">
           {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
+          {state.detail ? (
+            <span className="mt-2 block break-words font-mono text-xs">
+              {state.detail}
+            </span>
+          ) : null}
         </Notice>
       ) : null}
       {state?.ok ? (

@@ -162,6 +162,11 @@ export function ListingImportPanel({ locale }: { locale: Locale }) {
         ) : (
           <Notice tone="warning" title={t("realEstate.admin.importIssuesHeading")}>
             <p>{t(`realEstate.admin.errors.${preview.error}`)}</p>
+            {preview.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {preview.detail}
+              </p>
+            ) : null}
           </Notice>
         )
       ) : null}
@@ -203,6 +208,11 @@ export function ListingImportPanel({ locale }: { locale: Locale }) {
         ) : (
           <Notice tone="warning" title={t("realEstate.admin.importDoneHeading")}>
             <p>{t(`realEstate.admin.errors.${commit.error}`)}</p>
+            {commit.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {commit.detail}
+              </p>
+            ) : null}
           </Notice>
         )
       ) : null}

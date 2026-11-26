@@ -76,14 +76,14 @@ describe("setPublisherVerificationAction", () => {
   it("refuses a real-estate admin, because deciding identity is not delegated", async () => {
     getAuthState.mockResolvedValue(authWithRole("real_estate_admin"));
     const result = await setPublisherVerificationAction(null, form("m-1", true));
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
     expect(createClient).not.toHaveBeenCalled();
   });
 
   it("refuses a department editor", async () => {
     getAuthState.mockResolvedValue(authWithRole("department_staff"));
     const result = await setPublisherVerificationAction(null, form("m-1", true));
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
   });
 
   it("refuses a missing membership id before any client work", async () => {
@@ -120,12 +120,12 @@ describe("setPublisherVerificationAction", () => {
     // trigger is the boundary, so the message must reflect that.
     stubClient({ code: "42501", message: "insufficient privilege" });
     const result = await setPublisherVerificationAction(null, form("m-1", true));
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
   });
 
   it("reports any other write error as a failure", async () => {
     stubClient({ code: "23503", message: "foreign key violation" });
     const result = await setPublisherVerificationAction(null, form("m-1", true));
-    expect(result).toEqual({ ok: false, error: "write_failed" });
+    expect(result).toMatchObject({ ok: false, error: "write_failed" });
   });
 });

@@ -4,13 +4,14 @@ import { ListingForm } from "@/components/admin/ListingForm";
 import { ListingLifecycleForm } from "@/components/admin/ListingLifecycleForm";
 import { ListingMediaForm } from "@/components/admin/ListingMediaForm";
 import { ListingStatusForm } from "@/components/admin/ListingStatusForm";
+import { Notice } from "@/components/ui/Notice";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
-  loadAdminListingById,
-  loadGeographyOptions,
+  loadAdminListingByIdResult,
+  loadGeographyOptionsResult,
 } from "@/lib/real-estate/loaders";
 
 export const dynamic = "force-dynamic";
@@ -46,10 +47,52 @@ export default async function AdminEditListingPage({
     redirect("/admin/unauthorized");
   }
 
-  const [listing, geography] = await Promise.all([
-    loadAdminListingById(id),
-    loadGeographyOptions(),
+  const [listingResult, geographyResult] = await Promise.all([
+    loadAdminListingByIdResult(id, "admin"),
+    loadGeographyOptionsResult("admin"),
   ]);
+
+  const listing = listingResult.ok ? listingResult.data : null;
+  const geography = geographyResult.ok ? geographyResult.data : [];
+  const geographyProblem = !geographyResult.ok
+    ? {
+        body:
+          geographyResult.reason === "unconfigured"
+            ? t("realEstate.admin.errors.unconfigured")
+            : t("errors.read_failed"),
+        detail: geographyResult.detail,
+      }
+    : geography.length === 0
+      ? { body: t("errors.geography_empty") }
+      : null;
+
+  if (!listingResult.ok) {
+    return (
+      <>
+        <PageIntro
+          eyebrow={t("realEstate.eyebrow")}
+          heading={t("realEstate.admin.editHeading")}
+          intro={t("realEstate.admin.editIntro")}
+          back={{
+            href: "/admin/real-estate/listings",
+            label: t("common.backTo", { destination: t("adminNav.listings") }),
+          }}
+        />
+        <div className="mt-8">
+          <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+            <p>
+              {listingResult.reason === "unconfigured"
+                ? t("realEstate.admin.errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {listingResult.detail}
+            </p>
+          </Notice>
+        </div>
+      </>
+    );
+  }
 
   if (!listing) notFound();
 
@@ -104,7 +147,18 @@ export default async function AdminEditListingPage({
       </p>
 
       <div className="mt-8 space-y-12">
-        <ListingForm locale="en" geography={geography} listing={listing} />
+        {geographyProblem ? (
+          <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+            <p>{geographyProblem.body}</p>
+            {geographyProblem.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {geographyProblem.detail}
+              </p>
+            ) : null}
+          </Notice>
+        ) : (
+          <ListingForm locale="en" geography={geography} listing={listing} />
+        )}
 
         <section className="border-t border-border pt-10">
           <ListingMediaForm

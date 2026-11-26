@@ -12,6 +12,7 @@ import {
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { validateUpload } from "@/lib/uploads/validation";
 import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
@@ -37,7 +38,7 @@ import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 export type ListingMediaState =
   | { ok: true; message: string }
-  | { ok: false; error: string };
+  | { ok: false; error: string; detail?: string };
 
 async function requireRealEstateAdmin(): Promise<
   | { ok: true; userId: string }
@@ -100,17 +101,31 @@ export async function uploadListingImageAction(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  const { data: listing } = await admin
+  const { data: listing, error: listingError } = await admin
     .from("property_listings")
     .select("id, slug")
     .eq("id", listingId)
     .maybeSingle();
+  if (listingError) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(listingError),
+    };
+  }
   if (!listing) return { ok: false, error: "not_found" };
 
-  const { count } = await admin
+  const { count, error: countError } = await admin
     .from("listing_media")
     .select("id", { count: "exact", head: true })
     .eq("listing_id", listingId);
+  if (countError) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(countError),
+    };
+  }
 
   let position = count ?? 0;
   let stored = 0;
@@ -146,7 +161,11 @@ export async function uploadListingImageAction(
       if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
-        : { ok: false, error: "upload_failed" };
+        : {
+            ok: false,
+            error: "upload_failed",
+            detail: describeSupabaseError(uploadError),
+          };
     }
 
     const { error: insertError } = await admin.from("listing_media").insert({
@@ -163,7 +182,11 @@ export async function uploadListingImageAction(
       if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
-        : { ok: false, error: "write_failed" };
+        : {
+            ok: false,
+            error: "write_failed",
+            detail: describeSupabaseError(insertError),
+          };
     }
 
     primaryTaken = true;
@@ -208,19 +231,32 @@ export async function removeListingImageAction(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "unconfigured" };
 
-  const { data: media } = await admin
+  const { data: media, error: mediaError } = await admin
     .from("listing_media")
     .select("id, listing_id, storage_path, is_primary")
     .eq("id", mediaId)
     .eq("listing_id", listingId)
     .maybeSingle();
+  if (mediaError) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(mediaError),
+    };
+  }
   if (!media) return { ok: false, error: "not_found" };
 
   const { error: deleteError } = await admin
     .from("listing_media")
     .delete()
     .eq("id", mediaId);
-  if (deleteError) return { ok: false, error: "write_failed" };
+  if (deleteError) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(deleteError),
+    };
+  }
 
   await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([media.storage_path]);
 

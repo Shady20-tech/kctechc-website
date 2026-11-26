@@ -9,7 +9,7 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadMembershipQueue } from "@/lib/real-estate/membership-loaders";
+import { loadMembershipQueueResult } from "@/lib/real-estate/membership-loaders";
 import {
   membershipStatusLabelKey,
   membershipTypeLabelKey,
@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
  * with the pending queue.
  *
  * The page guard is a redirect for the experience; the real boundary is
- * `real_estate_memberships_write_staff` in the database, and `loadMembershipQueue`
+ * `real_estate_memberships_write_staff` in the database, and `loadMembershipQueueResult`
  * independently returns nothing for a non-staff caller.
  */
 export default async function AdminMembershipsPage() {
@@ -44,7 +44,8 @@ export default async function AdminMembershipsPage() {
     redirect("/admin/unauthorized");
   }
 
-  const queue = await loadMembershipQueue();
+  const queueResult = await loadMembershipQueueResult();
+  const queue = queueResult.ok ? queueResult.data : [];
 
   const labels: Record<string, string> = {
     decisionLabel: t("adminMemberships.decisionLabel"),
@@ -84,7 +85,18 @@ export default async function AdminMembershipsPage() {
       </div>
 
       <div className="mt-10">
-        {queue.length === 0 ? (
+        {!queueResult.ok ? (
+          <Notice tone="warning" title={t("adminMemberships.heading")}>
+            <p>
+              {queueResult.reason === "unconfigured"
+                ? t("errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {queueResult.detail}
+            </p>
+          </Notice>
+        ) : queue.length === 0 ? (
           <Notice tone="info" title={t("adminMemberships.heading")}>
             {t("adminMemberships.empty")}
           </Notice>

@@ -7,6 +7,7 @@ import { getAuthState } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/security/audit";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { createClient } from "@/lib/supabase/server";
 import { signedKycUrl } from "@/lib/uploads/kyc-storage";
 import { kycDecisionSchema, kycNoteSchema } from "@/lib/validation/kyc";
@@ -43,7 +44,9 @@ import { KYC_DECISION_STATUS, type KycDecision } from "./kyc";
  * application status and the membership cannot disagree.
  */
 
-export type KycReviewState = { ok: true } | { ok: false; error: string };
+export type KycReviewState =
+  | { ok: true }
+  | { ok: false; error: string; detail?: string };
 
 /**
  * Record a decision: approve, reject, or request more information.
@@ -103,16 +106,17 @@ export async function reviewKycApplicationAction(
     });
 
     if (error) {
+      const detail = describeSupabaseError(error);
       if ((error.message ?? "").includes("insufficient_privilege")) {
-        return { ok: false, error: "forbidden" };
+        return { ok: false, error: "forbidden", detail };
       }
       if ((error.message ?? "").includes("already approved")) {
-        return { ok: false, error: "already_decided" };
+        return { ok: false, error: "already_decided", detail };
       }
       if ((error.message ?? "").includes("has not been submitted")) {
-        return { ok: false, error: "not_submitted" };
+        return { ok: false, error: "not_submitted", detail };
       }
-      return { ok: false, error: "write_failed" };
+      return { ok: false, error: "write_failed", detail };
     }
   } else {
     // A refusal or a request for changes. Written with the session client so the
@@ -134,7 +138,13 @@ export async function reviewKycApplicationAction(
       })
       .eq("id", applicationId);
 
-    if (error) return { ok: false, error: "write_failed" };
+    if (error) {
+      return {
+        ok: false,
+        error: "write_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
 
     await supabase.from("real_estate_kyc_review_events").insert({
       application_id: applicationId,
@@ -192,7 +202,13 @@ export async function addKycNoteAction(
     note: parsed.data.note,
   });
 
-  if (error) return { ok: false, error: "write_failed" };
+  if (error) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
 
   revalidatePath(`/admin/real-estate/kyc/${applicationId}`);
   return { ok: true };

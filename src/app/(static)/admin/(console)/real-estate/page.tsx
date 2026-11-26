@@ -13,8 +13,8 @@ import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateStaffRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
-  loadAdminListings,
-  loadRealEstateOverview,
+  loadAdminListingsResult,
+  loadRealEstateOverviewResult,
 } from "@/lib/real-estate/loaders";
 import type { AdminListingRecord } from "@/lib/real-estate/types";
 
@@ -48,11 +48,24 @@ export default async function AdminRealEstatePage() {
     redirect("/admin/unauthorized");
   }
 
-  const [overview, listings, activityRows] = await Promise.all([
-    loadRealEstateOverview(),
-    loadAdminListings({ limit: 25 }),
+  const [overviewResult, listingsResult, activityRows] = await Promise.all([
+    loadRealEstateOverviewResult("session"),
+    loadAdminListingsResult({ limit: 25 }, "session"),
     loadListingActivityReport(),
   ]);
+  const overview = overviewResult.ok
+    ? overviewResult.data
+    : {
+        total: 0,
+        drafts: 0,
+        pendingReview: 0,
+        published: 0,
+        archived: 0,
+        pendingSubmissions: 0,
+        activeAgents: 0,
+      };
+  const listings = listingsResult.ok ? listingsResult.data : [];
+  const readProblem = !overviewResult.ok ? overviewResult : !listingsResult.ok ? listingsResult : null;
   const activity = summarizeListingActivity(activityRows);
   const publishedShare =
     overview.total > 0
@@ -70,6 +83,21 @@ export default async function AdminRealEstatePage() {
           label: t("common.backTo", { destination: t("adminNav.dashboard") }),
         }}
       />
+
+      {readProblem ? (
+        <div className="mt-8">
+          <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+            <p>
+              {readProblem.reason === "unconfigured"
+                ? t("realEstate.admin.errors.unconfigured")
+                : t("errors.read_failed")}
+            </p>
+            <p className="mt-2 break-words font-mono text-xs">
+              {readProblem.detail}
+            </p>
+          </Notice>
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(
@@ -144,7 +172,18 @@ export default async function AdminRealEstatePage() {
         </p>
 
         <div className="mt-6">
-          {listings.length === 0 ? (
+          {!listingsResult.ok ? (
+            <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
+              <p>
+                {listingsResult.reason === "unconfigured"
+                  ? t("realEstate.admin.errors.unconfigured")
+                  : t("errors.read_failed")}
+              </p>
+              <p className="mt-2 break-words font-mono text-xs">
+                {listingsResult.detail}
+              </p>
+            </Notice>
+          ) : listings.length === 0 ? (
             <Notice tone="info" title={t("realEstate.admin.listingsHeading")}>
               <p>{t("realEstate.admin.noListings")}</p>
             </Notice>

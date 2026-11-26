@@ -6,6 +6,7 @@ import { getAuthState } from "@/lib/auth/session";
 import { isKycReviewerRole } from "@/lib/auth/roles";
 import { recordAudit } from "@/lib/security/audit";
 import { createClient } from "@/lib/supabase/server";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 
 /**
  * Granting and revoking a publisher's verification badge.
@@ -24,7 +25,9 @@ import { createClient } from "@/lib/supabase/server";
  * action here.
  */
 
-export type VerificationState = { ok: true } | { ok: false; error: string };
+export type VerificationState =
+  | { ok: true }
+  | { ok: false; error: string; detail?: string };
 
 export async function setPublisherVerificationAction(
   _previous: VerificationState | null,
@@ -63,8 +66,9 @@ export async function setPublisherVerificationAction(
   if (error) {
     // `42501` is the trigger's insufficient-privilege error, which a
     // non-super-admin caller reaches if the application guard is ever removed.
-    if (error.code === "42501") return { ok: false, error: "forbidden" };
-    return { ok: false, error: "write_failed" };
+    const detail = describeSupabaseError(error);
+    if (error.code === "42501") return { ok: false, error: "forbidden", detail };
+    return { ok: false, error: "write_failed", detail };
   }
 
   await recordAudit({

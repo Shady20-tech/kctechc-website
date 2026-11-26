@@ -111,7 +111,7 @@ describe("reviewKycApplicationAction — authorization", () => {
       null,
       form({ decision: "approve" }),
     );
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -125,7 +125,7 @@ describe("reviewKycApplicationAction — authorization", () => {
       null,
       form({ decision: "approve" }),
     );
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
   });
 
   it("refuses an unknown decision before checking the session", async () => {
@@ -218,7 +218,7 @@ describe("reviewKycApplicationAction — approval writes the capability atomical
       null,
       form({ decision: "approve" }),
     );
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
   });
 
   it("reports an already-decided application distinctly", async () => {
@@ -228,7 +228,7 @@ describe("reviewKycApplicationAction — approval writes the capability atomical
       null,
       form({ decision: "approve" }),
     );
-    expect(result).toEqual({ ok: false, error: "already_decided" });
+    expect(result).toMatchObject({ ok: false, error: "already_decided" });
   });
 
   it("reports an unsubmitted application distinctly", async () => {
@@ -238,7 +238,7 @@ describe("reviewKycApplicationAction — approval writes the capability atomical
       null,
       form({ decision: "approve" }),
     );
-    expect(result).toEqual({ ok: false, error: "not_submitted" });
+    expect(result).toMatchObject({ ok: false, error: "not_submitted" });
   });
 
   it("records an audit entry for an approval", async () => {
@@ -290,7 +290,7 @@ describe("reviewKycApplicationAction — refusal and request for changes", () =>
       null,
       form({ decision: "reject", reason: "Nope" }),
     );
-    expect(result).toEqual({ ok: false, error: "write_failed" });
+    expect(result).toMatchObject({ ok: false, error: "write_failed" });
     expect(recordAudit).not.toHaveBeenCalled();
   });
 });
@@ -302,7 +302,7 @@ describe("addKycNoteAction", () => {
       profile: { id: "u-re", role: "real_estate_admin" },
     });
     const result = await addKycNoteAction("app-1", null, form({ note: "hi" }));
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
   });
 
   it("refuses an empty note", async () => {
@@ -327,7 +327,7 @@ describe("getKycDocumentUrlAction", () => {
       profile: { id: "u-re", role: "real_estate_admin" },
     });
     const result = await getKycDocumentUrlAction("doc-1");
-    expect(result).toEqual({ ok: false, error: "forbidden" });
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
     expect(signedKycUrl).not.toHaveBeenCalled();
   });
 

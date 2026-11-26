@@ -1,7 +1,14 @@
 import "server-only";
 
 import { getAuthState } from "@/lib/auth/session";
+import { isKycReviewerRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
+import {
+  adminReadClient,
+  failedRead,
+  unconfiguredRead,
+  type AdminReadResult,
+} from "@/lib/supabase/admin-read";
 
 import {
   type KycApplicationRecord,
@@ -282,13 +289,24 @@ export type KycQueueFilter = {
   search?: string;
 };
 
-export async function loadKycQueue(
+export async function loadKycQueueResult(
   filter: KycQueueFilter = {},
-): Promise<KycQueueEntry[]> {
-  try {
-    const supabase = await createClient();
-    if (!supabase) return [];
+): Promise<AdminReadResult<KycQueueEntry[]>> {
+  const auth = await getAuthState();
+  if (auth.status !== "authenticated" || !auth.profile) {
+    return { ok: true, data: [] };
+  }
+  if (!isKycReviewerRole(auth.profile.role)) return { ok: true, data: [] };
 
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
+  try {
+    supabase = await adminReadClient();
+  } catch (error) {
+    return failedRead(error);
+  }
+  if (!supabase) return unconfiguredRead();
+
+  try {
     let query = supabase
       .from("real_estate_kyc_applications")
       .select(APPLICATION_SELECT)
@@ -309,12 +327,13 @@ export async function loadKycQueue(
       );
     }
 
-    const { data } = await query;
-    if (!data || data.length === 0) return [];
+    const { data, error } = await query;
+    if (error) return failedRead(error);
+    if (!data || data.length === 0) return { ok: true, data: [] };
 
     const records = data.map(toApplication);
 
-    const { data: docs } = await supabase
+    const { data: docs, error: docsError } = await supabase
       .from("real_estate_kyc_documents")
       .select("application_id")
       .in(
@@ -322,17 +341,22 @@ export async function loadKycQueue(
         records.map((record) => record.id),
       );
 
+    if (docsError) return failedRead(docsError);
+
     const counts = new Map<string, number>();
     for (const row of docs ?? []) {
       counts.set(row.application_id, (counts.get(row.application_id) ?? 0) + 1);
     }
 
-    return records.map((record) => ({
-      ...record,
-      documentCount: counts.get(record.id) ?? 0,
-    }));
-  } catch {
-    return [];
+    return {
+      ok: true,
+      data: records.map((record) => ({
+        ...record,
+        documentCount: counts.get(record.id) ?? 0,
+      })),
+    };
+  } catch (error) {
+    return failedRead(error);
   }
 }
 

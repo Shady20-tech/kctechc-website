@@ -10,7 +10,7 @@ import { createTranslator } from "@/lib/i18n/translator";
 import { setListingStatusAction } from "@/lib/real-estate/admin-actions";
 import { LISTING_STATUSES } from "@/lib/real-estate/enums";
 
-const EMPTY = { ok: false } as { ok: boolean; error?: string };
+const EMPTY = { ok: false } as { ok: boolean; error?: string; detail?: string };
 
 /**
  * Change a listing's status.
@@ -54,6 +54,9 @@ export function ListingStatusForm({
       {!state.ok && state.error ? (
         <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
           <p>{t(`realEstate.admin.errors.${state.error}`)}</p>
+          {state.detail ? (
+            <p className="mt-2 break-words font-mono text-xs">{state.detail}</p>
+          ) : null}
         </Notice>
       ) : null}
 

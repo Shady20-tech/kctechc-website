@@ -4,6 +4,12 @@ import { getAuthState } from "@/lib/auth/session";
 import { isKycReviewerRole, isRealEstateAdminRole } from "@/lib/auth/roles";
 import type { Locale } from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
+import {
+  adminReadClient,
+  failedRead,
+  unconfiguredRead,
+  type AdminReadResult,
+} from "@/lib/supabase/admin-read";
 
 import { localizeGeographyName } from "./geography";
 import {
@@ -160,34 +166,44 @@ export async function loadCameroonRegions(
  * Returns an empty list for a caller who is not a super admin, rather than
  * relying on the page guard alone, so the loader is safe to call from anywhere.
  */
-export async function loadVerifiedMembershipCandidates(): Promise<
-  MembershipQueueEntry[]
+export async function loadVerifiedMembershipCandidatesResult(): Promise<
+  AdminReadResult<MembershipQueueEntry[]>
 > {
+  const auth = await getAuthState();
+  if (auth.status !== "authenticated" || !auth.profile) {
+    return { ok: true, data: [] };
+  }
+  if (!isKycReviewerRole(auth.profile.role)) return { ok: true, data: [] };
+
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
   try {
-    const auth = await getAuthState();
-    if (auth.status !== "authenticated" || !auth.profile) return [];
-    if (!isKycReviewerRole(auth.profile.role)) return [];
+    supabase = await adminReadClient();
+  } catch (error) {
+    return failedRead(error);
+  }
+  if (!supabase) return unconfiguredRead();
 
-    const supabase = await createClient();
-    if (!supabase) return [];
-
-    const { data } = await supabase
+  try {
+    const { data, error } = await supabase
       .from("real_estate_memberships")
       .select(MEMBERSHIP_SELECT)
       .eq("status", "approved")
       .order("approved_at", { ascending: false });
 
-    if (!data || data.length === 0) return [];
+    if (error) return failedRead(error);
+    if (!data || data.length === 0) return { ok: true, data: [] };
 
     const records = data.map(toRecord);
 
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profileError } = await supabase
       .from("profiles")
       .select("id, email, full_name")
       .in(
         "id",
         records.map((record) => record.userId),
       );
+
+    if (profileError) return failedRead(profileError);
 
     const byId = new Map(
       (profiles ?? []).map((row) => [
@@ -196,13 +212,16 @@ export async function loadVerifiedMembershipCandidates(): Promise<
       ]),
     );
 
-    return records.map((record) => ({
-      ...record,
-      email: byId.get(record.userId)?.email ?? null,
-      fullName: byId.get(record.userId)?.fullName ?? null,
-    }));
-  } catch {
-    return [];
+    return {
+      ok: true,
+      data: records.map((record) => ({
+        ...record,
+        email: byId.get(record.userId)?.email ?? null,
+        fullName: byId.get(record.userId)?.fullName ?? null,
+      })),
+    };
+  } catch (error) {
+    return failedRead(error);
   }
 }
 
@@ -218,35 +237,44 @@ export type MembershipQueueEntry = MembershipRecord & {
   fullName: string | null;
 };
 
-export async function loadMembershipQueue(): Promise<MembershipQueueEntry[]> {
+export async function loadMembershipQueueResult(): Promise<
+  AdminReadResult<MembershipQueueEntry[]>
+> {
+  const auth = await getAuthState();
+  if (auth.status !== "authenticated" || !auth.profile) {
+    return { ok: true, data: [] };
+  }
+  if (!isRealEstateAdminRole(auth.profile.role)) return { ok: true, data: [] };
+
+  let supabase: Awaited<ReturnType<typeof adminReadClient>>;
   try {
-    const auth = await getAuthState();
-    if (auth.status !== "authenticated" || !auth.profile) return [];
-    if (!isRealEstateAdminRole(auth.profile.role)) return [];
+    supabase = await adminReadClient();
+  } catch (error) {
+    return failedRead(error);
+  }
+  if (!supabase) return unconfiguredRead();
 
-    const supabase = await createClient();
-    if (!supabase) return [];
-
-    const { data } = await supabase
+  try {
+    const { data, error } = await supabase
       .from("real_estate_memberships")
       .select(MEMBERSHIP_SELECT)
       .in("status", ["pending_kyc", "pending_review"])
       .order("created_at", { ascending: true });
 
-    if (!data || data.length === 0) return [];
+    if (error) return failedRead(error);
+    if (!data || data.length === 0) return { ok: true, data: [] };
 
     const records = data.map(toRecord);
 
-    // The applicant's name and email, so the queue is actionable. Read in one
-    // query rather than one per row; a missing profile degrades to null rather
-    // than dropping the application.
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profileError } = await supabase
       .from("profiles")
       .select("id, email, full_name")
       .in(
         "id",
         records.map((record) => record.userId),
       );
+
+    if (profileError) return failedRead(profileError);
 
     const byId = new Map(
       (profiles ?? []).map((row) => [
@@ -255,12 +283,15 @@ export async function loadMembershipQueue(): Promise<MembershipQueueEntry[]> {
       ]),
     );
 
-    return records.map((record) => ({
-      ...record,
-      email: byId.get(record.userId)?.email ?? null,
-      fullName: byId.get(record.userId)?.fullName ?? null,
-    }));
-  } catch {
-    return [];
+    return {
+      ok: true,
+      data: records.map((record) => ({
+        ...record,
+        email: byId.get(record.userId)?.email ?? null,
+        fullName: byId.get(record.userId)?.fullName ?? null,
+      })),
+    };
+  } catch (error) {
+    return failedRead(error);
   }
 }

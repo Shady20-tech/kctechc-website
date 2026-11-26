@@ -121,6 +121,9 @@ export function ListingForm({
       {errorCode && errorCode !== "invalid" ? (
         <Notice tone="warning" title={t("realEstate.admin.metaTitle")}>
           <p>{t(`realEstate.admin.errors.${errorCode}`)}</p>
+          {!state.ok && state.detail ? (
+            <p className="mt-2 break-words font-mono text-xs">{state.detail}</p>
+          ) : null}
         </Notice>
       ) : null}
 

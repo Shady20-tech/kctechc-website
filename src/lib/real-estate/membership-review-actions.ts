@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 
 import type { MembershipStatus } from "./memberships";
 
@@ -31,7 +32,9 @@ export type MembershipDecision =
   | "suspend"
   | "reinstate";
 
-export type MembershipReviewState = { ok: true } | { ok: false; error: string };
+export type MembershipReviewState =
+  | { ok: true }
+  | { ok: false; error: string; detail?: string };
 
 /** The status a decision moves the membership to. */
 const DECISION_STATUS = {
@@ -127,7 +130,13 @@ export async function reviewMembershipAction(
     .update(update)
     .eq("id", membershipId);
 
-  if (error) return { ok: false, error: "write_failed" };
+  if (error) {
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
 
   revalidatePath("/admin/real-estate/memberships");
   revalidatePath("/en/account");

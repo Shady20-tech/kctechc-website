@@ -159,12 +159,12 @@ export function DashboardCreateBody({
   kind,
   locale,
   form,
-  hasGeography,
+  geographyProblem,
 }: {
   kind: DashboardKind;
   locale: Locale;
   form: ReactNode;
-  hasGeography: boolean;
+  geographyProblem?: { body: string; detail?: string } | null;
 }) {
   const t = createTranslator(locale).t;
   const base = `account.dashboards.${kind}`;
@@ -203,12 +203,17 @@ export function DashboardCreateBody({
       </h2>
 
       <div className="mt-8">
-        {hasGeography ? (
-          form
-        ) : (
+        {geographyProblem ? (
           <Notice tone="warning" title={t(`${base}.createHeading`)}>
-            <p>{t("errors.unconfigured")}</p>
+            <p>{geographyProblem.body}</p>
+            {geographyProblem.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {geographyProblem.detail}
+              </p>
+            ) : null}
           </Notice>
+        ) : (
+          form
         )}
       </div>
     </SectionBand>

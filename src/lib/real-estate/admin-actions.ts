@@ -7,6 +7,7 @@ import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 import { CsvParseError, parseCsv } from "./csv";
@@ -16,7 +17,7 @@ import {
   splitListInput,
   type ListingInput,
 } from "./listing-input";
-import { loadGeographyIndex } from "./loaders";
+import { loadGeographyIndexResult } from "./loaders";
 import { LISTING_STATUSES, type ListingStatus } from "./enums";
 
 /**
@@ -42,7 +43,12 @@ import { LISTING_STATUSES, type ListingStatus } from "./enums";
 
 export type ListingActionResult =
   | { ok: true; listingId: string; warning?: string }
-  | { ok: false; error: string; fields?: Record<string, string> };
+  | {
+      ok: false;
+      error: string;
+      detail?: string;
+      fields?: Record<string, string>;
+    };
 
 /** Parse one cell of a FormData, tolerating a missing field. */
 function cell(formData: FormData, name: string): string {
@@ -212,7 +218,11 @@ export async function createListingAction(
         fields: { slug: "A listing already uses this slug." },
       };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   // The private details and the listing are two writes, and the second can fail
@@ -317,7 +327,11 @@ export async function updateListingAction(
         fields: { slug: "A listing already uses this slug." },
       };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   const detailWarning = await writePrivateDetails(supabase, listingId, input);
@@ -340,7 +354,7 @@ export async function updateListingAction(
 export async function setListingStatusAction(
   listingId: string,
   status: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
   const denied = await authorize();
   if (denied) return { ok: false, error: denied.error };
 
@@ -371,7 +385,11 @@ export async function setListingStatusAction(
     if (error.message.includes("cannot be published until")) {
       return { ok: false, error: "submission_not_approved" };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   revalidateListings();
@@ -391,7 +409,7 @@ export async function reviewListingSubmissionAction(
   decision: "approved" | "rejected" | "changes_requested",
   notes: string,
   publish: boolean,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
   const denied = await authorize();
   if (denied) return { ok: false, error: denied.error };
 
@@ -412,7 +430,11 @@ export async function reviewListingSubmissionAction(
     if (error.message.includes("already been decided")) {
       return { ok: false, error: "already_decided" };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   revalidateListings();
@@ -432,7 +454,7 @@ export async function reviewListingSubmissionAction(
 export async function archiveListingAction(
   listingId: string,
   reason: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
   const denied = await authorize();
   if (denied) return { ok: false, error: denied.error };
 
@@ -454,7 +476,11 @@ export async function archiveListingAction(
     if (error.message.includes("requires a reason")) {
       return { ok: false, error: "reason_required" };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   revalidateListings();
@@ -477,7 +503,7 @@ export async function archiveListingAction(
 export async function deleteListingAction(
   listingId: string,
   reason: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
   const auth = await getAuthState();
   if (auth.status === "unconfigured")
     return { ok: false, error: "unconfigured" };
@@ -504,9 +530,17 @@ export async function deleteListingAction(
       return { ok: false, error: "retained_history" };
     }
     if (error.message.includes("at least 10 characters")) {
-      return { ok: false, error: "reason_required" };
+      return {
+        ok: false,
+        error: "reason_required",
+        detail: describeSupabaseError(error),
+      };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   revalidateListings();
@@ -530,7 +564,7 @@ export type ImportPreviewResult =
         issues: ImportReport["issues"];
       };
     }
-  | { ok: false; error: string };
+  | { ok: false; error: string; detail?: string };
 
 /**
  * Validate a CSV file without writing anything.
@@ -554,8 +588,18 @@ export async function previewListingImportAction(
   let report: ImportReport;
   try {
     const parsed = parseCsv(csvText);
-    const geography = (await loadGeographyIndex()) ?? undefined;
-    report = validateListingImport(parsed, geography);
+    const geographyResult = await loadGeographyIndexResult();
+    if (!geographyResult.ok) {
+      return {
+        ok: false,
+        error: "read_failed",
+        detail: geographyResult.detail,
+      };
+    }
+    report = validateListingImport(
+      parsed,
+      geographyResult.data ?? undefined,
+    );
   } catch (error) {
     if (error instanceof CsvParseError) {
       return { ok: false, error: error.message };
@@ -584,7 +628,7 @@ export type ImportCommitResult =
       failed: number;
       issues: ImportIssueList;
     }
-  | { ok: false; error: string };
+  | { ok: false; error: string; detail?: string };
 
 type ImportIssueList = ImportReport["issues"];
 
@@ -616,8 +660,18 @@ export async function commitListingImportAction(
   let report: ImportReport;
   try {
     const parsed = parseCsv(csvText);
-    const geography = (await loadGeographyIndex()) ?? undefined;
-    report = validateListingImport(parsed, geography);
+    const geographyResult = await loadGeographyIndexResult();
+    if (!geographyResult.ok) {
+      return {
+        ok: false,
+        error: "read_failed",
+        detail: geographyResult.detail,
+      };
+    }
+    report = validateListingImport(
+      parsed,
+      geographyResult.data ?? undefined,
+    );
   } catch (error) {
     if (error instanceof CsvParseError) {
       return { ok: false, error: error.message };
@@ -697,7 +751,7 @@ export async function commitListingImportAction(
         column: null,
         message: error.message.includes("slug")
           ? "A listing already uses this slug."
-          : "Rejected by the database.",
+          : describeSupabaseError(error),
       });
       continue;
     }

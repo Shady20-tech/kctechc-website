@@ -68,6 +68,11 @@ export function ListingMediaForm({
           <Notice tone="error">
             {labels[`errors.${uploadState.error}`] ??
               labels["errors.upload_failed"]}
+            {uploadState.detail ? (
+              <span className="mt-2 block break-words font-mono text-xs">
+                {uploadState.detail}
+              </span>
+            ) : null}
           </Notice>
         ) : null}
         {uploadState?.ok ? (
@@ -209,9 +214,14 @@ function RemoveImageForm({
       <input type="hidden" name="listingId" value={listingId} />
       <input type="hidden" name="mediaId" value={mediaId} />
       {state && !state.ok ? (
-        <p className="text-xs text-danger">
+        <div className="text-xs text-danger">
           {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
-        </p>
+          {state.detail ? (
+            <span className="mt-1 block break-words font-mono">
+              {state.detail}
+            </span>
+          ) : null}
+        </div>
       ) : null}
       <SubmitButton
         label={labels.imageRemove}
