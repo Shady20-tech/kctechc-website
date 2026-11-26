@@ -13,34 +13,63 @@ function optional(value: string | undefined): string | null {
   return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
-/**
- * Supabase calls the server key two things depending on project age: the legacy
- * `service_role` JWT, and the newer `sb_secret_…` key. The dashboard's newer
- * wording is "secret key", and operators naturally name the variable after it,
- * so accept either name rather than reporting a configured deployment as
- * unconfigured. `SUPABASE_SERVICE_ROLE_KEY` wins when both are set.
- */
-const legacyServiceRoleKey = optional(process.env.SUPABASE_SERVICE_ROLE_KEY);
-const secretKey = optional(process.env.SUPABASE_SECRET_KEY);
-const serviceRoleKey = legacyServiceRoleKey ?? secretKey;
+export type SupabaseServerKeySource =
+  | "SUPABASE_SERVICE_ROLE_KEY"
+  | "SUPABASE_SECRET_KEY"
+  | null;
 
-function serverKeyType(
-  key: string | null,
-): "legacy_jwt" | "secret" | "unknown" | null {
+export type SupabaseServerKeyType = "legacy_jwt" | "secret" | "unknown" | null;
+
+export type ResolvedSupabaseServerKey = {
+  key: string | null;
+  source: SupabaseServerKeySource;
+  type: SupabaseServerKeyType;
+};
+
+function serverKeyType(key: string | null): SupabaseServerKeyType {
   if (!key) return null;
   if (key.startsWith("sb_secret_")) return "secret";
   if (key.startsWith("eyJ")) return "legacy_jwt";
   return "unknown";
 }
 
+/**
+ * The one server-key resolver.
+ *
+ * Supabase calls the server key two things depending on project age: the legacy
+ * `service_role` JWT, and the newer `sb_secret_…` key. The dashboard's newer
+ * wording is "secret key", and operators naturally name the variable after it,
+ * so accept either name rather than reporting a configured deployment as
+ * unconfigured. `SUPABASE_SERVICE_ROLE_KEY` wins when both are set.
+ *
+ * Every server consumer — the admin client factory, the health probe and the
+ * admin actions — must read this function rather than `process.env` directly, so
+ * a new key name cannot be honoured in one place and ignored in another.
+ */
+export function resolveSupabaseServerKey(
+  env: Record<string, string | undefined> = process.env,
+): ResolvedSupabaseServerKey {
+  const legacyServiceRoleKey = optional(env.SUPABASE_SERVICE_ROLE_KEY);
+  const secretKey = optional(env.SUPABASE_SECRET_KEY);
+  const key = legacyServiceRoleKey ?? secretKey;
+
+  return {
+    key,
+    source: legacyServiceRoleKey
+      ? "SUPABASE_SERVICE_ROLE_KEY"
+      : secretKey
+        ? "SUPABASE_SECRET_KEY"
+        : null,
+    type: serverKeyType(key),
+  };
+}
+
+const resolvedServerKey = resolveSupabaseServerKey();
+
 export const serverEnv = {
-  supabaseServiceRoleKey: serviceRoleKey,
-  supabaseServiceRoleKeySource: legacyServiceRoleKey
-    ? "SUPABASE_SERVICE_ROLE_KEY"
-    : secretKey
-      ? "SUPABASE_SECRET_KEY"
-      : null,
-  supabaseServiceRoleKeyType: serverKeyType(serviceRoleKey),
+  supabaseServiceRoleKey: resolvedServerKey.key,
+  supabaseServiceRoleKeySource: resolvedServerKey.source,
+  supabaseServiceRoleKeyType: resolvedServerKey.type,
   /** Salt for hashing submitter IPs. Rotating it invalidates past hashes. */
   inquiryIpSalt: optional(process.env.INQUIRY_IP_SALT),
   tolgeeApiKey: optional(process.env.TOLGEE_API_KEY),

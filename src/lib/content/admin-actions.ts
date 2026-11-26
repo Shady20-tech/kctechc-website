@@ -10,7 +10,11 @@ import {
   isSuperAdminRole,
   type AppRole,
 } from "@/lib/auth/roles";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createAdminClient,
+  missingAdminClientDetail,
+} from "@/lib/supabase/admin";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { recordAudit } from "@/lib/security/audit";
 import { CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
 import { buildObjectPath, validateUpload } from "@/lib/uploads/validation";
@@ -35,7 +39,12 @@ import { LOCALES } from "@/lib/i18n/locales";
 
 export type ContentState =
   | { ok: true; id: string; message: string }
-  | { ok: false; error: string; fields?: Record<string, string> };
+  | {
+      ok: false;
+      error: string;
+      fields?: Record<string, string>;
+      detail?: string;
+    };
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -97,35 +106,68 @@ async function requireAuthor(): Promise<
 }
 
 /**
- * True when `role` may author an article for `departmentId`.
+ * Whether `role` may author an article for `departmentId`.
  *
  * A department editor is confined to their own department. A cross-department
  * role may also leave the department unset, because a corporate announcement
  * belongs to no single department — and a department editor may not, because an
  * unset department is not one they can be shown to own.
+ *
+ * A failed read is returned as a failure, not as "not allowed": the old boolean
+ * turned a missing admin key or a database error into `forbidden_department`,
+ * which told the editor the wrong thing.
  */
+type DepartmentAuthorisation =
+  | { ok: true; allowed: boolean }
+  | { ok: false; detail: string };
+
+function authorisationFailure(
+  check: DepartmentAuthorisation,
+  forbiddenError = "forbidden",
+): { ok: false; error: string; detail?: string } | null {
+  if (!check.ok) {
+    return { ok: false, error: "unconfigured", detail: check.detail };
+  }
+  if (!check.allowed) {
+    return { ok: false, error: forbiddenError };
+  }
+  return null;
+}
+
 async function canAuthorForDepartment(
   role: AppRole,
   departmentId: string | null,
-): Promise<boolean> {
+): Promise<DepartmentAuthorisation> {
   if (!departmentId) {
-    return role === "super_admin" || role === "department_staff";
+    return {
+      ok: true,
+      allowed: role === "super_admin" || role === "department_staff",
+    };
   }
 
   const admin = createAdminClient();
-  if (!admin) return false;
+  if (!admin) {
+    return { ok: false, detail: missingAdminClientDetail() };
+  }
 
-  const { data } = await admin
+  const { data, error } = await admin
     .from("departments")
     .select("slug")
     .eq("id", departmentId)
     .maybeSingle();
+  if (error) {
+    return { ok: false, detail: describeSupabaseError(error) };
+  }
 
-  if (!data) return false;
-  return canAccessDepartment(role, data.slug);
+  return {
+    ok: true,
+    allowed: Boolean(data && canAccessDepartment(role, data.slug)),
+  };
 }
 
-export async function createInsightAction(formData: FormData): Promise<ContentState> {
+export async function createInsightAction(
+  formData: FormData,
+): Promise<ContentState> {
   const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
@@ -147,10 +189,21 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
   const input = parsed.data;
 
   if (input.publishState === "published" && !input.authorId) {
-    return { ok: false, error: "need_author", fields: { authorId: "Required to publish." } };
+    return {
+      ok: false,
+      error: "need_author",
+      fields: { authorId: "Required to publish." },
+    };
   }
 
-  if (!(await canAuthorForDepartment(gate.role, input.departmentId))) {
+  const departmentCheck = await canAuthorForDepartment(
+    gate.role,
+    input.departmentId,
+  );
+  if (!departmentCheck.ok) {
+    return { ok: false, error: "unconfigured", detail: departmentCheck.detail };
+  }
+  if (!departmentCheck.allowed) {
     return {
       ok: false,
       error: "forbidden_department",
@@ -159,7 +212,12 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
   }
 
   const supabase = await createClientOrAdmin();
-  if (!supabase) return { ok: false, error: "unconfigured" };
+  if (!supabase)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const { data, error } = await supabase
     .from("insights")
@@ -173,16 +231,25 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
       author_id: input.authorId,
       is_featured: input.isFeatured,
       publish_state: input.publishState,
-      published_at: input.publishState === "published" ? new Date().toISOString() : null,
+      published_at:
+        input.publishState === "published" ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
 
   if (error || !data) {
     if ((error?.message ?? "").includes("slug")) {
-      return { ok: false, error: "duplicate", fields: { slug: "That slug is taken." } };
+      return {
+        ok: false,
+        error: "duplicate",
+        fields: { slug: "That slug is taken." },
+      };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   await recordAudit({
@@ -199,7 +266,9 @@ export async function createInsightAction(formData: FormData): Promise<ContentSt
   return { ok: true, id: data.id, message: "created" };
 }
 
-export async function updateInsightAction(formData: FormData): Promise<ContentState> {
+export async function updateInsightAction(
+  formData: FormData,
+): Promise<ContentState> {
   const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
@@ -222,14 +291,25 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
   }
   const input = parsed.data;
   if (input.publishState === "published" && !input.authorId) {
-    return { ok: false, error: "need_author", fields: { authorId: "Required to publish." } };
+    return {
+      ok: false,
+      error: "need_author",
+      fields: { authorId: "Required to publish." },
+    };
   }
 
   // The target department and the new department are both checked: an editor
   // must be allowed to touch the article as it stands *and* to move it to where
   // the form says. Checking only the new value would let an editor reassign
   // another department's article to their own.
-  if (!(await canAuthorForDepartment(gate.role, input.departmentId))) {
+  const departmentCheck = await canAuthorForDepartment(
+    gate.role,
+    input.departmentId,
+  );
+  if (!departmentCheck.ok) {
+    return { ok: false, error: "unconfigured", detail: departmentCheck.detail };
+  }
+  if (!departmentCheck.allowed) {
     return {
       ok: false,
       error: "forbidden_department",
@@ -238,7 +318,12 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
   }
 
   const supabase = await createClientOrAdmin();
-  if (!supabase) return { ok: false, error: "unconfigured" };
+  if (!supabase)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   // Read the current publish state so `published_at` is set once, on the
   // draft→published transition, and kept on later edits. Rewriting it on every
@@ -253,9 +338,15 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
     .maybeSingle();
   if (!current) return { ok: false, error: "not_found" };
 
-  if (!(await canAuthorForDepartment(gate.role, current.department_id))) {
-    return { ok: false, error: "forbidden_department" };
-  }
+  const currentCheck = await canAuthorForDepartment(
+    gate.role,
+    current.department_id,
+  );
+  const currentFailure = authorisationFailure(
+    currentCheck,
+    "forbidden_department",
+  );
+  if (currentFailure) return currentFailure;
 
   const publishedAt =
     input.publishState === "published"
@@ -280,14 +371,25 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
 
   if (error) {
     if ((error.message ?? "").includes("slug")) {
-      return { ok: false, error: "duplicate", fields: { slug: "That slug is taken." } };
+      return {
+        ok: false,
+        error: "duplicate",
+        fields: { slug: "That slug is taken." },
+      };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
   }
 
   await recordAudit({
     actorId: gate.userId,
-    action: input.publishState === "published" ? "content_published" : "content_updated",
+    action:
+      input.publishState === "published"
+        ? "content_published"
+        : "content_updated",
     entityType: "insight",
     entityId: id,
     metadata: { slug: input.slug, publish_state: input.publishState },
@@ -301,7 +403,9 @@ export async function updateInsightAction(formData: FormData): Promise<ContentSt
   return { ok: true, id, message: "updated" };
 }
 
-export async function uploadInsightCoverAction(formData: FormData): Promise<ContentState> {
+export async function uploadInsightCoverAction(
+  formData: FormData,
+): Promise<ContentState> {
   const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
@@ -316,7 +420,12 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
   if (!verdict.ok) return { ok: false, error: verdict.reason };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   // The article's department decides whether the caller may touch it. Read with
   // the service-role client so the check is explicit rather than relying on a
@@ -327,15 +436,23 @@ export async function uploadInsightCoverAction(formData: FormData): Promise<Cont
     .eq("id", id)
     .maybeSingle();
   if (!owned) return { ok: false, error: "not_found" };
-  if (!(await canAuthorForDepartment(gate.role, owned.department_id))) {
-    return { ok: false, error: "forbidden" };
-  }
+  const ownedCheck = await canAuthorForDepartment(
+    gate.role,
+    owned.department_id,
+  );
+  const ownedFailure = authorisationFailure(ownedCheck);
+  if (ownedFailure) return ownedFailure;
 
   const objectPath = buildObjectPath(id, verdict.extension);
   const { error: uploadError } = await admin.storage
     .from(CONTENT_MEDIA_BUCKET)
     .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
-  if (uploadError) return { ok: false, error: "upload_failed" };
+  if (uploadError)
+    return {
+      ok: false,
+      error: "upload_failed",
+      detail: describeSupabaseError(uploadError),
+    };
 
   const supabase = await createClientOrAdmin();
   const { error: updateError } = await (supabase ?? admin)
@@ -404,7 +521,12 @@ export async function uploadInsightImageAction(
   if (files.length === 0) return { ok: false, error: "no_file" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const { data: article } = await admin
     .from("insights")
@@ -412,9 +534,12 @@ export async function uploadInsightImageAction(
     .eq("id", id)
     .maybeSingle();
   if (!article) return { ok: false, error: "not_found" };
-  if (!(await canAuthorForDepartment(gate.role, article.department_id))) {
-    return { ok: false, error: "forbidden" };
-  }
+  const articleCheck = await canAuthorForDepartment(
+    gate.role,
+    article.department_id,
+  );
+  const articleFailure = authorisationFailure(articleCheck);
+  if (articleFailure) return articleFailure;
 
   // Position continues from the current maximum so a later image does not take
   // the first slot from an earlier one.
@@ -452,7 +577,11 @@ export async function uploadInsightImageAction(
     if (uploadError) {
       return stored > 0
         ? { ok: true, id, message: "image_added_partial" }
-        : { ok: false, error: "upload_failed" };
+        : {
+            ok: false,
+            error: "upload_failed",
+            detail: describeSupabaseError(uploadError),
+          };
     }
 
     const { error: rowError } = await writer.from("insight_media").insert({
@@ -469,7 +598,11 @@ export async function uploadInsightImageAction(
       await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([objectPath]);
       return stored > 0
         ? { ok: true, id, message: "image_added_partial" }
-        : { ok: false, error: "write_failed" };
+        : {
+            ok: false,
+            error: "write_failed",
+            detail: describeSupabaseError(rowError),
+          };
     }
 
     position += 1;
@@ -503,7 +636,12 @@ export async function removeInsightImageAction(
   if (!mediaId) return { ok: false, error: "not_found" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const { data: media } = await admin
     .from("insight_media")
@@ -515,12 +653,23 @@ export async function removeInsightImageAction(
   const departmentId =
     (media.insights as { department_id: string | null } | null)
       ?.department_id ?? null;
-  if (!(await canAuthorForDepartment(gate.role, departmentId))) {
-    return { ok: false, error: "forbidden" };
-  }
+  const mediaDepartmentCheck = await canAuthorForDepartment(
+    gate.role,
+    departmentId,
+  );
+  const mediaDepartmentFailure = authorisationFailure(mediaDepartmentCheck);
+  if (mediaDepartmentFailure) return mediaDepartmentFailure;
 
-  const { error } = await admin.from("insight_media").delete().eq("id", mediaId);
-  if (error) return { ok: false, error: "write_failed" };
+  const { error } = await admin
+    .from("insight_media")
+    .delete()
+    .eq("id", mediaId);
+  if (error)
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
 
   await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([media.storage_path]);
 
@@ -557,7 +706,6 @@ async function createClientOrAdmin() {
   return createAdminClient();
 }
 
-
 /**
  * Permanently delete an article. Super-admin only.
  *
@@ -569,9 +717,10 @@ async function createClientOrAdmin() {
 export async function deleteInsightAction(
   insightId: string,
   reason: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
   const auth = await getAuthState();
-  if (auth.status === "unconfigured") return { ok: false, error: "unconfigured" };
+  if (auth.status === "unconfigured")
+    return { ok: false, error: "unconfigured" };
   if (auth.status !== "authenticated" || !auth.profile) {
     return { ok: false, error: "unauthenticated" };
   }
@@ -583,11 +732,20 @@ export async function deleteInsightAction(
   if (trimmed.length < 10) return { ok: false, error: "reason_required" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   // Remove stored objects first, while the media rows still name them.
   const [{ data: article }, { data: media }] = await Promise.all([
-    admin.from("insights").select("cover_image_path").eq("id", insightId).maybeSingle(),
+    admin
+      .from("insights")
+      .select("cover_image_path")
+      .eq("id", insightId)
+      .maybeSingle(),
     admin
       .from("insight_media")
       .select("storage_path")

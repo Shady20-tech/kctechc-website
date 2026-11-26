@@ -429,7 +429,12 @@
         "unauthenticated": "Votre session a expiré. Reconnectez-vous puis réessayez.",
         "forbidden": "Votre rôle ne permet pas de créer des produits.",
         "forbidden_department": "Cette catégorie appartient à un autre département. Choisissez une catégorie de votre propre département.",
-        "unconfigured": "Le serveur n'a pas de clé serveur Supabase. Définissez SUPABASE_SERVICE_ROLE_KEY (ancien JWT service_role) ou SUPABASE_SECRET_KEY (nouvelle clé sb_secret_) dans l'environnement du serveur, puis redémarrez ou redéployez. Vérifiez /api/health : supabaseAdmin doit valoir true.",
+        "unconfigured": "Le serveur n'a pas de clé serveur Supabase. Définissez SUPABASE_SECRET_KEY (recommandée, nouvelle clé sb_secret_) ou SUPABASE_SERVICE_ROLE_KEY (ancien JWT service_role) dans l'environnement du serveur, puis redémarrez ou redéployez. Vérifiez /api/health : supabaseAdmin doit valoir true.",
+        "lookup_failed": "La catégorie sélectionnée n'a pas pu être lue dans la base de données. L'erreur est affichée ci-dessous.",
+        "categoryLoadFailed": "Les catégories de produits n'ont pas pu être chargées. Il s'agit d'une erreur de lecture de la base, pas d'une clé serveur manquante.",
+        "departmentLoadFailed": "La liste des départements n'a pas pu être chargée. Il s'agit d'une erreur de lecture de la base, pas d'une clé serveur manquante.",
+        "noCategories": "Aucune catégorie de produits active n'existe encore. Appliquez les migrations de la boutique, ou créez une catégorie, avant d'ajouter un produit.",
+        "noEditableDepartments": "Votre rôle n'a aucun département disponible pour ajouter des produits.",
         "invalid": "Certains champs nécessitent votre attention. Les messages sont affichés sous chacun d'eux.",
         "duplicate": "Un produit utilise déjà cet identifiant ou cette référence.",
         "write_failed": "Le produit n'a pas pu être enregistré. Veuillez réessayer.",
@@ -2186,7 +2191,7 @@
     "realEstate": "Immobilier",
     "reviews": "Avis",
     "serviceRoleMissingTitle": "Le serveur n'a pas de clé serveur Supabase",
-    "serviceRoleMissingBody": "Les écritures d’administration, les envois d’images et la journalisation d’audit nécessitent une clé Supabase côté serveur. Définissez SUPABASE_SERVICE_ROLE_KEY (ancien JWT service_role) ou SUPABASE_SECRET_KEY (nouvelle clé sb_secret_) sur le serveur, puis redémarrez ou redéployez. N’utilisez jamais le préfixe NEXT_PUBLIC_. Vérifiez /api/health : supabaseAdmin doit valoir true. Il s’agit de configuration serveur, pas de migrations de base de données."
+    "serviceRoleMissingBody": "Les écritures d’administration, les envois d’images et la journalisation d’audit nécessitent une clé Supabase côté serveur. Définissez SUPABASE_SECRET_KEY (recommandée, nouvelle clé sb_secret_) ou SUPABASE_SERVICE_ROLE_KEY (ancien JWT service_role) sur le serveur, puis redémarrez ou redéployez. N’utilisez jamais le préfixe NEXT_PUBLIC_. Vérifiez /api/health : supabaseAdmin doit valoir true. Il s’agit de configuration serveur, pas de migrations de base de données."
   },
   "roleName": {
     "super_admin": "Super administrateur",

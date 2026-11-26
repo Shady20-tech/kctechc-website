@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { STORE_CURRENCY } from "@/lib/config/site";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import {
   allCategoryRecords,
   allProductRecords,
@@ -467,8 +468,7 @@ export async function loadCategoryRecords(
 
     return rows.map((row) => ({
       slug: row.slug,
-      departmentSlug:
-        (row.departments as { slug: string } | null)?.slug ?? "",
+      departmentSlug: (row.departments as { slug: string } | null)?.slug ?? "",
       name: row.name,
       description: asString(row.description),
       localizedSlugs: localizedSlugs.get(row.id),
@@ -514,21 +514,69 @@ export async function loadProductsInCategory(
  * admin form does need it — a product references its category by id — so this
  * loader exists separately rather than widening `CategoryRecord` for everyone.
  *
- * Returns an empty list rather than a fallback when the database is unavailable.
- * A form that silently offers a fabricated category id would let an editor submit
- * a product pointing at a row that does not exist.
+ * The result form is what the Add Product page uses: an empty list has two very
+ * different meanings — "there are no categories yet" and "the read failed" — and
+ * the page must not report both as a configuration error. A form silently
+ * offering a fabricated category id would let an editor submit a product
+ * pointing at a row that does not exist.
  */
-export async function loadCategoryOptions(departmentSlug?: string): Promise<
-  readonly { id: string; name: string; departmentSlug: string }[]
-> {
-  try {
-    const supabase = await createClient();
-    if (!supabase) return [];
+export type CategoryOption = {
+  id: string;
+  name: string;
+  departmentSlug: string;
+};
 
-    const { data: departments } = departmentSlug
-      ? await supabase.from("departments").select("id").eq("slug", departmentSlug)
+export type CategoryOptionsResult =
+  | { ok: true; categories: readonly CategoryOption[] }
+  | { ok: false; reason: "unconfigured" | "read_failed"; detail: string };
+
+/**
+ * Load the category options an editor may attach a product to.
+ *
+ * This returns the failure explicitly instead of collapsing it to an empty list.
+ * An empty list has two very different meanings — "there are no categories yet"
+ * and "the read failed" — and the Add Product page used to treat both, plus a
+ * missing admin key, as the same "server key not configured" message. The page now
+ * decides from the reason, so a database error is reported as one.
+ */
+export async function loadCategoryOptionsResult(
+  departmentSlug?: string,
+): Promise<CategoryOptionsResult> {
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return {
+      ok: false,
+      reason: "unconfigured",
+      detail: "The Supabase session client is not configured.",
+    };
+  }
+
+  try {
+    const { data: departments, error: departmentError } = departmentSlug
+      ? await supabase
+          .from("departments")
+          .select("id")
+          .eq("slug", departmentSlug)
       : await supabase.from("departments").select("id");
-    if (!departments || departments.length === 0) return [];
+    if (departmentError) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(departmentError),
+      };
+    }
+    if (!departments || departments.length === 0) {
+      return { ok: true, categories: [] };
+    }
 
     const { data: rows, error } = await supabase
       .from("product_categories")
@@ -540,16 +588,44 @@ export async function loadCategoryOptions(departmentSlug?: string): Promise<
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
-    if (error || !rows) return [];
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      departmentSlug:
-        (row.departments as { slug: string } | null)?.slug ?? "",
-    }));
-  } catch {
-    return [];
+    if (error || !rows) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+
+    return {
+      ok: true,
+      categories: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        departmentSlug:
+          (row.departments as { slug: string } | null)?.slug ?? "",
+      })),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
   }
+}
+
+/**
+ * Backwards-compatible list form.
+ *
+ * Callers that only need the options and already handle an empty list (the
+ * product edit page's category picker) use this. The Add Product page uses the
+ * result form so it can tell the editor what actually went wrong.
+ */
+export async function loadCategoryOptions(
+  departmentSlug?: string,
+): Promise<readonly { id: string; name: string; departmentSlug: string }[]> {
+  const result = await loadCategoryOptionsResult(departmentSlug);
+  return result.ok ? result.categories : [];
 }
 
 /** Load published categories, localized. */

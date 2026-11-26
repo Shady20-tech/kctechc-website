@@ -3,6 +3,7 @@ import "server-only";
 import { canAccessDepartment, type AppRole } from "@/lib/auth/roles";
 import { DEPARTMENTS, type DepartmentSlug } from "@/lib/config/site";
 import { createClient } from "@/lib/supabase/server";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import type { Database } from "@/lib/db/database.types";
 
 type PublishState = Database["public"]["Enums"]["publish_state"];
@@ -86,29 +87,81 @@ export function departmentsForRole(role: AppRole): DepartmentSlug[] {
   ).map((entry) => entry.slug);
 }
 
+export type EditableDepartmentsResult =
+  | { ok: true; departments: readonly EditableDepartment[] }
+  | { ok: false; reason: "unconfigured" | "read_failed"; detail: string };
+
+/**
+ * Load the department rows (id + name) for the slugs a role may edit.
+ *
+ * The Add Product page needs to distinguish "this role may edit no department"
+ * from "the department read failed", because the second one used to render as a
+ * missing-key message. The list form remains for the project console, where an
+ * empty list is a legitimate "no editable department" state.
+ */
+export async function loadEditableDepartmentsResult(
+  role: AppRole,
+): Promise<EditableDepartmentsResult> {
+  const allowed = departmentsForRole(role);
+  if (allowed.length === 0) return { ok: true, departments: [] };
+
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+  if (!supabase) {
+    return {
+      ok: false,
+      reason: "unconfigured",
+      detail: "The Supabase session client is not configured.",
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("departments")
+      .select("id, slug, name")
+      .in("slug", allowed)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      return {
+        ok: false,
+        reason: "read_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+    if (!data) return { ok: true, departments: [] };
+
+    return {
+      ok: true,
+      departments: data
+        .filter((row): row is typeof row & { slug: DepartmentSlug } =>
+          (allowed as readonly string[]).includes(row.slug),
+        )
+        .map((row) => ({ id: row.id, slug: row.slug, name: row.name })),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "read_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+}
+
 /** Load the department rows (id + name) for the slugs a role may edit. */
 export async function loadEditableDepartments(
   role: AppRole,
 ): Promise<EditableDepartment[]> {
-  const allowed = departmentsForRole(role);
-  if (allowed.length === 0) return [];
-
-  const supabase = await createClient();
-  if (!supabase) return [];
-
-  const { data } = await supabase
-    .from("departments")
-    .select("id, slug, name")
-    .in("slug", allowed)
-    .order("sort_order", { ascending: true });
-
-  if (!data) return [];
-
-  return data
-    .filter((row): row is typeof row & { slug: DepartmentSlug } =>
-      (allowed as readonly string[]).includes(row.slug),
-    )
-    .map((row) => ({ id: row.id, slug: row.slug, name: row.name }));
+  const result = await loadEditableDepartmentsResult(role);
+  return result.ok ? [...result.departments] : [];
 }
 
 type ProjectListRow = {

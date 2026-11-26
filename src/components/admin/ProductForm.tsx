@@ -94,6 +94,7 @@ export function ProductForm({
 
   const fields = state.ok ? undefined : state.fields;
   const errorCode = state.ok ? undefined : state.error;
+  const errorDetail = state.ok ? undefined : state.detail;
 
   return (
     <form action={formAction} className="max-w-3xl space-y-6">
@@ -152,12 +153,18 @@ export function ProductForm({
       {errorCode && errorCode !== "invalid" ? (
         <Notice tone="warning" title={t("admin.store.errorHeading")}>
           <p>{t(`admin.store.errors.${errorCode}`)}</p>
+          {errorDetail ? (
+            <p className="mt-2 break-words font-mono text-xs">{errorDetail}</p>
+          ) : null}
         </Notice>
       ) : null}
 
       {errorCode === "invalid" ? (
         <Notice tone="warning" title={t("admin.store.errorHeading")}>
           <p>{t("admin.store.errors.invalid")}</p>
+          {errorDetail ? (
+            <p className="mt-2 break-words font-mono text-xs">{errorDetail}</p>
+          ) : null}
         </Notice>
       ) : null}
 

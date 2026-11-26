@@ -97,6 +97,11 @@ export function ProductMediaForm({
           <Notice tone="error">
             {labels[`errors.${imageState.error}`] ??
               labels["errors.upload_failed"]}
+            {imageState.detail ? (
+              <span className="mt-2 block break-words font-mono text-xs">
+                {imageState.detail}
+              </span>
+            ) : null}
           </Notice>
         ) : null}
         {imageState?.ok ? (
@@ -234,6 +239,11 @@ export function ProductMediaForm({
           <Notice tone="error">
             {labels[`errors.${publishState.error}`] ??
               labels["errors.write_failed"]}
+            {publishState.detail ? (
+              <span className="mt-2 block break-words font-mono text-xs">
+                {publishState.detail}
+              </span>
+            ) : null}
           </Notice>
         ) : null}
         {publishState?.ok ? (
@@ -286,9 +296,16 @@ function PrimaryImageForm({
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="mediaId" value={mediaId} />
       {state && !state.ok ? (
-        <p className="text-xs text-danger">
-          {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
-        </p>
+        <>
+          <p className="text-xs text-danger">
+            {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
+          </p>
+          {state.detail ? (
+            <p className="break-words font-mono text-xs text-muted">
+              {state.detail}
+            </p>
+          ) : null}
+        </>
       ) : null}
       {state?.ok ? (
         <p className="text-xs text-success">{labels.primarySet}</p>
@@ -329,9 +346,16 @@ function RemoveImageForm({
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="mediaId" value={mediaId} />
       {state && !state.ok ? (
-        <p className="text-xs text-danger">
-          {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
-        </p>
+        <>
+          <p className="text-xs text-danger">
+            {labels[`errors.${state.error}`] ?? labels["errors.write_failed"]}
+          </p>
+          {state.detail ? (
+            <p className="break-words font-mono text-xs text-muted">
+              {state.detail}
+            </p>
+          ) : null}
+        </>
       ) : null}
       {state?.ok ? (
         <p className="text-xs text-success">{labels.imageRemoved}</p>

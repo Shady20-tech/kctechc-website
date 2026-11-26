@@ -12,7 +12,11 @@ import {
 import { storePathFor } from "@/lib/config/navigation";
 import { recordAudit } from "@/lib/security/audit";
 import { PRODUCT_MEDIA_BUCKET, productMediaPath } from "@/lib/store/storage";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createAdminClient,
+  missingAdminClientDetail,
+} from "@/lib/supabase/admin";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { validateUpload } from "@/lib/uploads/validation";
 
 /**
@@ -33,7 +37,7 @@ import { validateUpload } from "@/lib/uploads/validation";
 
 export type ProductMediaState =
   | { ok: true; message: string }
-  | { ok: false; error: string };
+  | { ok: false; error: string; detail?: string };
 
 async function requireEditor(): Promise<
   | { ok: true; userId: string; role: AppRole }
@@ -108,7 +112,12 @@ export async function uploadProductImageAction(
   if (files.length === 0) return { ok: false, error: "no_file" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   // The department comes from the product, never from the request. A product in
   // a department the caller may not edit is treated as not-found, so the action
@@ -156,7 +165,11 @@ export async function uploadProductImageAction(
     if (uploadError) {
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
-        : { ok: false, error: "upload_failed" };
+        : {
+            ok: false,
+            error: "upload_failed",
+            detail: describeSupabaseError(uploadError),
+          };
     }
 
     const { error: insertError } = await admin.from("product_media").insert({
@@ -172,7 +185,11 @@ export async function uploadProductImageAction(
       await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([objectPath]);
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
-        : { ok: false, error: "write_failed" };
+        : {
+            ok: false,
+            error: "write_failed",
+            detail: describeSupabaseError(insertError),
+          };
     }
 
     primaryTaken = true;
@@ -218,7 +235,12 @@ export async function removeProductImageAction(
   if (!productId || !mediaId) return { ok: false, error: "not_found" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const departmentSlug = await departmentSlugForProduct(admin, productId);
   if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
@@ -237,7 +259,12 @@ export async function removeProductImageAction(
     .from("product_media")
     .delete()
     .eq("id", mediaId);
-  if (deleteError) return { ok: false, error: "write_failed" };
+  if (deleteError)
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(deleteError),
+    };
 
   await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([media.storage_path]);
 
@@ -293,7 +320,12 @@ export async function setProductPrimaryImageAction(
   if (!productId || !mediaId) return { ok: false, error: "not_found" };
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const departmentSlug = await departmentSlugForProduct(admin, productId);
   if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
@@ -313,13 +345,23 @@ export async function setProductPrimaryImageAction(
     .update({ is_primary: false })
     .eq("product_id", productId)
     .eq("is_primary", true);
-  if (demoteError) return { ok: false, error: "write_failed" };
+  if (demoteError)
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(demoteError),
+    };
 
   const { error: promoteError } = await admin
     .from("product_media")
     .update({ is_primary: true })
     .eq("id", mediaId);
-  if (promoteError) return { ok: false, error: "write_failed" };
+  if (promoteError)
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(promoteError),
+    };
 
   await recordAudit({
     actorId: gate.userId,
@@ -357,7 +399,12 @@ export async function setProductPublishedAction(
   const publish = String(formData.get("publish") ?? "") === "true";
 
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin)
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
 
   const departmentSlug = await departmentSlugForProduct(admin, productId);
   if (!departmentSlug || !canAccessDepartment(gate.role, departmentSlug)) {
@@ -380,7 +427,12 @@ export async function setProductPublishedAction(
     })
     .eq("id", productId);
 
-  if (error) return { ok: false, error: "write_failed" };
+  if (error)
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(error),
+    };
 
   await recordAudit({
     actorId: gate.userId,

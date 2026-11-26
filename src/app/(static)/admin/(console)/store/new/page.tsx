@@ -5,8 +5,9 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { isDepartmentEditorRole } from "@/lib/auth/roles";
 import { createTranslator } from "@/lib/i18n/translator";
-import { loadEditableDepartments } from "@/lib/content/project-admin-queries";
-import { loadCategoryOptions } from "@/lib/store/loaders";
+import { loadEditableDepartmentsResult } from "@/lib/content/project-admin-queries";
+import { isSupabaseAdminConfigured } from "@/lib/config/server-env";
+import { loadCategoryOptionsResult } from "@/lib/store/loaders";
 
 /**
  * Admin: add a product.
@@ -21,6 +22,12 @@ import { loadCategoryOptions } from "@/lib/store/loaders";
  * department editor sees their own and a super admin sees all — which is the
  * feature: place a product in any department, and that department's staff can then
  * manage it.
+ *
+ * The page must not report every empty state as a missing admin key. A failed
+ * category read, an unseeded category table, a role with no department and an
+ * absent service-role key are four different conditions with four different
+ * fixes. The loaders return their failure explicitly so the notice can name the
+ * real one.
  */
 export const dynamic = "force-dynamic";
 
@@ -38,19 +45,48 @@ export default async function AdminNewProductPage() {
     redirect("/admin/unauthorized");
   }
 
-  const [categories, departments] = await Promise.all([
-    loadCategoryOptions(),
-    loadEditableDepartments(state.profile.role).then((rows) =>
-      rows.map((row) => ({ slug: row.slug, name: row.name })),
-    ),
+  const [categoryResult, departmentResult] = await Promise.all([
+    loadCategoryOptionsResult(),
+    loadEditableDepartmentsResult(state.profile.role),
   ]);
 
-  const allowed = new Set<string>(
-    departments.map((department) => department.slug),
-  );
-  const offered = categories.filter((category) =>
-    allowed.has(category.departmentSlug),
-  );
+  const departments = departmentResult.ok ? departmentResult.departments : [];
+  const allowed = new Set<string>(departments.map((entry) => entry.slug));
+  const offered = categoryResult.ok
+    ? categoryResult.categories.filter((category) =>
+        allowed.has(category.departmentSlug),
+      )
+    : [];
+
+  let problem: { title: string; body: string; detail?: string } | null = null;
+  if (!isSupabaseAdminConfigured()) {
+    problem = {
+      title: t("adminNav.serviceRoleMissingTitle"),
+      body: t("adminNav.serviceRoleMissingBody"),
+    };
+  } else if (!categoryResult.ok) {
+    problem = {
+      title: t("admin.store.errorHeading"),
+      body: t("admin.store.errors.categoryLoadFailed"),
+      detail: categoryResult.detail,
+    };
+  } else if (!departmentResult.ok) {
+    problem = {
+      title: t("admin.store.errorHeading"),
+      body: t("admin.store.errors.departmentLoadFailed"),
+      detail: departmentResult.detail,
+    };
+  } else if (departments.length === 0) {
+    problem = {
+      title: t("admin.store.errorHeading"),
+      body: t("admin.store.errors.noEditableDepartments"),
+    };
+  } else if (offered.length === 0) {
+    problem = {
+      title: t("admin.store.errorHeading"),
+      body: t("admin.store.errors.noCategories"),
+    };
+  }
 
   return (
     <>
@@ -61,16 +97,22 @@ export default async function AdminNewProductPage() {
       />
 
       <div className="mt-8">
-        {offered.length === 0 ? (
-          // Without a category there is nothing to attach a product to. Saying so
-          // is better than rendering a select with no options.
-          <Notice tone="warning" title={t("admin.store.errorHeading")}>
-            <p>{t("admin.store.errors.unconfigured")}</p>
+        {problem ? (
+          <Notice tone="warning" title={problem.title}>
+            <p>{problem.body}</p>
+            {problem.detail ? (
+              <p className="mt-2 break-words font-mono text-xs">
+                {problem.detail}
+              </p>
+            ) : null}
           </Notice>
         ) : (
           <ProductForm
             categories={offered}
-            departments={departments}
+            departments={departments.map((row) => ({
+              slug: row.slug,
+              name: row.name,
+            }))}
             locale="en"
           />
         )}

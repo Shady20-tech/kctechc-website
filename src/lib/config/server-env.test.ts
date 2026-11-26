@@ -70,4 +70,34 @@ describe("Supabase server key resolution", () => {
     expect(serverEnv.supabaseServiceRoleKeySource).toBeNull();
     expect(isSupabaseAdminConfigured()).toBe(false);
   });
+
+  it("exposes a pure resolver that every server consumer can share", async () => {
+    const { resolveSupabaseServerKey } = await loadServerEnv();
+
+    expect(
+      resolveSupabaseServerKey({
+        SUPABASE_SERVICE_ROLE_KEY: "",
+        SUPABASE_SECRET_KEY: "sb_secret_only",
+      }),
+    ).toEqual({
+      key: "sb_secret_only",
+      source: "SUPABASE_SECRET_KEY",
+      type: "secret",
+    });
+    expect(
+      resolveSupabaseServerKey({
+        SUPABASE_SERVICE_ROLE_KEY: "legacy",
+        SUPABASE_SECRET_KEY: "sb_secret_only",
+      }),
+    ).toEqual({
+      key: "legacy",
+      source: "SUPABASE_SERVICE_ROLE_KEY",
+      type: "unknown",
+    });
+    expect(resolveSupabaseServerKey({})).toEqual({
+      key: null,
+      source: null,
+      type: null,
+    });
+  });
 });

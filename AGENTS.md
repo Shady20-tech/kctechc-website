@@ -3878,5 +3878,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Department inquiry summaries filter in the database, not after the limit.**
   `loadInquiryReport(limit, departmentSlug?)` applies the department predicate to the query, so a
   department's pulse is not computed from the last 30 rows of every department combined.
-- 1731 Vitest tests pass (152 files); `tsc --noEmit`, ESLint and the production build are clean.
+- 1744 Vitest tests pass (155 files); `tsc --noEmit`, ESLint and the production build are clean.
   `/admin/reports` and `/admin/reviews` both build as dynamic console routes.
+
+### "Supabase admin key is not configured" can be a loader failure, not a missing key
+
+- **The Add Product page could render a form when the category read failed, because the loader
+  swallowed the failure into `[]`.** The page then read "no categories" as "no server key" and
+  printed `admin.store.errors.unconfigured`. The editor saw a key problem while the real problem
+  could have been a PostgREST error, an empty category table or a missing admin client. The
+  loaders now return discriminated results (`loadCategoryOptionsResult`,
+  `loadEditableDepartmentsResult`) and the page names the actual condition.
+- **An empty list has three meanings that must stay distinguishable**: unconfigured, a failed
+  read, and genuinely no rows. Collapsing them is what made a database error look like config.
+  `describeSupabaseError` keeps the PostgREST message and code, and `missingAdminClientDetail`
+  names whether the public URL or the server key is absent. Neither returns a key value.
+- **`SUPABASE_SECRET_KEY` is the preferred server-key name** (the newer `sb_secret_…` key);
+  `SUPABASE_SERVICE_ROLE_KEY` remains an accepted legacy alias and still wins when both are set.
+  `resolveSupabaseServerKey()` is the one resolver used by `serverEnv`, the admin client factory
+  and `/api/health`.
+- **A present key is not a working key.** `/api/health` now performs one cached HEAD request to
+  `departments` and reports `supabaseAdminProbe` as `ok`, `error` with the PostgREST code only, or
+  `not_configured`. A boolean `supabaseAdmin` cannot tell a valid secret key from a pasted
+  database password.
+- **Product create/update and media actions return a `detail` field** for a real PostgREST or
+  thrown error, and the forms render it under the localized message. The action's category lookup
+  no longer turns a database error into `invalid`, and `createProductAction` wraps its insert so a
+  thrown network error becomes a visible failure instead of an unhandled Server Action exception.
+- **A Server Action test cannot replace this proof.** The distinction depends on the running
+  process environment and a live PostgREST response; the Vitest coverage pins the resolver, the
+  error formatter and the loader's discriminated result, while `/api/health` proves the deployed
+  key against the deployed database.

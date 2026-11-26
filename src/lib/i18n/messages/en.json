@@ -429,7 +429,12 @@
         "unauthenticated": "Your session has ended. Sign in again and retry.",
         "forbidden": "Your role does not allow creating products.",
         "forbidden_department": "That category belongs to another department. Choose a category in your own department.",
-        "unconfigured": "The server has no Supabase server key. Set SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) or SUPABASE_SECRET_KEY (new sb_secret_ key) in the server environment, then restart or redeploy. Check /api/health: supabaseAdmin must be true.",
+        "unconfigured": "The server has no Supabase server key. Set SUPABASE_SECRET_KEY (preferred, new sb_secret_ key) or SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) in the server environment, then restart or redeploy. Check /api/health: supabaseAdmin must be true.",
+        "lookup_failed": "The selected category could not be read from the database. The database error is shown below.",
+        "categoryLoadFailed": "Product categories could not be loaded. This is a database read error, not a missing server key.",
+        "departmentLoadFailed": "The department list could not be loaded. This is a database read error, not a missing server key.",
+        "noCategories": "No active product categories exist yet. Apply the store database migrations, or create a category, before adding a product.",
+        "noEditableDepartments": "Your role has no department available for adding products.",
         "invalid": "Some fields need attention. The messages are shown below each one.",
         "duplicate": "A product already uses that slug or SKU.",
         "write_failed": "The product could not be saved. Please try again.",
@@ -2186,7 +2191,7 @@
     "realEstate": "Real Estate",
     "reviews": "Reviews",
     "serviceRoleMissingTitle": "The server has no Supabase server key",
-    "serviceRoleMissingBody": "Admin writes, image uploads and audit logging need a server-side Supabase key. Set SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) or SUPABASE_SECRET_KEY (new sb_secret_ key) on the server, then restart or redeploy. Never use a NEXT_PUBLIC_ prefix. Check /api/health: supabaseAdmin must be true. This is server configuration, not a database migration."
+    "serviceRoleMissingBody": "Admin writes, image uploads and audit logging need a server-side Supabase key. Set SUPABASE_SECRET_KEY (preferred, new sb_secret_ key) or SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) on the server, then restart or redeploy. Never use a NEXT_PUBLIC_ prefix. Check /api/health: supabaseAdmin must be true. This is server configuration, not a database migration."
   },
   "roleName": {
     "super_admin": "Super administrator",

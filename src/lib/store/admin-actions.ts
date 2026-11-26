@@ -8,8 +8,12 @@ import {
   isSuperAdminRole,
 } from "@/lib/auth/roles";
 import { storePathFor } from "@/lib/config/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createAdminClient,
+  missingAdminClientDetail,
+} from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { describeSupabaseError } from "@/lib/supabase/errors";
 import { PRODUCT_MEDIA_BUCKET } from "@/lib/store/storage";
 import {
   DEFAULT_PRODUCT_CURRENCY,
@@ -51,7 +55,63 @@ export type CreateProductResult =
       syncWarning?: string;
       seoWarning?: string;
     }
-  | { ok: false; error: string; fields?: Record<string, string> };
+  | {
+      ok: false;
+      error: string;
+      fields?: Record<string, string>;
+      detail?: string;
+    };
+
+type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>;
+
+type CategoryDepartmentResult =
+  | { ok: true; departmentSlug: string }
+  | { ok: false; error: "lookup_failed" | "invalid"; detail: string };
+
+/**
+ * Resolve the category the editor picked to its department.
+ *
+ * Shared by create and update so the two cannot disagree about whether a read
+ * failure is a database error, and so a real PostgREST message reaches the
+ * console instead of being turned into "invalid".
+ */
+async function categoryDepartment(
+  admin: AdminClient,
+  categoryId: string,
+): Promise<CategoryDepartmentResult> {
+  let category: { departments: { slug: string } | null } | null;
+  try {
+    const { data, error } = await admin
+      .from("product_categories")
+      .select("id, departments(slug)")
+      .eq("id", categoryId)
+      .maybeSingle();
+    if (error) {
+      return {
+        ok: false,
+        error: "lookup_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+    category = data;
+  } catch (error) {
+    return {
+      ok: false,
+      error: "lookup_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
+
+  const departmentSlug = category?.departments?.slug ?? null;
+  if (!departmentSlug) {
+    return {
+      ok: false,
+      error: "invalid",
+      detail: "The selected category does not exist or has no department.",
+    };
+  }
+  return { ok: true, departmentSlug };
+}
 
 export async function createProductAction(
   formData: FormData,
@@ -86,7 +146,13 @@ export async function createProductAction(
 
   const input = parsed.data;
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin) {
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
+  }
 
   // The department is the category's, so the category the editor picked decides
   // which department the product lands in. Reading it from the database rather
@@ -94,20 +160,15 @@ export async function createProductAction(
   // policy already refuses a cross-department write, but a department editor must
   // also get a message rather than a raw policy violation — and the console must
   // never offer another department's categories in the first place.
-  const { data: category } = await admin
-    .from("product_categories")
-    .select("id, departments(slug)")
-    .eq("id", input.categoryId)
-    .maybeSingle();
-
-  const departmentSlug =
-    (category?.departments as { slug: string } | null)?.slug ?? null;
-  if (!category || !departmentSlug) {
-    // A category id that does not resolve means a crafted POST; the generic
-    // invalid message is the right response.
-    return { ok: false, error: "invalid" };
+  const category = await categoryDepartment(admin, input.categoryId);
+  if (!category.ok) {
+    return {
+      ok: false,
+      error: category.error,
+      detail: category.detail,
+    };
   }
-  if (!canAccessDepartment(auth.profile.role, departmentSlug)) {
+  if (!canAccessDepartment(auth.profile.role, category.departmentSlug)) {
     // Reported as its own code so the form shows a message rather than a raw
     // policy violation, and no field-level text is invented: the notice is the
     // whole story.
@@ -119,28 +180,40 @@ export async function createProductAction(
   // The product is inserted as a draft. Publishing requires an image, and the
   // image cannot be attached until the product row exists to attach it to, so a
   // new product starts unpublished and becomes visible when an image is added.
-  const { data: product, error } = await supabase
-    .from("products")
-    .insert({
-      category_id: input.categoryId,
-      slug: input.slug,
-      sku: input.sku,
-      title: input.title,
-      short_description: input.shortDescription,
-      description: input.description,
-      brand: input.brand || null,
-      price_minor: input.priceMinor,
-      currency: DEFAULT_PRODUCT_CURRENCY,
-      stock: input.stock,
-      publish_state: "draft",
-    })
-    .select("id")
-    .single();
+  let product: { id: string } | null;
+  let insertError: unknown;
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        category_id: input.categoryId,
+        slug: input.slug,
+        sku: input.sku,
+        title: input.title,
+        short_description: input.shortDescription,
+        description: input.description,
+        brand: input.brand || null,
+        price_minor: input.priceMinor,
+        currency: DEFAULT_PRODUCT_CURRENCY,
+        stock: input.stock,
+        publish_state: "draft",
+      })
+      .select("id")
+      .single();
+    product = data;
+    insertError = error;
+  } catch (error) {
+    insertError = error;
+    product = null;
+  }
 
-  if (error || !product) {
+  if (insertError || !product) {
     // A unique violation on slug or sku is the common case and deserves a
     // message the editor can act on rather than a generic failure.
-    const message = error?.message ?? "";
+    const message =
+      insertError && typeof insertError === "object"
+        ? String((insertError as { message?: unknown }).message ?? "")
+        : "";
     if (message.includes("slug") || message.includes("sku")) {
       return {
         ok: false,
@@ -149,9 +222,14 @@ export async function createProductAction(
           [message.includes("sku") ? "sku" : "slug"]:
             "A product already uses this value.",
         },
+        detail: describeSupabaseError(insertError),
       };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(insertError),
+    };
   }
 
   // SEO overrides live in `entity_seo`, not on the product row, and the product
@@ -219,8 +297,8 @@ export async function createProductAction(
     syncWarning = "tolgee_unconfigured";
   }
 
-  revalidatePath(`/en${storePathFor(departmentSlug)}`);
-  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
+  revalidatePath(`/en${storePathFor(category.departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(category.departmentSlug)}`);
 
   return {
     ok: true,
@@ -279,61 +357,87 @@ export async function updateProductAction(
 
   const input = parsed.data;
   const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "unconfigured" };
+  if (!admin) {
+    return {
+      ok: false,
+      error: "unconfigured",
+      detail: missingAdminClientDetail(),
+    };
+  }
 
   // The product's current category decides which department it belongs to, and
   // the submitted category must resolve to a department the caller may edit.
-  const { data: category } = await admin
-    .from("product_categories")
-    .select("id, departments(slug)")
-    .eq("id", input.categoryId)
-    .maybeSingle();
-
-  const departmentSlug =
-    (category?.departments as { slug: string } | null)?.slug ?? null;
-  if (!category || !departmentSlug) {
-    return { ok: false, error: "invalid" };
+  const category = await categoryDepartment(admin, input.categoryId);
+  if (!category.ok) {
+    return {
+      ok: false,
+      error: category.error,
+      detail: category.detail,
+    };
   }
-  if (!canAccessDepartment(auth.profile.role, departmentSlug)) {
+  if (!canAccessDepartment(auth.profile.role, category.departmentSlug)) {
     return { ok: false, error: "forbidden_department" };
   }
 
   // Scoped read: a published product in another department is world-readable, so
   // a guessed id must not open an edit whose save the write policy would refuse.
-  const { data: existing } = await admin
-    .from("products")
-    .select("id, product_categories(departments(slug))")
-    .eq("id", input.productId)
-    .maybeSingle();
+  let existing: {
+    product_categories: { departments: { slug: string } | null } | null;
+  } | null;
+  try {
+    const { data, error } = await admin
+      .from("products")
+      .select("id, product_categories(departments(slug))")
+      .eq("id", input.productId)
+      .maybeSingle();
+    if (error) {
+      return {
+        ok: false,
+        error: "lookup_failed",
+        detail: describeSupabaseError(error),
+      };
+    }
+    existing = data;
+  } catch (error) {
+    return {
+      ok: false,
+      error: "lookup_failed",
+      detail: describeSupabaseError(error),
+    };
+  }
   if (!existing) return { ok: false, error: "not_found" };
 
-  const existingSlug =
-    (
-      existing.product_categories as {
-        departments: { slug: string } | null;
-      } | null
-    )?.departments?.slug ?? null;
+  const existingSlug = existing.product_categories?.departments?.slug ?? null;
   if (!existingSlug || !canAccessDepartment(auth.profile.role, existingSlug)) {
     return { ok: false, error: "not_found" };
   }
 
-  const { error } = await admin
-    .from("products")
-    .update({
-      category_id: input.categoryId,
-      slug: input.slug,
-      sku: input.sku,
-      title: input.title,
-      short_description: input.shortDescription,
-      description: input.description,
-      brand: input.brand || null,
-      price_minor: input.priceMinor,
-      stock: input.stock,
-    })
-    .eq("id", input.productId);
+  let updateError: unknown;
+  try {
+    const { error } = await admin
+      .from("products")
+      .update({
+        category_id: input.categoryId,
+        slug: input.slug,
+        sku: input.sku,
+        title: input.title,
+        short_description: input.shortDescription,
+        description: input.description,
+        brand: input.brand || null,
+        price_minor: input.priceMinor,
+        stock: input.stock,
+      })
+      .eq("id", input.productId);
+    updateError = error;
+  } catch (error) {
+    updateError = error;
+  }
 
-  if (error) {
-    const message = error.message ?? "";
+  if (updateError) {
+    const message =
+      typeof updateError === "object" && updateError !== null
+        ? String((updateError as { message?: unknown }).message ?? "")
+        : "";
     if (message.includes("slug") || message.includes("sku")) {
       return {
         ok: false,
@@ -342,9 +446,14 @@ export async function updateProductAction(
           [message.includes("sku") ? "sku" : "slug"]:
             "A product already uses this value.",
         },
+        detail: describeSupabaseError(updateError),
       };
     }
-    return { ok: false, error: "write_failed" };
+    return {
+      ok: false,
+      error: "write_failed",
+      detail: describeSupabaseError(updateError),
+    };
   }
 
   const seoTitle = input.seoTitle || null;
@@ -366,8 +475,8 @@ export async function updateProductAction(
     if (seoError) seoWarning = "seo_write_failed";
   }
 
-  revalidatePath(`/en${storePathFor(departmentSlug)}`);
-  revalidatePath(`/fr${storePathFor(departmentSlug)}`);
+  revalidatePath(`/en${storePathFor(category.departmentSlug)}`);
+  revalidatePath(`/fr${storePathFor(category.departmentSlug)}`);
 
   return {
     ok: true,
