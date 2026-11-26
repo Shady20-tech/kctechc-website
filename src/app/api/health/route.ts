@@ -5,6 +5,7 @@ import {
   isSupabaseAdminConfigured,
   serverEnv,
 } from "@/lib/config/server-env";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // This endpoint reports the *running process* configuration. Without a dynamic
 // declaration Next prerenders it at build time (the route reads no request
@@ -13,6 +14,48 @@ import {
 export const dynamic = "force-dynamic";
 
 const startedAt = new Date().toISOString();
+
+type AdminProbe = {
+  status: "ok" | "error" | "not_configured";
+  code: string | null;
+  checkedAt: string;
+};
+
+// A public health probe must not become a free query generator. One probe per
+// instance per 30 seconds is enough to answer "is this key accepted?".
+const ADMIN_PROBE_TTL_MS = 30_000;
+let adminProbeCache: { expiresAt: number; value: AdminProbe } | null = null;
+
+async function probeAdminKey(): Promise<AdminProbe> {
+  if (adminProbeCache && adminProbeCache.expiresAt > Date.now()) {
+    return adminProbeCache.value;
+  }
+
+  const admin = createAdminClient();
+  const value: AdminProbe = admin
+    ? { status: "ok", code: null, checkedAt: new Date().toISOString() }
+    : {
+        status: "not_configured",
+        code: null,
+        checkedAt: new Date().toISOString(),
+      };
+
+  if (admin) {
+    // A real round trip is the only way to tell a present key from a key the
+    // server accepts. The table is a seeded reference table, so a successful
+    // head request proves authentication without reading any business row.
+    const { error } = await admin
+      .from("departments")
+      .select("id", { count: "exact", head: true });
+    if (error) {
+      value.status = "error";
+      value.code = error.code ?? "unknown";
+    }
+  }
+
+  adminProbeCache = { expiresAt: Date.now() + ADMIN_PROBE_TTL_MS, value };
+  return value;
+}
 
 /**
  * Health endpoint.
@@ -23,7 +66,8 @@ const startedAt = new Date().toISOString();
  * There is no `payments` entry: the site takes no payment through a provider.
  * An order is emailed to the business, so its health signal is `email`.
  */
-export function GET() {
+export async function GET() {
+  const adminProbe = await probeAdminKey();
   return NextResponse.json({
     status: "ok",
     build: {
@@ -52,6 +96,9 @@ export function GET() {
       // JWT and a current `sb_secret_…` key are both valid; anything else is a
       // pasted database password or truncated value and will be refused.
       supabaseAdminKeyType: serverEnv.supabaseServiceRoleKeyType,
+      // A real round trip with the server key. `ok` means Supabase accepted it
+      // and the schema is reachable; `error` carries only the PostgREST code.
+      supabaseAdminProbe: adminProbe,
       tolgee: Boolean(publicEnv.tolgeeProjectId),
       email: isEmailConfigured(),
       maps: publicEnv.mapProvider,
