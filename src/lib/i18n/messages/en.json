@@ -2279,7 +2279,27 @@
     "systemActor": "System",
     "noMetadata": "—",
     "showing": "Showing {count} entries",
-    "limited": "Showing the most recent {count} entries. Narrow the filters to see older ones."
+    "limited": "Showing the most recent {count} entries. Narrow the filters to see older ones.",
+    "clearHeading": "Clear system logs",
+    "clearIntro": "Permanently delete every audit log entry. This cannot be undone. A single entry recording that the logs were cleared is written afterwards.",
+    "clearReasonLabel": "Reason for clearing",
+    "clearReasonHint": "At least 10 characters. The reason is stored in the new audit entry.",
+    "clearSubmit": "Clear all logs",
+    "clearConfirmTitle": "Confirm clearing all logs",
+    "clearConfirmBody": "Every existing audit log entry will be permanently deleted. Enter the reason above, then confirm.",
+    "clearConfirm": "Yes, clear all logs",
+    "clearCancel": "Cancel",
+    "clearSubmitting": "Clearing…",
+    "clearDone": "Cleared {count} log entries.",
+    "clearAuditFailed": "The logs were cleared, but the clear action could not be recorded in the audit trail.",
+    "clearErrors": {
+      "unauthenticated": "Your session has expired. Sign in again.",
+      "forbidden": "Only a super administrator can clear the system logs.",
+      "unconfigured": "The database is not configured.",
+      "rate_limited": "Too many clear attempts. Wait a few minutes.",
+      "invalid_reason": "Enter a reason of at least 10 characters.",
+      "delete_failed": "The logs could not be cleared."
+    }
   },
   "inquiryStatus": {
     "new": "New",

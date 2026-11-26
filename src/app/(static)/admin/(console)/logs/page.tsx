@@ -1,3 +1,4 @@
+import { ClearLogsForm } from "@/components/admin/ClearLogsForm";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
@@ -41,6 +42,8 @@ export default async function AdminLogsPage({
         heading={t("adminLogs.heading")}
         intro={t("adminLogs.intro")}
       />
+
+      <ClearLogsForm locale="en" />
 
       <form
         method="get"

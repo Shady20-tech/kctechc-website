@@ -59,6 +59,7 @@ export const AUDIT_ACTIONS = [
   "inquiry_received",
   "inquiry_status_changed",
   "inquiry_assigned",
+  "audit_logs_cleared",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

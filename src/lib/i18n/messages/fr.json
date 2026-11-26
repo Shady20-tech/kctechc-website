@@ -2279,7 +2279,27 @@
     "systemActor": "Système",
     "noMetadata": "—",
     "showing": "{count} entrées affichées",
-    "limited": "Affichage des {count} entrées les plus récentes. Affinez les filtres pour voir les plus anciennes."
+    "limited": "Affichage des {count} entrées les plus récentes. Affinez les filtres pour voir les plus anciennes.",
+    "clearHeading": "Effacer les journaux système",
+    "clearIntro": "Supprime définitivement toutes les entrées de la piste d'audit. Cette action est irréversible. Une seule entrée indiquant que les journaux ont été effacés est ensuite écrite.",
+    "clearReasonLabel": "Motif de l'effacement",
+    "clearReasonHint": "Au moins 10 caractères. Ce motif est enregistré dans la nouvelle entrée d'audit.",
+    "clearSubmit": "Effacer tous les journaux",
+    "clearConfirmTitle": "Confirmer l'effacement de tous les journaux",
+    "clearConfirmBody": "Toutes les entrées existantes de la piste d'audit seront définitivement supprimées. Saisissez le motif ci-dessus, puis confirmez.",
+    "clearConfirm": "Oui, effacer tous les journaux",
+    "clearCancel": "Annuler",
+    "clearSubmitting": "Effacement…",
+    "clearDone": "{count} entrées de journal effacées.",
+    "clearAuditFailed": "Les journaux ont été effacés, mais l'action n'a pas pu être enregistrée dans la piste d'audit.",
+    "clearErrors": {
+      "unauthenticated": "Votre session a expiré. Reconnectez-vous.",
+      "forbidden": "Seul un super administrateur peut effacer les journaux système.",
+      "unconfigured": "La base de données n'est pas configurée.",
+      "rate_limited": "Trop de tentatives d'effacement. Patientez quelques minutes.",
+      "invalid_reason": "Saisissez un motif d'au moins 10 caractères.",
+      "delete_failed": "Les journaux n'ont pas pu être effacés."
+    }
   },
   "inquiryStatus": {
     "new": "Nouvelle",

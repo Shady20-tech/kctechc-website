@@ -726,6 +726,13 @@ Insights`. Departments are a dropdown on desktop and a labelled group in the mob
     product page, the store index, `/en/real-estate/listings` and `/en`. The cart reports SEO 66
     from the single `is-crawlable` audit, which is its deliberate `noindex`.
 
+### Super-admin system-log clear
+
+- **`/admin/logs` now has a clear control, and the database boundary is a DELETE policy.** Migration `20260101000085_clear_audit_logs.sql` adds `audit_logs_delete_super_admin` (`for delete to authenticated using (public.is_super_admin())`) and `grant delete on public.audit_logs to authenticated`. The Server Action `clearAuditLogsAction` uses the **cookie-bound** client, so RLS is the control; its `role !== "super_admin"` check is only the message. A lesser role's delete matches no row.
+- **The clear is itself audited.** After deleting, the action writes one `audit_logs_cleared` row through `recordAudit` (service role) carrying the reason and the number removed. If that write fails the rows are still gone, and the action returns `audited: false` so the UI warns rather than pretending the trail is intact.
+- **The UI is `ClearLogsForm`**, a two-step reveal with a required 10-character reason. The reveal gates only the submit button; the action validates the reason and the role. The page is still English-only, like the rest of the console, but the strings exist in both dictionaries.
+- `supabase/validate/170_audit_log_clear_behaviour.sql` proves the non-super refusal, the super-admin delete and the anon grant boundary. `src/lib/admin/log-actions.test.ts` covers the action and pins the migration policy.
+
 ### Hero image provenance
 
 Every hero backdrop is a Wikimedia Commons file with a licence that permits commercial use
