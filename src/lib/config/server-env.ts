@@ -73,6 +73,14 @@ export const serverEnv = {
   /** Salt for hashing submitter IPs. Rotating it invalidates past hashes. */
   inquiryIpSalt: optional(process.env.INQUIRY_IP_SALT),
   tolgeeApiKey: optional(process.env.TOLGEE_API_KEY),
+  /**
+   * Optional server-only overrides for the sync worker. The browser runtime uses
+   * the `NEXT_PUBLIC_*` pair, but a server-only deployment can keep the project
+   * id and API base out of the client bundle. A server-only value wins when both
+   * are set; the public value is the fallback.
+   */
+  tolgeeApiUrl: optional(process.env.TOLGEE_API_URL),
+  tolgeeProjectId: optional(process.env.TOLGEE_PROJECT_ID),
   resendApiKey: optional(process.env.RESEND_API_KEY),
   emailFrom: optional(process.env.EMAIL_FROM),
   emailContactTo: optional(process.env.EMAIL_CONTACT_TO),

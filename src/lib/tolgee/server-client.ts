@@ -2,6 +2,7 @@ import "server-only";
 
 import { serverEnv } from "@/lib/config/server-env";
 import { publicEnv } from "@/lib/config/env";
+import { normalizeTolgeeApiUrl } from "@/lib/tolgee/url";
 
 /**
  * Tolgee server-side client.
@@ -21,7 +22,7 @@ export type TolgeeResult<T> =
   | { ok: false; error: string; retryable: boolean };
 
 export function isTolgeeSyncConfigured(): boolean {
-  return serverEnv.tolgeeApiKey !== null && publicEnv.tolgeeProjectId !== "";
+  return serverEnv.tolgeeApiKey !== null && getProjectId() !== "";
 }
 
 type TolgeeConfig = {
@@ -30,13 +31,28 @@ type TolgeeConfig = {
   apiKey: string;
 };
 
+function getProjectId(): string {
+  return serverEnv.tolgeeProjectId ?? publicEnv.tolgeeProjectId ?? "";
+}
+
 function getConfig(): TolgeeConfig | null {
   if (!isTolgeeSyncConfigured()) return null;
   return {
-    baseUrl: publicEnv.tolgeeApiUrl.replace(/\/$/, ""),
-    projectId: publicEnv.tolgeeProjectId,
+    // A server-only URL is authoritative when present: the public value always
+    // has a default, so treating it as "configured" would hide the override.
+    baseUrl: normalizeTolgeeApiUrl(
+      serverEnv.tolgeeApiUrl ?? publicEnv.tolgeeApiUrl,
+    ),
+    projectId: getProjectId(),
     apiKey: serverEnv.tolgeeApiKey as string,
   };
+}
+
+function apiKeyKind(apiKey: string): string {
+  if (apiKey.startsWith("tgpak_")) return "project_api_key";
+  if (apiKey.startsWith("tgpat_")) return "personal_access_token";
+  if (apiKey.startsWith("eyJ")) return "legacy_jwt";
+  return "unknown";
 }
 
 /**
@@ -48,7 +64,10 @@ function getConfig(): TolgeeConfig | null {
  * Recording that distinction is what stops the queue from burning all its
  * attempts on an error that will never succeed.
  */
-function classifyFailure(status: number): { message: string; retryable: boolean } {
+function classifyFailure(
+  status: number,
+  requestUrl: string,
+): { message: string; retryable: boolean } {
   if (status === 429) {
     return { message: "Tolgee rate limit reached", retryable: true };
   }
@@ -57,12 +76,15 @@ function classifyFailure(status: number): { message: string; retryable: boolean 
   }
   if (status === 401 || status === 403) {
     return {
-      message: "Tolgee rejected the project API key",
+      message: "Tolgee rejected the API key or personal access token",
       retryable: false,
     };
   }
   if (status === 404) {
-    return { message: "Tolgee project or endpoint not found", retryable: false };
+    return {
+      message: `Tolgee project or endpoint not found (404): ${requestUrl}`,
+      retryable: false,
+    };
   }
   return { message: `Tolgee request failed (${status})`, retryable: false };
 }
@@ -83,11 +105,13 @@ async function request<T>(
   }
 
   try {
-    const response = await fetch(`${config.baseUrl}${path}`, {
+    const requestUrl = `${config.baseUrl}${path}`;
+    const response = await fetch(requestUrl, {
       method: init.method,
       headers: {
-        // The documented header. The `ak` query parameter is deliberately not
-        // used: it leaks the key into server access logs.
+        // Both Project API keys (`tgpak_...`) and Personal Access Tokens
+        // (`tgpat_...`) authenticate with this header. The `ak` query parameter
+        // is deliberately not used: it leaks the key into server access logs.
         "X-API-Key": config.apiKey,
         "Content-Type": "application/json",
       },
@@ -98,7 +122,25 @@ async function request<T>(
     });
 
     if (!response.ok) {
-      const { message, retryable } = classifyFailure(response.status);
+      const responseBody = await response.text().catch(() => "");
+      if (response.status === 404) {
+        // A 404 is almost always a base URL or project id problem, and the
+        // generic "not found" text hides which one. Log the exact URL, the
+        // status, the project id, the credential kind (never the secret) and
+        // Tolgee's short error body.
+        console.error("[tolgee] 404", {
+          method: init.method,
+          url: requestUrl,
+          status: response.status,
+          projectId: config.projectId,
+          apiKeyKind: apiKeyKind(config.apiKey),
+          responseBody: responseBody.slice(0, 500),
+        });
+      }
+      const { message, retryable } = classifyFailure(
+        response.status,
+        requestUrl,
+      );
       return { ok: false, error: message, retryable };
     }
 

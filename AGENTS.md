@@ -2245,6 +2245,24 @@ DEFINER`-adjacent write the cookie-bound client may not be allowed to make.
   Do not describe the site as machine-translating EN→FR: it is not, and no provider/credentials for
   one have been chosen.
 
+### Tolgee configuration and the 404 diagnosis
+
+- **The sync worker reads `TOLGEE_API_KEY` and a project id from either `NEXT_PUBLIC_TOLGEE_PROJECT_ID`
+  or `TOLGEE_PROJECT_ID`, and an API base from `NEXT_PUBLIC_TOLGEE_API_URL` or `TOLGEE_API_URL`.**
+  The `NEXT_PUBLIC_*` pair is what the browser runtime and the Tolgee dev tools use, so set both
+  in Vercel even when the server-only aliases are also present. The project id is the numeric id,
+  not the project name or slug.
+- **`normalizeTolgeeApiUrl` strips a trailing slash and a final `/v2`.** Every request already
+  appends `/v2/...`, so a pasted `https://app.tolgee.io/v2` produced `/v2/v2/projects/...` and a
+  404 that looked like a missing project. A self-hosted subpath is preserved.
+- **Both `tgpak_` Project API keys and `tgpat_` Personal Access Tokens use `X-API-Key`.** This is
+  Tolgee's documented header for both credential kinds; do not send a PAT as a bearer JWT. A
+  404 now logs the exact request URL, status, project id and credential kind (never the key), and
+  the recorded sync error includes the URL.
+- **A 404 is a configuration error, not a retryable outage.** The classifier keeps it
+  non-retryable so the queue does not burn attempts on a URL or project id that will never
+  resolve.
+
 ### Account capabilities and listing ownership (Phase 1.1/1.2)
 
 - **`profiles.role` is authorization; a `real_estate_memberships` row is a capability, and the two
@@ -3880,7 +3898,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Department inquiry summaries filter in the database, not after the limit.**
   `loadInquiryReport(limit, departmentSlug?)` applies the department predicate to the query, so a
   department's pulse is not computed from the last 30 rows of every department combined.
-- 1746 Vitest tests pass (156 files); `tsc --noEmit`, ESLint and the production build are clean.
+- 1757 Vitest tests pass (158 files); `tsc --noEmit`, ESLint and the production build are clean.
   `/admin/reports` and `/admin/reviews` both build as dynamic console routes.
 
 ### "Supabase admin key is not configured" can be a loader failure, not a missing key

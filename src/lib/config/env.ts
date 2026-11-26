@@ -7,13 +7,18 @@
  * isolated in `server-env.ts`.
  */
 
+import { normalizeTolgeeApiUrl } from "@/lib/tolgee/url";
+
 function readPublic(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : fallback;
 }
 
 export const publicEnv = {
-  siteUrl: readPublic(process.env.NEXT_PUBLIC_SITE_URL, "http://localhost:3000"),
+  siteUrl: readPublic(
+    process.env.NEXT_PUBLIC_SITE_URL,
+    "http://localhost:3000",
+  ),
   defaultLocale: readPublic(process.env.NEXT_PUBLIC_DEFAULT_LOCALE, "en"),
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "",
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? "",
@@ -22,10 +27,7 @@ export const publicEnv = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "",
   supabasePublishableKey:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "",
-  tolgeeApiUrl: readPublic(
-    process.env.NEXT_PUBLIC_TOLGEE_API_URL,
-    "https://app.tolgee.io",
-  ),
+  tolgeeApiUrl: normalizeTolgeeApiUrl(process.env.NEXT_PUBLIC_TOLGEE_API_URL),
   tolgeeProjectId: process.env.NEXT_PUBLIC_TOLGEE_PROJECT_ID?.trim() ?? "",
 } as const;
 
