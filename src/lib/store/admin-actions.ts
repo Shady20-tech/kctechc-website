@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { getAuthState } from "@/lib/auth/session";
 import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
 import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
@@ -20,7 +19,7 @@ import {
   productInputSchema,
   productUpdateSchema,
 } from "@/lib/store/product-input";
-import { isTolgeeSyncConfigured } from "@/lib/tolgee/server-client";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 /**
  * Create a product from the admin surface.
@@ -281,22 +280,13 @@ export async function createProductAction(
     queued = count ?? 0;
   }
 
-  let syncWarning: string | undefined;
-  if (isTolgeeSyncConfigured()) {
-    // The queue is durable, so draining it belongs after the response. Running it
-    // inline made "Create product" wait on up to 50 sequential Tolgee HTTP calls.
-    try {
-      after(async () => {
-        const { runTranslationSync } = await import("@/lib/tolgee/sync-worker");
-        await runTranslationSync({ limit: 25 });
-      });
-    } catch {
-      // `after()` needs a request scope. The queued jobs remain for the next run.
-      syncWarning = "sync_deferred_unavailable";
-    }
-  } else {
-    syncWarning = "tolgee_unconfigured";
-  }
+  const syncStatus = scheduleTranslationSync();
+  const syncWarning =
+    syncStatus === "unavailable"
+      ? "sync_deferred_unavailable"
+      : syncStatus === "unconfigured"
+        ? "tolgee_unconfigured"
+        : undefined;
 
   revalidatePath(`/en${storePathFor(category.departmentSlug)}`);
   revalidatePath(`/fr${storePathFor(category.departmentSlug)}`);
@@ -476,6 +466,8 @@ export async function updateProductAction(
     if (seoError) seoWarning = "seo_write_failed";
   }
 
+  const syncStatus = scheduleTranslationSync();
+
   revalidatePath(`/en${storePathFor(category.departmentSlug)}`);
   revalidatePath(`/fr${storePathFor(category.departmentSlug)}`);
 
@@ -484,6 +476,12 @@ export async function updateProductAction(
     productId: input.productId,
     translationKeyCount: 0,
     syncQueued: 0,
+    syncWarning:
+      syncStatus === "unavailable"
+        ? "sync_deferred_unavailable"
+        : syncStatus === "unconfigured"
+          ? "tolgee_unconfigured"
+          : undefined,
     seoWarning,
   };
 }

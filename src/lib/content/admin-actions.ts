@@ -21,6 +21,7 @@ import { CONTENT_MEDIA_BUCKET } from "@/lib/uploads/media";
 import { buildObjectPath, validateUpload } from "@/lib/uploads/validation";
 import { INSIGHTS_PATH } from "@/lib/config/navigation";
 import { LOCALES } from "@/lib/i18n/locales";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 /**
  * Insight (blog article) authoring.
@@ -261,6 +262,8 @@ export async function createInsightAction(
     metadata: { slug: input.slug, publish_state: input.publishState },
   });
 
+  scheduleTranslationSync();
+
   revalidatePath("/admin/content");
   // A new article is a new sitemap entry with a new `lastmod`.
   revalidatePath("/sitemap.xml");
@@ -395,6 +398,8 @@ export async function updateInsightAction(
     entityId: id,
     metadata: { slug: input.slug, publish_state: input.publishState },
   });
+
+  scheduleTranslationSync();
 
   revalidatePath("/admin/content");
   revalidatePath(`/admin/content/${id}`);
@@ -566,6 +571,7 @@ export async function uploadInsightImageAction(
     if (!verdict.ok) {
       // A partly valid batch keeps the files that landed; the editor can see
       // what arrived and retry only the file the message names.
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, id, message: "image_added_partial" }
         : { ok: false, error: verdict.reason };
@@ -576,6 +582,7 @@ export async function uploadInsightImageAction(
       .from(CONTENT_MEDIA_BUCKET)
       .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
     if (uploadError) {
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, id, message: "image_added_partial" }
         : {
@@ -597,6 +604,7 @@ export async function uploadInsightImageAction(
     if (rowError) {
       // A row that could not be written must not leave an orphan object behind.
       await admin.storage.from(CONTENT_MEDIA_BUCKET).remove([objectPath]);
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, id, message: "image_added_partial" }
         : {
@@ -617,6 +625,8 @@ export async function uploadInsightImageAction(
     entityId: id,
     metadata: { field: "gallery_image", count: stored },
   });
+
+  scheduleTranslationSync();
 
   revalidatePath(`/admin/content/${id}`);
   return {

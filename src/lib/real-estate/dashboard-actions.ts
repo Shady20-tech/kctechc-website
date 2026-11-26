@@ -9,6 +9,7 @@ import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { validateUpload } from "@/lib/uploads/validation";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 import {
   type DashboardKind,
@@ -316,6 +317,8 @@ export async function createDashboardListingAction(
     metadata: { via: `${kind}_dashboard`, source: "owner_submission" },
   });
 
+  scheduleTranslationSync();
+
   revalidateListingSurfaces(data.id, input.slug);
 
   return {
@@ -380,6 +383,8 @@ export async function updateDashboardListingAction(
     entityId: listingId,
     metadata: { via: `${kind}_dashboard` },
   });
+
+  scheduleTranslationSync();
 
   revalidateListingSurfaces(listingId, input.slug);
 
@@ -591,6 +596,7 @@ export async function uploadDashboardListingImageAction(
     if (!verdict.ok) {
       // A partly-invalid batch keeps what already landed rather than discarding a
       // completed upload, so the editor can retry only the file the message names.
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: verdict.reason };
@@ -608,6 +614,7 @@ export async function uploadDashboardListingImageAction(
         upsert: false,
       });
     if (uploadError) {
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: "upload_failed" };
@@ -623,6 +630,7 @@ export async function uploadDashboardListingImageAction(
 
     if (insertError) {
       await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: "write_failed" };
@@ -640,6 +648,8 @@ export async function uploadDashboardListingImageAction(
     entityId: listingId,
     metadata: { via: `${kind}_dashboard`, field: "media_added", count: stored },
   });
+
+  scheduleTranslationSync();
 
   revalidateListingSurfaces(listingId, listing.slug);
   return { ok: true, message: "image_added" };

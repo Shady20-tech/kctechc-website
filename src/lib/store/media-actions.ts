@@ -18,6 +18,7 @@ import {
 } from "@/lib/supabase/admin";
 import { describeSupabaseError } from "@/lib/supabase/errors";
 import { validateUpload } from "@/lib/uploads/validation";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 /**
  * Product media and publishing.
@@ -144,6 +145,7 @@ export async function uploadProductImageAction(
       // A batch that is partly invalid leaves the valid files in place rather
       // than rolling back a completed upload: the editor can see what landed and
       // retry only the file the message names.
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: verdict.reason };
@@ -163,6 +165,7 @@ export async function uploadProductImageAction(
         upsert: false,
       });
     if (uploadError) {
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : {
@@ -183,6 +186,7 @@ export async function uploadProductImageAction(
     });
     if (insertError) {
       await admin.storage.from(PRODUCT_MEDIA_BUCKET).remove([objectPath]);
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : {
@@ -204,6 +208,8 @@ export async function uploadProductImageAction(
     entityId: productId,
     metadata: { field: "media_added", count: stored },
   });
+
+  scheduleTranslationSync();
 
   revalidatePath("/admin/store");
   revalidatePath(`/admin/store/${productId}`);

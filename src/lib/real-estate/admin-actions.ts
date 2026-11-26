@@ -7,6 +7,7 @@ import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 import { CsvParseError, parseCsv } from "./csv";
 import { validateListingImport, type ImportReport } from "./import";
@@ -220,6 +221,8 @@ export async function createListingAction(
   // alternative — deleting the listing — would discard the work that did succeed.
   const detailWarning = await writePrivateDetails(supabase, data.id, input);
 
+  scheduleTranslationSync();
+
   revalidateListings(input.slug);
   return { ok: true, listingId: data.id, warning: detailWarning };
 }
@@ -318,6 +321,8 @@ export async function updateListingAction(
   }
 
   const detailWarning = await writePrivateDetails(supabase, listingId, input);
+
+  scheduleTranslationSync();
 
   revalidateListings(input.slug);
   return { ok: true, listingId, warning: detailWarning };
@@ -699,6 +704,8 @@ export async function commitListingImportAction(
 
     inserted += 1;
   }
+
+  if (inserted > 0) scheduleTranslationSync(100);
 
   revalidateListings();
   return { ok: true, inserted, failed, issues: issues.slice(0, 200) };

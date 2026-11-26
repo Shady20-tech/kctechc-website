@@ -13,6 +13,7 @@ import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateUpload } from "@/lib/uploads/validation";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 /**
  * Listing gallery and publish controls.
@@ -122,6 +123,7 @@ export async function uploadListingImageAction(
     if (!verdict.ok) {
       // A partly-invalid batch keeps what already landed rather than discarding a
       // completed upload, so the editor can retry only the file the message names.
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: verdict.reason };
@@ -141,6 +143,7 @@ export async function uploadListingImageAction(
         upsert: false,
       });
     if (uploadError) {
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: "upload_failed" };
@@ -157,6 +160,7 @@ export async function uploadListingImageAction(
     });
     if (insertError) {
       await admin.storage.from(PROPERTY_MEDIA_BUCKET).remove([objectPath]);
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "image_added_partial" }
         : { ok: false, error: "write_failed" };
@@ -174,6 +178,8 @@ export async function uploadListingImageAction(
     entityId: listingId,
     metadata: { field: "media_added", count: stored },
   });
+
+  scheduleTranslationSync();
 
   revalidateGallery(listingId, String(listing.slug ?? ""));
   return { ok: true, message: "image_added" };

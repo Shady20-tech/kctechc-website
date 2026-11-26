@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { PROJECT_MEDIA_BUCKET, projectMediaPath } from "@/lib/uploads/storage";
 import { validateUpload } from "@/lib/uploads/validation";
+import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
 
 /**
  * Completed-work authoring ("Work Done").
@@ -204,6 +205,8 @@ export async function createProjectAction(
     metadata: { department: slug, state: parsed.data.publishState },
   });
 
+  scheduleTranslationSync();
+
   revalidateWork(slug);
   return { ok: true, id: data.id, message: "created" };
 }
@@ -300,6 +303,8 @@ export async function updateProjectAction(
     entityId: id,
     metadata: { department: slug, state: parsed.data.publishState },
   });
+
+  scheduleTranslationSync();
 
   revalidateWork(slug);
   revalidatePath(`/admin/work/${id}`);
@@ -428,6 +433,7 @@ export async function uploadProjectMediaAction(
       .from(PROJECT_MEDIA_BUCKET)
       .upload(objectPath, bytes, { contentType: verdict.mime, upsert: false });
     if (uploadError) {
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "media_added_partial" }
         : { ok: false, error: "upload_failed" };
@@ -448,6 +454,7 @@ export async function uploadProjectMediaAction(
       await admin.storage.from(PROJECT_MEDIA_BUCKET).remove([objectPath]);
       // 23505 on the before/after unique index is the honest "one each" message.
       const code = (rowError as { code?: string }).code;
+      if (stored > 0) scheduleTranslationSync();
       return stored > 0
         ? { ok: true, message: "media_added_partial" }
         : {
@@ -467,6 +474,8 @@ export async function uploadProjectMediaAction(
     entityId: projectId,
     metadata: { role, count: stored },
   });
+
+  scheduleTranslationSync();
 
   revalidateWork(slug);
   revalidatePath(`/admin/work/${projectId}`);
