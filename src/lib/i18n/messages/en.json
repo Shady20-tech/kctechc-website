@@ -429,7 +429,7 @@
         "unauthenticated": "Your session has ended. Sign in again and retry.",
         "forbidden": "Your role does not allow creating products.",
         "forbidden_department": "That category belongs to another department. Choose a category in your own department.",
-        "unconfigured": "The server is missing its Supabase service-role key. Add SUPABASE_SERVICE_ROLE_KEY to the deployment environment and redeploy.",
+        "unconfigured": "The server has no Supabase server key. Set SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) or SUPABASE_SECRET_KEY (new sb_secret_ key) in the server environment, then restart or redeploy. Check /api/health: supabaseAdmin must be true.",
         "invalid": "Some fields need attention. The messages are shown below each one.",
         "duplicate": "A product already uses that slug or SKU.",
         "write_failed": "The product could not be saved. Please try again.",
@@ -2185,8 +2185,8 @@
     "electricalServices": "Electrical Services",
     "realEstate": "Real Estate",
     "reviews": "Reviews",
-    "serviceRoleMissingTitle": "The server is missing its Supabase service-role key",
-    "serviceRoleMissingBody": "Admin writes, image uploads and audit logging need SUPABASE_SERVICE_ROLE_KEY. Add it to the deployment environment (never with a NEXT_PUBLIC_ prefix) and redeploy. This is server configuration, not a database migration."
+    "serviceRoleMissingTitle": "The server has no Supabase server key",
+    "serviceRoleMissingBody": "Admin writes, image uploads and audit logging need a server-side Supabase key. Set SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT) or SUPABASE_SECRET_KEY (new sb_secret_ key) on the server, then restart or redeploy. Never use a NEXT_PUBLIC_ prefix. Check /api/health: supabaseAdmin must be true. This is server configuration, not a database migration."
   },
   "roleName": {
     "super_admin": "Super administrator",

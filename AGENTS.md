@@ -3351,14 +3351,25 @@ on this app; use applied throttling before chasing a simulated-LCP regression.
 
 - **Migrations do not configure the service-role key, and a missing key is not a database problem.**
   `createProductAction`, every media upload, audit write and privileged admin query calls
-  `createAdminClient()`, which returns `null` unless both the public Supabase config and
-  `SUPABASE_SERVICE_ROLE_KEY` are present. The form then reports `unconfigured` while the rest of
+  `createAdminClient()`, which returns `null` unless both the public Supabase config and a
+  server-side Supabase key are present. The form then reports `unconfigured` while the rest of
   the site and the signed-in session work normally, which reads as "the migrations did not run".
   Set the key in the deployment environment (Vercel project env, or the VPS `.env`/systemd unit) and
   redeploy/restart; never give it a `NEXT_PUBLIC_` prefix. The console now carries a warning banner
   when the key is absent, the store's admin error names the variable, and
-  `/api/health` exposes a boolean `integrations.supabaseAdmin` so the state can be checked without
-  reading the secret.
+  `/api/health` exposes `integrations.supabaseAdmin` plus the variable name that supplied it
+  (`supabaseAdminKeySource`) so the state can be checked without reading the secret.
+- **Supabase now issues two server-key formats, and the env name must match what the app reads.**
+  `serverEnv` accepts `SUPABASE_SERVICE_ROLE_KEY` (the legacy `service_role` JWT) and
+  `SUPABASE_SECRET_KEY` (the newer `sb_secret_…` key), with the legacy name winning. A project
+  migrated to the new API keys exposes only `sb_secret_…`, and copying it into a variable the app
+  never reads looks exactly like "the key is missing". `@supabase/supabase-js` 2.117+ sends an
+  `sb_secret_` key as the `apikey` header only, never as a Bearer token; an older client version
+  may reject it. The key is read through a module constant, so adding it to `.env.local` while the
+  server is running changes nothing: restart `next dev`/the standalone server, or redeploy. Check
+  `/api/health` for `supabaseAdmin: true` after the restart, not just the dashboard's saved value.
+  A key pasted into chat, an issue or a screenshot is compromised: rotate it in Supabase before
+  redeploying.
 - **`npm run build` deletes `.next/standalone` wholesale, including any `.env` you copied into it.**
   The standalone bundle is regenerated from scratch, so `cp .env.local .next/standalone/.env` must be
   repeated after every build, before restarting `server.js`. The symptom is the previous session's

@@ -6,7 +6,7 @@ import { resolveAvatarUrl } from "@/components/admin/Avatar";
 import { navSectionsForRoleClient } from "@/lib/admin/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
 import { isSupabaseConfigured } from "@/lib/config/env";
-import { serverEnv } from "@/lib/config/server-env";
+import { isSupabaseAdminConfigured } from "@/lib/config/server-env";
 import { createTranslator } from "@/lib/i18n/translator";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function ConsoleLayout({
   // migration problem, so say so at the top of the console instead of letting
   // each form report the misleading "store is not connected to a database".
   const serviceRoleConfigured =
-    isSupabaseConfigured() && Boolean(serverEnv.supabaseServiceRoleKey);
+    isSupabaseConfigured() && isSupabaseAdminConfigured();
 
   const labels: Record<string, string> = {
     consoleName: t("adminNav.consoleName"),
