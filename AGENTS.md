@@ -3878,7 +3878,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Department inquiry summaries filter in the database, not after the limit.**
   `loadInquiryReport(limit, departmentSlug?)` applies the department predicate to the query, so a
   department's pulse is not computed from the last 30 rows of every department combined.
-- 1744 Vitest tests pass (155 files); `tsc --noEmit`, ESLint and the production build are clean.
+- 1746 Vitest tests pass (156 files); `tsc --noEmit`, ESLint and the production build are clean.
   `/admin/reports` and `/admin/reviews` both build as dynamic console routes.
 
 ### "Supabase admin key is not configured" can be a loader failure, not a missing key
@@ -3889,6 +3889,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   could have been a PostgREST error, an empty category table or a missing admin client. The
   loaders now return discriminated results (`loadCategoryOptionsResult`,
   `loadEditableDepartmentsResult`) and the page names the actual condition.
+- **The production cause was `permission denied for function is_department_editor (42501)`.**
+  The predicate is called from RLS policies, and the hosted project had no `EXECUTE` grant for
+  `anon`/`authenticated` even though migration 42 grants it. The Phase 12 default-deny migration
+  revoking by role name is the likely explanation: a re-run of an older-named hardening file
+  after 42 removes the grant. Migration
+  `20260101000083_restore_department_editor_execute.sql` restates the ACL and asserts it.
+  Do not rely on a grant made in the migration that creates a function: a later re-run of the
+  default-deny file can remove it, so the final grant must be its own applied migration.
+- **The admin category loader now uses the service-role client, not the session client.** It is
+  an admin-only read behind a role guard, and the service role bypasses the policy that was
+  failing, so the Add Product page works even while a hosted project is waiting for migration 83.
+  The write boundary is still the database, and project/insight console reads still use the
+  session client and therefore still need the grant.
 - **An empty list has three meanings that must stay distinguishable**: unconfigured, a failed
   read, and genuinely no rows. Collapsing them is what made a database error look like config.
   `describeSupabaseError` keeps the PostgREST message and code, and `missingAdminClientDetail`

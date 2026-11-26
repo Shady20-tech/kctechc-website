@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Locale } from "@/lib/i18n/locales";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { STORE_CURRENCY } from "@/lib/config/site";
 import { describeSupabaseError } from "@/lib/supabase/errors";
@@ -533,6 +533,13 @@ export type CategoryOptionsResult =
 /**
  * Load the category options an editor may attach a product to.
  *
+ * This is an admin-only read, so it uses the service-role client rather than the
+ * cookie-bound one. The department read policies call `is_department_editor()`
+ * from inside RLS, and a browser role without EXECUTE on that predicate gets
+ * `42501` before any row is returned. The console already authorized the caller,
+ * and reading category names is not a privileged disclosure; the write boundary
+ * remains in the database.
+ *
  * This returns the failure explicitly instead of collapsing it to an empty list.
  * An empty list has two very different meanings — "there are no categories yet"
  * and "the read failed" — and the Add Product page used to treat both, plus a
@@ -542,21 +549,12 @@ export type CategoryOptionsResult =
 export async function loadCategoryOptionsResult(
   departmentSlug?: string,
 ): Promise<CategoryOptionsResult> {
-  let supabase: Awaited<ReturnType<typeof createClient>>;
-  try {
-    supabase = await createClient();
-  } catch (error) {
-    return {
-      ok: false,
-      reason: "read_failed",
-      detail: describeSupabaseError(error),
-    };
-  }
+  const supabase = createAdminClient();
   if (!supabase) {
     return {
       ok: false,
       reason: "unconfigured",
-      detail: "The Supabase session client is not configured.",
+      detail: "The Supabase admin client is not configured.",
     };
   }
 

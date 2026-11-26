@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const createClient = vi.fn();
+const createAdminClient = vi.fn();
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: () => createClient(),
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => createAdminClient(),
 }));
 
 import { loadCategoryOptionsResult } from "./loaders";
@@ -31,12 +31,12 @@ function client(departments: Result, categories: Result) {
 }
 
 afterEach(() => {
-  createClient.mockReset();
+  createAdminClient.mockReset();
 });
 
 describe("loadCategoryOptionsResult", () => {
-  it("reports the session client as unconfigured", async () => {
-    createClient.mockResolvedValue(null);
+  it("reports the admin client as unconfigured", async () => {
+    createAdminClient.mockReturnValue(null);
 
     await expect(loadCategoryOptionsResult()).resolves.toMatchObject({
       ok: false,
@@ -45,7 +45,7 @@ describe("loadCategoryOptionsResult", () => {
   });
 
   it("reports a department read error instead of returning an empty list", async () => {
-    createClient.mockResolvedValue(
+    createAdminClient.mockReturnValue(
       client(
         { data: null, error: { message: "permission denied", code: "42501" } },
         {
@@ -61,7 +61,7 @@ describe("loadCategoryOptionsResult", () => {
   });
 
   it("returns an empty list when there are no departments", async () => {
-    createClient.mockResolvedValue(
+    createAdminClient.mockReturnValue(
       client({ data: [], error: null }, { data: [], error: null }),
     );
 
@@ -72,7 +72,7 @@ describe("loadCategoryOptionsResult", () => {
   });
 
   it("reports a category read error", async () => {
-    createClient.mockResolvedValue(
+    createAdminClient.mockReturnValue(
       client(
         { data: [{ id: "dept-1" }], error: null },
         { data: null, error: { message: "boom", code: "XX000" } },
@@ -87,7 +87,7 @@ describe("loadCategoryOptionsResult", () => {
   });
 
   it("maps category rows, including the department slug", async () => {
-    createClient.mockResolvedValue(
+    createAdminClient.mockReturnValue(
       client(
         { data: [{ id: "dept-1" }], error: null },
         {

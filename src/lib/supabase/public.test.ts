@@ -37,15 +37,15 @@ describe("public render path", () => {
     const source = readModule("../store/loaders.ts");
 
     expect(source).toMatch(/from "@\/lib\/supabase\/public"/);
-    // Every storefront read is stateless. The count is not pinned, because a
-    // loader split into more functions is not a regression — the property that
-    // matters is that the *only* session client is the admin-only
-    // `loadCategoryOptions`, which must see unpublished categories. A single
-    // `await createClient()` is exactly that one call.
+    // Every storefront read is stateless. The admin-only category options read
+    // uses the service-role client, because its RLS policy calls
+    // `is_department_editor()` and a browser role without EXECUTE gets 42501.
+    // No session client remains in this module.
     expect(
       source.match(/createPublicClient\(\)/g)?.length ?? 0,
     ).toBeGreaterThan(2);
-    expect(source.match(/await createClient\(\)/g)).toHaveLength(1);
+    expect(source).not.toMatch(/from "@\/lib\/supabase\/server"/);
+    expect(source).toMatch(/from "@\/lib\/supabase\/admin"/);
   });
 });
 
