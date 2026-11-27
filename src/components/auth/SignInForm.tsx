@@ -176,16 +176,6 @@ export function SignInForm({
         pendingLabel={t("auth.signingIn")}
         disabled={disabled}
       />
-
-      <p className="text-sm text-body">
-        {t("auth.noAccount")}{" "}
-        <Link
-          href={`/${locale}/sign-up`}
-          className="font-medium text-ink-900 underline underline-offset-4"
-        >
-          {t("auth.signUpSubmit")}
-        </Link>
-      </p>
     </form>
   );
 }

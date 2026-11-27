@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { SignInForm } from "@/components/auth/SignInForm";
-import { SectionBand } from "@/components/layout/PageShell";
 import { Notice } from "@/components/ui/Notice";
-import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { postSignInPathFor } from "@/lib/auth/redirects";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
@@ -76,36 +75,32 @@ export default async function SignInPage({
   const configured = isSupabaseConfigured();
 
   return (
-    <SectionBand tone="accent">
-      <div className="mx-auto max-w-md py-8">
-        <PageIntro
-          heading={t("auth.signInHeading")}
-          intro={t("auth.signInDescription")}
-          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
-        />
+    <AuthShell
+      locale={resolved}
+      mode="signin"
+      eyebrow={t("auth.signInEyebrow")}
+      heading={t("auth.signInHeading")}
+      intro={t("auth.signInDescription")}
+    >
+      {!configured ? (
+        <Notice tone="warning" title={t("auth.notConfigured")}>
+          <p>{t("auth.notConfiguredBody")}</p>
+        </Notice>
+      ) : null}
 
-        <div className="mt-6 space-y-4">
-          {!configured ? (
-            <Notice tone="warning" title={t("auth.notConfigured")}>
-              <p>{t("auth.notConfiguredBody")}</p>
-            </Notice>
-          ) : null}
+      <OAuthButtons
+        locale={resolved}
+        disabled={!configured}
+        mode="signin"
+        nextPath={next}
+      />
 
-          <OAuthButtons
-            locale={resolved}
-            disabled={!configured}
-            mode="signin"
-            nextPath={next}
-          />
-
-          <SignInForm
-            locale={resolved}
-            nextPath={next}
-            disabled={!configured}
-            initialReason={reason}
-          />
-        </div>
-      </div>
-    </SectionBand>
+      <SignInForm
+        locale={resolved}
+        nextPath={next}
+        disabled={!configured}
+        initialReason={reason}
+      />
+    </AuthShell>
   );
 }

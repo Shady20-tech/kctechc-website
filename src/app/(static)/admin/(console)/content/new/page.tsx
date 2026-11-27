@@ -9,7 +9,7 @@ import { createTranslator } from "@/lib/i18n/translator";
 
 export const dynamic = "force-dynamic";
 
-/** Admin: write a new article. The cover image is added once the article exists. */
+/** Admin: write a new article, attaching its cover and gallery in the same submission. */
 export default async function AdminNewInsightPage() {
   await requireRole([...DEPARTMENT_EDITOR_ROLES], "/admin/content/new");
   const t = createTranslator("en").t;
@@ -34,6 +34,13 @@ export default async function AdminNewInsightPage() {
     "state.draft": t("adminContent.state.draft"),
     "state.published": t("adminContent.state.published"),
     "state.archived": t("adminContent.state.archived"),
+    coverLabel: t("adminContent.coverLabel"),
+    coverHint: t("adminContent.coverHint"),
+    galleryLabel: t("adminContent.galleryLabel"),
+    galleryHint: t("adminContent.galleryHint"),
+    mediaAdded: t("adminContent.mediaAdded"),
+    mediaPartial: t("adminContent.mediaPartial"),
+    mediaFailed: t("adminContent.mediaFailed"),
   };
   for (const key of [
     "unauthenticated",

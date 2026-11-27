@@ -3,10 +3,12 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
 import type { ContentState } from "@/lib/content/admin-actions";
+import { MAX_CONTENT_IMAGE_BYTES } from "@/lib/uploads/limits";
 
 /**
  * Article editor form.
@@ -64,12 +66,29 @@ export function InsightForm({
 
       {state && !state.ok ? (
         <Notice tone="error">
-          {labels[`errors.${state.error}`] ?? labels["errors.write_failed"] ?? ""}
+          {labels[`errors.${state.error}`] ??
+            labels["errors.write_failed"] ??
+            ""}
         </Notice>
       ) : null}
       {state?.ok ? (
         <Notice tone="success">
-          {state.message === "created" ? labels.created : labels.updated}
+          <p>{state.message === "created" ? labels.created : labels.updated}</p>
+          {state.mediaCount ? (
+            <p className="mt-1">
+              {(labels.mediaAdded ?? "").replace(
+                "{count}",
+                String(state.mediaCount),
+              )}
+            </p>
+          ) : null}
+          {state.mediaWarning ? (
+            <p className="mt-1">
+              {state.mediaWarning === "partial"
+                ? labels.mediaPartial
+                : labels.mediaFailed}
+            </p>
+          ) : null}
         </Notice>
       ) : null}
 
@@ -120,6 +139,26 @@ export function InsightForm({
         />
         {fieldError("body")}
       </div>
+
+      {!id ? (
+        <div className="space-y-5 rounded-card border border-border bg-surface-alt p-4">
+          <ImageUploadField
+            name="cover"
+            label={labels.coverLabel ?? ""}
+            hint={labels.coverHint ?? ""}
+            tooLargeMessage={labels["errors.too_large"]}
+            maxBytes={MAX_CONTENT_IMAGE_BYTES}
+            multiple={false}
+          />
+          <ImageUploadField
+            name="image"
+            label={labels.galleryLabel ?? ""}
+            hint={labels.galleryHint ?? ""}
+            tooLargeMessage={labels["errors.too_large"]}
+            maxBytes={MAX_CONTENT_IMAGE_BYTES}
+          />
+        </div>
+      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-3">
         <SelectField
@@ -175,8 +214,12 @@ export function InsightForm({
         defaultValue={initial?.publishState ?? "draft"}
       >
         <option value="draft">{labels["state.draft"] ?? "Draft"}</option>
-        <option value="published">{labels["state.published"] ?? "Published"}</option>
-        <option value="archived">{labels["state.archived"] ?? "Archived"}</option>
+        <option value="published">
+          {labels["state.published"] ?? "Published"}
+        </option>
+        <option value="archived">
+          {labels["state.archived"] ?? "Archived"}
+        </option>
       </SelectField>
 
       <label className="flex items-center gap-3 text-sm text-body">

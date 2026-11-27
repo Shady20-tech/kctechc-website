@@ -2,13 +2,10 @@
 
 import { useActionState, useState } from "react";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
-import {
-  SelectField,
-  TextAreaField,
-  TextField,
-} from "@/components/ui/Form";
+import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
 import type { Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import {
@@ -28,6 +25,7 @@ import {
   type ListingActionResult,
 } from "@/lib/real-estate/admin-actions";
 import type { AdminListingRecord } from "@/lib/real-estate/types";
+import { MAX_PROPERTY_IMAGE_BYTES, megabytes } from "@/lib/uploads/limits";
 
 export type GeographyOptions = readonly {
   id: string;
@@ -93,7 +91,9 @@ export function ListingForm({
         <Notice
           tone="success"
           title={
-            editing ? t("realEstate.admin.updatedHeading") : t("realEstate.admin.createdHeading")
+            editing
+              ? t("realEstate.admin.updatedHeading")
+              : t("realEstate.admin.createdHeading")
           }
         >
           <p>
@@ -104,6 +104,18 @@ export function ListingForm({
           {state.warning ? (
             <p className="mt-2">{t("realEstate.admin.detailWarning")}</p>
           ) : null}
+          {state.mediaCount ? (
+            <p className="mt-2">
+              {t("realEstate.admin.imagesAdded", {
+                count: state.mediaCount,
+              })}
+            </p>
+          ) : null}
+          {state.mediaWarning ? (
+            <p className="mt-2">
+              {t(`realEstate.admin.mediaWarnings.${state.mediaWarning}`)}
+            </p>
+          ) : null}
           {!editing ? (
             <p className="mt-4">
               <ButtonLink
@@ -111,7 +123,7 @@ export function ListingForm({
                 variant="accent"
                 size="sm"
               >
-                {t("realEstate.admin.goToImages")}
+                {t("realEstate.admin.openCreatedListing")}
               </ButtonLink>
             </p>
           ) : null}
@@ -185,7 +197,9 @@ export function ListingForm({
           required
           requiredLabel={t("validation.required")}
         >
-          <option value="">{t("realEstate.admin.fieldListingTypePlaceholder")}</option>
+          <option value="">
+            {t("realEstate.admin.fieldListingTypePlaceholder")}
+          </option>
           {LISTING_TYPES.map((type) => (
             <option key={type} value={type}>
               {t(`realEstate.types.${type}`)}
@@ -205,7 +219,9 @@ export function ListingForm({
           required
           requiredLabel={t("validation.required")}
         >
-          <option value="">{t("realEstate.admin.fieldPropertyKindPlaceholder")}</option>
+          <option value="">
+            {t("realEstate.admin.fieldPropertyKindPlaceholder")}
+          </option>
           {LISTING_PROPERTY_KINDS.map((kind) => (
             <option key={kind} value={kind}>
               {t(`realEstate.kinds.${kind}`)}
@@ -222,7 +238,9 @@ export function ListingForm({
           required
           requiredLabel={t("validation.required")}
         >
-          <option value="">{t("realEstate.admin.fieldPropertyTypePlaceholder")}</option>
+          <option value="">
+            {t("realEstate.admin.fieldPropertyTypePlaceholder")}
+          </option>
           {PROPERTY_TYPES.map((type) => (
             <option key={type} value={type}>
               {t(`realEstate.propertyTypes.${type}`)}
@@ -230,6 +248,18 @@ export function ListingForm({
           ))}
         </SelectField>
       </fieldset>
+
+      {!editing ? (
+        <ImageUploadField
+          name="image"
+          label={t("realEstate.admin.fieldImages")}
+          hint={t("realEstate.admin.fieldImagesHint", {
+            size: megabytes(MAX_PROPERTY_IMAGE_BYTES),
+          })}
+          tooLargeMessage={t("realEstate.admin.errors.too_large")}
+          maxBytes={MAX_PROPERTY_IMAGE_BYTES}
+        />
+      ) : null}
 
       <fieldset className="space-y-6">
         <legend className="font-display text-lg font-semibold text-ink-900">
@@ -294,7 +324,10 @@ export function ListingForm({
         </SelectField>
 
         <div>
-          <label htmlFor="priceOnRequest" className="flex items-start gap-3 text-sm">
+          <label
+            htmlFor="priceOnRequest"
+            className="flex items-start gap-3 text-sm"
+          >
             <input
               id="priceOnRequest"
               name="priceOnRequest"
@@ -326,7 +359,9 @@ export function ListingForm({
             name="landAreaSqm"
             label={t("realEstate.admin.fieldLandArea")}
             hint={t("realEstate.admin.fieldLandAreaHint")}
-            defaultValue={listing?.landAreaSqm != null ? String(listing.landAreaSqm) : ""}
+            defaultValue={
+              listing?.landAreaSqm != null ? String(listing.landAreaSqm) : ""
+            }
             error={fields?.landAreaSqm}
           />
         ) : null}
@@ -337,7 +372,9 @@ export function ListingForm({
             label={t("realEstate.admin.fieldBuildingArea")}
             hint={t("realEstate.admin.fieldBuildingAreaHint")}
             defaultValue={
-              listing?.buildingAreaSqm != null ? String(listing.buildingAreaSqm) : ""
+              listing?.buildingAreaSqm != null
+                ? String(listing.buildingAreaSqm)
+                : ""
             }
             error={fields?.buildingAreaSqm}
           />
@@ -348,7 +385,9 @@ export function ListingForm({
             name="bedrooms"
             label={t("realEstate.admin.fieldBedrooms")}
             hint={t("realEstate.admin.fieldBedroomsHint")}
-            defaultValue={listing?.bedrooms != null ? String(listing.bedrooms) : ""}
+            defaultValue={
+              listing?.bedrooms != null ? String(listing.bedrooms) : ""
+            }
             error={fields?.bedrooms}
           />
         ) : null}
@@ -358,7 +397,9 @@ export function ListingForm({
             name="bathrooms"
             label={t("realEstate.admin.fieldBathrooms")}
             hint={t("realEstate.admin.fieldBathroomsHint")}
-            defaultValue={listing?.bathrooms != null ? String(listing.bathrooms) : ""}
+            defaultValue={
+              listing?.bathrooms != null ? String(listing.bathrooms) : ""
+            }
             error={fields?.bathrooms}
           />
         ) : null}
@@ -368,7 +409,9 @@ export function ListingForm({
             name="yearBuilt"
             label={t("realEstate.admin.fieldYearBuilt")}
             hint={t("realEstate.admin.fieldYearBuiltHint")}
-            defaultValue={listing?.yearBuilt != null ? String(listing.yearBuilt) : ""}
+            defaultValue={
+              listing?.yearBuilt != null ? String(listing.yearBuilt) : ""
+            }
             error={fields?.yearBuilt}
           />
         ) : null}

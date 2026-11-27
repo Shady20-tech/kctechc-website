@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { SignUpForm } from "@/components/auth/SignUpForm";
-import { SectionBand } from "@/components/layout/PageShell";
 import { Notice } from "@/components/ui/Notice";
-import { PageIntro } from "@/components/ui/PageIntro";
 import { getAuthState } from "@/lib/auth/session";
 import { postSignInPathFor } from "@/lib/auth/redirects";
 import { DEFAULT_ROLE, isAppRole } from "@/lib/auth/roles";
@@ -67,30 +66,22 @@ export default async function SignUpPage({
   const configured = isSupabaseConfigured();
 
   return (
-    <SectionBand tone="accent">
-      <div className="mx-auto max-w-md py-8">
-        <PageIntro
-          heading={t("auth.signUpHeading")}
-          intro={t("auth.signUpDescription")}
-          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
-        />
+    <AuthShell
+      locale={resolved}
+      mode="signup"
+      eyebrow={t("auth.signUpEyebrow")}
+      heading={t("auth.signUpHeading")}
+      intro={t("auth.signUpDescription")}
+    >
+      {!configured ? (
+        <Notice tone="warning" title={t("auth.notConfigured")}>
+          <p>{t("auth.notConfiguredBody")}</p>
+        </Notice>
+      ) : null}
 
-        <div className="mt-6 space-y-4">
-          {!configured ? (
-            <Notice tone="warning" title={t("auth.notConfigured")}>
-              <p>{t("auth.notConfiguredBody")}</p>
-            </Notice>
-          ) : null}
+      <OAuthButtons locale={resolved} disabled={!configured} mode="signup" />
 
-          <OAuthButtons
-            locale={resolved}
-            disabled={!configured}
-            mode="signup"
-          />
-
-          <SignUpForm locale={resolved} disabled={!configured} />
-        </div>
-      </div>
-    </SectionBand>
+      <SignUpForm locale={resolved} disabled={!configured} />
+    </AuthShell>
   );
 }

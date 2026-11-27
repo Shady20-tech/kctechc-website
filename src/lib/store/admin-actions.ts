@@ -20,6 +20,7 @@ import {
   productUpdateSchema,
 } from "@/lib/store/product-input";
 import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
+import { uploadProductImageAction } from "./media-actions";
 
 /**
  * Create a product from the admin surface.
@@ -52,6 +53,8 @@ export type CreateProductResult =
       syncQueued: number;
       syncWarning?: string;
       seoWarning?: string;
+      mediaCount?: number;
+      mediaWarning?: "partial" | "failed";
     }
   | {
       ok: false;
@@ -109,6 +112,40 @@ async function categoryDepartment(
     };
   }
   return { ok: true, departmentSlug };
+}
+
+function filesFrom(formData: FormData, field: string): File[] {
+  return formData
+    .getAll(field)
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+}
+
+/**
+ * Attach the files chosen in the create form.
+ *
+ * The create action and the gallery action share one uploader, so the storage
+ * path, the primary-image rule and the partial-batch behaviour cannot drift.
+ * A media failure does not undo the product: the row exists and the editor can
+ * retry from its detail page, which is exactly what the success notice links to.
+ */
+async function attachProductImages(
+  productId: string,
+  title: string,
+  files: readonly File[],
+): Promise<{ count: number; warning?: "partial" | "failed" }> {
+  if (files.length === 0) return { count: 0 };
+
+  const media = new FormData();
+  media.set("productId", productId);
+  media.set("altText", title.slice(0, 300));
+  for (const file of files) media.append("image", file);
+
+  const result = await uploadProductImageAction(media);
+  if (!result.ok) return { count: 0, warning: "failed" };
+  if (result.message === "image_added_partial") {
+    return { count: 0, warning: "partial" };
+  }
+  return { count: files.length };
 }
 
 export async function createProductAction(
@@ -230,6 +267,12 @@ export async function createProductAction(
     };
   }
 
+  const media = await attachProductImages(
+    product.id,
+    input.title,
+    filesFrom(formData, "image"),
+  );
+
   // SEO overrides live in `entity_seo`, not on the product row, and the product
   // page reads them from there. Writing them anywhere else would accept the
   // editor's text and never use it. The `entity_seo` trigger then indexes the
@@ -298,6 +341,8 @@ export async function createProductAction(
     syncQueued: queued,
     syncWarning,
     seoWarning,
+    mediaCount: media.count,
+    mediaWarning: media.warning,
   };
 }
 

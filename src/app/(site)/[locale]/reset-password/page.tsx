@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-import { SectionBand } from "@/components/layout/PageShell";
-import { PageIntro } from "@/components/ui/PageIntro";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -54,17 +53,14 @@ export default async function ResetPasswordPage({
   const t = createTranslator(resolved).t;
 
   return (
-    <SectionBand tone="accent">
-      <div className="mx-auto max-w-md py-8">
-        <PageIntro
-          heading={t("auth.resetPasswordHeading")}
-          intro={t("auth.resetPasswordDescription")}
-          back={{ href: `/${resolved}`, label: t("common.backToHome") }}
-        />
-        <div className="mt-6">
-          <ResetPasswordForm locale={resolved} initialEmail={initialEmail} />
-        </div>
-      </div>
-    </SectionBand>
+    <AuthShell
+      locale={resolved}
+      mode="recovery"
+      eyebrow={t("auth.recoveryEyebrow")}
+      heading={t("auth.resetPasswordHeading")}
+      intro={t("auth.resetPasswordDescription")}
+    >
+      <ResetPasswordForm locale={resolved} initialEmail={initialEmail} />
+    </AuthShell>
   );
 }

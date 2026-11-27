@@ -3998,3 +3998,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **`super_admin` already administers listings without a real-estate staff or agent row.** `REAL_ESTATE_ADMIN_ROLES` and `is_real_estate_admin()` both include `super_admin`, the listing routes guard with `isRealEstateAdminRole`, and the actions write through the session client so RLS applies. `admin-read.test.ts` pins the role, the nav entry and the page/action guard.
 - **Do not add a direct `process.env.SUPABASE_SERVICE_ROLE_KEY` read.** `src/lib/config/server-env.ts` is the single resolver and prefers `SUPABASE_SECRET_KEY`; `admin-read.test.ts` scans `src/` and fails if another file reads the variable directly.
 - 1792 Vitest tests pass (163 files), `tsc --noEmit` is clean, ESLint is clean, and the production build succeeds.
+
+### Create-with-images and the auth section switcher
+
+- The create forms for products, articles, finished work and listings now accept
+  image files in the same submission. Each create action inserts the row first,
+  then calls the existing edit-page uploader with a synthetic `FormData`; a media
+  failure is returned as a warning on the success result, never as a rollback of
+  the record that was just created.
+- `src/components/admin/ImageUploadField.tsx` is the shared client file control:
+  it posts under the field name the action expects, previews the chosen files with
+  local object URLs, and reports an oversized file before submit. The server still
+  validates the real bytes in `validation.ts`.
+- `src/components/auth/AuthShell.tsx` owns the account-page layout. The two-way
+  switcher sits above the heading, so the sign-in page always offers
+  **Register Here** and the sign-up page always offers **Sign in**. The recovery
+  pages reuse the same card with a single back-to-sign-in link. The bottom switch
+  links were removed from `SignInForm` and `SignUpForm` so the switcher is the one
+  place that changes section.

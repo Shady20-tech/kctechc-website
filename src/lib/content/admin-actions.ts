@@ -40,7 +40,13 @@ import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
  */
 
 export type ContentState =
-  | { ok: true; id: string; message: string }
+  | {
+      ok: true;
+      id: string;
+      message: string;
+      mediaCount?: number;
+      mediaWarning?: "partial" | "failed";
+    }
   | {
       ok: false;
       error: string;
@@ -167,6 +173,56 @@ async function canAuthorForDepartment(
   };
 }
 
+function imageFilesFrom(formData: FormData, field: string): File[] {
+  return formData
+    .getAll(field)
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+}
+
+/**
+ * Attach the cover and gallery chosen in the create form.
+ *
+ * Both uploads reuse the edit-page actions, so the object path, byte validation,
+ * department check and partial-batch behaviour are one implementation. A media
+ * failure does not remove the article: the editor can retry from its detail page,
+ * and the success notice links there.
+ */
+async function attachInsightMedia(
+  id: string,
+  title: string,
+  formData: FormData,
+): Promise<{ count: number; warning?: "partial" | "failed" }> {
+  let count = 0;
+  let warning: "partial" | "failed" | undefined;
+
+  const cover = formData.get("cover");
+  if (cover instanceof File && cover.size > 0) {
+    const coverForm = new FormData();
+    coverForm.set("id", id);
+    coverForm.set("cover", cover);
+    const result = await uploadInsightCoverAction(coverForm);
+    if (result.ok) count += 1;
+    else warning = "failed";
+  }
+
+  const gallery = imageFilesFrom(formData, "image");
+  if (gallery.length > 0) {
+    const galleryForm = new FormData();
+    galleryForm.set("id", id);
+    galleryForm.set("altText", title.slice(0, 300));
+    for (const file of gallery) galleryForm.append("image", file);
+    const result = await uploadInsightImageAction(galleryForm);
+    if (result.ok) {
+      if (result.message === "image_added_partial") warning = "partial";
+      else count += gallery.length;
+    } else {
+      warning = "failed";
+    }
+  }
+
+  return { count, warning };
+}
+
 export async function createInsightAction(
   formData: FormData,
 ): Promise<ContentState> {
@@ -254,6 +310,8 @@ export async function createInsightAction(
     };
   }
 
+  const media = await attachInsightMedia(data.id, input.title, formData);
+
   await recordAudit({
     actorId: gate.userId,
     action: "content_created",
@@ -267,7 +325,13 @@ export async function createInsightAction(
   revalidatePath("/admin/content");
   // A new article is a new sitemap entry with a new `lastmod`.
   revalidatePath("/sitemap.xml");
-  return { ok: true, id: data.id, message: "created" };
+  return {
+    ok: true,
+    id: data.id,
+    message: "created",
+    mediaCount: media.count,
+    mediaWarning: media.warning,
+  };
 }
 
 export async function updateInsightAction(

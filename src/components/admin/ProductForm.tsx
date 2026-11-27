@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
@@ -11,6 +12,7 @@ import {
   updateProductAction,
   type CreateProductResult,
 } from "@/lib/store/admin-actions";
+import { MAX_PRODUCT_IMAGE_BYTES, megabytes } from "@/lib/uploads/limits";
 
 /** The fields an edit pre-fills, mirroring `AdminProduct` from the loader. */
 export type ProductFormInitial = {
@@ -138,6 +140,16 @@ export function ProductForm({
           {state.seoWarning ? (
             <p className="mt-2">{t("admin.store.seoWarning")}</p>
           ) : null}
+          {state.mediaCount ? (
+            <p className="mt-2">
+              {t("admin.store.imagesAdded", { count: state.mediaCount })}
+            </p>
+          ) : null}
+          {state.mediaWarning ? (
+            <p className="mt-2">
+              {t(`admin.store.mediaWarnings.${state.mediaWarning}`)}
+            </p>
+          ) : null}
           <p className="mt-4">
             <ButtonLink
               href={`/admin/store/${state.productId}`}
@@ -245,6 +257,18 @@ export function ProductForm({
           </option>
         ))}
       </SelectField>
+
+      {!editing ? (
+        <ImageUploadField
+          name="image"
+          label={t("admin.store.fieldImages")}
+          hint={t("admin.store.fieldImagesHint", {
+            size: megabytes(MAX_PRODUCT_IMAGE_BYTES),
+          })}
+          tooLargeMessage={t("admin.store.errors.too_large")}
+          maxBytes={MAX_PRODUCT_IMAGE_BYTES}
+        />
+      ) : null}
 
       <TextAreaField
         id="shortDescription"

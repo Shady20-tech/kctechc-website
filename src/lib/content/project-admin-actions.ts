@@ -33,7 +33,13 @@ import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
  */
 
 export type ProjectState =
-  | { ok: true; id: string; message: string }
+  | {
+      ok: true;
+      id: string;
+      message: string;
+      mediaCount?: number;
+      mediaWarning?: "partial" | "failed";
+    }
   | { ok: false; error: string; fields?: Record<string, string> };
 
 export type ProjectMediaState =
@@ -120,6 +126,39 @@ function serviceIdsFrom(formData: FormData): string[] {
     .filter((value) => value.length > 0);
 }
 
+function imageFilesFrom(formData: FormData): File[] {
+  return formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+}
+
+/**
+ * Attach the files chosen in the create form through the same uploader the edit
+ * page uses. A failed upload leaves the project in place and is reported as a
+ * warning, because the record itself succeeded.
+ */
+async function attachProjectMedia(
+  projectId: string,
+  title: string,
+  formData: FormData,
+): Promise<{ count: number; warning?: "partial" | "failed" }> {
+  const files = imageFilesFrom(formData);
+  if (files.length === 0) return { count: 0 };
+
+  const media = new FormData();
+  media.set("projectId", projectId);
+  media.set("altText", title.slice(0, 300));
+  media.set("role", "general");
+  for (const file of files) media.append("image", file);
+
+  const result = await uploadProjectMediaAction(media);
+  if (!result.ok) return { count: 0, warning: "failed" };
+  if (result.message === "media_added_partial") {
+    return { count: 0, warning: "partial" };
+  }
+  return { count: files.length };
+}
+
 export async function createProjectAction(
   formData: FormData,
 ): Promise<ProjectState> {
@@ -196,6 +235,7 @@ export async function createProjectAction(
   }
 
   await syncServices(supabase, data.id, serviceIdsFrom(formData));
+  const media = await attachProjectMedia(data.id, parsed.data.title, formData);
 
   await recordAudit({
     actorId: gate.profile.id,
@@ -208,7 +248,13 @@ export async function createProjectAction(
   scheduleTranslationSync();
 
   revalidateWork(slug);
-  return { ok: true, id: data.id, message: "created" };
+  return {
+    ok: true,
+    id: data.id,
+    message: "created",
+    mediaCount: media.count,
+    mediaWarning: media.warning,
+  };
 }
 
 export async function updateProjectAction(

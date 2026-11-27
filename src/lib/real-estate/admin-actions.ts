@@ -19,6 +19,7 @@ import {
 } from "./listing-input";
 import { loadGeographyIndexResult } from "./loaders";
 import { LISTING_STATUSES, type ListingStatus } from "./enums";
+import { uploadListingImageAction } from "./media-actions";
 
 /**
  * Real-estate administration, as Server Actions.
@@ -42,7 +43,13 @@ import { LISTING_STATUSES, type ListingStatus } from "./enums";
  */
 
 export type ListingActionResult =
-  | { ok: true; listingId: string; warning?: string }
+  | {
+      ok: true;
+      listingId: string;
+      warning?: string;
+      mediaCount?: number;
+      mediaWarning?: "partial" | "failed";
+    }
   | {
       ok: false;
       error: string;
@@ -156,11 +163,45 @@ function revalidateListings(listingSlug?: string) {
 /**
  * Create a listing.
  *
- * Written as a draft always. Publication is a separate action, because a listing
- * needs its private details and usually an image before it is fit to be seen, and
- * a single "save" that also published would make the draft state unreachable for
- * a listing created in one sitting.
+ * Written as a draft always. Photographs chosen in the create form are attached
+ * in the same submission, so the operator does not have to save first and return
+ * to a gallery. Publication remains a separate action: a listing needs its private
+ * details reviewed before it is fit to be seen, and a single "save" that also
+ * published would make the draft state unreachable for a listing created in one
+ * sitting.
  */
+function imageFilesFrom(formData: FormData): File[] {
+  return formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+}
+
+/**
+ * Attach the photographs chosen in the create form through the same uploader the
+ * listing gallery uses. A failed upload leaves the draft in place and is
+ * reported as a warning, so the operator can retry from the listing page.
+ */
+async function attachListingImages(
+  listingId: string,
+  title: string,
+  formData: FormData,
+): Promise<{ count: number; warning?: "partial" | "failed" }> {
+  const files = imageFilesFrom(formData);
+  if (files.length === 0) return { count: 0 };
+
+  const media = new FormData();
+  media.set("listingId", listingId);
+  media.set("altText", title.slice(0, 300));
+  for (const file of files) media.append("image", file);
+
+  const result = await uploadListingImageAction(media);
+  if (!result.ok) return { count: 0, warning: "failed" };
+  if (result.message === "image_added_partial") {
+    return { count: 0, warning: "partial" };
+  }
+  return { count: files.length };
+}
+
 export async function createListingAction(
   formData: FormData,
 ): Promise<ListingActionResult> {
@@ -230,11 +271,18 @@ export async function createListingAction(
   // listing exists and the operator can save the details from the edit form. The
   // alternative — deleting the listing — would discard the work that did succeed.
   const detailWarning = await writePrivateDetails(supabase, data.id, input);
+  const media = await attachListingImages(data.id, input.title, formData);
 
   scheduleTranslationSync();
 
   revalidateListings(input.slug);
-  return { ok: true, listingId: data.id, warning: detailWarning };
+  return {
+    ok: true,
+    listingId: data.id,
+    warning: detailWarning,
+    mediaCount: media.count,
+    mediaWarning: media.warning,
+  };
 }
 
 /**
@@ -596,10 +644,7 @@ export async function previewListingImportAction(
         detail: geographyResult.detail,
       };
     }
-    report = validateListingImport(
-      parsed,
-      geographyResult.data ?? undefined,
-    );
+    report = validateListingImport(parsed, geographyResult.data ?? undefined);
   } catch (error) {
     if (error instanceof CsvParseError) {
       return { ok: false, error: error.message };
@@ -668,10 +713,7 @@ export async function commitListingImportAction(
         detail: geographyResult.detail,
       };
     }
-    report = validateListingImport(
-      parsed,
-      geographyResult.data ?? undefined,
-    );
+    report = validateListingImport(parsed, geographyResult.data ?? undefined);
   } catch (error) {
     if (error instanceof CsvParseError) {
       return { ok: false, error: error.message };

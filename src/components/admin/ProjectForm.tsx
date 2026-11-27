@@ -3,10 +3,12 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
 import type { ProjectState } from "@/lib/content/project-admin-actions";
+import { MAX_PROJECT_IMAGE_BYTES, megabytes } from "@/lib/uploads/limits";
 
 /**
  * Completed-work editor.
@@ -76,7 +78,22 @@ export function ProjectForm({
       ) : null}
       {state?.ok ? (
         <Notice tone="success">
-          {state.message === "created" ? labels.created : labels.updated}
+          <p>{state.message === "created" ? labels.created : labels.updated}</p>
+          {state.mediaCount ? (
+            <p className="mt-1">
+              {(labels.mediaCreated ?? "").replace(
+                "{count}",
+                String(state.mediaCount),
+              )}
+            </p>
+          ) : null}
+          {state.mediaWarning ? (
+            <p className="mt-1">
+              {state.mediaWarning === "partial"
+                ? labels.mediaPartial
+                : labels.mediaFailed}
+            </p>
+          ) : null}
         </Notice>
       ) : null}
 
@@ -237,6 +254,19 @@ export function ProjectForm({
           </div>
         )}
       </fieldset>
+
+      {!id ? (
+        <ImageUploadField
+          name="image"
+          label={labels.imagesLabel ?? ""}
+          hint={(labels.imagesHint ?? "").replace(
+            "{size}",
+            String(megabytes(MAX_PROJECT_IMAGE_BYTES)),
+          )}
+          tooLargeMessage={labels["errors.too_large"]}
+          maxBytes={MAX_PROJECT_IMAGE_BYTES}
+        />
+      ) : null}
 
       <SelectField
         id="publishState"

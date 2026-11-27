@@ -14,11 +14,10 @@ export const dynamic = "force-dynamic";
 /**
  * Admin: record a finished job.
  *
- * The record is created as a draft first and photography is added on the edit
- * page, so the workflow is "create, add images, publish" rather than a single form
- * that has to hold a file upload and a new row at once. A role with no department
- * to edit — a real-estate agent — sees an explicit notice instead of a form whose
- * department select would have no options.
+ * The record and its photography are submitted together: the create action
+ * inserts the row, then hands the chosen files to the same uploader the edit page
+ * uses. A role with no department to edit — a real-estate agent — sees an explicit
+ * notice instead of a form whose department select would have no options.
  */
 export default async function AdminNewWorkPage() {
   const profile = await requireRole(
