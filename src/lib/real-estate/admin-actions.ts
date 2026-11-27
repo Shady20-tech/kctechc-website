@@ -49,6 +49,8 @@ export type ListingActionResult =
       warning?: string;
       mediaCount?: number;
       mediaWarning?: "partial" | "failed";
+      published?: boolean;
+      publishWarning?: "failed";
     }
   | {
       ok: false;
@@ -163,12 +165,10 @@ function revalidateListings(listingSlug?: string) {
 /**
  * Create a listing.
  *
- * Written as a draft always. Photographs chosen in the create form are attached
- * in the same submission, so the operator does not have to save first and return
- * to a gallery. Publication remains a separate action: a listing needs its private
- * details reviewed before it is fit to be seen, and a single "save" that also
- * published would make the draft state unreachable for a listing created in one
- * sitting.
+ * Written as a draft first, because the private details and photographs need the
+ * row to exist. The form's requested publish state is then applied in the same
+ * submission, so an operator can publish immediately or leave the listing as a
+ * draft. A refused publish leaves the draft in place and is reported as a warning.
  */
 function imageFilesFrom(formData: FormData): File[] {
   return formData
@@ -273,6 +273,18 @@ export async function createListingAction(
   const detailWarning = await writePrivateDetails(supabase, data.id, input);
   const media = await attachListingImages(data.id, input.title, formData);
 
+  // The row is inserted as a draft because the lifecycle trigger and the private
+  // details write both need it to exist. Publishing is therefore the last step,
+  // and a refusal leaves the draft in place with a warning.
+  const requestedPublish = cell(formData, "publishState") === "published";
+  let published = false;
+  let publishWarning: "failed" | undefined;
+  if (requestedPublish) {
+    const publish = await setListingStatusAction(data.id, "published");
+    if (publish.ok) published = true;
+    else publishWarning = "failed";
+  }
+
   scheduleTranslationSync();
 
   revalidateListings(input.slug);
@@ -282,6 +294,8 @@ export async function createListingAction(
     warning: detailWarning,
     mediaCount: media.count,
     mediaWarning: media.warning,
+    published,
+    publishWarning,
   };
 }
 

@@ -4016,3 +4016,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   pages reuse the same card with a single back-to-sign-in link. The bottom switch
   links were removed from `SignInForm` and `SignUpForm` so the switcher is the one
   place that changes section.
+- Every create form now offers a publication choice. Products and listings gained
+  a **Save as draft / Publish now** selector; articles and projects already had
+  their state select. A product is inserted as a draft, its images are attached,
+  and only then is the requested publish applied — publishing without an image
+  leaves the draft and returns a warning. A listing is inserted as a draft, its
+  private details and photographs are written, and `setListingStatusAction`
+  publishes it when requested; a refused publish is a warning, not a lost record.
+- Landlords and agents get the same create-time media step on their dashboard,
+  but the second choice is **Submit for review**, not **Publish now**. Their
+  listing is still inserted as an `owner_submission` draft; `submitListingForReviewAction`
+  moves it to `pending_review`, and publication remains the reviewer's decision.
+  Do not add a publish control to that form — `enforce_listing_lifecycle` refuses
+  it without an approved submission.
+- The publication choice follows the existing role boundary. Product, article
+  and finished-work creation is open to `isDepartmentEditorRole`; the listing
+  console is open to `isRealEstateAdminRole` (a `real_estate_staff` account works
+  the queue but does not manage the portfolio, by design). Landlords and agents
+  reach their own capability-scoped dashboard and can submit for review, not
+  publish directly.

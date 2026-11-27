@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
@@ -26,6 +27,7 @@ import {
   type ListingPropertyKind,
 } from "@/lib/real-estate/enums";
 import type { DashboardKind } from "@/lib/real-estate/dashboard";
+import { MAX_PROPERTY_IMAGE_BYTES, megabytes } from "@/lib/uploads/limits";
 
 export type DashboardGeographyOptions = readonly {
   id: string;
@@ -116,16 +118,33 @@ export function DashboardListingForm({
           title={
             editing
               ? t(`${base}.updatedHeading`)
-              : t(`${base}.createdHeading`)
+              : state.submitted
+                ? t(`${base}.createdSubmittedHeading`)
+                : t(`${base}.createdHeading`)
           }
         >
           <p>
             {editing
               ? t(`${base}.updatedBody`)
-              : t(`${base}.createdBody`)}
+              : state.submitted
+                ? t(`${base}.createdSubmittedBody`)
+                : t(`${base}.createdBody`)}
           </p>
           {state.message === "details_warning" ? (
             <p className="mt-2">{t(`${base}.detailsWarning`)}</p>
+          ) : null}
+          {state.mediaCount ? (
+            <p className="mt-2">
+              {t(`${base}.imagesAdded`, { count: state.mediaCount })}
+            </p>
+          ) : null}
+          {state.mediaWarning ? (
+            <p className="mt-2">
+              {t(`${base}.mediaWarnings.${state.mediaWarning}`)}
+            </p>
+          ) : null}
+          {state.publishWarning ? (
+            <p className="mt-2">{t(`${base}.publishWarnings.failed`)}</p>
           ) : null}
           {!editing ? (
             <p className="mt-4">
@@ -234,6 +253,30 @@ export function DashboardListingForm({
           ))}
         </SelectField>
       </fieldset>
+
+      {!editing ? (
+        <>
+          <ImageUploadField
+            name="image"
+            label={t("realEstate.admin.fieldImages")}
+            hint={t("realEstate.admin.fieldImagesHint", {
+              size: megabytes(MAX_PROPERTY_IMAGE_BYTES),
+            })}
+            tooLargeMessage={t("realEstate.admin.errors.too_large")}
+            maxBytes={MAX_PROPERTY_IMAGE_BYTES}
+          />
+          <SelectField
+            id="publishState"
+            name="publishState"
+            label={t(`${base}.fieldPublishState`)}
+            hint={t(`${base}.fieldPublishStateHint`)}
+            defaultValue="draft"
+          >
+            <option value="draft">{t(`${base}.publishStateDraft`)}</option>
+            <option value="review">{t(`${base}.publishStateReview`)}</option>
+          </SelectField>
+        </>
+      ) : null}
 
       <fieldset className="space-y-6">
         <legend className="font-display text-lg font-semibold text-ink-900">
@@ -369,10 +412,7 @@ export function DashboardListingForm({
           />
         ) : null}
 
-        {shouldRenderField(
-          relevance.buildingArea,
-          listing?.buildingAreaSqm,
-        ) ? (
+        {shouldRenderField(relevance.buildingArea, listing?.buildingAreaSqm) ? (
           <TextField
             id="buildingAreaSqm"
             name="buildingAreaSqm"

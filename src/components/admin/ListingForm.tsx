@@ -99,7 +99,9 @@ export function ListingForm({
           <p>
             {editing
               ? t("realEstate.admin.updatedBody")
-              : t("realEstate.admin.createdBody")}
+              : state.published
+                ? t("realEstate.admin.createdPublishedBody")
+                : t("realEstate.admin.createdBody")}
           </p>
           {state.warning ? (
             <p className="mt-2">{t("realEstate.admin.detailWarning")}</p>
@@ -114,6 +116,11 @@ export function ListingForm({
           {state.mediaWarning ? (
             <p className="mt-2">
               {t(`realEstate.admin.mediaWarnings.${state.mediaWarning}`)}
+            </p>
+          ) : null}
+          {state.publishWarning ? (
+            <p className="mt-2">
+              {t(`realEstate.admin.publishWarnings.${state.publishWarning}`)}
             </p>
           ) : null}
           {!editing ? (
@@ -250,15 +257,31 @@ export function ListingForm({
       </fieldset>
 
       {!editing ? (
-        <ImageUploadField
-          name="image"
-          label={t("realEstate.admin.fieldImages")}
-          hint={t("realEstate.admin.fieldImagesHint", {
-            size: megabytes(MAX_PROPERTY_IMAGE_BYTES),
-          })}
-          tooLargeMessage={t("realEstate.admin.errors.too_large")}
-          maxBytes={MAX_PROPERTY_IMAGE_BYTES}
-        />
+        <>
+          <ImageUploadField
+            name="image"
+            label={t("realEstate.admin.fieldImages")}
+            hint={t("realEstate.admin.fieldImagesHint", {
+              size: megabytes(MAX_PROPERTY_IMAGE_BYTES),
+            })}
+            tooLargeMessage={t("realEstate.admin.errors.too_large")}
+            maxBytes={MAX_PROPERTY_IMAGE_BYTES}
+          />
+          <SelectField
+            id="publishState"
+            name="publishState"
+            label={t("realEstate.admin.fieldPublishState")}
+            hint={t("realEstate.admin.fieldPublishStateHint")}
+            defaultValue="draft"
+          >
+            <option value="draft">
+              {t("realEstate.admin.publishStateDraft")}
+            </option>
+            <option value="published">
+              {t("realEstate.admin.publishStatePublished")}
+            </option>
+          </SelectField>
+        </>
       ) : null}
 
       <fieldset className="space-y-6">

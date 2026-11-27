@@ -49,7 +49,15 @@ import { PROPERTY_MEDIA_BUCKET, listingMediaPath } from "./storage";
  */
 
 export type DashboardActionResult =
-  | { ok: true; listingId: string; message?: string }
+  | {
+      ok: true;
+      listingId: string;
+      message?: string;
+      mediaCount?: number;
+      mediaWarning?: "partial" | "failed";
+      submitted?: boolean;
+      publishWarning?: "failed";
+    }
   | { ok: false; error: string; fields?: Record<string, string> };
 
 export type DashboardSimpleResult =
@@ -60,6 +68,12 @@ export type DashboardSimpleResult =
 function cell(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function imageFilesFrom(formData: FormData): File[] {
+  return formData
+    .getAll("image")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 }
 
 function readListingForm(formData: FormData) {
@@ -253,12 +267,12 @@ async function writePrivateDetails(
 }
 
 /**
- * Create a listing as a draft.
+ * Create a listing, then either leave it as a draft or submit it for review.
  *
- * Always a draft, matching the console's behaviour: publication is the reviewer's
- * decision, and a single "save" that also published would make the draft state
- * unreachable for a listing created in one sitting. The listing's `source` is left
- * unset so the trigger pins it to `owner_submission`.
+ * The row is inserted as a draft first because the private details and media need
+ * it to exist. A landlord or agent cannot publish directly — the lifecycle trigger
+ * requires an approved submission — so the "publish" choice here is "submit for
+ * review", the furthest step their capability allows.
  */
 export async function createDashboardListingAction(
   kind: DashboardKind,
@@ -317,6 +331,22 @@ export async function createDashboardListingAction(
     metadata: { via: `${kind}_dashboard`, source: "owner_submission" },
   });
 
+  const media = await attachDashboardListingImages(
+    kind,
+    data.id,
+    input.title,
+    formData,
+  );
+
+  const requestedReview = cell(formData, "publishState") === "review";
+  let submitted = false;
+  let publishWarning: "failed" | undefined;
+  if (requestedReview) {
+    const result = await submitListingForReviewAction(kind, data.id, "");
+    if (result.ok) submitted = true;
+    else publishWarning = "failed";
+  }
+
   scheduleTranslationSync();
 
   revalidateListingSurfaces(data.id, input.slug);
@@ -325,7 +355,38 @@ export async function createDashboardListingAction(
     ok: true,
     listingId: data.id,
     message: detailsWritten ? undefined : "details_warning",
+    mediaCount: media.count,
+    mediaWarning: media.warning,
+    submitted,
+    publishWarning,
   };
+}
+
+/**
+ * Attach the photographs chosen on the create form through the same uploader the
+ * listing gallery uses. A failure leaves the draft or submission in place and is
+ * reported as a warning, so the owner can retry from the listing page.
+ */
+async function attachDashboardListingImages(
+  kind: DashboardKind,
+  listingId: string,
+  title: string,
+  formData: FormData,
+): Promise<{ count: number; warning?: "partial" | "failed" }> {
+  const files = imageFilesFrom(formData);
+  if (files.length === 0) return { count: 0 };
+
+  const media = new FormData();
+  media.set("listingId", listingId);
+  media.set("altText", title.slice(0, 300));
+  for (const file of files) media.append("image", file);
+
+  const result = await uploadDashboardListingImageAction(kind, media);
+  if (!result.ok) return { count: 0, warning: "failed" };
+  if (result.message === "image_added_partial") {
+    return { count: 0, warning: "partial" };
+  }
+  return { count: files.length };
 }
 
 /**

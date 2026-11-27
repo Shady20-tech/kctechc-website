@@ -49,6 +49,42 @@ describe("create forms attach images in the same submission", () => {
     expect(form).toContain('name="image"');
   });
 
+  it("offers publish-now or save-as-draft on every create form", () => {
+    for (const path of [
+      "src/components/admin/ProductForm.tsx",
+      "src/components/admin/InsightForm.tsx",
+      "src/components/admin/ProjectForm.tsx",
+      "src/components/admin/ListingForm.tsx",
+    ]) {
+      const form = source(path);
+      expect(form, path).toContain('name="publishState"');
+      expect(form, path).toContain('value="published"');
+    }
+
+    const productAction = source("src/lib/store/admin-actions.ts");
+    expect(productAction).toContain("setProductPublishedAction(publishForm)");
+    expect(productAction).toContain('publishWarning = "image_required"');
+
+    const listingAction = source("src/lib/real-estate/admin-actions.ts");
+    expect(listingAction).toContain(
+      'setListingStatusAction(data.id, "published")',
+    );
+    expect(listingAction).toContain('publishWarning = "failed"');
+
+    const dashboardForm = source(
+      "src/components/account/DashboardListingForm.tsx",
+    );
+    expect(dashboardForm).toContain("ImageUploadField");
+    expect(dashboardForm).toContain('name="publishState"');
+    expect(dashboardForm).toContain('value="review"');
+
+    const dashboardAction = source("src/lib/real-estate/dashboard-actions.ts");
+    expect(dashboardAction).toContain("attachDashboardListingImages");
+    expect(dashboardAction).toContain(
+      'submitListingForReviewAction(kind, data.id, "")',
+    );
+  });
+
   it("does not ask the editor to save first in the create notices", () => {
     const en = JSON.parse(source("src/lib/i18n/messages/en.json"));
     expect(en.admin.store.imageUploadNotice).not.toMatch(

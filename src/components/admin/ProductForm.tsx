@@ -118,7 +118,11 @@ export function ProductForm({
           )}
         >
           <p>
-            {t(editing ? "admin.store.updatedBody" : "admin.store.createdBody")}
+            {editing
+              ? t("admin.store.updatedBody")
+              : state.published
+                ? t("admin.store.publishedNow")
+                : t("admin.store.createdBody")}
           </p>
           {!editing ? (
             <>
@@ -148,6 +152,11 @@ export function ProductForm({
           {state.mediaWarning ? (
             <p className="mt-2">
               {t(`admin.store.mediaWarnings.${state.mediaWarning}`)}
+            </p>
+          ) : null}
+          {state.publishWarning ? (
+            <p className="mt-2">
+              {t(`admin.store.publishWarnings.${state.publishWarning}`)}
             </p>
           ) : null}
           <p className="mt-4">
@@ -363,6 +372,21 @@ export function ProductForm({
         rows={3}
         error={fields?.seoDescription}
       />
+
+      {!editing ? (
+        <SelectField
+          id="publishState"
+          name="publishState"
+          label={t("admin.store.fieldPublishState")}
+          hint={t("admin.store.fieldPublishStateHint")}
+          defaultValue="draft"
+        >
+          <option value="draft">{t("admin.store.publishStateDraft")}</option>
+          <option value="published">
+            {t("admin.store.publishStatePublished")}
+          </option>
+        </SelectField>
+      ) : null}
 
       <Notice tone="info" title={t("admin.store.draftNoticeHeading")}>
         <p>{t("admin.store.draftNoticeBody")}</p>

@@ -36,7 +36,9 @@ function renderForm(listing?: DashboardListing) {
   );
 }
 
-function listingFixture(over: Partial<DashboardListing> = {}): DashboardListing {
+function listingFixture(
+  over: Partial<DashboardListing> = {},
+): DashboardListing {
   return {
     id: "listing-1",
     reference: "KC-RE-000001",
@@ -111,6 +113,21 @@ describe("DashboardListingForm field relevance", () => {
     });
     expect(screen.getByLabelText(/^Longitude$/i)).toBeTruthy();
     expect(screen.getByLabelText(/^Latitude$/i)).toBeTruthy();
+  });
+
+  it("offers create-time photographs and a draft-or-review choice", () => {
+    renderForm();
+    expect(screen.getByLabelText(/Property photographs/i)).toBeTruthy();
+    expect(screen.getByLabelText(/What happens next/i)).toBeTruthy();
+    expect(
+      screen.getByRole("option", { name: /Submit for review/i }),
+    ).toBeTruthy();
+  });
+
+  it("hides the create-only upload and review choice when editing", () => {
+    renderForm(listingFixture());
+    expect(screen.queryByLabelText(/Property photographs/i)).toBeNull();
+    expect(screen.queryByLabelText(/What happens next/i)).toBeNull();
   });
 
   it("tells the owner the optional fields can be left empty", () => {

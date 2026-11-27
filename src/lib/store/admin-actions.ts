@@ -20,7 +20,10 @@ import {
   productUpdateSchema,
 } from "@/lib/store/product-input";
 import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
-import { uploadProductImageAction } from "./media-actions";
+import {
+  setProductPublishedAction,
+  uploadProductImageAction,
+} from "./media-actions";
 
 /**
  * Create a product from the admin surface.
@@ -55,6 +58,8 @@ export type CreateProductResult =
       seoWarning?: string;
       mediaCount?: number;
       mediaWarning?: "partial" | "failed";
+      published?: boolean;
+      publishWarning?: "image_required" | "failed";
     }
   | {
       ok: false;
@@ -212,9 +217,9 @@ export async function createProductAction(
 
   const supabase = admin;
 
-  // The product is inserted as a draft. Publishing requires an image, and the
-  // image cannot be attached until the product row exists to attach it to, so a
-  // new product starts unpublished and becomes visible when an image is added.
+  // The product is inserted as a draft because publishing requires an image and
+  // the image cannot be attached until the row exists. The requested publish
+  // state is therefore applied after the media step, never on the insert.
   let product: { id: string } | null;
   let insertError: unknown;
   try {
@@ -272,6 +277,24 @@ export async function createProductAction(
     input.title,
     filesFrom(formData, "image"),
   );
+
+  // Publishing needs the row to exist and at least one image to be attached, so
+  // the request is honoured after the media step rather than by inserting a
+  // published row. A refusal leaves the product as the draft it already is.
+  const requestedPublish =
+    String(formData.get("publishState") ?? "draft") === "published";
+  let published = false;
+  let publishWarning: "image_required" | "failed" | undefined;
+  if (requestedPublish) {
+    const publishForm = new FormData();
+    publishForm.set("productId", product.id);
+    publishForm.set("publish", "true");
+    const publishResult = await setProductPublishedAction(publishForm);
+    if (publishResult.ok) published = true;
+    else if (publishResult.error === "no_image")
+      publishWarning = "image_required";
+    else publishWarning = "failed";
+  }
 
   // SEO overrides live in `entity_seo`, not on the product row, and the product
   // page reads them from there. Writing them anywhere else would accept the
@@ -343,6 +366,8 @@ export async function createProductAction(
     seoWarning,
     mediaCount: media.count,
     mediaWarning: media.warning,
+    published,
+    publishWarning,
   };
 }
 
