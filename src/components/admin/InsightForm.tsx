@@ -148,6 +148,7 @@ export function InsightForm({
             hint={labels.coverHint ?? ""}
             tooLargeMessage={labels["errors.too_large"]}
             maxBytes={MAX_CONTENT_IMAGE_BYTES}
+            removeLabel={labels.removeLabel ?? "Remove"}
             multiple={false}
           />
           <ImageUploadField
@@ -156,6 +157,7 @@ export function InsightForm({
             hint={labels.galleryHint ?? ""}
             tooLargeMessage={labels["errors.too_large"]}
             maxBytes={MAX_CONTENT_IMAGE_BYTES}
+            removeLabel={labels.removeLabel ?? "Remove"}
           />
         </div>
       ) : null}

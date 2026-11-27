@@ -264,6 +264,7 @@ export function DashboardListingForm({
             })}
             tooLargeMessage={t("realEstate.admin.errors.too_large")}
             maxBytes={MAX_PROPERTY_IMAGE_BYTES}
+            removeLabel={t("actions.remove")}
           />
           <SelectField
             id="publishState"

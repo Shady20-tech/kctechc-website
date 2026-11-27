@@ -4035,3 +4035,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   the queue but does not manage the portfolio, by design). Landlords and agents
   reach their own capability-scoped dashboard and can submit for review, not
   publish directly.
+- Create-time image previews carry a remove ("x") control. Removing one must
+  rewrite the file input's own `FileList` with a `DataTransfer`; deleting only the
+  preview would leave the discarded file in the submitted request. The control is
+  rendered only where `DataTransfer` exists, because without it a removal cannot be
+  represented honestly.

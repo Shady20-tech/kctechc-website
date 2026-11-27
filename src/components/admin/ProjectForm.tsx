@@ -265,6 +265,7 @@ export function ProjectForm({
           )}
           tooLargeMessage={labels["errors.too_large"]}
           maxBytes={MAX_PROJECT_IMAGE_BYTES}
+          removeLabel={labels.mediaRemove ?? "Remove"}
         />
       ) : null}
 

@@ -35,6 +35,7 @@ export default async function AdminNewInsightPage() {
     "state.published": t("adminContent.state.published"),
     "state.archived": t("adminContent.state.archived"),
     coverLabel: t("adminContent.coverLabel"),
+    removeLabel: t("actions.remove"),
     coverHint: t("adminContent.coverHint"),
     galleryLabel: t("adminContent.galleryLabel"),
     galleryHint: t("adminContent.galleryHint"),

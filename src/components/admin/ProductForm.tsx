@@ -276,6 +276,7 @@ export function ProductForm({
           })}
           tooLargeMessage={t("admin.store.errors.too_large")}
           maxBytes={MAX_PRODUCT_IMAGE_BYTES}
+          removeLabel={t("actions.remove")}
         />
       ) : null}
 
