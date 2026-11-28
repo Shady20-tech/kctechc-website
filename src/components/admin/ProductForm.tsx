@@ -200,16 +200,18 @@ export function ProductForm({
         error={fields?.title}
       />
 
-      <TextField
-        id="slug"
-        defaultValue={initial?.slug ?? ""}
-        name="slug"
-        label={t("admin.store.fieldSlug")}
-        hint={t("admin.store.fieldSlugHint")}
-        required
-        requiredLabel={t("common.required")}
-        error={fields?.slug}
-      />
+      {editing ? (
+        <TextField
+          id="slug"
+          defaultValue={initial?.slug ?? ""}
+          name="slug"
+          label={t("admin.store.fieldSlug")}
+          hint={t("admin.store.fieldSlugHint")}
+          required
+          requiredLabel={t("common.required")}
+          error={fields?.slug}
+        />
+      ) : null}
 
       <TextField
         id="sku"

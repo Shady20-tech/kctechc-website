@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { GeographyFields } from "@/components/real-estate/GeographyFields";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
@@ -187,15 +188,17 @@ export function DashboardListingForm({
           required
         />
 
-        <TextField
-          id="slug"
-          name="slug"
-          label={t("realEstate.admin.fieldSlug")}
-          hint={t("realEstate.admin.fieldSlugHint")}
-          defaultValue={listing?.slug ?? ""}
-          error={fields?.slug}
-          required
-        />
+        {editing ? (
+          <TextField
+            id="slug"
+            name="slug"
+            label={t("realEstate.admin.fieldSlug")}
+            hint={t("realEstate.admin.fieldSlugHint")}
+            defaultValue={listing?.slug ?? ""}
+            error={fields?.slug}
+            required
+          />
+        ) : null}
 
         <TextAreaField
           id="description"
@@ -284,65 +287,14 @@ export function DashboardListingForm({
           {t("realEstate.admin.sections.location")}
         </legend>
 
-        <SelectField
-          id="regionId"
-          name="regionId"
-          label={t("realEstate.admin.fieldRegion")}
-          defaultValue={listing?.regionId ?? ""}
-          error={fields?.regionId}
-          required
-        >
-          <option value="">{t("account.regionPlaceholder")}</option>
-          {geography.map((region) => (
-            <option key={region.id} value={region.id}>
-              {region.name}
-            </option>
-          ))}
-        </SelectField>
-
-        <SelectField
-          id="divisionId"
-          name="divisionId"
-          label={t("realEstate.admin.fieldDivision")}
-          defaultValue={listing?.divisionId ?? ""}
-          error={fields?.divisionId}
-        >
-          <option value="">—</option>
-          {geography.flatMap((region) =>
-            region.divisions.map((division) => (
-              <option key={division.id} value={division.id}>
-                {region.name} · {division.name}
-              </option>
-            )),
-          )}
-        </SelectField>
-
-        <SelectField
-          id="subdivisionId"
-          name="subdivisionId"
-          label={t("realEstate.admin.fieldSubdivision")}
-          defaultValue={listing?.subdivisionId ?? ""}
-          error={fields?.subdivisionId}
-        >
-          <option value="">—</option>
-          {geography.flatMap((region) =>
-            region.divisions.flatMap((division) =>
-              division.subdivisions.map((subdivision) => (
-                <option key={subdivision.id} value={subdivision.id}>
-                  {division.name} · {subdivision.name}
-                </option>
-              )),
-            ),
-          )}
-        </SelectField>
-
-        <TextField
-          id="locality"
-          name="locality"
-          label={t("realEstate.admin.fieldLocality")}
-          hint={t("realEstate.admin.fieldLocalityHint")}
-          defaultValue={listing?.locality ?? ""}
-          error={fields?.locality}
+        <GeographyFields
+          geography={geography}
+          locale={locale}
+          initialRegionId={listing?.regionId ?? ""}
+          initialDivisionId={listing?.divisionId ?? ""}
+          initialSubdivisionId={listing?.subdivisionId ?? ""}
+          initialLocality={listing?.locality ?? ""}
+          errors={fields}
         />
       </fieldset>
 

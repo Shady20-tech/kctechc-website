@@ -180,6 +180,12 @@ function stubSession(
   };
 
   createClient.mockResolvedValue(client);
+  // The action reads slug uniqueness through the service-role client. Reuse the
+  // same stub so the test exercises the real query path rather than a second mock.
+  createAdminClient.mockReturnValue({
+    ...client,
+    storage: { from: vi.fn() },
+  });
   return captured;
 }
 
@@ -222,6 +228,13 @@ describe("createDashboardListingAction", () => {
     const result = await createDashboardListingAction("landlord", validForm());
     expect(result.ok).toBe(true);
     expect(inserted[0]!.status).toBe("draft");
+  });
+
+  it("derives the URL slug from the title when the form posts none", async () => {
+    const { inserted } = stubSession();
+    const result = await createDashboardListingAction("landlord", validForm({ title: "Three bedroom house in Limbe", slug: "" }));
+    expect(result.ok).toBe(true);
+    expect(inserted[0]!.slug).toBe("three-bedroom-house-in-limbe");
   });
 
   it("never sends a source, so the trigger owns it", async () => {

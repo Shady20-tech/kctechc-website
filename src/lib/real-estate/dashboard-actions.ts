@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { getAuthState } from "@/lib/auth/session";
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
+import { slugifyTitle, uniqueSlug } from "@/lib/content/slug";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -281,7 +282,9 @@ export async function createDashboardListingAction(
   const gate = await requireCapability(kind);
   if (!gate.ok) return gate;
 
-  const parsed = listingInputSchema.safeParse(readListingForm(formData));
+  const raw = readListingForm(formData);
+  raw.slug = slugifyTitle(raw.title, "property");
+  const parsed = listingInputSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "invalid", fields: fieldErrorsFrom(parsed.error) };
   }
@@ -290,12 +293,21 @@ export async function createDashboardListingAction(
   if (!supabase) return { ok: false, error: "unconfigured" };
 
   const input = parsed.data;
+  const slugClient = createAdminClient() ?? supabase;
+  const slug = await uniqueSlug(input.slug, async (candidate) => {
+    const { data } = await slugClient
+      .from("property_listings")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    return Boolean(data);
+  });
 
   const { data, error } = await supabase
     .from("property_listings")
     .insert({
       ...listingColumns(input),
-      slug: input.slug,
+      slug,
       status: "draft",
       // A landlord owns what they create; an agent is the manager and the poster.
       // Both columns are pinned again by `enforce_listing_ownership`, so this is
@@ -349,7 +361,7 @@ export async function createDashboardListingAction(
 
   scheduleTranslationSync();
 
-  revalidateListingSurfaces(data.id, input.slug);
+  revalidateListingSurfaces(data.id, slug);
 
   return {
     ok: true,

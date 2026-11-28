@@ -124,6 +124,20 @@ describe("DashboardListingForm field relevance", () => {
     ).toBeTruthy();
   });
 
+  it("does not ask for a slug or a free-text locality on create", () => {
+    renderForm();
+    expect(screen.queryByLabelText(/URL slug/i)).toBeNull();
+    expect(screen.queryByLabelText(/Locality/i)).toBeNull();
+    expect(screen.getByLabelText(/^Region/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^Division/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^Subdivision/i)).toBeTruthy();
+  });
+
+  it("keeps the slug editable when editing an existing listing", () => {
+    renderForm(listingFixture());
+    expect(screen.getByLabelText(/URL slug/i)).toBeTruthy();
+  });
+
   it("hides the create-only upload and review choice when editing", () => {
     renderForm(listingFixture());
     expect(screen.queryByLabelText(/Property photographs/i)).toBeNull();

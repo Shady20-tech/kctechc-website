@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { GeographyFields } from "@/components/real-estate/GeographyFields";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/Form";
@@ -167,16 +168,18 @@ export function ListingForm({
           required
           requiredLabel={t("validation.required")}
         />
-        <TextField
-          id="slug"
-          name="slug"
-          label={t("realEstate.admin.fieldSlug")}
-          hint={t("realEstate.admin.fieldSlugHint")}
-          defaultValue={listing?.slug ?? ""}
-          error={fields?.slug}
-          required
-          requiredLabel={t("validation.required")}
-        />
+        {editing ? (
+          <TextField
+            id="slug"
+            name="slug"
+            label={t("realEstate.admin.fieldSlug")}
+            hint={t("realEstate.admin.fieldSlugHint")}
+            defaultValue={listing?.slug ?? ""}
+            error={fields?.slug}
+            required
+            requiredLabel={t("validation.required")}
+          />
+        ) : null}
         <TextAreaField
           id="description"
           name="description"
@@ -290,30 +293,14 @@ export function ListingForm({
           {t("realEstate.admin.sections.location")}
         </legend>
 
-        <SelectField
-          id="regionId"
-          name="regionId"
-          label={t("realEstate.admin.fieldRegion")}
-          defaultValue={listing?.regionId ?? ""}
-          error={fields?.regionId}
-          required
-          requiredLabel={t("validation.required")}
-        >
-          <option value="">{t("realEstate.admin.selectPlaceholder")}</option>
-          {geography.map((region) => (
-            <option key={region.id} value={region.id}>
-              {region.name}
-            </option>
-          ))}
-        </SelectField>
-
-        <TextField
-          id="locality"
-          name="locality"
-          label={t("realEstate.admin.fieldLocality")}
-          hint={t("realEstate.admin.fieldLocalityHint")}
-          defaultValue={listing?.locality ?? ""}
-          error={fields?.locality}
+        <GeographyFields
+          geography={geography}
+          locale={locale}
+          initialRegionId={listing?.regionId ?? ""}
+          initialDivisionId={listing?.divisionId ?? ""}
+          initialSubdivisionId={listing?.subdivisionId ?? ""}
+          initialLocality={listing?.locality ?? ""}
+          errors={fields}
         />
       </fieldset>
 

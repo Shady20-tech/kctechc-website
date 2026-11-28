@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAuthState } from "@/lib/auth/session";
 import { isRealEstateAdminRole, isSuperAdminRole } from "@/lib/auth/roles";
 import { REAL_ESTATE_PATH } from "@/lib/config/navigation";
+import { slugifyTitle, uniqueSlug } from "@/lib/content/slug";
 import { createClient } from "@/lib/supabase/server";
 import { describeSupabaseError } from "@/lib/supabase/errors";
 import { scheduleTranslationSync } from "@/lib/tolgee/schedule-sync";
@@ -208,7 +209,9 @@ export async function createListingAction(
   const denied = await authorize();
   if (denied) return denied;
 
-  const parsed = listingInputSchema.safeParse(readListingForm(formData));
+  const raw = readListingForm(formData);
+  raw.slug = slugifyTitle(raw.title, "property");
+  const parsed = listingInputSchema.safeParse(raw);
   if (!parsed.success) {
     return {
       ok: false,
@@ -221,10 +224,18 @@ export async function createListingAction(
   if (!supabase) return { ok: false, error: "unconfigured" };
 
   const input = parsed.data;
+  const slug = await uniqueSlug(input.slug, async (candidate) => {
+    const { data } = await supabase
+      .from("property_listings")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    return Boolean(data);
+  });
   const { data, error } = await supabase
     .from("property_listings")
     .insert({
-      slug: input.slug,
+      slug,
       title: input.title,
       description: input.description,
       listing_type: input.listingType,
@@ -287,7 +298,7 @@ export async function createListingAction(
 
   scheduleTranslationSync();
 
-  revalidateListings(input.slug);
+  revalidateListings(slug);
   return {
     ok: true,
     listingId: data.id,
@@ -342,7 +353,9 @@ export async function updateListingAction(
   const denied = await authorize();
   if (denied) return denied;
 
-  const parsed = listingInputSchema.safeParse(readListingForm(formData));
+  const raw = readListingForm(formData);
+  raw.slug = raw.slug.trim() || slugifyTitle(raw.title, "property");
+  const parsed = listingInputSchema.safeParse(raw);
   if (!parsed.success) {
     return {
       ok: false,

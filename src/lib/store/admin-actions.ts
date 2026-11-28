@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAuthState } from "@/lib/auth/session";
 import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
 import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
+import { slugifyTitle, uniqueSlug } from "@/lib/content/slug";
 import { storePathFor } from "@/lib/config/navigation";
 import {
   createAdminClient,
@@ -166,9 +167,11 @@ export async function createProductAction(
     return { ok: false, error: "forbidden" };
   }
 
+  const titleValue = formData.get("title");
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
   const parsed = productInputSchema.safeParse({
-    title: formData.get("title"),
-    slug: formData.get("slug"),
+    title,
+    slug: slugifyTitle(title, "product", 120),
     sku: formData.get("sku"),
     categoryId: formData.get("categoryId"),
     shortDescription: formData.get("shortDescription"),
@@ -216,6 +219,18 @@ export async function createProductAction(
   }
 
   const supabase = admin;
+  const slug = await uniqueSlug(
+    input.slug,
+    async (candidate) => {
+      const { data } = await admin
+        .from("products")
+        .select("id")
+        .eq("slug", candidate)
+        .maybeSingle();
+      return Boolean(data);
+    },
+    120,
+  );
 
   // The product is inserted as a draft because publishing requires an image and
   // the image cannot be attached until the row exists. The requested publish
@@ -227,7 +242,7 @@ export async function createProductAction(
       .from("products")
       .insert({
         category_id: input.categoryId,
-        slug: input.slug,
+        slug,
         sku: input.sku,
         title: input.title,
         short_description: input.shortDescription,

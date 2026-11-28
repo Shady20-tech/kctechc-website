@@ -4040,3 +4040,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   preview would leave the discarded file in the submitted request. The control is
   rendered only where `DataTransfer` exists, because without it a removal cannot be
   represented honestly.
+- Create forms no longer ask for a URL slug. Every create action derives it from
+  the title with `slugifyTitle` (`src/lib/content/slug.ts`), then resolves a free
+  value with `uniqueSlug`, which adds `-2`, `-3`, ... before a random fallback.
+  Edit forms keep the slug field because changing an existing URL is a deliberate
+  action. Do not reintroduce a required slug input on create: it made a normal
+  post fail with a validation error, and it is the one field the publisher cannot
+  know before the title exists.
+- Listing location is the administrative hierarchy, not free text. `GeographyFields`
+  (`src/components/real-estate/GeographyFields.tsx`) cascades Region -> Division ->
+  Subdivision, clears children when a parent changes, and posts a hidden `locality`
+  derived from the selected level. Both the admin listing form and the landlord/agent
+  dashboard use it; the visible "Locality" input is gone from both. Keep `locality`
+  posted because the public card and search still read it.

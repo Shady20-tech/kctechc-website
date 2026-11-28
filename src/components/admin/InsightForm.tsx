@@ -103,17 +103,19 @@ export function InsightForm({
         {fieldError("title")}
       </div>
 
-      <div>
-        <TextField
-          id="slug"
-          name="slug"
-          label={labels.slugLabel ?? ""}
-          hint={labels.slugHint ?? ""}
-          defaultValue={initial?.slug ?? ""}
-          required
-        />
-        {fieldError("slug")}
-      </div>
+      {id ? (
+        <div>
+          <TextField
+            id="slug"
+            name="slug"
+            label={labels.slugLabel ?? ""}
+            hint={labels.slugHint ?? ""}
+            defaultValue={initial?.slug ?? ""}
+            required
+          />
+          {fieldError("slug")}
+        </div>
+      ) : null}
 
       <div>
         <TextAreaField

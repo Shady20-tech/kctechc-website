@@ -8,6 +8,7 @@ import { z } from "zod";
 import { canAccessDepartment, isDepartmentEditorRole } from "@/lib/auth/roles";
 import { getAuthState, type Profile } from "@/lib/auth/session";
 import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
+import { slugifyTitle, uniqueSlug } from "@/lib/content/slug";
 import { recordAudit } from "@/lib/security/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -165,9 +166,11 @@ export async function createProjectAction(
   const gate = await requireEditor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
+  const titleValue = formData.get("title");
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
   const parsed = projectSchema.safeParse({
-    slug: String(formData.get("slug") ?? ""),
-    title: String(formData.get("title") ?? ""),
+    slug: slugifyTitle(title, "project"),
+    title,
     summary: String(formData.get("summary") ?? ""),
     description: optionalText(formData.get("description")),
     scope: optionalText(formData.get("scope")),
@@ -199,11 +202,20 @@ export async function createProjectAction(
 
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "unconfigured" };
+  const slugClient = createAdminClient() ?? supabase;
+  const projectSlug = await uniqueSlug(parsed.data.slug, async (candidate) => {
+    const { data } = await slugClient
+      .from("electrical_projects")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    return Boolean(data);
+  });
 
   const { data, error } = await supabase
     .from("electrical_projects")
     .insert({
-      slug: parsed.data.slug,
+      slug: projectSlug,
       title: parsed.data.title,
       summary: parsed.data.summary,
       description: parsed.data.description ?? null,
@@ -242,7 +254,11 @@ export async function createProjectAction(
     action: "project_created",
     entityType: "electrical_project",
     entityId: data.id,
-    metadata: { department: slug, state: parsed.data.publishState },
+    metadata: {
+      department: slug,
+      slug: projectSlug,
+      state: parsed.data.publishState,
+    },
   });
 
   scheduleTranslationSync();
@@ -266,9 +282,13 @@ export async function updateProjectAction(
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return { ok: false, error: "not_found" };
 
+  const titleValue = formData.get("title");
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
   const parsed = projectSchema.safeParse({
-    slug: String(formData.get("slug") ?? ""),
-    title: String(formData.get("title") ?? ""),
+    slug:
+      String(formData.get("slug") ?? "").trim() ||
+      slugifyTitle(title, "project"),
+    title,
     summary: String(formData.get("summary") ?? ""),
     description: optionalText(formData.get("description")),
     scope: optionalText(formData.get("scope")),

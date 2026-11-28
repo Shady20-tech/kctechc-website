@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { getAuthState } from "@/lib/auth/session";
 import { contentDeletionErrorKey } from "@/lib/content/deletion-errors";
+import { slugifyTitle, uniqueSlug } from "@/lib/content/slug";
 import {
   canAccessDepartment,
   isDepartmentEditorRole,
@@ -229,9 +230,11 @@ export async function createInsightAction(
   const gate = await requireAuthor();
   if (!gate.ok) return { ok: false, error: gate.error };
 
+  const titleValue = formData.get("title");
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
   const parsed = insightSchema.safeParse({
-    slug: formData.get("slug"),
-    title: formData.get("title"),
+    slug: slugifyTitle(title, "article"),
+    title,
     summary: formData.get("summary"),
     body: formData.get("body"),
     categoryId: uuidOrNull(formData.get("categoryId")),
@@ -277,10 +280,19 @@ export async function createInsightAction(
       detail: missingAdminClientDetail(),
     };
 
+  const slugClient = createAdminClient() ?? supabase;
+  const slug = await uniqueSlug(input.slug, async (candidate) => {
+    const { data } = await slugClient
+      .from("insights")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    return Boolean(data);
+  });
   const { data, error } = await supabase
     .from("insights")
     .insert({
-      slug: input.slug,
+      slug,
       title: input.title,
       summary: input.summary,
       body: input.body,
@@ -317,7 +329,7 @@ export async function createInsightAction(
     action: "content_created",
     entityType: "insight",
     entityId: data.id,
-    metadata: { slug: input.slug, publish_state: input.publishState },
+    metadata: { slug, publish_state: input.publishState },
   });
 
   scheduleTranslationSync();
@@ -343,9 +355,13 @@ export async function updateInsightAction(
   const id = String(formData.get("id") ?? "");
   if (!id) return { ok: false, error: "not_found" };
 
+  const titleValue = formData.get("title");
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
   const parsed = insightSchema.safeParse({
-    slug: formData.get("slug"),
-    title: formData.get("title"),
+    slug:
+      String(formData.get("slug") ?? "").trim() ||
+      slugifyTitle(title, "article"),
+    title,
     summary: formData.get("summary"),
     body: formData.get("body"),
     categoryId: uuidOrNull(formData.get("categoryId")),
