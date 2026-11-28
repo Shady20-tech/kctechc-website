@@ -45,6 +45,7 @@ export function Alert({
     <div
       id={id}
       role={isUrgent ? "alert" : "status"}
+      data-alert-tone={tone}
       className={`flex gap-3 rounded-control border px-4 py-3 text-sm ${wrapper}`}
     >
       <Icon aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />

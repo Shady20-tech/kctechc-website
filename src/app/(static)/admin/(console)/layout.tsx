@@ -1,4 +1,5 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { SessionKeepalive } from "@/components/account/SessionKeepalive";
 import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
 import { ViewSiteLink } from "@/components/layout/ViewSiteLink";
 import { Notice } from "@/components/ui/Notice";
@@ -82,6 +83,7 @@ export default async function ConsoleLayout({
 
   return (
     <div className="min-h-screen bg-surface-alt lg:flex">
+      <SessionKeepalive />
       <AdminSidebar
         sections={sections}
         labels={labels}

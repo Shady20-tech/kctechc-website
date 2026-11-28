@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerRegistration } from "@/components/layout/InstallPrompt";
 import { ThemeController } from "@/components/layout/ThemeController";
+import { FormStateKeeper } from "@/components/ui/FormStateKeeper";
 import { fontClassNames } from "@/lib/fonts";
 import { getSiteUrl } from "@/lib/config/env";
 import { BRAND_COLORS } from "@/lib/config/site";
 import { installPromptBootstrapScript } from "@/lib/pwa/install-prompt-script";
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE_TEMPLATE } from "@/lib/seo/metadata";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE_TEMPLATE,
+} from "@/lib/seo/metadata";
 import { themeBootstrapScript } from "@/lib/theme/department-theme";
 import "./globals.css";
 
@@ -62,9 +66,7 @@ export default function RootLayout({
             client-side navigation was seen on this Next 16 build, but it
             reproduces without this script, so it is pre-existing framework
             behaviour rather than something the theme work introduced.) */}
-        <script
-          dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript() }} />
         {/* Captures `beforeinstallprompt` at parse time. Chromium can fire it
             before hydration finishes, and the event fires once per page load, so
             a listener registered by the install banner would miss it and the
@@ -74,6 +76,11 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: installPromptBootstrapScript() }}
         />
         <ThemeController />
+        {/* Keeps in-progress form values across a client navigation and across
+            the reset React performs when a form action finishes, so a validation
+            error no longer clears every correct field. Headless: it only attaches
+            document-level listeners and renders nothing. */}
+        <FormStateKeeper />
         {/* Registers `public/sw.js` once, for the whole site. It belongs in the
             root layout because a service worker's scope is a directory of the
             origin, not a route: `/sw.js` can only control `/` and below, so it

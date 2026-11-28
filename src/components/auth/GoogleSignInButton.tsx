@@ -66,6 +66,22 @@ function createNonce(): string {
 }
 
 /**
+ * Google expects the *hashed* nonce in the ID token while Supabase expects the
+ * raw nonce and hashes it again for comparison. Passing the raw value to both
+ * makes the comparison fail for every account, which looks exactly like Google
+ * refusing valid addresses. This is the step that keeps them in agreement.
+ */
+async function hashNonce(nonce: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(nonce),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
  * The official Google Sign-In button, backed by Google Identity Services.
  *
  * `supabase.auth.signInWithOAuth({ provider: "google" })` sends the browser
@@ -117,11 +133,12 @@ export function GoogleSignInButton({
     const translate = createTranslator(locale).t;
     nonceRef.current ??= createNonce();
     const nonce = nonceRef.current;
+    let hashedNonce: string | null = null;
     let lastWidth = 0;
     let cancelled = false;
 
     const render = () => {
-      if (cancelled) return;
+      if (cancelled || !hashedNonce) return;
       const width = Math.min(
         400,
         Math.max(200, Math.round(container.clientWidth || 320)),
@@ -151,6 +168,11 @@ export function GoogleSignInButton({
                 });
 
               if (signInError) {
+                console.error("[google-signin] signInWithIdToken failed", {
+                  status: signInError.status,
+                  code: signInError.code,
+                  message: signInError.message,
+                });
                 setError(translate("auth.oauthFailed"));
                 return;
               }
@@ -160,6 +182,10 @@ export function GoogleSignInButton({
                 next: nextPath,
               });
               if (completion.status === "error") {
+                console.error(
+                  "[google-signin] completion failed",
+                  completion.messageKey,
+                );
                 setError(translate(completion.messageKey));
                 return;
               }
@@ -176,7 +202,7 @@ export function GoogleSignInButton({
         ux_mode: "popup",
         auto_select: false,
         cancel_on_tap_outside: true,
-        nonce,
+        nonce: hashedNonce,
       });
       google.renderButton(container, {
         type: "standard",
@@ -190,7 +216,15 @@ export function GoogleSignInButton({
       });
     };
 
-    render();
+    void hashNonce(nonce)
+      .then((value) => {
+        if (cancelled) return;
+        hashedNonce = value;
+        render();
+      })
+      .catch(() => {
+        if (!cancelled) setScriptFailed(true);
+      });
 
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(render);

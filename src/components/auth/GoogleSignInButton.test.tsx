@@ -109,6 +109,32 @@ describe("GoogleSignInButton", () => {
     );
   });
 
+  it("sends the hashed nonce to Google and the raw nonce to Supabase", async () => {
+    let callback: CredentialCallback | undefined;
+    let googleNonce: string | undefined;
+    initialize.mockImplementation(
+      (options: { callback: CredentialCallback; nonce?: string }) => {
+        callback = options.callback;
+        googleNonce = options.nonce;
+      },
+    );
+
+    render(<GoogleSignInButton locale="en" />);
+    act(() => mocks.script.onReady?.());
+    await waitFor(() => expect(callback).toBeTypeOf("function"));
+
+    await act(async () => {
+      callback?.({ credential: "google-id-token" });
+    });
+
+    await waitFor(() => expect(mocks.signInWithIdToken).toHaveBeenCalled());
+    const supabaseNonce = mocks.signInWithIdToken.mock.calls[0]![0]
+      .nonce as string;
+    expect(googleNonce).toMatch(/^[0-9a-f]{64}$/);
+    expect(supabaseNonce).toMatch(/^[0-9a-f]{32}$/);
+    expect(supabaseNonce).not.toBe(googleNonce);
+  });
+
   it("uses the sign-up wording and French locale", async () => {
     render(<GoogleSignInButton locale="fr" mode="signup" />);
     act(() => mocks.script.onReady?.());

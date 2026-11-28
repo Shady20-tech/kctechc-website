@@ -106,10 +106,12 @@ describe("service worker", () => {
     // A cached `/admin` or `/api` response would be served to the next visitor on
     // a shared device. This is the one mistake here that is a security problem
     // rather than a staleness one.
-    expect(source).toContain("/api/");
-    expect(source).toContain("/admin");
-    expect(source).toContain("/auth");
-    expect(source).toContain("NEVER_CACHE");
+    expect(source).toContain('"api"');
+    expect(source).toContain('"admin"');
+    expect(source).toContain('"auth"');
+    expect(source).toContain('"account"');
+    expect(source).toContain("NEVER_CACHE_SEGMENTS");
+    expect(source).toContain("isPrivatePath");
   });
 
   it("precaches the offline page", () => {

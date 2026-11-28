@@ -39,16 +39,30 @@ const STATIC_CACHE = `kc-static-${VERSION}`;
 // in the visitor's language.
 const OFFLINE_PAGES = { en: "/en/offline", fr: "/fr/offline" };
 
-// Prefixes the worker must never intercept.
-const NEVER_CACHE = [
-  "/api/",
-  "/admin",
-  "/auth",
-  "/login",
-  "/sign-up",
-  "/forgot-password",
-  "/reset-password",
-];
+// Path segments the worker must never intercept. The map is matched both at the
+// root (`/admin`) and after a locale segment (`/en/account`), because the
+// localized dashboard and auth pages are the same private surfaces.
+const NEVER_CACHE_SEGMENTS = new Set([
+  "api",
+  "admin",
+  "auth",
+  "account",
+  "login",
+  "sign-up",
+  "forgot-password",
+  "reset-password",
+]);
+
+function isPrivatePath(pathname) {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return false;
+  if (NEVER_CACHE_SEGMENTS.has(segments[0])) return true;
+  return (
+    (segments[0] === "en" || segments[0] === "fr") &&
+    segments.length > 1 &&
+    NEVER_CACHE_SEGMENTS.has(segments[1])
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -93,8 +107,9 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // Authenticated or personal surfaces, and every API route, go straight to the
-  // network with no cache read and no cache write.
-  if (NEVER_CACHE.some((prefix) => url.pathname.startsWith(prefix))) return;
+  // network with no cache read and no cache write. This covers both `/admin` and
+  // the localized `/{locale}/account` dashboards.
+  if (isPrivatePath(url.pathname)) return;
 
   // Build-hashed assets are immutable, so cache-first is safe and fastest.
   if (url.pathname.startsWith("/_next/static/")) {

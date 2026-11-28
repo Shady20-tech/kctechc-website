@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { resolveAvatarUrl } from "@/components/admin/Avatar";
 import { DashboardShell } from "@/components/account/DashboardShell";
+import { SessionKeepalive } from "@/components/account/SessionKeepalive";
 import { getAuthState } from "@/lib/auth/session";
 import { isLocale, type Locale } from "@/lib/i18n/locales";
 import { createTranslator } from "@/lib/i18n/translator";
@@ -100,16 +101,19 @@ export default async function DashboardLayout({
   };
 
   return (
-    <DashboardShell
-      sections={sections}
-      labels={labels}
-      user={user}
-      locale={resolved}
-      kind={dashboard}
-      siteHref={`/${resolved}`}
-      siteLabel={t("account.dashboards.nav.viewSite")}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <SessionKeepalive />
+      <DashboardShell
+        sections={sections}
+        labels={labels}
+        user={user}
+        locale={resolved}
+        kind={dashboard}
+        siteHref={`/${resolved}`}
+        siteLabel={t("account.dashboards.nav.viewSite")}
+      >
+        {children}
+      </DashboardShell>
+    </>
   );
 }
